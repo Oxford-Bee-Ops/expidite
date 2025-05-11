@@ -1,0 +1,200 @@
+"""The ETL process is responsible for taking the data uploaded to the Cloud and:
+    - unpacking it
+    - running  DataProcessors over the data
+    - archiving the data
+    - creating aggregated data (eg hourly, daily) for ingestion by analysis and reporting tools.
+
+The ETL is a periodic batch process that runs over all uploaded ZIP files and then exits.
+
+The ETL is composed of the following subprocesses:
+    - a worker thread that downloads and unpacks the ZIP files
+    - a pool of Datastream objects (1 per Datastream represented in the uploaded ZIP files) that
+    call DataProcessors to process and then archive the data
+    - a pool of ??? objects (1 per DatastreamType) that aggregate the data into hourly records
+
+The ETLScheduler manages the overall process flow as follows:
+    - it starts the ZipHandler thread to download & unpack the ZIP files
+    - it starts the DatastreamFactory to create Datastream objects to process the data in parallel
+    - once the ZipHandler completes, it starts the Aggregation process
+
+The ETL process can handle a ZIP file being re-injected and will manage de-duplication.
+"""
+
+import zipfile
+from threading import Event, Thread, Timer
+from time import sleep
+
+from sensor_core import api
+from sensor_core import configuration as root_cfg
+from sensor_core.cloud_connector import CloudConnector
+from sensor_core.dpworker import DPworker
+from sensor_core.utils import file_naming
+
+logger = root_cfg.setup_logger(name="sensor_core")
+
+
+class ZipFileHandler(Thread):
+    """ZipFileHandler downloads files uploaded by Sensors to the CLOUD_UPLOAD_DATASTORE and unzips them
+    into the local storage ETL_PROCESSING_DIR.
+    """
+
+    def __init__(self, max_zip_files_per_batch: int) -> None:
+        self.max_zip_files_per_batch = max_zip_files_per_batch
+        self.cloud_connector = root_cfg.cloud_connector
+
+    def run(self) -> None:
+        """Download and unzip a batch of zip files from the CLOUD_UPLOAD_DATASTORE"""
+
+        # List the zip files in the CLOUD_UPLOAD_DATASTORE
+        zip_files = self.cloud_connector.list_cloud_files(root_cfg.my_device.cc_for_upload, suffix="*.zip")
+
+        for count, zip_file in enumerate(zip_files):
+            if count >= self.max_zip_files_per_batch:
+                # We don't want to overload the ETL by downloading too many zip files at once
+                logger.info("ZipFileHandler exiting at 100 zip files")
+                break
+
+            # Download and unzip the file.  We do one at a time rather than download all first, so
+            # that we generate work for the subsequent threads and don't block on download.
+            self.cloud_connector.download_from_container(
+                root_cfg.my_device.cc_for_upload,
+                zip_file,
+                dst_file=root_cfg.ETL_UNZIP_DIR.joinpath(zip_file),
+            )
+            with zipfile.ZipFile(zip_file, "r") as zip_obj:
+                zip_obj.extractall(path=root_cfg.ETL_PROCESSING_DIR)
+
+        # We shouldn't have created any directories beneath the ETL_PROCESSING_DIR ie zips should be flat
+        assert all(f.is_file() for f in root_cfg.ETL_PROCESSING_DIR.glob("*")), "Directory in zip file"
+
+
+class DatastreamFactory:
+    """DatastreamFactory is responsible for creating Datastream objects to process uploaded zip files.
+
+    It periodically checks the files in the ETL_PROCESSING_DIR and creates Datastream
+    objects to process the files present.
+
+    The Datastream objects required are identifiable from the common filename prefix used for all files:
+    <ds_type_ID>_<device_id>_<sensor_index>...
+
+    Once a Datastream object is instantiated and its start() method called, it will find the files in the
+    ETL_PROCESSING_DIR and process them using the DataProcessors defined for it in the DatastreamTypes
+    configuration.
+
+    Once the DataProcessors (if any) have completed processing, the Datastream object will manage the
+    archiving of the resulting data:
+        - if the output is a recording file (eg .wav) it will upload it to the ARCHIVE_DATASTORE
+        defined on the DatastreamType object.
+        - if the output is a DataFrame, it is saved to a per-DST-per-day Journal
+
+    The Datastream object is stored in an internal dictionary so that duplicate objects are not created;
+    the Datastream object will continue to periodically check for new files to process.
+    The DatastreamFactory is responsible for calling stop() on all Datastream objects once the ZipFileHandler
+    has completed and there are no files left to process.
+    """
+
+    def __init__(self) -> None:
+        """Initialise the DatastreamFactory"""
+        self._datastreams: dict[str, DPworker] = {}
+        self._stop_requested_event = Event()
+        # We start the first iteration with a short timer, so we start work quickly, but then back-off
+        self._sleep_time = 5 * 60
+        self._dsf_timer = Timer(30, self.run_scan)
+        self._dsf_timer.name = "dsf_thread"
+        self._dsf_timer.start()
+
+    def run_scan(self) -> None:
+        """Check all the unzipped files and make sure there are Datastreams instantiated to process them
+
+        Called on a timer."""
+
+        PREFIX_LEN = 21  # len("ABCDE_XXXXXXXXXXXX_SS")
+        # Get the type_id, device_id and sensor_index for all files...
+        # ... and check that we have Datastreams to process them
+        files = list(root_cfg.ETL_PROCESSING_DIR.glob("*"))
+        for f in files:
+            # We index the datastreams by the file prefix which contains type_id, device_id & sensor_index
+            prefix = f.name[:PREFIX_LEN]
+            if prefix in self._datastreams:
+                continue
+            else:
+                file_details = file_naming.parse_record_filename(f)
+                datastream = DPworker(
+                    file_details[api.RECORD_ID.DATA_TYPE_ID.value],
+                    file_details[api.RECORD_ID.DEVICE_ID.value],
+                    file_details[api.RECORD_ID.SENSOR_INDEX.value],
+                )
+                datastream.start()
+                self._datastreams[prefix] = datastream
+
+        if not self._stop_requested_event.is_set():
+            self._dsf_timer = Timer(30, self.run_scan)
+            self._dsf_timer.name = "dsf_thread"
+            self._dsf_timer.start()
+
+    def stop(self) -> None:
+        """Stop the DatastreamFactory timer and any Datastream threads that it initiated"""
+
+        # Stop our own timer
+        self._stop_requested_event.set()
+        self._dsf_timer.cancel()
+        # Stop all the Datastream threads
+        for ds in self._datastreams.values():
+            ds.stop()
+
+    def join(self) -> None:
+        """Blocks until all of the Datastreams complete"""
+
+        for ds in self._datastreams.values():
+            if ds.is_alive():
+                ds.join()
+
+
+class Aggregation(Thread):
+    pass
+
+
+class ETLOrchestrator(Thread):
+    """The ETL orchestrator manages the ETL process flow."""
+
+    def __init__(self) -> None:
+        self.cloud_connector = root_cfg.cloud_connector
+
+    def zip_loop(self, max_zip_files_per_batch: int) -> bool:
+        """The ETL loop fully processes a batch of zip files and then exits"""
+        # Start the ZipFileHandler to download and unzip sensor data
+        zipFileHandler = ZipFileHandler(max_zip_files_per_batch=max_zip_files_per_batch)
+        zipFileHandler.start()
+
+        # Start the DatastreamFactory (which starts the Datastores and their DataProcessors)
+        dsFactory = DatastreamFactory()
+
+        # Wait for the ZipFileHandler to complete; then call DatastreamFactory.stop()
+        while zipFileHandler.is_alive():
+            sleep(10)
+
+        # ZipFileHandler has completed.
+        # Wait for the DatastreamFactory and all the Datastreams to complete
+        dsFactory.stop()
+        dsFactory.join()
+
+        # If there are more zips to process, return True, else False
+        zip_files = self.cloud_connector.list_cloud_files(root_cfg.my_device.cc_for_upload, suffix="*.zip")
+        if zip_files is not None and len(zip_files) > 0:
+            return True
+        else:
+            return False
+
+    def run(self) -> None:
+        # Iterate over all zip files in the CLOUD_UPLOAD_DATASTORE
+        batch_size = 50
+        while self.zip_loop(batch_size):
+            logger.info(f"Processed {batch_size} zip files")
+
+        # Start the Aggregation process
+        aggregation = Aggregation()
+        aggregation.start()
+
+        # Wait until aggregation completes
+        if aggregation.is_alive():
+            aggregation.join()

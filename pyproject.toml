@@ -1,0 +1,80 @@
+[build-system]
+requires = ["setuptools"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "sensor-core"
+version = "0.1.135"
+description = "Python module to support using Raspberry Pi for scientific data collection"
+readme = "README.md"
+requires-python = ">=3.11"
+authors = [
+  {name = "Estella", email = "estella@bee-ops.com"},
+  {name = "Stuart", email = "stuart@bee-ops.com"},
+]
+dependencies = [
+    "azure-storage-blob",
+    "click",
+    "python-crontab",
+    "gitpython",
+    "gpiozero",
+    "numpy",
+    'opencv-python; sys_platform == "win32"',
+    "pandas",
+    "psutil",
+    "pydantic-settings",
+    "pytest",
+    "PyYAML",
+    "smbus2",
+    'systemd-python; sys_platform != "win32"',
+    "wheel",
+]
+
+[project.optional-dependencies]
+test = [
+    "pytest",
+    "pyinstrument",
+    "types-PyYAML",
+    "pandas-stubs",
+    "types-psutil",
+]
+lint = [
+    "ruff == 0.4.4",
+    "mypy == 1.10.0",
+]
+dev = [
+    "sensor-core[test,lint]",
+]
+
+[project.scripts]
+bcli = "sensor_core.bcli:main"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.setuptools.package-data]
+"sensor_core" = ["src/sensor_core/scripts/*"]
+
+[tool.setuptools.data-files]
+"scripts" = ["src/sensor_core/scripts/*"]
+
+[tool.ruff]
+line-length = 110
+indent-width = 4
+
+[tool.ruff.format]
+quote-style = "double"
+indent-style = "space"
+line-ending = "auto"
+
+[tool.ruff.lint]
+select = [
+    "F",   # pyflakes
+    "E",   # pycodestyle
+    "I",   # isort
+    "RUF", # ruff-specific rules
+]
+fixable = ["ALL"]
+
+[tool.ruff.lint.pydocstyle]
+convention = "google"
