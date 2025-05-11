@@ -6,12 +6,12 @@ from typing import Optional
 import cv2
 import pandas as pd
 
-from sensor_core import api, file_naming
-from sensor_core import configuration as root_cfg
-from sensor_core.dp import DataProcessor
-from sensor_core.dp_config_objects import DataProcessorCfg, Stream
+from rpi.core import api, file_naming
+from rpi.core import configuration as root_cfg
+from rpi.core.dp import DataProcessor
+from rpi.core.dp_config_objects import DataProcessorCfg, Stream
 
-logger = root_cfg.setup_logger("sensor_core")
+logger = root_cfg.setup_logger("rpi_core")
 
 TRAPCAM_TYPE_ID = "TRAPCAM"
 TRAPCAM_STREAM_INDEX: int = 0
@@ -32,7 +32,7 @@ DEFAULT_TRAPCAM_PROCESSOR_CFG = TrapCamProcessorCfg(
             type_id=TRAPCAM_TYPE_ID,
             index=TRAPCAM_STREAM_INDEX,
             format=api.FORMAT.MP4,
-            cloud_container="sensor-core-upload",
+            cloud_container="expidite-upload",
             sample_probability="0.1",
         )
     ],

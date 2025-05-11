@@ -1,18 +1,19 @@
 ####################################################################################################
 # Sensor class that provides a direct map onto Raspberry Pi's rpicam-vid for continuous video recording.
 #
-# The user specifies the rpicam-vid command line, except for the file name, which is set by SensorCore.
+# The user specifies the rpicam-vid command line, except for the file name, which is set by RpiCore.
 #
 ####################################################################################################
 
 from dataclasses import dataclass
 
-from sensor_core import Sensor, SensorCfg, api, file_naming
-from sensor_core import configuration as root_cfg
-from sensor_core.dp_config_objects import Stream
-from sensor_core.utils import utils
+from rpi.core import api, file_naming
+from rpi.core import configuration as root_cfg
+from rpi.core.dp_config_objects import Stream
+from rpi.core.sensor import Sensor, SensorCfg
+from rpi.utils import utils
 
-logger = root_cfg.setup_logger("sensor_core")
+logger = root_cfg.setup_logger("rpi_core")
 
 RPICAM_DATA_TYPE_ID = "RPICAM"
 RPICAM_STREAM_INDEX: int = 0
@@ -40,7 +41,7 @@ DEFAULT_RPICAM_SENSOR_CFG = RpicamSensorCfg(
             type_id=RPICAM_DATA_TYPE_ID,
             index=RPICAM_STREAM_INDEX,
             format=api.FORMAT.MP4,
-            cloud_container="sensor-core-upload",
+            cloud_container="expidite-upload",
         )
     ],
     rpicam_cmd = "rpicam-vid --framerate 15 --width 640 --height 480 -o FILENAME -t 5000",

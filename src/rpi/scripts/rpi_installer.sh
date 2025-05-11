@@ -2,30 +2,30 @@
 
 # RPI installer
 #
-# This script installs / updates SensorCore code according to the ~/.sensor_core/system.cfg file.
-# This script is also called from crontab on reboot to restart SensorCore (if auto-start is enabled).
+# This script installs / updates RpiCore code according to the ~/.expidite/system.cfg file.
+# This script is also called from crontab on reboot to restart RpiCore (if auto-start is enabled).
 # It is safe to re-run this script multiple times.
 #
 # Pre-requisites:
-# - system.cfg file must exist in the ~/.sensor_core directory
-# - keys.env file must exist in the ~/.sensor_core directory
+# - system.cfg file must exist in the ~/.expidite directory
+# - keys.env file must exist in the ~/.expidite directory
 # - SSH enabled on the RPi
-# - SSH keys for the user's code repository must exist in the ~/.sensor_core directory
+# - SSH keys for the user's code repository must exist in the ~/.expidite directory
 #   if using a private repository
 #
 # This script will:
 # - install_ssh_keys for accessing the user's code repository
 # - create_and_activate_venv
-# - install_os_packages required for SensorCore
-# - install_sensor_core
+# - install_os_packages required for RpiCore
+# - install_expidite
 # - install_user_code
 # - install_ufw and configure the firewall rules
 # - set_log_storage_volatile so that logs are stored in RAM and don't wear out the SD card
-# - create_mount which is a RAM disk for the use by SensorCore
+# - create_mount which is a RAM disk for the use by RpiCore
 # - set_predictable_network_interface_names
 # - enable_i2c
 # - alias_bcli so that you can run 'bcli' at any prompt
-# - auto_start_if_requested to start SensorCore & DeviceManager automatically if requested in system.cfg
+# - auto_start_if_requested to start RpiCore & DeviceManager automatically if requested in system.cfg
 # - make_persistent by adding this script to crontab to run on reboot
 #
 # This script can be called with a no_os_update argument to skip the OS update and package installation steps.
@@ -44,16 +44,16 @@ fi
 # Function to check pre-requisites
 check_prerequisites() {
     echo "Checking pre-requisites..."
-    if [ ! -d "$HOME/.sensor_core" ]; then
-        echo "Error: $HOME/.sensor_core directory is missing"
+    if [ ! -d "$HOME/.expidite" ]; then
+        echo "Error: $HOME/.expidite directory is missing"
         exit 1
     fi
-    if [ ! -f "$HOME/.sensor_core/system.cfg" ]; then
-        echo "Error: system.cfg file is missing in $HOME/.sensor_core"
+    if [ ! -f "$HOME/.expidite/system.cfg" ]; then
+        echo "Error: system.cfg file is missing in $HOME/.expidite"
         exit 1
     fi
-    if [ ! -f "$HOME/.sensor_core/keys.env" ]; then
-        echo "Error: keys.env file is missing in $HOME/.sensor_core"
+    if [ ! -f "$HOME/.expidite/keys.env" ]; then
+        echo "Error: keys.env file is missing in $HOME/.expidite"
         exit 1
     fi
     if ! command -v sudo >/dev/null 2>&1; then
@@ -70,17 +70,17 @@ check_prerequisites() {
         echo "64-bit OS detected"
     else
         echo "!!! 32-bit OS detected !!!"
-        echo "SensorCore is not supported on 32-bit OS because key packages like Ultralytics require 64-bit."
+        echo "RpiCore is not supported on 32-bit OS because key packages like Ultralytics require 64-bit."
         echo "Please install a 64-bit OS and re-run this script."
         exit 1
     fi
     echo "All pre-requisites are met."
 
     # Ensure the flags directory exists
-    mkdir -p "$HOME/.sensor_core/flags"
+    mkdir -p "$HOME/.expidite/flags"
     # Delete the reboot_required flag if it exists
-    if [ -f "$HOME/.sensor_core/flags/reboot_required" ]; then
-        rm "$HOME/.sensor_core/flags/reboot_required"
+    if [ -f "$HOME/.expidite/flags/reboot_required" ]; then
+        rm "$HOME/.expidite/flags/reboot_required"
     fi
 
 }
@@ -95,11 +95,11 @@ git_project_name() {
 
 # Function to read system.cfg file and export the key-value pairs found
 export_system_cfg() {
-    if [ ! -f "$HOME/.sensor_core/system.cfg" ]; then
-        echo "Error: system.cfg file is missing in $HOME/.sensor_core"
+    if [ ! -f "$HOME/.expidite/system.cfg" ]; then
+        echo "Error: system.cfg file is missing in $HOME/.expidite"
         exit 1
     fi
-    dos2unix -q "$HOME/.sensor_core/system.cfg" || { echo "Failed to convert system.cfg to Unix format"; exit 1; }
+    dos2unix -q "$HOME/.expidite/system.cfg" || { echo "Failed to convert system.cfg to Unix format"; exit 1; }
     while IFS='=' read -r key value; do
         if [[ $key != \#* && $key != "" ]]; then
             if [[ $key =~ ^[a-zA-Z_][a-zA-Z0-9_]*$ ]]; then
@@ -110,10 +110,10 @@ export_system_cfg() {
                 echo "Warning: Skipping invalid key '$key' in system.cfg"
             fi
         fi
-    done < "$HOME/.sensor_core/system.cfg"
+    done < "$HOME/.expidite/system.cfg"
 }
 
-# Install SSH keys from the ./sensor_core directory to the ~/.ssh directory
+# Install SSH keys from the ./expidite directory to the ~/.ssh directory
 install_ssh_keys() {
     echo "Installing SSH keys..."
 
@@ -133,11 +133,11 @@ install_ssh_keys() {
         echo "my_git_ssh_private_key_file is not set in system.cfg"
     else
         # Copy the users private key file to the ~/.ssh directory
-        if [ -f "$HOME/.sensor_core/$my_git_ssh_private_key_file" ]; then
-            cp "$HOME/.sensor_core/$my_git_ssh_private_key_file" "$HOME/.ssh/" || { echo "Failed to copy $my_git_ssh_private_key_file to ~/.ssh"; exit 1; }
+        if [ -f "$HOME/.expidite/$my_git_ssh_private_key_file" ]; then
+            cp "$HOME/.expidite/$my_git_ssh_private_key_file" "$HOME/.ssh/" || { echo "Failed to copy $my_git_ssh_private_key_file to ~/.ssh"; exit 1; }
             chmod 600 "$HOME/.ssh/$my_git_ssh_private_key_file" || { echo "Failed to set permissions for $my_git_ssh_private_key_file"; exit 1; }
         else
-            echo "Error: Private key file $my_git_ssh_private_key_file does not exist in $HOME/.sensor_core"
+            echo "Error: Private key file $my_git_ssh_private_key_file does not exist in $HOME/.expidite"
             # This is not a fatal error (it may be intentional if a public repo), but we need to warn the user
         fi
 
@@ -195,29 +195,29 @@ install_os_packages() {
     echo "OS packages installed successfully."
     # A reboot is always required after installing packages, otherwise the system is unstable 
     # (eg rpicam broken pipe)
-    touch "$HOME/.sensor_core/flags/reboot_required"
+    touch "$HOME/.expidite/flags/reboot_required"
 }
 
-# Function to install SensorCore 
-install_sensor_core() {
-    # Install SensorCore from GitHub
-    current_version=$(pip show sensor_core | grep Version)
-    echo "Installing SensorCore.  Current version: $current_version"
+# Function to install Expidite's RpiCore 
+install_expidite() {
+    # Install RpiCore from GitHub
+    current_version=$(pip show expidite | grep Version)
+    echo "Installing expidite.  Current version: $current_version"
     source "$HOME/$venv_dir/bin/activate" || { echo "Failed to activate virtual environment"; exit 1; }
 
     ###############################################################################################################
     # We don't return exit code 1 if the install fails, because we want to continue with the rest of the script
     # and this can happen due to transient network issues causing github.com name resolution to fail.
     ###############################################################################################################
-    pip install git+https://github.com/oxford-bee-ops/sensor_core.git@main || { echo "Failed to install SensorCore"; }
-    updated_version=$(pip show sensor_core | grep Version)
-    echo "SensorCore installed successfully.  Now version: $updated_version"
+    pip install git+https://github.com/oxford-bee-ops/rpi.git@main || { echo "Failed to install RpiCore"; }
+    updated_version=$(pip show expidite | grep Version)
+    echo "Expidite installed successfully.  Now version: $updated_version"
 
     # If the version has changed, we need to set a flag so we reboot at the end of the script
     if [ "$current_version" != "$updated_version" ]; then
-        echo "SensorCore version has changed from $current_version to $updated_version.  Reboot required."
+        echo "Expidite version has changed from $current_version to $updated_version.  Reboot required."
         # Set a flag to indicate that a reboot is required
-        touch "$HOME/.sensor_core/flags/reboot_required"
+        touch "$HOME/.expidite/flags/reboot_required"
     fi
 }
 
@@ -281,7 +281,7 @@ install_user_code() {
     if [ "$current_version" != "$updated_version" ]; then
         echo "User's code version has changed from $current_version to $updated_version.  Reboot required."
         # Set a flag to indicate that a reboot is required
-        touch "$HOME/.sensor_core/flags/reboot_required"
+        touch "$HOME/.expidite/flags/reboot_required"
     fi
 }
 
@@ -363,7 +363,7 @@ function set_log_storage_volatile() {
 # If we're running off an SSD, we mount /bee-ops on the SSD.
 ###############################################
 function create_mount() {
-    mountpoint="/sensor_core"
+    mountpoint="/expidite"
 
     # Create the mount point directory if it doesn't exist
     # We have to do this before we put it in fstab and call sudo mount -a, otherwise it will fail
@@ -383,9 +383,9 @@ function create_mount() {
         if grep -Eqs "$mountpoint.*$mount_size" /etc/fstab; then
             echo "The mount point already exists in fstab with the correct size."
         else
-            # If it doesn't exist, we delete any lines that start with "tmpfs /sensor_core" to clean out old config...
+            # If it doesn't exist, we delete any lines that start with "tmpfs /expidite" to clean out old config...
             # Such as mounts with the wrong size
-            sudo sed -i '/^tmpfs \/sensor_core/d' /etc/fstab
+            sudo sed -i '/^tmpfs \/expidite/d' /etc/fstab
 
             # ...and then add the new lines
             fstab_entry="tmpfs $mountpoint tmpfs defaults,size=$mount_size,uid=$USER,gid=$USER 0 0"
@@ -400,7 +400,7 @@ function create_mount() {
             # Recommended sleep before mount -a to allow systemd to complete
             sleep 1
             sudo mount -a
-            echo "The sensor_core mount point has been added to fstab."
+            echo "The expidite mount point has been added to fstab."
         fi
     fi
 
@@ -449,11 +449,11 @@ function alias_bcli() {
 ################################################
 function auto_start_if_requested() {
     if [ "$auto_start" == "Yes" ]; then
-        echo "Auto-starting SensorCore..."
+        echo "Auto-starting Expidite RpiCore..."
         
         # Check the script is not already running
         if pgrep -f "$my_start_script" > /dev/null; then
-            echo "SensorCore is already running."
+            echo "Expidite RpiCore is already running."
             return
         fi
         echo "Calling $my_start_script in $HOME/$venv_dir"
@@ -497,7 +497,7 @@ function make_persistent() {
 # Reboot if required
 ################################################
 function reboot_if_required() {
-    if [ -f "$HOME/.sensor_core/flags/reboot_required" ]; then
+    if [ -f "$HOME/.expidite/flags/reboot_required" ]; then
         echo "Reboot required. Rebooting now..."
         sudo reboot
     else
@@ -507,14 +507,14 @@ function reboot_if_required() {
 
 ###################################################################################################
 #
-# Main script execution to configure a RPi device suitable for long-running SensorCore operations
+# Main script execution to configure a RPi device suitable for long-running RpiCore operations
 # 
 ###################################################################################################
 echo "Starting RPi installer.  (os_update=$os_update)"
 # Sleep for 20 seconds to allow the system to settle down after booting
 sleep 10
 check_prerequisites
-cd "$HOME/.sensor_core" || { echo "Failed to change directory to $HOME/.sensor_core"; exit 1; }
+cd "$HOME/.expidite" || { echo "Failed to change directory to $HOME/.expidite"; exit 1; }
 export_system_cfg
 install_ssh_keys
 create_and_activate_venv
@@ -522,7 +522,7 @@ create_and_activate_venv
 if [ "$os_update" == "yes" ]; then
     install_os_packages
 fi
-install_sensor_core
+install_expidite
 install_user_code
 install_ufw
 set_log_storage_volatile
@@ -534,8 +534,8 @@ auto_start_if_requested
 make_persistent
 reboot_if_required
 
-# Add a flag file in the .sensor_core directory to indicate that the installer has run
+# Add a flag file in the .expidite directory to indicate that the installer has run
 # We use the timestamp on this flag to determine the last update time
-touch "$HOME/.sensor_core/flags/rpi_installer_ran"
-echo "RPi installer completed successfully."
+touch "$HOME/.expidite/flags/rpi_installer_ran"
+echo "Expidite RPi installer completed successfully."
 

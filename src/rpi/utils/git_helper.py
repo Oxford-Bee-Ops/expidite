@@ -4,9 +4,9 @@ from typing import Optional
 
 import git
 
-from sensor_core import configuration as root_cfg
+from rpi.core import configuration as root_cfg
 
-logger = root_cfg.setup_logger("sensor_core")
+logger = root_cfg.setup_logger("rpi_core")
 
 def initialize_git_repo(git_url: str, 
                         git_branch: str = "main", 
@@ -114,16 +114,16 @@ def main() -> None:
             root_cfg.system_cfg.my_git_ssh_private_key_file
         )
 
-    # Refresh the SensorCore code
-    if not root_cfg.system_cfg.sensor_core_git_branch:
+    # Refresh the RpiCore code
+    if not root_cfg.system_cfg.rpi_core_git_branch:
         refresh_git_repo(
-            root_cfg.system_cfg.sensor_core_git_url,
+            root_cfg.system_cfg.rpi_core_git_url,
             root_cfg.system_cfg.my_git_ssh_private_key_file
         )
     else:
         refresh_git_repo(
-            root_cfg.system_cfg.sensor_core_git_url,
-            root_cfg.system_cfg.sensor_core_git_branch,
+            root_cfg.system_cfg.rpi_core_git_url,
+            root_cfg.system_cfg.rpi_core_git_branch,
             root_cfg.system_cfg.my_git_ssh_private_key_file
         )
 

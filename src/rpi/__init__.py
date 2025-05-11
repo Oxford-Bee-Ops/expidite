@@ -1,36 +1,36 @@
-# filepath: sensor_core/__init__.py
+# filepath: rpi_core/__init__.py
 
 # Re-export specific classes and functions
 # Dynamically fetch the version from the package metadata
 import importlib.metadata
 
-from . import api, configuration
-from .device_config_objects import (
-    DeviceCfg,
-)
-from .dp import DataProcessor
-from .dp_config_objects import (
+from .core import api, configuration
+from .core.device_config_objects import DeviceCfg
+from .core.dp import DataProcessor
+from .core.dp_config_objects import (
     DataProcessorCfg,
     SensorCfg,
     Stream,
 )
-from .sensor import Sensor
-from .sensor_core import SensorCore
+from .core.dp_tree import DPtree
+from .core.sensor import Sensor
+from .rpi_core import RpiCore
 
 try:
-    __version__ = importlib.metadata.version("sensor-core")
+    __version__ = importlib.metadata.version("expidite")
 except importlib.metadata.PackageNotFoundError:
     __version__ = "unknown"
 
-# Optionally, define an explicit __all__ to control what gets imported with "from sensor_core import *"
+# Optionally, define an explicit __all__ to control what gets imported with "from rpi.core import *"
 __all__ = [
     "configuration",
     "DataProcessor",
     "DataProcessorCfg",
+    "DPtree",
     "DeviceCfg",
     "Sensor",
     "SensorCfg",
-    "SensorCore",
+    "RpiCore",
     "Stream",
     "api",
 ]

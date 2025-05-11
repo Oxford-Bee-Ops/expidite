@@ -3,8 +3,8 @@ requires = ["setuptools"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "sensor-core"
-version = "0.1.135"
+name = "expidite"
+version = "0.1.2"
 description = "Python module to support using Raspberry Pi for scientific data collection"
 readme = "README.md"
 requires-python = ">=3.11"
@@ -31,32 +31,27 @@ dependencies = [
 ]
 
 [project.optional-dependencies]
-test = [
+dev = [
     "pytest",
     "pyinstrument",
     "types-PyYAML",
     "pandas-stubs",
     "types-psutil",
-]
-lint = [
     "ruff == 0.4.4",
     "mypy == 1.10.0",
 ]
-dev = [
-    "sensor-core[test,lint]",
-]
 
 [project.scripts]
-bcli = "sensor_core.bcli:main"
+bcli = "rpi.bcli:main"
 
 [tool.setuptools.packages.find]
 where = ["src"]
 
 [tool.setuptools.package-data]
-"sensor_core" = ["src/sensor_core/scripts/*"]
+"expidite" = ["src/rpi/scripts/*"]
 
 [tool.setuptools.data-files]
-"scripts" = ["src/sensor_core/scripts/*"]
+"scripts" = ["src/rpi/scripts/*"]
 
 [tool.ruff]
 line-length = 110

@@ -1,18 +1,17 @@
 
-from sensor_core.device_config_objects import DeviceCfg, WifiClient
-from sensor_core.dp_tree import DPtree
-
-from example.my_processor_example import EXAMPLE_FILE_PROCESSOR_CFG, ExampleProcessor
-from example.my_sensor_example import EXAMPLE_FILE_STREAM_INDEX, EXAMPLE_SENSOR_CFG, ExampleSensor
+from rpi.core.device_config_objects import DeviceCfg, WifiClient
+from rpi.core.dp_tree import DPtree
+from rpi.example.my_processor_example import EXAMPLE_FILE_PROCESSOR_CFG, ExampleProcessor
+from rpi.example.my_sensor_example import EXAMPLE_FILE_STREAM_INDEX, EXAMPLE_SENSOR_CFG, ExampleSensor
 
 ###############################################################################
-# SensorCore config model
+# RpiCore config model
 #
 # At the top level, we are defining configuration for a fleet of devices.
 # This fleet config must be returned as a list of DeviceCfg objects.
-# The inventory is passed to SensorCore when it is first configured:
+# The inventory is passed to RpiCore when it is first configured:
 #
-#   SensorCore.configure(fleet_config=example.my_fleet_config.INVENTORY)
+#   RpiCore.configure(fleet_config=example.my_fleet_config.INVENTORY)
 #
 # The DeviceCfg contains:
 # - name: a friendly name for the device (eg Alex)

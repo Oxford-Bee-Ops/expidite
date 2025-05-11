@@ -9,9 +9,9 @@ import numpy as np
 import torch
 import torchaudio
 
-from sensor_core import configuration as root_cfg
+from rpi.core import configuration as root_cfg
 
-logger = root_cfg.setup_logger("sensor_core")
+logger = root_cfg.setup_logger("rpi_core")
 
 # Fix the seed for reproducability
 np.random.seed(42)

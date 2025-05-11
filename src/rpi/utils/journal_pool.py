@@ -7,14 +7,14 @@ from typing import Optional
 
 import pandas as pd
 
-from sensor_core import api, file_naming
-from sensor_core import configuration as root_cfg
-from sensor_core.configuration import Mode
-from sensor_core.dp_config_objects import Stream
-from sensor_core.utils.cloud_journal import CloudJournal
-from sensor_core.utils.journal import Journal
+from rpi.core import api, file_naming
+from rpi.core import configuration as root_cfg
+from rpi.core.configuration import Mode
+from rpi.core.dp_config_objects import Stream
+from rpi.utils.cloud_journal import CloudJournal
+from rpi.utils.journal import Journal
 
-logger = root_cfg.setup_logger("sensor_core")
+logger = root_cfg.setup_logger("rpi_core")
 
 
 class JournalPool(ABC):

@@ -1,7 +1,7 @@
 ###################################################################################################
 # Thie file contains recipes for fully specified device types.
 #
-# SensorCore config model
+# RpiCore config model
 #
 # DeviceCfg (1 per physical device)
 # -> sensor_ds_list: list[SensorDsCfg] - 1 per Sensor)
@@ -15,25 +15,25 @@
 ###################################################################################################
 from typing import Optional
 
-from sensor_core import api
-from sensor_core import configuration as root_cfg
-from sensor_core.dp_config_objects import Stream
-from sensor_core.dp_tree import DPtree
-from sensor_core.sensors import processor_video_aruco
-from sensor_core.sensors.processor_video_trap_cam import (
+from rpi.core import api
+from rpi.core import configuration as root_cfg
+from rpi.core.dp_config_objects import Stream
+from rpi.core.dp_tree import DPtree
+from rpi.sensors import processor_video_aruco
+from rpi.sensors.processor_video_trap_cam import (
     DEFAULT_TRAPCAM_PROCESSOR_CFG,
     ProcessorVideoTrapCam,
 )
-from sensor_core.sensors.sensor_rpicam_vid import (
+from rpi.sensors.sensor_rpicam_vid import (
     DEFAULT_RPICAM_SENSOR_CFG,
     RPICAM_DATA_TYPE_ID,
     RPICAM_STREAM_INDEX,
     RpicamSensor,
     RpicamSensorCfg,
 )
-from sensor_core.sensors.sensor_sht31 import DEFAULT_SHT31_SENSOR_CFG, SHT31
+from rpi.sensors.sensor_sht31 import DEFAULT_SHT31_SENSOR_CFG, SHT31
 
-logger = root_cfg.setup_logger("sensor_core")
+logger = root_cfg.setup_logger("rpi_core")
 
 
 ###################################################################################################
@@ -51,7 +51,7 @@ def create_continuous_video_4fps_device() -> list[DPtree]:
                 type_id=RPICAM_DATA_TYPE_ID,
                 index=RPICAM_STREAM_INDEX,
                 format=api.FORMAT.MP4,
-                cloud_container="sensor-core-upload",
+                cloud_container="expidite-upload",
             )
         ],
         rpicam_cmd="rpicam-vid --framerate 4 --width 640 --height 480 -o FILENAME -t 180000 -v 0"
@@ -87,7 +87,7 @@ def create_trapcam_device(sensor_index: Optional[int] = 0) -> list[DPtree]:
                     type_id=RPICAM_DATA_TYPE_ID,
                     index=RPICAM_STREAM_INDEX,
                     format=api.FORMAT.MP4,
-                    cloud_container="sensor-core-upload",
+                    cloud_container="expidite-upload",
                 )
             ],
             rpicam_cmd = "rpicam-vid --framerate 15 --width 640 --height 480 -o FILENAME -t 180000",

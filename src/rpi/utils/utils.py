@@ -18,15 +18,15 @@ from zoneinfo import ZoneInfo
 import pandas as pd
 import psutil
 
-from sensor_core import api
-from sensor_core import configuration as root_cfg
-from sensor_core.utils.sc_test_emulator import ScEmulator
+from rpi.core import api
+from rpi.core import configuration as root_cfg
+from rpi.utils.rpi_emulator import RpiEmulator
 
 # Configure pandas to use copy-on-write
 # https://pandas.pydata.org/pandas-docs/stable/user_guide/copy_on_write.html#copy-on-write-enabling
 pd.options.mode.copy_on_write = True
 
-logger = root_cfg.setup_logger("sensor_core")
+logger = root_cfg.setup_logger("rpi_core")
 
 ############################################################################################################
 # OpenCV color constants (BGR format)
@@ -74,7 +74,7 @@ def failing_to_keep_up()-> bool:
     else:
         last_space_check = now
 
-    if root_cfg.running_on_rpi and psutil.disk_usage("/sensor_core").percent > 50:
+    if root_cfg.running_on_rpi and psutil.disk_usage("/rpi_core").percent > 50:
         # Check if we're running low on space
         logger.warning(f"{root_cfg.RAISE_WARN()} Failing to keep up due to low disk space")
         last_check_outcome = True
@@ -182,7 +182,7 @@ def run_cmd(cmd: str, ignore_errors: bool=False, grep_strs: Optional[list[str]]=
     """
     # In test mode, we stub out commands so that we can run more realistic test scenarios.
     if root_cfg.TEST_MODE == root_cfg.MODE.TEST:
-        harness = ScEmulator.get_instance()
+        harness = RpiEmulator.get_instance()
         return harness.run_cmd_test_stub(cmd, ignore_errors, grep_strs)
     
     if root_cfg.running_on_windows:

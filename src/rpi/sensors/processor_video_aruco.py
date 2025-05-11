@@ -11,13 +11,14 @@ import cv2
 import numpy as np
 import pandas as pd
 
-from sensor_core import DataProcessor, api, file_naming
-from sensor_core import configuration as root_cfg
-from sensor_core.dp_config_objects import DataProcessorCfg, Stream
+from rpi.core import api, file_naming
+from rpi.core import configuration as root_cfg
+from rpi.core.dp import DataProcessor
+from rpi.core.dp_config_objects import DataProcessorCfg, Stream
 
 cv2.setRNGSeed(42)
 
-logger = root_cfg.setup_logger("sensor_core")
+logger = root_cfg.setup_logger("rpi_core")
 
 ARUCO_DATA_DS_TYPE_ID = "ARUCO"
 ARUCO_MARKED_UP_VIDEOS_DS_TYPE_ID = "ARUCOMARKED"
@@ -76,7 +77,7 @@ DEFAULT_AUROCO_PROCESSOR_CFG = ArucoProcessorCfg(
             type_id=ARUCO_MARKED_UP_VIDEOS_DS_TYPE_ID,
             index=ARUCO_MARKED_UP_VIDEOS_STREAM_INDEX,
             format=api.FORMAT.MP4,
-            cloud_container="sensor-core-upload",
+            cloud_container="expidite-upload",
         )
     ],
     aruco_dict_name = "DICT_4X4_50",

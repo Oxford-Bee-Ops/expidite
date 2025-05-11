@@ -1,10 +1,10 @@
 
-from sensor_core import api, file_naming
-from sensor_core import configuration as root_cfg
-from sensor_core.dp_config_objects import SensorCfg, Stream
-from sensor_core.sensor import Sensor
+from rpi.core import api, file_naming
+from rpi.core import configuration as root_cfg
+from rpi.core.dp_config_objects import SensorCfg, Stream
+from rpi.core.sensor import Sensor
 
-logger = root_cfg.setup_logger("sensor_core")
+logger = root_cfg.setup_logger("rpi_core")
 
 EXAMPLE_LOG_DS_TYPE_ID = "DUMML"
 EXAMPLE_FILE_DS_TYPE_ID = "DUMMF"
@@ -32,7 +32,7 @@ EXAMPLE_SENSOR_CFG = SensorCfg(
                 EXAMPLE_FILE_STREAM_INDEX, 
                 api.FORMAT.JPG, 
                 ["temperature"],
-                cloud_container="sensor-core-upload",
+                cloud_container="expidite-upload",
                 sample_probability="1.0"),
         Stream("Example log file stream",
                 EXAMPLE_LOG_DS_TYPE_ID, 

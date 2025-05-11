@@ -23,10 +23,10 @@ import subprocess
 from dataclasses import dataclass
 from datetime import datetime, timedelta
 
-from sensor_core import Sensor, SensorCfg, api, file_naming
-from sensor_core import configuration as root_cfg
-from sensor_core.dp_config_objects import Stream
-from sensor_core.utils import utils
+from rpi.core import Sensor, SensorCfg, api, file_naming
+from rpi.core import configuration as root_cfg
+from rpi.core.dp_config_objects import Stream
+from rpi.utils import utils
 
 if root_cfg.running_on_rpi:
     from libcamera import Transform, controls  # type: ignore
@@ -39,7 +39,7 @@ else:
         MEDIUM = 2
         HIGH = 3
 
-logger = root_cfg.setup_logger("sensor_core")
+logger = root_cfg.setup_logger("rpi_core")
 
 
 ############################################################
@@ -85,14 +85,14 @@ DEFAULT_VIDEO_SENSOR_CFG = VideoSensorCfg(
             type_id=CONTINUOUS_VIDEO_DS_TYPE_ID,
             index=VIDEO_STREAM_INDEX,
             format=api.FORMAT.MP4,
-            cloud_container="sensor-core-upload",
+            cloud_container="expidite-upload",
         ),
         Stream(
             description="Still image",
             type_id=STILL_IMAGE_DS_TYPE_ID,
             index=IMAGE_STREAM_INDEX,
             format=api.FORMAT.JPG,
-            cloud_container="sensor-core-upload",
+            cloud_container="expidite-upload",
         ),
     ],
 )

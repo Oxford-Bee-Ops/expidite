@@ -1,11 +1,11 @@
 from dataclasses import dataclass
 
-from sensor_core import Sensor, SensorCfg, api
-from sensor_core import configuration as root_cfg
-from sensor_core.dp_config_objects import Stream
-from sensor_core.sensors.drivers.aht20 import AHT20 as AHT20_driver
+from rpi.core import Sensor, SensorCfg, api
+from rpi.core import configuration as root_cfg
+from rpi.core.dp_config_objects import Stream
+from rpi.sensors.drivers.aht20 import AHT20 as AHT20_driver
 
-logger = root_cfg.setup_logger("sensor_core")
+logger = root_cfg.setup_logger("rpi_core")
 
 AHT20_STREAM_INDEX = 0
 AHT20_SENSOR_INDEX = 56 # AHT20 i2c address, 0x38 (56)
@@ -36,7 +36,7 @@ DEFAULT_AHT20_SENSOR_CFG = AHT20SensorCfg(
             index=AHT20_STREAM_INDEX,
             format=api.FORMAT.LOG,
             fields=AHT20_FIELDS,
-            cloud_container="sensor-core-journals",
+            cloud_container="expidite-journals",
         )
     ],
 )

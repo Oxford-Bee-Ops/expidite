@@ -10,7 +10,7 @@ import time
 
 from smbus2 import SMBus
 
-from sensor_core.sensors.drivers.crc8_helper import AHT20_crc8_check
+from rpi.sensors.drivers.crc8_helper import AHT20_crc8_check
 
 
 def get_normalized_bit(value, bit_index):

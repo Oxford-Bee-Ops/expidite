@@ -9,7 +9,7 @@ from typing import Optional
 
 import pandas as pd
 
-from sensor_core import configuration as root_cfg
+from rpi.core import configuration as root_cfg
 
 
 class Journal:

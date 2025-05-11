@@ -1,11 +1,13 @@
 from pathlib import Path
 
 import pandas as pd
-from sensor_core import DataProcessor, api
-from sensor_core import configuration as root_cfg
-from sensor_core.dp_config_objects import DataProcessorCfg, Stream
 
-logger = root_cfg.setup_logger("sensor_core")
+from rpi.core import api
+from rpi.core import configuration as root_cfg
+from rpi.core.dp import DataProcessor
+from rpi.core.dp_config_objects import DataProcessorCfg, Stream
+
+logger = root_cfg.setup_logger("rpi_core")
 
 EXAMPLE_DF_DS_TYPE_ID = "DUMMD"
 EXAMPLE_DF_STREAM_INDEX = 0

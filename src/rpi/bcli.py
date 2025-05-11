@@ -12,14 +12,15 @@ from datetime import timedelta
 import click
 from crontab import CronTab
 
-from sensor_core import SensorCore, api, device_health
-from sensor_core import configuration as root_cfg
-from sensor_core.cloud_connector import AsyncCloudConnector, CloudConnector
-from sensor_core.edge_orchestrator import EdgeOrchestrator
-from sensor_core.utils import utils, utils_clean
-from sensor_core.utils.utils_clean import disable_console_logging
+from rpi.core import api, device_health
+from rpi.core import configuration as root_cfg
+from rpi.core.cloud_connector import AsyncCloudConnector, CloudConnector
+from rpi.core.edge_orchestrator import EdgeOrchestrator
+from rpi.rpi_core import RpiCore
+from rpi.utils import utils, utils_clean
+from rpi.utils.utils_clean import disable_console_logging
 
-logger = root_cfg.setup_logger("sensor_core")
+logger = root_cfg.setup_logger("rpi_core")
 
 dash_line = "########################################################"
 header = dash_line + "\n\n"
@@ -101,7 +102,7 @@ def check_if_setup_required() -> None:
 
 def check_keys_env() -> bool:
     """
-    Check if the keys.env exists in ./sensor_core and is not empty.
+    Check if the keys.env exists in ./rpi_core and is not empty.
 
     Returns:
         True if the keys.env file exists and is valid, False otherwise.
@@ -132,7 +133,7 @@ def check_keys_env() -> bool:
 class InteractiveMenu():
     """Interactive menu for navigating commands."""
     def __init__(self):
-        self.sc = SensorCore()
+        self.sc = RpiCore()
         inventory = root_cfg.load_configuration()
         logger.debug(f"Inventory: {inventory}")
         if inventory:
@@ -149,8 +150,8 @@ class InteractiveMenu():
             click.echo(f"Error in script start up: {e}")
 
 
-    def view_sensor_core_config(self) -> None:
-        """View the sensor core configuration."""
+    def view_rpi_core_config(self) -> None:
+        """View the rpi core configuration."""
         # Check we have bloc storage access
         if not check_keys_env():
             return
@@ -233,17 +234,17 @@ class InteractiveMenu():
         self.display_logs(logs)
 
 
-    def display_sensor_core_logs(self) -> None:
-        """Display regular sensor_core logs."""
+    def display_rpi_core_logs(self) -> None:
+        """Display regular rpi_core logs."""
         if root_cfg.running_on_windows:
             click.echo("This command only works on Linux. Exiting...")
             return
         since_time = api.utc_now() - timedelta(minutes=15)
         click.echo(f"{dash_line}")
-        click.echo("# SensorCore logs")
-        click.echo("# Displaying sensor_core logs for the last 15 minutes")
+        click.echo("# RpiCore logs")
+        click.echo("# Displaying rpi_core logs for the last 15 minutes")
         click.echo(f"{dash_line}")
-        logs = device_health.get_logs(since=since_time, min_priority=6, grep_str="sensor_core")
+        logs = device_health.get_logs(since=since_time, min_priority=6, grep_str="rpi_core")
         self.display_logs(logs)
 
 
@@ -253,15 +254,15 @@ class InteractiveMenu():
             return
         since_time = api.utc_now() - timedelta(minutes=30)
         click.echo(f"{dash_line}")
-        click.echo("# SensorCore logs")
-        click.echo("# Displaying sensor_core logs for the last 30 minutes")
+        click.echo("# RpiCore logs")
+        click.echo("# Displaying rpi_core logs for the last 30 minutes")
         click.echo(f"{dash_line}")
         logs = device_health.get_logs(since=since_time, min_priority=6, grep_str=api.TELEM_TAG)
         self.display_logs(logs)
 
     def display_running_processes(self) -> None:
         # Running processes
-        # for each process in the list, strip any text before "sensor_core" or "dua"
+        # for each process in the list, strip any text before "rpi_core" or "dua"
         # Drop any starting / or . characters
         # And convert the process list to a simple comma-seperated string with no {} or ' or " 
         # characters                
@@ -274,14 +275,14 @@ class InteractiveMenu():
                                         "").replace("}", "").replace("'", "").replace('"', "").strip()
         )
         click.echo(f"{dash_line}")
-        click.echo("# Display running SensorCore processes")
+        click.echo("# Display running RpiCore processes")
         click.echo(f"{dash_line}\n")
         click.echo(process_list_str)
 
     def show_recordings(self) -> None:
         # List all files under the root_working_dir
         click.echo(f"{dash_line}")
-        click.echo("# SensorCore recordings")
+        click.echo("# RpiCore recordings")
         click.echo(f"{dash_line}")
         click.echo("Recording files:")
         click.echo(run_cmd(f"ls -lhR {root_cfg.ROOT_WORKING_DIR}*"))
@@ -307,9 +308,9 @@ class InteractiveMenu():
             return
 
 
-    def start_sensor_core(self) -> None:
-        """Start the SensorCore service."""
-        click.echo("Starting SensorCore...")
+    def start_rpi_core(self) -> None:
+        """Start the RpiCore service."""
+        click.echo("Starting RpiCore...")
 
         # If my_start_script is a resolvable module in this environment, then we use that to start the service
         # using that user-provided script.
@@ -317,13 +318,13 @@ class InteractiveMenu():
             root_cfg.system_cfg.my_start_script is None or
             root_cfg.system_cfg.my_start_script == root_cfg.FAILED_TO_LOAD):
             click.echo("System.cfg has no my_start_script configuration")
-            click.echo("Do you want to start SensorCore using the default configuration? (y/n)")
+            click.echo("Do you want to start RpiCore using the default configuration? (y/n)")
             char = click.getchar()
             click.echo(char)
             if char != "y":
                 click.echo("Exiting...")
                 return
-            click.echo("Starting SensorCore using default configuration...")
+            click.echo("Starting RpiCore using default configuration...")
             self.sc.start()
         else:
             try:
@@ -344,7 +345,7 @@ class InteractiveMenu():
                 click.echo("Exiting...")
                 return
             else:
-                click.echo(f"Found {my_start_script}. Starting SensorCore...")
+                click.echo(f"Found {my_start_script}. Starting RpiCore...")
                 if root_cfg.running_on_windows:
                     click.echo("This command only works on Linux. Exiting...")
                     return
@@ -359,13 +360,13 @@ class InteractiveMenu():
                 click.echo(f"Running command: {cmd}")
                 run_cmd_live_echo(cmd)
 
-        click.echo("SensorCore started.")
+        click.echo("RpiCore started.")
         return
 
 
-    def stop_sensor_core(self, pkill: bool) -> None:
-        """Stop the SensorCore service."""
-        click.echo("Stopping SensorCore... this may take up to 180s to complete.")
+    def stop_rpi_core(self, pkill: bool) -> None:
+        """Stop the RpiCore service."""
+        click.echo("Stopping RpiCore... this may take up to 180s to complete.")
         # We just need to "touch" the stop file to stop the service
         root_cfg.STOP_SENSOR_CORE_FLAG.touch()
 
@@ -440,7 +441,7 @@ class InteractiveMenu():
         run_cmd_live_echo("sudo reboot")
 
     def update_storage_key(self) -> None:
-        """Update the storage key in ~/.sensor_core/keys.env."""
+        """Update the storage key in ~/.rpi_core/keys.env."""
         # Ask the user for the new storage key
         click.echo("This option enables you to update the SAS key "
                    "for access to your Azure cloud storage. "
@@ -614,7 +615,7 @@ class InteractiveMenu():
 
         # Display status
         click.echo(f"{dash_line}")
-        click.echo(f"# SensorCore CLI on {root_cfg.my_device_id} {root_cfg.my_device.name}")
+        click.echo(f"# RpiCore CLI on {root_cfg.my_device_id} {root_cfg.my_device.name}")
         while True:
             click.echo(f"{header}Main Menu:")
             click.echo("1. View Config")
@@ -632,7 +633,7 @@ class InteractiveMenu():
                 continue
 
             if choice == 1:
-                self.view_sensor_core_config()
+                self.view_rpi_core_config()
             elif choice == 2:
                 self.view_status()
             elif choice == 3:
@@ -660,7 +661,7 @@ class InteractiveMenu():
             click.echo(f"{header}Debugging Menu:")
             click.echo("1. Journalctl")
             click.echo("2. Display errors")
-            click.echo("3. Display SensorCore Logs")
+            click.echo("3. Display RpiCore Logs")
             click.echo("4. Display logs from sensors")
             click.echo("5. Display running processes")
             click.echo("6. Show recordings and data files")
@@ -678,7 +679,7 @@ class InteractiveMenu():
             elif choice == 2:
                 self.display_errors()
             elif choice == 3:
-                self.display_sensor_core_logs()
+                self.display_rpi_core_logs()
             elif choice == 4:
                 self.display_sensor_logs()
             elif choice == 5:
@@ -698,9 +699,9 @@ class InteractiveMenu():
         while True:
             click.echo(f"{header}Maintenance Menu:")
             click.echo("1. Update Software")
-            click.echo("2. Start SensorCore")
-            click.echo("3. Stop SensorCore (graceful stop)")
-            click.echo("4. Hard stop SensorCore (pkill)")
+            click.echo("2. Start RpiCore")
+            click.echo("3. Stop RpiCore (graceful stop)")
+            click.echo("4. Hard stop RpiCore (pkill)")
             click.echo("5. Set Hostname")
             click.echo("6. Enable rpi-connect")
             click.echo("7. Restart the Device")
@@ -716,11 +717,11 @@ class InteractiveMenu():
             if choice == 1:
                 self.update_software()
             elif choice == 2:
-                self.start_sensor_core()
+                self.start_rpi_core()
             elif choice == 3:
-                self.stop_sensor_core(pkill=False)
+                self.stop_rpi_core(pkill=False)
             elif choice == 4:
-                self.stop_sensor_core(pkill=True) 
+                self.stop_rpi_core(pkill=True) 
             elif choice == 5:
                 self.set_hostname()
             elif choice == 6:
@@ -794,7 +795,7 @@ class InteractiveMenu():
 #################################################################################
 def main():
     # Disable console logging during CLI execution
-    with disable_console_logging("sensor_core"):
+    with disable_console_logging("rpi_core"):
         im = InteractiveMenu()
         im.interactive_menu()
 

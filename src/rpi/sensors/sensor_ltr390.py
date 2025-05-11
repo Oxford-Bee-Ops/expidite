@@ -1,16 +1,16 @@
 ##########################################################################################################
-# SensorCore wrapper for LTR390
+# RpiCore wrapper for LTR390
 ##########################################################################################################
 from dataclasses import dataclass
 
 import board
 
-from sensor_core import Sensor, SensorCfg, api
-from sensor_core import configuration as root_cfg
-from sensor_core.dp_config_objects import Stream
-from sensor_core.sensors.drivers import ltr390
+from rpi.core import Sensor, SensorCfg, api
+from rpi.core import configuration as root_cfg
+from rpi.core.dp_config_objects import Stream
+from rpi.core.sensors.drivers import ltr390
 
-logger = root_cfg.setup_logger("sensor_core")
+logger = root_cfg.setup_logger("rpi_core")
 
 LTR390_STREAM_INDEX = 0
 LTR390_SENSOR_INDEX = 83 # LTR390 i2c address, 0x53 (83)
@@ -41,7 +41,7 @@ DEFAULT_LTR390_SENSOR_CFG = LTR390SensorCfg(
             index=LTR390_STREAM_INDEX,
             format=api.FORMAT.LOG,
             fields=LTR390_FIELDS,
-            cloud_container="sensor-core-journals",
+            cloud_container="expidite-journals",
         )
     ],
 )

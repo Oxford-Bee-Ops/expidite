@@ -1,11 +1,11 @@
 import shutil
 
 import pandas as pd
-from sensor_core import configuration as root_cfg
-from sensor_core import file_naming
-from sensor_core.cloud_connector import CloudConnector
+from rpi.core import configuration as root_cfg
+from rpi.core import file_naming
+from rpi.core.cloud_connector import CloudConnector
 
-logger = root_cfg.setup_logger("sensor_core")
+logger = root_cfg.setup_logger("rpi_core")
 
 class CloudUtilities:
 

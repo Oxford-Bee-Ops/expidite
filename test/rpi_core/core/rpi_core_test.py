@@ -1,0 +1,44 @@
+from time import sleep
+
+import pytest
+from rpi.core import configuration as root_cfg
+from rpi.example import my_fleet_config
+from rpi.rpi_core import RpiCore
+from rpi.utils.rpi_emulator import RpiEmulator
+
+logger = root_cfg.setup_logger("rpi_core")
+
+class Test_SensorFactory:
+    @pytest.mark.quick
+    def test_RpiCore_status(self) -> None:
+        sc = RpiCore()
+        sc.configure(my_fleet_config.INVENTORY)
+        message = sc.status()
+        logger.info(message)
+        assert message is not None
+
+    @pytest.mark.quick
+    def test_RpiCore_cycle(self) -> None:
+        # Standard flow
+        # We reset cfg.my_device_id to override the computers mac_address
+        # This is a test device defined in BeeOps.cfg to have a DummySensor.
+        with RpiEmulator.get_instance() as th:
+            # Mock the timers in the inventory for faster testing
+            inventory = th.mock_timers(my_fleet_config.INVENTORY)
+
+            root_cfg.update_my_device_id("d01111111111")
+
+            sc = RpiCore()
+            sc.configure(inventory)
+            sc.start()
+            sleep(2)
+            sc.status()
+            # This should be rejected because the sensor is already running
+            #with pytest.raises(Exception):
+            #    sc.configure("example.my_fleet_config.Inventory")
+            sc.stop()
+            sc.status()
+
+            # Start again
+            sc.start()
+            sc.stop()

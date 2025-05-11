@@ -5,12 +5,12 @@ from typing import Optional
 
 import pandas as pd
 
-from sensor_core import api
-from sensor_core import configuration as root_cfg
-from sensor_core.cloud_connector import CloudConnector
-from sensor_core.utils.journal import Journal
+from rpi.core import api
+from rpi.core import configuration as root_cfg
+from rpi.core.cloud_connector import CloudConnector
+from rpi.utils.journal import Journal
 
-logger = root_cfg.setup_logger(name="sensor_core")
+logger = root_cfg.setup_logger(name="rpi_core")
 
 
 class _CloudJournalManager:

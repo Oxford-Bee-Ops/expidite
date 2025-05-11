@@ -2,11 +2,12 @@ from dataclasses import dataclass
 from time import sleep
 from typing import ClassVar
 
-from sensor_core import Sensor, SensorCfg, api
-from sensor_core import configuration as root_cfg
-from sensor_core.dp_config_objects import Stream
+from rpi.core import api
+from rpi.core import configuration as root_cfg
+from rpi.core.dp_config_objects import Stream
+from rpi.core.sensor import Sensor, SensorCfg
 
-logger = root_cfg.setup_logger("sensor_core")
+logger = root_cfg.setup_logger("rpi_core")
 
 SHT31_STREAM_INDEX = 0
 SHT31_SENSOR_INDEX = 68 # SHT31 i2c address, 0x44(68)
@@ -37,7 +38,7 @@ DEFAULT_SHT31_SENSOR_CFG = SHT31SensorCfg(
             index=SHT31_STREAM_INDEX,
             format=api.FORMAT.LOG,
             fields=SHT31_FIELDS,
-            cloud_container="sensor-core-journals",
+            cloud_container="expidite-journals",
         )
     ],
 )
