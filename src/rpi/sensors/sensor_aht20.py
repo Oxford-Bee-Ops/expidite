@@ -1,6 +1,7 @@
 from dataclasses import dataclass
 
-from rpi.core import Sensor, SensorCfg, api
+from rpi.core import api
+from rpi.core.sensor import SensorCfg, Sensor
 from rpi.core import configuration as root_cfg
 from rpi.core.dp_config_objects import Stream
 from rpi.sensors.drivers.aht20 import AHT20 as AHT20_driver

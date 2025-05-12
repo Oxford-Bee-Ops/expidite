@@ -23,7 +23,8 @@ import subprocess
 from dataclasses import dataclass
 from datetime import datetime, timedelta
 
-from rpi.core import Sensor, SensorCfg, api, file_naming
+from rpi.core import api, file_naming
+from rpi.core.sensor import SensorCfg, Sensor
 from rpi.core import configuration as root_cfg
 from rpi.core.dp_config_objects import Stream
 from rpi.utils import utils
