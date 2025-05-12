@@ -1,5 +1,5 @@
 import pytest
-from rpi.core import device_manager
+from expidite_rpi.core import device_manager
 
 
 class Test_device_manager:

@@ -1,11 +1,11 @@
 from time import sleep
 
 import pytest
-from rpi.core import configuration as root_cfg
-from rpi.core.device_config_objects import DeviceCfg
-from rpi.rpi_core import RpiCore
-from rpi.sensors.device_recipes import create_sht31_device
-from rpi.utils.rpi_emulator import RpiEmulator
+from expidite_rpi.core import configuration as root_cfg
+from expidite_rpi.core.device_config_objects import DeviceCfg
+from expidite_rpi.rpi_core import RpiCore
+from expidite_rpi.sensors.device_recipes import create_sht31_device
+from expidite_rpi.utils.rpi_emulator import RpiEmulator
 
 logger = root_cfg.setup_logger("rpi_core")
 

@@ -1,10 +1,10 @@
 from time import sleep
 
 import pytest
-from rpi.core import configuration as root_cfg
-from rpi.example import my_fleet_config
-from rpi.rpi_core import RpiCore
-from rpi.utils.rpi_emulator import RpiEmulator
+from expidite_rpi.core import configuration as root_cfg
+from expidite_rpi.example import my_fleet_config
+from expidite_rpi.rpi_core import RpiCore
+from expidite_rpi.utils.rpi_emulator import RpiEmulator
 
 logger = root_cfg.setup_logger("rpi_core")
 

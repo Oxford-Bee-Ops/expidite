@@ -3,12 +3,12 @@ from threading import Thread
 from time import sleep
 
 import pytest
-from rpi.core import api, edge_orchestrator
-from rpi.core import configuration as root_cfg
-from rpi.core.edge_orchestrator import EdgeOrchestrator
-from rpi.example.my_fleet_config import INVENTORY
-from rpi.rpi_core import RpiCore
-from rpi.utils import rpi_emulator
+from expidite_rpi.core import api, edge_orchestrator
+from expidite_rpi.core import configuration as root_cfg
+from expidite_rpi.core.edge_orchestrator import EdgeOrchestrator
+from expidite_rpi.example.my_fleet_config import INVENTORY
+from expidite_rpi.rpi_core import RpiCore
+from expidite_rpi.utils import rpi_emulator
 
 logger = root_cfg.setup_logger("rpi_core", level=logging.DEBUG)
 

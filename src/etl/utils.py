@@ -1,9 +1,9 @@
 import shutil
 
 import pandas as pd
-from rpi.core import configuration as root_cfg
-from rpi.core import file_naming
-from rpi.core.cloud_connector import CloudConnector
+from expidite_rpi.core import configuration as root_cfg
+from expidite_rpi.core import file_naming
+from expidite_rpi.core.cloud_connector import CloudConnector
 
 logger = root_cfg.setup_logger("rpi_core")
 

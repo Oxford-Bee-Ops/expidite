@@ -1,13 +1,13 @@
 from time import sleep
 
 import pytest
-from rpi.core import api
-from rpi.core import configuration as root_cfg
-from rpi.core.device_config_objects import DeviceCfg
-from rpi.example.my_fleet_config import create_example_device
-from rpi.example.my_processor_example import EXAMPLE_DF_DS_TYPE_ID
-from rpi.rpi_core import RpiCore
-from rpi.utils.rpi_emulator import RpiEmulator
+from expidite_rpi.core import api
+from expidite_rpi.core import configuration as root_cfg
+from expidite_rpi.core.device_config_objects import DeviceCfg
+from expidite_rpi.example.my_fleet_config import create_example_device
+from expidite_rpi.example.my_processor_example import EXAMPLE_DF_DS_TYPE_ID
+from expidite_rpi.rpi_core import RpiCore
+from expidite_rpi.utils.rpi_emulator import RpiEmulator
 
 logger = root_cfg.setup_logger("rpi_core")
 

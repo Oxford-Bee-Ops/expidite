@@ -2,9 +2,9 @@ import datetime as dt
 from datetime import datetime
 
 import pytest
-from rpi.core import api
-from rpi.core import configuration as root_cfg
-from rpi.utils import utils
+from expidite_rpi.core import api
+from expidite_rpi.core import configuration as root_cfg
+from expidite_rpi.utils import utils
 
 logger = root_cfg.setup_logger("rpi_core")
 

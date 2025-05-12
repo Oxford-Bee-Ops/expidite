@@ -2,7 +2,7 @@ import logging
 import sys
 
 import pytest
-from rpi.core import configuration as root_cfg
+from expidite_rpi.core import configuration as root_cfg
 
 logger = root_cfg.setup_logger("rpi_core")
 

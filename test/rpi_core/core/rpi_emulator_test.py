@@ -1,8 +1,8 @@
 import logging
 
 import pytest
-from rpi.core import configuration as root_cfg
-from rpi.utils import rpi_emulator
+from expidite_rpi.core import configuration as root_cfg
+from expidite_rpi.utils import rpi_emulator
 
 logger = root_cfg.setup_logger("rpi_core", logging.DEBUG)
 

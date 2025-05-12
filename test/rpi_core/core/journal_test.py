@@ -2,8 +2,8 @@ import os
 
 import pandas as pd
 import pytest
-from rpi.core import configuration as root_cfg
-from rpi.utils.journal import Journal
+from expidite_rpi.core import configuration as root_cfg
+from expidite_rpi.utils.journal import Journal
 
 logger = root_cfg.setup_logger("rpi_core")
 root_cfg.TEST_MODE = root_cfg.MODE.TEST
