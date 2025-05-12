@@ -334,7 +334,7 @@ class LTR390Driver:  # pylint:disable=too-many-instance-attributes
         self._mode = UV
         self.gain = Gain.GAIN_3X  # pylint:disable=no-member
 
-        # @@@ SW: This code doesn't work for anything other than 16-bit resolution !!!
+        # Note: This code doesn't work for anything other than 16-bit resolution !!!
         # Suspect a bug in the UnalignedStruct class, which doesn't use the bitwidth parameter
         self.resolution = Resolution.RESOLUTION_16BIT  # pylint:disable=no-member
         self._window_factor = 1  # default window transmission factor

@@ -37,13 +37,7 @@ class JournalPool(ABC):
     def get(mode: Mode) -> JournalPool:
         """Get the singleton instance of the JournalPool"""
         if JournalPool._instance is None:
-            if mode is None:
-                raise ValueError("DPtreeNode mode has not been set.")
-            # We create different concrete implementations depending on the mode we're running in
-            if mode == Mode.EDGE:
-                JournalPool._instance = CloudJournalPool() # @@@ LocalJournalPool()
-            else:
-                JournalPool._instance = CloudJournalPool()
+            JournalPool._instance = CloudJournalPool()
         return JournalPool._instance
 
     @abstractmethod

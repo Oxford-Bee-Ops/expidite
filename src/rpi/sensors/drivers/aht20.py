@@ -38,7 +38,6 @@ class AHT20:
         if not self.get_status_calibrated == 1:
             self.cmd_initialize()
             while not self.get_status_calibrated() == 1:
-                # @@@ this could be an infinite loop if the sensor is not connected or not working
                 time.sleep(0.01)
 
     def cmd_soft_reset(self):

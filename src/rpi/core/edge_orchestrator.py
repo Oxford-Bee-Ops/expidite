@@ -246,8 +246,6 @@ class EdgeOrchestrator:
         It calls the edge_orchestrator main() function."""
 
         logger.debug("Start orchestrator with watchdog")
-        # @@@ We should do this as a separate process, so we can exit without killing SC
-        # or without hanging on exit.
         orchestrator_thread = threading.Thread(target=main, name="EdgeOrchestrator")
         orchestrator_thread.start()
         # Block for long enough for the main thread to be scheduled

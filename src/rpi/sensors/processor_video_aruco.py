@@ -295,7 +295,6 @@ class VideoArucoProcessor(DataProcessor):
             )
 
         # Convert the frame to greyscale
-        # @@@ TO DO, what python type is frame (so we can type check)?
         gray = cv2.cvtColor(frame, cv2.COLOR_RGB2GRAY)
         clahe = cv2.createCLAHE(clipLimit=2.0, tileGridSize=(8, 8))
         cl1 = clahe.apply(gray)

@@ -509,57 +509,26 @@ class InteractiveMenu():
         pass
 
 
-    def test_video(self) -> None:
-        """Test the camera function by recording a video."""
-        # Parse the output of libcamera-hello --list-cameras to get the camera names
-        # and to see how many cameras are configured
+    def test_camera(self) -> None:
+        """Test the camera function."""
         camera_info = run_cmd("libcamera-hello --list-cameras")
         if camera_info == "":
             click.echo("No camera found.\n")
             return
-        click.echo("This test uses the configuration defined for your "
-                   "device_type and with the current settings.")
-        click.echo("\nWhat duration of video do you want to capture? (in seconds)")
-        try:
-            duration = input()
-            click.echo(
-                "\nRecording video for "
-                + duration
-                + " seconds... this prompt will not return until capture is complete."
-            )
+        
+        click.echo("You can enter any valid rpicam command as per the rpicam documentation.")
+        click.echo("An example would be:")
+        click.echo("rpicam-vid --framerate 15 --width 640 --height 480 -o test.mp4 -t 5000")
+        click.echo("\nEnter the rpicam command:")
 
-            #@@@vs = video_sensor.VideoSensor(bcli_test_mode=True, bcli_test_duration=int(duration))
-            #vs.run()
-            click.echo("Video capture completed.")
-            click.echo("The video will be saved to /bee-ops/video_capture/ as an H264 file.")
+        rpicam_cmd = input()
+        try:
+            run_cmd_live_echo(rpicam_cmd)
+            click.echo("\nCommand completed.")
         except Exception as e:
             click.echo(f"Error: {e}")
-            click.echo("WARNING: This failure may be because you have "
-                       "not paused recording or set manual mode.")
-            click.echo("You also need to wait up to 180s after setting pause recording or manual mode.")
-
-
-    def test_still(self) -> None:
-        """Test the camera function by capturing a still image."""
-        camera_info = run_cmd("libcamera-hello --list-cameras")
-        if camera_info == "":
-            click.echo("No camera found.\n")
-            return
-
-        click.echo("This test uses the configuration defined for "
-                   "your device_type and with the current settings.")
-
-        #@@@vs = video_sensor.VideoSensor(bcli_test_mode=True)
-        try:
-            #vs.run_single_image()
-            click.echo("Image capture completed.")
-            click.echo("The image will be saved to /bee-ops/tmp/video/ as a jpg.")
-        except Exception as e:
-            click.echo(f"Error: {e}")
-            click.echo(
-                "WARNING: This failure was likely because you have not paused recording or set manual mode."
-            )
-            click.echo("You also need to wait up to 180s after setting pause recording or manual mode.")
+            click.echo("WARNING: This failure may be because expidite is running. "
+                       "Use maintenance > stop to pause expidite.")
 
 
     ####################################################################################################
@@ -742,9 +711,8 @@ class InteractiveMenu():
             click.echo(f"{header}Sensor Menu:")
             click.echo("1. Display Sensors")
             click.echo("2. Test Audio")
-            click.echo("3. Test Video")
-            click.echo("4. Test Still")
-            click.echo("5. Back to Main Menu")
+            click.echo("3. Test camera")
+            click.echo("4. Back to Main Menu")
             try:
                 choice = click.prompt("\nEnter your choice", type=int)
                 click.echo("\n")
@@ -757,10 +725,8 @@ class InteractiveMenu():
             elif choice == 2:
                 self.test_audio()
             elif choice == 3:
-                self.test_video()
+                self.test_camera()
             elif choice == 4:
-                self.test_still()
-            elif choice == 5:
                 break
             else:
                 click.echo("Invalid choice. Please try again.")

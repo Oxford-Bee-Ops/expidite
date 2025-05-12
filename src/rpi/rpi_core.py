@@ -113,8 +113,8 @@ class RpiCore:
 
         logger.info("Starting RpiCore")
 
-        # Trigger the orchestrator to start the sensors
-        # This will run the sensors in the current process
+        # Start the orchestrator, which will start the sensors
+        # This will run the sensors in the current process, so it will exit when the process exits.
         EdgeOrchestrator.start_all_with_watchdog()
 
 
