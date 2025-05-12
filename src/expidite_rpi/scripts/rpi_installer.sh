@@ -306,8 +306,8 @@ install_ufw() {
     # Allow DNS on 53
     sudo ufw allow 53
     # Allow DHCP on 67 / 68
-    #sudo ufw allow 67/udp
-    #sudo ufw allow 68/udp
+    sudo ufw allow 67/udp
+    sudo ufw allow 68/udp
     # Allow NTP on 123
     #sudo ufw allow 123
     # Allow HTTPS on 443
