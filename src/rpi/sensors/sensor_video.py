@@ -24,9 +24,9 @@ from dataclasses import dataclass
 from datetime import datetime, timedelta
 
 from rpi.core import api, file_naming
-from rpi.core.sensor import SensorCfg, Sensor
 from rpi.core import configuration as root_cfg
 from rpi.core.dp_config_objects import Stream
+from rpi.core.sensor import Sensor, SensorCfg
 from rpi.utils import utils
 
 if root_cfg.running_on_rpi:

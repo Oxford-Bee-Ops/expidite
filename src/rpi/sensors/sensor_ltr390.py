@@ -6,9 +6,9 @@ from dataclasses import dataclass
 import board
 
 from rpi.core import api
-from rpi.core.sensor import SensorCfg, Sensor
 from rpi.core import configuration as root_cfg
 from rpi.core.dp_config_objects import Stream
+from rpi.core.sensor import Sensor, SensorCfg
 from rpi.sensors.drivers import ltr390
 
 logger = root_cfg.setup_logger("rpi_core")
