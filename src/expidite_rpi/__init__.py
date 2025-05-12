@@ -4,7 +4,7 @@
 # Dynamically fetch the version from the package metadata
 import importlib.metadata
 
-from .core import api, configuration
+from .core import api, configuration, file_naming
 from .core.device_config_objects import DeviceCfg
 from .core.dp import DataProcessor
 from .core.dp_config_objects import (
@@ -15,6 +15,7 @@ from .core.dp_config_objects import (
 from .core.dp_tree import DPtree
 from .core.sensor import Sensor
 from .rpi_core import RpiCore
+from .utils import rpi_emulator
 
 try:
     __version__ = importlib.metadata.version("expidite")
@@ -28,9 +29,11 @@ __all__ = [
     "DataProcessorCfg",
     "DPtree",
     "DeviceCfg",
+    "file_naming",
     "Sensor",
     "SensorCfg",
     "RpiCore",
+    "rpi_emulator",
     "Stream",
     "api",
 ]

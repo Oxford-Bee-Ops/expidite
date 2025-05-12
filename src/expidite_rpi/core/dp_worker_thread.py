@@ -8,6 +8,8 @@ from typing import Optional
 
 import pandas as pd
 import yaml
+from yaml import Dumper
+
 from expidite_rpi.core import api, file_naming
 from expidite_rpi.core import configuration as root_cfg
 from expidite_rpi.core.cloud_connector import CloudConnector
@@ -16,7 +18,6 @@ from expidite_rpi.core.dp import DataProcessor
 from expidite_rpi.core.dp_config_objects import SensorCfg, Stream
 from expidite_rpi.core.dp_node import DPnode
 from expidite_rpi.core.dp_tree import DPtree
-from yaml import Dumper
 
 logger = root_cfg.setup_logger("rpi_core")
 

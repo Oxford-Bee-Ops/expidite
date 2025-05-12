@@ -3,6 +3,7 @@ from pathlib import Path
 from typing import Optional
 
 import git
+
 from expidite_rpi.core import configuration as root_cfg
 
 logger = root_cfg.setup_logger("rpi_core")

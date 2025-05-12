@@ -8,6 +8,7 @@ from pathlib import Path
 from typing import Optional
 
 import pandas as pd
+
 from expidite_rpi.core import configuration as root_cfg
 
 

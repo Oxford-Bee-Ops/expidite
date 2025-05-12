@@ -8,6 +8,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 import torch
 import torchaudio
+
 from expidite_rpi.core import configuration as root_cfg
 
 logger = root_cfg.setup_logger("rpi_core")

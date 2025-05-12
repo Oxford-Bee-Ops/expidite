@@ -17,6 +17,7 @@ from zoneinfo import ZoneInfo
 
 import pandas as pd
 import psutil
+
 from expidite_rpi.core import api
 from expidite_rpi.core import configuration as root_cfg
 from expidite_rpi.utils.rpi_emulator import RpiEmulator

@@ -17,6 +17,7 @@ from typing import Optional
 import cv2
 import numpy as np
 import pandas as pd
+
 from expidite_rpi.core import configuration as root_cfg
 from expidite_rpi.core.cloud_connector import CloudConnector, LocalCloudConnector
 from expidite_rpi.core.device_config_objects import DeviceCfg

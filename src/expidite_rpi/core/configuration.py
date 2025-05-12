@@ -8,6 +8,7 @@ from pathlib import Path
 from typing import Optional
 
 import psutil
+
 from expidite_rpi.core import api
 from expidite_rpi.core.device_config_objects import FAILED_TO_LOAD, DeviceCfg, Keys, SystemCfg
 from expidite_rpi.utils import utils_clean

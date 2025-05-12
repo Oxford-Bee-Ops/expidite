@@ -5,6 +5,7 @@ from datetime import datetime
 from typing import Any, Optional
 
 import psutil
+
 from expidite_rpi.core import api
 from expidite_rpi.core import configuration as root_cfg
 from expidite_rpi.core.device_manager import DeviceManager

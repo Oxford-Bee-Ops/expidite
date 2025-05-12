@@ -8,6 +8,7 @@ from time import sleep
 from typing import Optional
 
 from azure.storage.blob import BlobClient, BlobLeaseClient, ContainerClient
+
 from expidite_rpi.core import api, file_naming
 from expidite_rpi.core import configuration as root_cfg
 from expidite_rpi.core.configuration import CloudType

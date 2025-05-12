@@ -4,6 +4,7 @@ from abc import ABC, abstractmethod
 from pathlib import Path
 
 import pandas as pd
+
 from expidite_rpi.core import configuration as root_cfg
 from expidite_rpi.core.dp_config_objects import DataProcessorCfg
 from expidite_rpi.core.dp_node import DPnode

@@ -11,6 +11,7 @@ from datetime import timedelta
 
 import click
 from crontab import CronTab
+
 from expidite_rpi.core import api, device_health
 from expidite_rpi.core import configuration as root_cfg
 from expidite_rpi.core.cloud_connector import AsyncCloudConnector, CloudConnector
