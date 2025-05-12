@@ -5,7 +5,7 @@
 import importlib.metadata
 
 from .core import api, configuration, file_naming
-from .core.device_config_objects import DeviceCfg
+from .core.device_config_objects import DeviceCfg, WifiClient
 from .core.dp import DataProcessor
 from .core.dp_config_objects import (
     DataProcessorCfg,
@@ -24,6 +24,7 @@ except importlib.metadata.PackageNotFoundError:
 
 # Optionally, define an explicit __all__ to control what gets imported with "from rpi.core import *"
 __all__ = [
+    "api",
     "configuration",
     "DataProcessor",
     "DataProcessorCfg",
@@ -35,5 +36,5 @@ __all__ = [
     "RpiCore",
     "rpi_emulator",
     "Stream",
-    "api",
+    "WifiClient",
 ]
