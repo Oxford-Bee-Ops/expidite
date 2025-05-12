@@ -92,8 +92,8 @@ class EdgeOrchestrator:
             # WARNING - captures error & warning logs
             # SCORE - data save events
             # SCORP - DP performance
-            self.device_health = DeviceHealth()
-            self.device_manager: DeviceManager | None = None
+            self.device_manager: DeviceManager = DeviceManager()
+            self.device_health = DeviceHealth(self.device_manager)
             health_dpe = DPworker(DPtree(self.device_health))
             self._sensorThreads.append(self.device_health)
             self._dpworkers.append(health_dpe)
@@ -221,7 +221,7 @@ class EdgeOrchestrator:
 
         # Start the device manager if we're on RPi
         if root_cfg.running_on_rpi:
-            self.device_manager = DeviceManager()
+            self.device_manager.start()
 
         # Start the DPworker threads
         for dpe in self._dpworkers:
@@ -287,7 +287,6 @@ class EdgeOrchestrator:
         # Stop the device manager if we're on RPi
         if self.device_manager is not None:
             self.device_manager.stop()
-            self.device_manager = None
 
         # Stop all the sensor threads
         for sensor in self._sensorThreads:

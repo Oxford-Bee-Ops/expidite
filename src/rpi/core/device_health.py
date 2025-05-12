@@ -8,6 +8,7 @@ import psutil
 
 from rpi.core import api
 from rpi.core import configuration as root_cfg
+from rpi.core.device_manager import DeviceManager
 from rpi.core.dp_config_objects import SensorCfg, Stream
 from rpi.core.sensor import Sensor
 from rpi.utils import utils
@@ -130,7 +131,7 @@ class DeviceHealth(Sensor):
       them, and sends them up to cloud storage.
     """
 
-    def __init__(self) -> None:
+    def __init__(self, device_manager: Optional[DeviceManager] = None) -> None:
         super().__init__(DEVICE_HEALTH_CFG)
         ###############################
         # Telemetry tracking
@@ -140,6 +141,7 @@ class DeviceHealth(Sensor):
         self.cum_bytes_written = 0
         self.cum_bytes_sent = 0
         self.log_counter = 0
+        self.device_manager = device_manager
         
     def run(self) -> None:
         """Main loop for the DeviceHealth sensor.
@@ -180,7 +182,7 @@ class DeviceHealth(Sensor):
             logs = get_logs(since=since_time, min_priority=6)
 
             for log in logs:
-                if api.RAISE_WARN_TAG in log:
+                if api.RAISE_WARN_TAG in log["message"]:
                     self.log(WARNING_STREAM_INDEX, log)
                 elif log["priority"] <= 4:
                     self.log(WARNING_STREAM_INDEX, log)
@@ -268,6 +270,16 @@ class DeviceHealth(Sensor):
             if ip_addresses:
                 ip_address = str(ip_addresses[0])
 
+            # Packet loss - this is the number of ping failures divided by the number of pings sent
+            if self.device_manager is None:
+                packet_loss: float = 0.0
+                ping_failure_count_run: int = 0
+            else:
+                packet_loss = (self.device_manager.ping_failure_count_all / 
+                               (self.device_manager.ping_failure_count_all + 
+                                self.device_manager.ping_success_count_all + 1))
+                ping_failure_count_run = self.device_manager.ping_failure_count_run
+
             # Grab the code version of the current RpiCore code
             try:
                 from rpi import __version__
@@ -303,8 +315,9 @@ class DeviceHealth(Sensor):
                 "sc_mount_size": str(sc_mount_size),
                 "sc_ram_percent": str(
                     psutil.disk_usage(str(root_cfg.ROOT_WORKING_DIR)).percent
-                ),  # Need to parse the output of sensors_temperatures() to get the current CPU temperature
-                # Output is {'cpu_thermal': [shwtemp(label='', current=46.251, high=110.0, critical=110.0)]}
+                ),
+                "packet_loss": str(packet_loss),
+                "current_ping_fail_run": str(ping_failure_count_run),
                 "cpu_temperature": str(cpu_temp),  # type: ignore
                 "ssid": ssid,
                 "ip_address": str(ip_address),

@@ -6,6 +6,7 @@
 import os
 import time
 from time import sleep
+from typing import Optional
 
 from gpiozero import LED
 
@@ -39,6 +40,16 @@ class DeviceManager:
         if root_cfg.system_cfg is None:
             logger.error(f"{root_cfg.RAISE_WARN()}DeviceManager: system_cfg is None; exiting")
             return
+        self.ping_failure_count_all = 0
+        self.ping_success_count_all = 0
+        self.ping_failure_count_run = 0
+        self.ping_success_count_run = 0
+        self.led_timer: Optional[utils.RepeatTimer] = None
+        self.wifi_timer: Optional[utils.RepeatTimer] = None
+        
+
+    def start(self) -> None:
+        """Start the DeviceManager threads."""
         ###############################
         # Wifi management
         ###############################
@@ -50,7 +61,6 @@ class DeviceManager:
         self.log_counter = 0
         self.wifi_log_frequency = 60 * 10
         self.client_wlan = "wlan0"
-        self.use_cloned_mac = False
         if root_cfg.my_device.wifi_clients:
             self.inject_wifi_clients()
 
