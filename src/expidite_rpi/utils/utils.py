@@ -45,24 +45,9 @@ MAGENTA = (255, 0, 255)
 # Functions used by sensors.
 ############################################################
 
-
-# Control function that pauses recording if we're running low on space
-# or if a manual flag has been set to pause recording.
-def pause_recording() -> bool:
-    if failing_to_keep_up():
-        return True
-
-    # Check if the permanent pause flag has been set
-    if os.path.exists(root_cfg.PERMANENT_PAUSE_RECORDING_FLAG):
-        logger.info("Pausing recording due to permanent flag")
-        return True
-
-    return False
-
-
 last_space_check = dt.datetime(1970, 1, 1, tzinfo=ZoneInfo("UTC"))
 last_check_outcome = False
-
+high_memory_usage_threshold = 75.0
 
 def failing_to_keep_up()-> bool:
     """Function that allows us to back off intensive operations if we're running low on space"""
@@ -74,8 +59,8 @@ def failing_to_keep_up()-> bool:
     else:
         last_space_check = now
 
-    if root_cfg.running_on_rpi and psutil.disk_usage(root_cfg.ROOT_WORKING_DIR).percent > 50:
-        # Check if we're running low on space
+    if (root_cfg.running_on_rpi and 
+        (psutil.disk_usage(str(root_cfg.ROOT_WORKING_DIR)).percent > high_memory_usage_threshold)):
         logger.warning(f"{root_cfg.RAISE_WARN()} Failing to keep up due to low disk space")
         last_check_outcome = True
     else:

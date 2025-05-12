@@ -214,12 +214,6 @@ RESTART_EXPIDITE_FLAG = FLAGS_DIR / "RESTART_EXPIDITE_FLAG"
 # Used by EdgeOrchestrator to check if RpiCore is running
 EXPIDITE_IS_RUNNING_FLAG = TMP_FLAGS_DIR / "EXPIDITE_IS_RUNNING_FLAG"
 
-# Used by BCLI to signal to VideoCapture to take a picture
-TAKE_PICTURE_FLAG = FLAGS_DIR / "TAKE_PICTURE"
-
-# Used by BCLI to signal to AudioCapture and VideoCapture to pause recording
-PERMANENT_PAUSE_RECORDING_FLAG = FLAGS_DIR / "PAUSE_RECORDING_FLAG"
-
 ############################################################################################################
 # Set up logging
 #

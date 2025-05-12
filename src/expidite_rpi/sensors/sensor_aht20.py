@@ -51,7 +51,7 @@ class AHT20(Sensor):
     # Separate thread to log data
     def run(self):
 
-        while not self.stop_requested.is_set():
+        while self.continue_recording():
             try:
                 aht20 = AHT20_driver(1)
                 temperature = aht20.get_temperature()

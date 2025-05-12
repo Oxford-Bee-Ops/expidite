@@ -10,6 +10,7 @@ from threading import Event, Thread
 from expidite_rpi.core import configuration as root_cfg
 from expidite_rpi.core.dp_config_objects import SensorCfg
 from expidite_rpi.core.dp_node import DPnode
+from expidite_rpi.utils import utils
 
 logger = root_cfg.setup_logger("rpi_core")
 
@@ -49,6 +50,24 @@ class Sensor(Thread, DPnode, ABC):
         """Stop the sensor thread - this method must not be subclassed"""
         logger.info(f"Stop sensor thread {self!r}")
         self.stop_requested.set()
+
+    def continue_recording(self) -> bool:
+        """Sensor subclasses *must* use this in a while loop to manage the recording cycle.
+
+        This method is called by the Sensor subclass to check if it should continue recording.
+        If Expidite is shutting down, this will return false.
+        If Expidite is failing to process data quickly enough and is therefore at risk of 
+        running out of memory, this function will hold up the thread until the data backlog is
+        processed.
+        """
+        # Check if the system is running low on memory
+        while utils.failing_to_keep_up():
+            self.stop_requested.wait(root_cfg.my_device.max_recording_timer)
+
+        if self.stop_requested.is_set():
+            return False
+        else:
+            return True
 
     def sensor_failed(self) -> None:
         """Called by a subclass when the Sensor fails and needs to be restarted.

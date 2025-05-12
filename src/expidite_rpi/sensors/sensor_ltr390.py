@@ -54,7 +54,7 @@ class LTR390(Sensor):
 
     def run(self):
         sensor = None
-        while not self.stop_requested.is_set():
+        while self.continue_recording():
             try:
                 if sensor is None:
                     i2c = board.I2C()  # uses board.SCL and board.SDA

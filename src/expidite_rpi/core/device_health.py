@@ -230,8 +230,7 @@ class DeviceHealth(Sensor):
                 self.cum_bytes_sent = latest_bytes_sent
 
                 # Get the size of the /rpi_core mount
-                # Parse the output to get the size of the mount (equivalent to "awk 'NR==2{print $2}'")
-                usage = psutil.disk_usage(root_cfg.ROOT_WORKING_DIR)
+                usage = psutil.disk_usage(str(root_cfg.ROOT_WORKING_DIR))
                 sc_mount_size = f"{usage.total / (1024**3):.2f} GB"
 
                 # Running processes
@@ -311,8 +310,8 @@ class DeviceHealth(Sensor):
                 "disk_percent": str(psutil.disk_usage("/").percent),
                 "disk_bytes_written_in_period": str(bytes_written),
                 "io_bytes_sent": str(bytes_sent),
-                "sc_mount_size": str(sc_mount_size),
-                "sc_ram_percent": str(
+                "expedite_mount_size": str(sc_mount_size),
+                "expedite_mount_percent": str(
                     psutil.disk_usage(str(root_cfg.ROOT_WORKING_DIR)).percent
                 ),
                 "packet_loss": str(packet_loss),

@@ -16,14 +16,14 @@ TRAPCAM_TYPE_ID = "TRAPCAM"
 TRAPCAM_STREAM_INDEX: int = 0
 
 @dataclass
-class TrapCamProcessorCfg(DataProcessorCfg):
+class TrapcamDpCfg(DataProcessorCfg):
     ########################################################################
     # Add custom fields
     ########################################################################
     min_blob_size: int = 1000  # Minimum blob size in pixels
     max_blob_size: int = 1000000  # Maximum blob size in pixels
 
-DEFAULT_TRAPCAM_PROCESSOR_CFG = TrapCamProcessorCfg(
+DEFAULT_TRAPCAM_DP_CFG = TrapcamDpCfg(
     description="Video processor that detects movement in video files and saves segments with movement.",
     outputs=[
         Stream(
@@ -35,14 +35,12 @@ DEFAULT_TRAPCAM_PROCESSOR_CFG = TrapCamProcessorCfg(
             sample_probability="0.1",
         )
     ],
-    min_blob_size=1000,
-    max_blob_size=1000000,
 )
 
-class ProcessorVideoTrapCam(DataProcessor):
-    def __init__(self, config: TrapCamProcessorCfg, sensor_index: int) -> None:
+class TrapcamDp(DataProcessor):
+    def __init__(self, config: TrapcamDpCfg, sensor_index: int) -> None:
         super().__init__(config, sensor_index)
-        self.config: TrapCamProcessorCfg = config
+        self.config: TrapcamDpCfg = config
         self.kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE,(3,3))
         self.background_subtractor = cv2.createBackgroundSubtractorMOG2()
 

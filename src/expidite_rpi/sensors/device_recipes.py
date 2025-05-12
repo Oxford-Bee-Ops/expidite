@@ -20,9 +20,9 @@ from expidite_rpi.core import configuration as root_cfg
 from expidite_rpi.core.dp_config_objects import Stream
 from expidite_rpi.core.dp_tree import DPtree
 from expidite_rpi.sensors import processor_video_aruco
-from expidite_rpi.sensors.processor_video_trap_cam import (
-    DEFAULT_TRAPCAM_PROCESSOR_CFG,
-    ProcessorVideoTrapCam,
+from expidite_rpi.sensors.processor_video_trapcam import (
+    DEFAULT_TRAPCAM_DP_CFG,
+    TrapcamDp,
 )
 from expidite_rpi.sensors.sensor_rpicam_vid import (
     DEFAULT_RPICAM_SENSOR_CFG,
@@ -95,7 +95,7 @@ def create_trapcam_device(sensor_index: Optional[int] = 0) -> list[DPtree]:
     )
 
     # Define the DataProcessor
-    my_dp = ProcessorVideoTrapCam(DEFAULT_TRAPCAM_PROCESSOR_CFG, sensor_index=sensor_index)
+    my_dp = TrapcamDp(DEFAULT_TRAPCAM_DP_CFG, sensor_index=sensor_index)
 
     # Connect the DataProcessor to the Sensor
     my_tree = DPtree(my_sensor)

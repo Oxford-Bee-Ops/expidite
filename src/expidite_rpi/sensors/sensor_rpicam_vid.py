@@ -78,14 +78,8 @@ class RpicamSensor(Sensor):
         exception_count = 0
 
         # Main loop to record video and take still images
-        while not self.stop_requested.is_set():
+        while self.continue_recording():
             try:
-                # If memory is running low, we pause recording until the downstream processing
-                # catches up.
-                if utils.pause_recording():
-                    self.stop_requested.wait(180)
-                    continue
-
                 # Record video for the specified number of seconds
                 start_time = api.utc_now()
 

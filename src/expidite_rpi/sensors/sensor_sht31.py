@@ -92,7 +92,7 @@ class SHT31(Sensor):
     # Separate thread to log data
     def run(self):
 
-        while not self.stop_requested.is_set():
+        while self.continue_recording():
             try:
                 temperature, humidity = self.read_data()
 
