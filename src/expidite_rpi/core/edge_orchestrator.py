@@ -183,7 +183,7 @@ class EdgeOrchestrator:
         # We must *not* call stop_all() here, as that will cause a deadlock because we're currently in the 
         # sensor thread that stop_all will wait on.
         # Instead, we set the RESTART flag, and the main() method will check for them.
-        root_cfg.RESTART_SENSOR_CORE_FLAG.touch()
+        root_cfg.RESTART_EXPIDITE_FLAG.touch()
 
 
     def _get_sensor(self, sensor_type: api.SENSOR_TYPE, sensor_index: int) -> Optional[Sensor | None]:
@@ -213,8 +213,8 @@ class EdgeOrchestrator:
             self._status = OrchestratorStatus.STARTING
             
             # Check the "stop" file has been cleared
-            root_cfg.STOP_SENSOR_CORE_FLAG.unlink(missing_ok=True)
-            root_cfg.RESTART_SENSOR_CORE_FLAG.unlink(missing_ok=True)
+            root_cfg.STOP_EXPIDITE_FLAG.unlink(missing_ok=True)
+            root_cfg.RESTART_EXPIDITE_FLAG.unlink(missing_ok=True)
 
             logger.info(f"Starting EdgeOrchestrator {self!r}")
 
@@ -269,18 +269,18 @@ class EdgeOrchestrator:
 
             self._status = OrchestratorStatus.STOPPING
 
-            # Set the STOP_SENSOR_CORE_FLAG file; this is polled by the main() method in 
+            # Set the STOP_EXPIDITE_FLAG file; this is polled by the main() method in 
             # the EdgeOrchestrator which will continue to restart the RpiCore until the flag is removed.
             # This is also important when we are not the running instance of the orchestrator,
             # as the running instance will check the file and stop itself.
             if not restart:
-                root_cfg.STOP_SENSOR_CORE_FLAG.touch()
-                root_cfg.RESTART_SENSOR_CORE_FLAG.unlink(missing_ok=True)
+                root_cfg.STOP_EXPIDITE_FLAG.touch()
+                root_cfg.RESTART_EXPIDITE_FLAG.unlink(missing_ok=True)
             else:
                 # We use stop_all to restart the orchestrator cleanly in the event of a sensor failure.
                 logger.info("Restart requested; clearing stop & restart flags")
-                root_cfg.STOP_SENSOR_CORE_FLAG.unlink(missing_ok=True)
-                root_cfg.RESTART_SENSOR_CORE_FLAG.unlink(missing_ok=True)
+                root_cfg.STOP_EXPIDITE_FLAG.unlink(missing_ok=True)
+                root_cfg.RESTART_EXPIDITE_FLAG.unlink(missing_ok=True)
 
         # Stop the device manager if we're on RPi
         if self.device_manager is not None:
@@ -337,32 +337,32 @@ class EdgeOrchestrator:
     def is_stop_requested(self) -> bool:
         """Check if a stop has been manually requested by the user.
         This function is polled by the main thread every second to check if the user has requested a stop."""
-        return root_cfg.STOP_SENSOR_CORE_FLAG.exists()
+        return root_cfg.STOP_EXPIDITE_FLAG.exists()
 
 
     @staticmethod
     def watchdog_file_alive() -> bool:
         """Check if the RpiCore is running"""
-        # If the SENSOR_CORE_IS_RUNNING_FLAG exists and was touched within the last 2x _FREQUENCY seconds,
-        # and the timestamp on the file is < than the timestamp on the STOP_SENSOR_CORE_FLAG file,
+        # If the EXPIDITE_IS_RUNNING_FLAG exists and was touched within the last 2x _FREQUENCY seconds,
+        # and the timestamp on the file is < than the timestamp on the STOP_EXPIDITE_FLAG file,
         # then we are running.
         # If the file doesn't exist, we are not running.
         # If the file exists, but was not touched within the last 2x _FREQUENCY seconds, we are not running.
 
-        if not root_cfg.SENSOR_CORE_IS_RUNNING_FLAG.exists():
+        if not root_cfg.EXPIDITE_IS_RUNNING_FLAG.exists():
             return False
         
-        if (root_cfg.STOP_SENSOR_CORE_FLAG.exists() and 
-            (root_cfg.STOP_SENSOR_CORE_FLAG.stat().st_mtime >
-             root_cfg.SENSOR_CORE_IS_RUNNING_FLAG.stat().st_mtime)):
+        if (root_cfg.STOP_EXPIDITE_FLAG.exists() and 
+            (root_cfg.STOP_EXPIDITE_FLAG.stat().st_mtime >
+             root_cfg.EXPIDITE_IS_RUNNING_FLAG.stat().st_mtime)):
                 return False
         
         time_threshold = api.utc_now() - timedelta(seconds=2 * root_cfg.WATCHDOG_FREQUENCY)
-        if root_cfg.SENSOR_CORE_IS_RUNNING_FLAG.stat().st_mtime < time_threshold.timestamp():
+        if root_cfg.EXPIDITE_IS_RUNNING_FLAG.stat().st_mtime < time_threshold.timestamp():
             return False
         
         # If we get here, the file exists, was touched within the last 2x _FREQUENCY seconds,
-        # and the timestamp is > than the timestamp on the STOP_SENSOR_CORE_FLAG file.
+        # and the timestamp is > than the timestamp on the STOP_EXPIDITE_FLAG file.
         return True
 
 #############################################################################################################
@@ -372,7 +372,7 @@ class EdgeOrchestrator:
 #############################################################################################################
 def _touch_watchdog_file() -> None:
     """Touch the running file to indicate that the script is running"""
-    root_cfg.SENSOR_CORE_IS_RUNNING_FLAG.touch()
+    root_cfg.EXPIDITE_IS_RUNNING_FLAG.touch()
 
 
 def main() -> None:
@@ -393,7 +393,7 @@ def main() -> None:
 
         # Keep the main thread alive
         while not orchestrator.is_stop_requested():
-            if root_cfg.RESTART_SENSOR_CORE_FLAG.exists():
+            if root_cfg.RESTART_EXPIDITE_FLAG.exists():
                 # Restart the re-load and re-start the EdgeOrchestrator if it fails.
                 logger.error(f"Orchestrator failed; restarting; {orchestrator._status}")
                 orchestrator.stop_all()

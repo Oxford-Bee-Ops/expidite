@@ -95,9 +95,9 @@ class Test_Orchestrator:
             assert sensor is not None
             
             sensor.sensor_failed()
-            assert root_cfg.RESTART_SENSOR_CORE_FLAG.exists()
+            assert root_cfg.RESTART_EXPIDITE_FLAG.exists()
             start_clock = api.utc_now()
-            while root_cfg.RESTART_SENSOR_CORE_FLAG.exists():
+            while root_cfg.RESTART_EXPIDITE_FLAG.exists():
                 sleep(1)
                 assert (api.utc_now() - start_clock).total_seconds() < 10, (
                     "Orchestrator did not restart quickly enough")

@@ -457,7 +457,7 @@ function auto_start_if_requested() {
             return
         fi
         echo "Calling $my_start_script in $HOME/$venv_dir"
-        nohup python -m $my_start_script 2>&1 | /usr/bin/logger -t SENSOR_CORE &
+        nohup python -m $my_start_script 2>&1 | /usr/bin/logger -t EXPIDITE &
     else
         echo "Auto-start is not enabled in system.cfg."
     fi
@@ -480,8 +480,8 @@ function make_persistent() {
             echo "rpi_installer.sh made executable."
         fi
         
-        rpi_installer_cmd="/bin/bash $HOME/$venv_dir/scripts/rpi_installer.sh 2>&1 | /usr/bin/logger -t SENSOR_CORE"
-        rpi_cmd_os_update="/bin/bash $HOME/$venv_dir/scripts/rpi_installer.sh os_update 2>&1 | /usr/bin/logger -t SENSOR_CORE"
+        rpi_installer_cmd="/bin/bash $HOME/$venv_dir/scripts/rpi_installer.sh 2>&1 | /usr/bin/logger -t EXPIDITE"
+        rpi_cmd_os_update="/bin/bash $HOME/$venv_dir/scripts/rpi_installer.sh os_update 2>&1 | /usr/bin/logger -t EXPIDITE"
         
         # Delete and re-add any lines containing "rpi_installer" from crontab
         crontab -l | grep -v "rpi_installer" | crontab -

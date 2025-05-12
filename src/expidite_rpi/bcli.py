@@ -355,7 +355,7 @@ class InteractiveMenu():
                     return
                 cmd = (
                     f"bash -c 'source {root_cfg.HOME_DIR}/{root_cfg.system_cfg.venv_dir}/bin/activate && "
-                    f"nohup python -m {my_start_script} 2>&1 | /usr/bin/logger -t SENSOR_CORE &'"
+                    f"nohup python -m {my_start_script} 2>&1 | /usr/bin/logger -t EXPIDITE &'"
                 )
                 click.echo(f"Running command: {cmd}")
                 run_cmd_live_echo(cmd)
@@ -368,7 +368,7 @@ class InteractiveMenu():
         """Stop the RpiCore service."""
         click.echo("Stopping RpiCore... this may take up to 180s to complete.")
         # We just need to "touch" the stop file to stop the service
-        root_cfg.STOP_SENSOR_CORE_FLAG.touch()
+        root_cfg.STOP_EXPIDITE_FLAG.touch()
 
         if pkill and root_cfg.system_cfg:
                 run_cmd(f"sudo pkill -f 'python -m {root_cfg.system_cfg.my_start_script}'")

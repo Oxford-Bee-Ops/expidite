@@ -208,11 +208,11 @@ def set_mode(mode: Mode) -> None:
 # Flag files set in FLAGS_DIR
 ############################################################
 # Used by the CLI and RpiCore.py to start / stop RpiCore
-STOP_SENSOR_CORE_FLAG = FLAGS_DIR / "STOP_SENSOR_CORE_FLAG"
-RESTART_SENSOR_CORE_FLAG = FLAGS_DIR / "RESTART_SENSOR_CORE_FLAG"
+STOP_EXPIDITE_FLAG = FLAGS_DIR / "STOP_EXPIDITE_FLAG"
+RESTART_EXPIDITE_FLAG = FLAGS_DIR / "RESTART_EXPIDITE_FLAG"
 
 # Used by EdgeOrchestrator to check if RpiCore is running
-SENSOR_CORE_IS_RUNNING_FLAG = TMP_FLAGS_DIR / "SENSOR_CORE_IS_RUNNING_FLAG"
+EXPIDITE_IS_RUNNING_FLAG = TMP_FLAGS_DIR / "EXPIDITE_IS_RUNNING_FLAG"
 
 # Used by BCLI to signal to VideoCapture to take a picture
 TAKE_PICTURE_FLAG = FLAGS_DIR / "TAKE_PICTURE"
