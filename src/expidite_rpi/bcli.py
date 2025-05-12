@@ -8,6 +8,7 @@ import sys
 import threading
 import time
 from datetime import timedelta
+from pathlib import Path
 
 import click
 from crontab import CronTab
@@ -297,14 +298,16 @@ class InteractiveMenu():
         if root_cfg.running_on_windows:
             click.echo("This command only works on Linux. Exiting...")
             return
-        # First check if the /home/bee-ops/code/dua directory exists
-        # If it does, we run the update script from there
-        # Otherwise we run the update script from the /home/bee-ops/code directory
-        if root_cfg.SCRIPTS_DIR.exists():
-            run_cmd_live_echo(f"sudo -u $USER {root_cfg.SCRIPTS_DIR}/rpi_installer.sh")
+        # Check if the scripts directory exists
+        if root_cfg.system_cfg is None:
+            click.echo("System.cfg is not set. Please check your installation.")
+            return
+        scripts_dir = Path.home() / root_cfg.system_cfg.venv_dir / "scripts"
+        if scripts_dir.exists():
+            run_cmd_live_echo(f"sudo -u $USER {scripts_dir}/rpi_installer.sh")
         else:
-            click.echo(f"Error: scripts directory does not exist at {root_cfg.SCRIPTS_DIR}. "
-                    f"Please check your installation.")
+            click.echo(f"Error: scripts directory does not exist at {scripts_dir}. "
+                       f"Please check your installation.")
             return
 
 
@@ -542,34 +545,16 @@ class InteractiveMenu():
         if not root_cfg.running_on_rpi:
             click.echo("This command only works on a Raspberry Pi")
             return
-        run_cmd_live_echo(f"sudo {root_cfg.SCRIPTS_DIR}/network_test.sh q")
+        if root_cfg.system_cfg is None:
+            click.echo("System.cfg is not set. Please check your installation.")
+            return
+        scripts_dir = Path.home() / root_cfg.system_cfg.venv_dir / "scripts"
+        if not scripts_dir.exists():
+            click.echo(f"Error: scripts directory does not exist at {scripts_dir}. "
+                       f"Please check your installation.")
+            return
+        run_cmd_live_echo(f"sudo {scripts_dir}/network_test.sh q")
         click.echo(f"{dash_line}")
-
-
-    def self_test(self) -> None:
-        """Run a self-test on the system."""
-        # First ask if they want quick or full test
-        click.echo("Choose a test:")
-        click.echo("  q: quick test")
-        click.echo("  f: full test")
-        char = click.getchar()
-        click.echo(char)
-        try:
-            if not root_cfg.running_on_rpi:
-                click.echo("This command only works on a Raspberry Pi")
-                return
-            if char == "q":
-                run_cmd_live_echo(
-                    "python -m pytest -s -m quick /home/bee-ops/code/bee_ops_code/common "
-                    "/home/bee-ops/code/bee_ops_code/rpi_sensor/"
-                )
-            elif char == "f":
-                run_cmd_live_echo(
-                    "python -m pytest -s /home/bee-ops/code/bee_ops_code/common "
-                    "/home/bee-ops/code/bee_ops_code/rpi_sensor/"
-                )
-        except Exception as e:
-            click.echo(f"ERROR: {e}")
 
 
     ####################################################################################################
@@ -737,8 +722,7 @@ class InteractiveMenu():
         while True:
             click.echo(f"{header}Testing Menu:")
             click.echo("1. Run Network Test")
-            click.echo("2. Self Test")
-            click.echo("3. Back to Main Menu")
+            click.echo("2. Back to Main Menu")
             try:
                 choice = click.prompt("\nEnter your choice", type=int)
                 click.echo("\n")
@@ -749,8 +733,6 @@ class InteractiveMenu():
             if choice == 1:
                 self.run_network_test()
             elif choice == 2:
-                self.self_test()
-            elif choice == 3:
                 break
             else:
                 click.echo("Invalid choice. Please try again.")

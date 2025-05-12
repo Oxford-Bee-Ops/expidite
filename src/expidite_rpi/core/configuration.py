@@ -150,7 +150,6 @@ else:
 TMP_DIR: Path = ROOT_WORKING_DIR / "tmp"
 LOG_DIR: Path = ROOT_WORKING_DIR / "logs"
 TEST_DIR: Path = SC_CODE_DIR / "test"
-SCRIPTS_DIR: Path = SC_CODE_DIR / "scripts"  # For the shell scripts
 FLAGS_DIR: Path = CFG_DIR / "flags"  # For persistent flags
 TMP_FLAGS_DIR: Path = TMP_DIR / "tmp_flags"  # For transient flags
 
@@ -170,7 +169,6 @@ dirs = [
     TMP_DIR,
     LOG_DIR,
     TEST_DIR,
-    SCRIPTS_DIR,
     FLAGS_DIR,
     TMP_FLAGS_DIR,
     EDGE_PROCESSING_DIR,
