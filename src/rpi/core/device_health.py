@@ -5,7 +5,6 @@ from datetime import datetime
 from typing import Any, Optional
 
 import psutil
-
 from rpi.core import api
 from rpi.core import configuration as root_cfg
 from rpi.core.device_manager import DeviceManager

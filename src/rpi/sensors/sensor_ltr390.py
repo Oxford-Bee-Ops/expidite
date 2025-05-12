@@ -4,7 +4,6 @@
 from dataclasses import dataclass
 
 import board
-
 from rpi.core import api
 from rpi.core import configuration as root_cfg
 from rpi.core.dp_config_objects import Stream

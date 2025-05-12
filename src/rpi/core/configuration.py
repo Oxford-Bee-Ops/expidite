@@ -8,7 +8,6 @@ from pathlib import Path
 from typing import Optional
 
 import psutil
-
 from rpi.core import api
 from rpi.core.device_config_objects import FAILED_TO_LOAD, DeviceCfg, Keys, SystemCfg
 from rpi.utils import utils_clean

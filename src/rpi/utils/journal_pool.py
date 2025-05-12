@@ -6,7 +6,6 @@ from threading import RLock
 from typing import Optional
 
 import pandas as pd
-
 from rpi.core import api, file_naming
 from rpi.core import configuration as root_cfg
 from rpi.core.configuration import Mode

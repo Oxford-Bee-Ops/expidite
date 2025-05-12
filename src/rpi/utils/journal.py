@@ -8,7 +8,6 @@ from pathlib import Path
 from typing import Optional
 
 import pandas as pd
-
 from rpi.core import configuration as root_cfg
 
 

@@ -11,7 +11,6 @@ from datetime import timedelta
 
 import click
 from crontab import CronTab
-
 from rpi.core import api, device_health
 from rpi.core import configuration as root_cfg
 from rpi.core.cloud_connector import AsyncCloudConnector, CloudConnector

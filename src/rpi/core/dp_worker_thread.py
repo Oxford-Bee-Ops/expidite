@@ -8,8 +8,6 @@ from typing import Optional
 
 import pandas as pd
 import yaml
-from yaml import Dumper
-
 from rpi.core import api, file_naming
 from rpi.core import configuration as root_cfg
 from rpi.core.cloud_connector import CloudConnector
@@ -18,6 +16,7 @@ from rpi.core.dp import DataProcessor
 from rpi.core.dp_config_objects import SensorCfg, Stream
 from rpi.core.dp_node import DPnode
 from rpi.core.dp_tree import DPtree
+from yaml import Dumper
 
 logger = root_cfg.setup_logger("rpi_core")
 

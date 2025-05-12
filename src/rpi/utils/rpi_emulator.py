@@ -17,7 +17,6 @@ from typing import Optional
 import cv2
 import numpy as np
 import pandas as pd
-
 from rpi.core import configuration as root_cfg
 from rpi.core.cloud_connector import CloudConnector, LocalCloudConnector
 from rpi.core.device_config_objects import DeviceCfg

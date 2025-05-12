@@ -9,7 +9,6 @@ from time import sleep
 from typing import Optional
 
 from gpiozero import LED
-
 from rpi.core import api
 from rpi.core import configuration as root_cfg
 from rpi.utils import utils

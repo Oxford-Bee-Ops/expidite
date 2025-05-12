@@ -9,9 +9,8 @@
 #################################################################################
 from time import sleep
 
-from rpi_core import RpiCore
-
 from rpi.core import configuration as root_cfg
+from rpi_core import RpiCore
 
 logger = root_cfg.setup_logger("bee_ops")
 

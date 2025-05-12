@@ -4,7 +4,6 @@ from threading import Event, Lock, Timer
 from typing import Optional
 
 import pandas as pd
-
 from rpi.core import api
 from rpi.core import configuration as root_cfg
 from rpi.core.cloud_connector import CloudConnector

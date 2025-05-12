@@ -8,7 +8,6 @@ from time import sleep
 from typing import Optional
 
 from azure.storage.blob import BlobClient, BlobLeaseClient, ContainerClient
-
 from rpi.core import api, file_naming
 from rpi.core import configuration as root_cfg
 from rpi.core.configuration import CloudType

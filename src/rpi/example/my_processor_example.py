@@ -1,7 +1,6 @@
 from pathlib import Path
 
 import pandas as pd
-
 from rpi.core import api
 from rpi.core import configuration as root_cfg
 from rpi.core.dp import DataProcessor

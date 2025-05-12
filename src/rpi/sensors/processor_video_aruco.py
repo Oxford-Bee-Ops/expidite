@@ -10,7 +10,6 @@ from pathlib import Path
 import cv2
 import numpy as np
 import pandas as pd
-
 from rpi.core import api, file_naming
 from rpi.core import configuration as root_cfg
 from rpi.core.dp import DataProcessor

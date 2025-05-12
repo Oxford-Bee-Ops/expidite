@@ -8,9 +8,8 @@ For more information, please refer to <https://unlicense.org>
 
 import time
 
-from smbus2 import SMBus
-
 from rpi.sensors.drivers.crc8_helper import AHT20_crc8_check
+from smbus2 import SMBus
 
 
 def get_normalized_bit(value, bit_index):

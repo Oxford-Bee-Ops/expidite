@@ -2,7 +2,6 @@ from dataclasses import dataclass, field
 from typing import Any, Callable, Optional
 
 from pydantic_settings import BaseSettings, SettingsConfigDict
-
 from rpi.core import api
 from rpi.utils import utils_clean
 
