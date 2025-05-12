@@ -1,9 +1,9 @@
 from dataclasses import dataclass, field
 from typing import Any, Callable, Optional
 
-from pydantic_settings import BaseSettings, SettingsConfigDict
 from expidite_rpi.core import api
 from expidite_rpi.utils import utils_clean
+from pydantic_settings import BaseSettings, SettingsConfigDict
 
 ############################################################################################
 #

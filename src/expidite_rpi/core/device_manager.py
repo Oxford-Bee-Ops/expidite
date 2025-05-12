@@ -8,10 +8,10 @@ import time
 from time import sleep
 from typing import Optional
 
-from gpiozero import LED
 from expidite_rpi.core import api
 from expidite_rpi.core import configuration as root_cfg
 from expidite_rpi.utils import utils
+from gpiozero import LED
 
 logger = root_cfg.setup_logger("rpi_core")
 

@@ -2,7 +2,11 @@
 from expidite_rpi.core.device_config_objects import DeviceCfg, WifiClient
 from expidite_rpi.core.dp_tree import DPtree
 from expidite_rpi.example.my_processor_example import EXAMPLE_FILE_PROCESSOR_CFG, ExampleProcessor
-from expidite_rpi.example.my_sensor_example import EXAMPLE_FILE_STREAM_INDEX, EXAMPLE_SENSOR_CFG, ExampleSensor
+from expidite_rpi.example.my_sensor_example import (
+    EXAMPLE_FILE_STREAM_INDEX,
+    EXAMPLE_SENSOR_CFG,
+    ExampleSensor,
+)
 
 ###############################################################################
 # RpiCore config model
