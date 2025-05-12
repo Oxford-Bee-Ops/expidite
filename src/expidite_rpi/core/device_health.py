@@ -72,7 +72,7 @@ logger = root_cfg.setup_logger("rpi_core")
 # HEART - special datastream for recording device & system health
 HEART_FIELDS = [
     "boot_time",
-    "last_update_timestamp",
+    "last_update_time",
     "cpu_percent",
     "total_memory_gb",
     "memory_percent",
@@ -84,6 +84,9 @@ HEART_FIELDS = [
     "expidite_mount_percent",
     "cpu_temperature",
     "ssid",
+    "signal_strength",
+    "packet_loss",
+    "current_ping_fail_run",
     "ip_address",
     "power_status",
     "process_list",
@@ -202,11 +205,12 @@ class DeviceHealth(Sensor):
             get_throttled_output = ""
             process_list_str = ""
             ssid = ""
+            signal_strength = ""
             if root_cfg.running_on_rpi:
                 cpu_temp = str(psutil.sensors_temperatures()["cpu_thermal"][0].current) # type: ignore
 
                 # Get the connected SSID
-                ssid = DeviceHealth.get_wifi_ssid()
+                ssid, signal_strength = DeviceHealth.get_wifi_ssid_and_signal()
 
                 # We need to call the "vcgencmd get_throttled" command to get the current throttled state
                 # Output is "throttled=0x0"
@@ -251,10 +255,10 @@ class DeviceHealth(Sensor):
             # Check update status by getting the last modified time of the rpi_installer_ran file
             # This file is created when the rpi_installer.sh script is run
             # and is used to track the last time the system was updated
-            last_update_timestamp: str = ""
+            last_update_time: str = ""
             rpi_installer_file = root_cfg.FLAGS_DIR / "rpi_installer_ran"
             if os.path.exists(rpi_installer_file):
-                last_update_timestamp = api.utc_to_iso_str(os.path.getmtime(rpi_installer_file))
+                last_update_time = api.utc_to_iso_str(os.path.getmtime(rpi_installer_file))
 
             # Get the IP address of the wlan0 interface
             if root_cfg.running_on_rpi:
@@ -278,13 +282,6 @@ class DeviceHealth(Sensor):
                                 self.device_manager.ping_success_count_all + 1))
                 ping_failure_count_run = self.device_manager.ping_failure_count_run
 
-            # Grab the code version of the current RpiCore code
-            try:
-                from expidite_rpi import __version__
-                rpi_core_version = __version__
-            except ImportError:
-                logger.warning(f"{root_cfg.RAISE_WARN()}Failed to get RpiCore version, using unknown")
-                rpi_core_version = "unknown"
 
             # Total memory
             total_memory = psutil.virtual_memory().total
@@ -299,9 +296,16 @@ class DeviceHealth(Sensor):
                         logger.error(root_cfg.RAISE_WARN() + "Memory usage >95%, rebooting")
                         utils.run_cmd("sudo reboot", ignore_errors=True)
 
+            # Get the version
+            try:
+                from expidite_rpi import __version__
+                rpi_core_version = __version__
+            except Exception:
+                rpi_core_version = "unknown"
+
             health = {
                 "boot_time": api.utc_to_iso_str(psutil.boot_time()),
-                "last_update_timestamp": str(last_update_timestamp),
+                "last_update_time": str(last_update_time),
                 # Returns the percentage of CPU usage since the last call to this function
                 "cpu_percent": str(psutil.cpu_percent(0)),
                 "total_memory_gb": str(total_memory_gb),
@@ -318,10 +322,11 @@ class DeviceHealth(Sensor):
                 "current_ping_fail_run": str(ping_failure_count_run),
                 "cpu_temperature": str(cpu_temp),  # type: ignore
                 "ssid": ssid,
+                "signal_strength": signal_strength,
                 "ip_address": str(ip_address),
                 "power_status": str(get_throttled_output),
                 "process_list": process_list_str,
-                "expidite_version": str(rpi_core_version),
+                "expidite_version": rpi_core_version,
             }
 
         except Exception as e:
@@ -357,7 +362,7 @@ class DeviceHealth(Sensor):
         logger.warning(log_string)
 
     @staticmethod
-    def get_wifi_ssid() -> str:
+    def get_wifi_ssid_and_signal() -> tuple[str, str]:
         """
         Get the SSID of the wlan0 interface using the `iw` command.
 
@@ -366,25 +371,35 @@ class DeviceHealth(Sensor):
         """
         if root_cfg.running_on_rpi:
             try:
-                output = utils.run_cmd(cmd="bash -c 'iw dev wlan0 link'", ignore_errors=True).strip()
-                logger.debug(f"iw output: {output}")
-                for line in output.split("\n"):
-                    if "SSID:" in line:
-                        logger.debug(f"Found SSID line: {line}")
-                        return line.split("SSID:")[1].strip()
-                return "Not connected"
+                #output = utils.run_cmd(cmd="/usr/sbin/iw dev wlan0 link", ignore_errors=True).strip()
+                #logger.debug(f"iw output: {output}")
+                #for line in output.split("\n"):
+                #    if "SSID:" in line:
+                #        logger.debug(f"Found SSID line: {line}")
+                #        return line.split("SSID:")[1].strip()
+                #return "Not connected"
+                output = utils.run_cmd(cmd="nmcli -g SSID,IN-USE,SIGNAL device wifi | grep '*'", 
+                                       ignore_errors=True)
+                # The return output contains a string like "SSID:*:95".  We need to strip out the ":*"
+                # and return just the SSID and the 95
+                if output:
+                    ssid = output.split(":")[0]
+                    signal_strength = output.split(":")[2]
+                    return (ssid, signal_strength)
+                else:
+                    return ("Not connected", "0")
             except Exception as e:
                 logger.info(f"Failed to get SSID: {e}")
-                return "Not connected"
+                return ("Not connected", "-1")
         elif root_cfg.running_on_windows:
             try:
                 output = subprocess.check_output(["netsh", "wlan", "show", "interfaces"], 
                                                  universal_newlines=True)
                 for line in output.split("\n"):
                     if "SSID" in line and "BSSID" not in line:
-                        return line.split(":")[1].strip()
-                return "Not connected"
+                        return (line.split(":")[1].strip(), "-1")
+                return ("Not connected", "0")
             except subprocess.CalledProcessError:
-                return "Not connected"
+                return ("Not connected", "-1")
         else:
-            return "Unsupported platform"
+            return ("Unsupported platform", "-1")

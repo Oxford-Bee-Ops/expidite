@@ -1,3 +1,4 @@
+from pathlib import Path
 from typing import Optional
 
 from expidite_rpi.core import config_validator
@@ -23,7 +24,7 @@ class RpiCore:
     """
     # We make the location of the keys file a public variable so that users can reference
     # it in their own code.
-    KEYS_FILE = root_cfg.KEYS_FILE
+    KEYS_FILE: Path = root_cfg.KEYS_FILE
 
 
     def load_configuration(self) -> list[DeviceCfg] | None:

@@ -153,6 +153,7 @@ TEST_DIR: Path = SC_CODE_DIR / "test"
 FLAGS_DIR: Path = CFG_DIR / "flags"  # For persistent flags
 TMP_FLAGS_DIR: Path = TMP_DIR / "tmp_flags"  # For transient flags
 
+
 ###########################################################################################
 # RpiCore uses 3 directories on the edge device:
 # - EDGE_PROCESSING_DIR for recordings that need to be processed
@@ -182,8 +183,8 @@ for d in dirs:
     if not d.exists():
         d.mkdir(parents=True, exist_ok=True)
 
-KEYS_FILE = CFG_DIR / "keys.env"
-SYSTEM_CFG_FILE = CFG_DIR / "system.cfg"
+KEYS_FILE: Path = CFG_DIR / "keys.env"
+SYSTEM_CFG_FILE: Path = CFG_DIR / "system.cfg"
 
 ############################################################################################
 # Mode of operation

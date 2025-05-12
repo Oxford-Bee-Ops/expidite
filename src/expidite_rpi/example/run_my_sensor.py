@@ -9,7 +9,7 @@
 #################################################################################
 from time import sleep
 
-from rpi_core import RpiCore
+from expidite_rpi import RpiCore
 
 from expidite_rpi.core import configuration as root_cfg
 

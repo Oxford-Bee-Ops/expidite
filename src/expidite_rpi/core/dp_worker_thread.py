@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from dataclasses import asdict
 from datetime import datetime
 from enum import Enum
 from pathlib import Path
@@ -10,14 +11,12 @@ import pandas as pd
 import yaml
 from yaml import Dumper
 
-from expidite_rpi.core import api, file_naming
+from expidite_rpi import DataProcessor, DPtree, SensorCfg, Stream, api, file_naming
 from expidite_rpi.core import configuration as root_cfg
 from expidite_rpi.core.cloud_connector import CloudConnector
 from expidite_rpi.core.configuration import Mode
-from expidite_rpi.core.dp import DataProcessor
-from expidite_rpi.core.dp_config_objects import SensorCfg, Stream
+from expidite_rpi.core.device_config_objects import Keys
 from expidite_rpi.core.dp_node import DPnode
-from expidite_rpi.core.dp_tree import DPtree
 
 logger = root_cfg.setup_logger("rpi_core")
 
@@ -89,7 +88,27 @@ class DPworker(Thread):
         wrap[api.RECORD_ID.DEVICE_ID.value] = self.device_id
         wrap[api.RECORD_ID.SENSOR_INDEX.value] = str(self.sensor_index)
         wrap[api.RECORD_ID.TIMESTAMP.value] = api.utc_to_iso_str()
-        wrap["record"] = self.dp_tree.export()
+
+        # Dump all the config from the DPtree
+        wrap["sensor_config"] = self.dp_tree.export()
+
+        # Dump the device config
+        wrap["device_config"] = asdict(root_cfg.my_device)
+
+        # Add system config
+        if root_cfg.system_cfg is not None:
+            wrap["system_config"] = root_cfg.system_cfg.model_dump()
+
+        # Expidite version
+        try:
+            from expidite_rpi import __version__
+            wrap["expidite_version"] = __version__
+        except Exception:
+            wrap["expidite_version"] = "unknown"
+
+        # Storage account name
+        if root_cfg.keys is not None:
+            wrap["storage_account"] = Keys.get_storage_account(root_cfg.keys)
 
         # We always include the list of mac addresses for all devices in this experiment (fleet_config)
         # This enables the dashboard to check that all devices are present and working.

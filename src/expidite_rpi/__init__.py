@@ -18,7 +18,7 @@ from .rpi_core import RpiCore
 from .utils import rpi_emulator
 
 try:
-    __version__ = importlib.metadata.version("expidite")
+    __version__: str = importlib.metadata.version("expidite")
 except importlib.metadata.PackageNotFoundError:
     __version__ = "unknown"
 
