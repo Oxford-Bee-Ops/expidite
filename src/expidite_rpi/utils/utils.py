@@ -74,7 +74,7 @@ def failing_to_keep_up()-> bool:
     else:
         last_space_check = now
 
-    if root_cfg.running_on_rpi and psutil.disk_usage("/rpi_core").percent > 50:
+    if root_cfg.running_on_rpi and psutil.disk_usage(root_cfg.ROOT_WORKING_DIR).percent > 50:
         # Check if we're running low on space
         logger.warning(f"{root_cfg.RAISE_WARN()} Failing to keep up due to low disk space")
         last_check_outcome = True

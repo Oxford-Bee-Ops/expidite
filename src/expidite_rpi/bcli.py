@@ -262,7 +262,7 @@ class InteractiveMenu():
 
     def display_running_processes(self) -> None:
         # Running processes
-        # for each process in the list, strip any text before "rpi_core" or "dua"
+        # for each process in the list, strip any text before "rpi_core"
         # Drop any starting / or . characters
         # And convert the process list to a simple comma-seperated string with no {} or ' or " 
         # characters                
@@ -441,7 +441,7 @@ class InteractiveMenu():
         run_cmd_live_echo("sudo reboot")
 
     def update_storage_key(self) -> None:
-        """Update the storage key in ~/.rpi_core/keys.env."""
+        """Update the storage key in ~/.expidite/keys.env."""
         # Ask the user for the new storage key
         click.echo("This option enables you to update the SAS key "
                    "for access to your Azure cloud storage. "

@@ -69,8 +69,8 @@ The following steps enable you to run the default example sensor on your RPi.  D
 - Log in to your RPi:
     - create a **.expidite** folder in your user home directory 
         - `mkdir ~/.expidite`
-    - copy your **keys.env** and **system.cfg** to the .rpi_core folder
-    - copy the **rpi_installer.sh** files from `/src/rpi_core/scripts` to the .expidite folder
+    - copy your **keys.env** and **system.cfg** to the .expidite folder
+    - copy the **rpi_installer.sh** files from `/src/expidite_rpi/scripts` to the .expidite folder
     - run the rpi_installer.sh script:
         - `cd ~/.expidite`
         - `dos2unix *.sh`
@@ -83,8 +83,8 @@ The following steps enable you to run the default example sensor on your RPi.  D
         - In Python:
             - `python`
             - `from rpi_core import RpiCore`
-            - `sc = RpiCore()`
-            - `sc.start()`
+            - `rc = RpiCore()`
+            - `rc.start()`
 - You should see data appearing in each of the containers in your cloud storage account.
 
 
@@ -93,14 +93,14 @@ To execute your particular experimental setup, you need to configure your device
 
 - Create your own Git repo if you haven't already got one
     - You might want to install `uv` or similar to help you with initial project setup (`uv init`)
-- Copy the `/src/example` folder into your Git repo as a starting point for your own config and code customizations.
+- Copy the `/src/expidite_rpi/example` folder into your Git repo as a starting point for your own config and code customizations.
 - Edit **my_fleet_config.py** to add configuration for your device(s)
     - You will need the mac address of the device's wlan0 interface as the identifier of the device
     - To get the mac address run `cat /sys/class/net/wlan0/address`
     - See the example fleet_config.py for more details.
 - Edit the **system.cfg**:
     - If you want RpiCore to auto-update your devices each night with the latest code from your git repo, you will need to set `my_git_repo_url`.
-    - See the system.cfg file in `/example` for more details and more options.
+    - See the system.cfg file in `/src/expidite_rpi/example` for more details and more options.
 
 ### USER FLOW - PRODUCTION PROCESS FOR AN EXPERIMENT WITH MANY DEVICES
 #### Pre-requisites

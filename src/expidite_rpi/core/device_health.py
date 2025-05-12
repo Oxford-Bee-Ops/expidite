@@ -231,11 +231,10 @@ class DeviceHealth(Sensor):
 
                 # Get the size of the /rpi_core mount
                 # Parse the output to get the size of the mount (equivalent to "awk 'NR==2{print $2}'")
-                usage = psutil.disk_usage("/rpi_core")
+                usage = psutil.disk_usage(root_cfg.ROOT_WORKING_DIR)
                 sc_mount_size = f"{usage.total / (1024**3):.2f} GB"
 
                 # Running processes
-                # for each process in the list, strip any text before "rpi_core" or "dua"
                 # Drop any starting / or . characters
                 # And convert the process list to a simple comma-seperated string with no {} or ' or " 
                 # characters          
