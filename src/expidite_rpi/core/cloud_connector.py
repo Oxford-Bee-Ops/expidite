@@ -709,7 +709,8 @@ class AsyncCloudConnector(CloudConnector):
         # Flush the queue by putting an empty object on it
         if self._upload_queue is not None:
             self._upload_queue.put(None)
-        self._worker_pool.shutdown(cancel_futures=True)
+        if self._worker_pool is not None:
+            self._worker_pool.shutdown(cancel_futures=True)
 
     def block_until_queue_empty(self):
         """ Method to support unit tests - blocks until queue has been processed """

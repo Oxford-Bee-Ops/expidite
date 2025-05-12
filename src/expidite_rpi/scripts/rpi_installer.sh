@@ -209,7 +209,7 @@ install_expidite() {
     # We don't return exit code 1 if the install fails, because we want to continue with the rest of the script
     # and this can happen due to transient network issues causing github.com name resolution to fail.
     ###############################################################################################################
-    pip install git+https://github.com/oxford-bee-ops/rpi.git@main || { echo "Failed to install RpiCore"; }
+    pip install git+https://github.com/oxford-bee-ops/expidite.git@main || { echo "Failed to install Expidite"; }
     updated_version=$(pip show expidite | grep Version)
     echo "Expidite installed successfully.  Now version: $updated_version"
 
