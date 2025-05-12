@@ -80,14 +80,14 @@ HEART_FIELDS = [
     "disk_percent",
     "disk_bytes_written_in_period",
     "io_bytes_sent",
-    "sc_mount_size",
-    "sc_ram_percent",
+    "expidite_mount_size",
+    "expidite_mount_percent",
     "cpu_temperature",
     "ssid",
     "ip_address",
     "power_status",
     "process_list",
-    "rpi_core_version",
+    "expidite_version",
 ]
 
 # WARNING - special datastream for capturing warning and error logs from any component
@@ -310,8 +310,8 @@ class DeviceHealth(Sensor):
                 "disk_percent": str(psutil.disk_usage("/").percent),
                 "disk_bytes_written_in_period": str(bytes_written),
                 "io_bytes_sent": str(bytes_sent),
-                "expedite_mount_size": str(sc_mount_size),
-                "expedite_mount_percent": str(
+                "expidite_mount_size": str(sc_mount_size),
+                "expidite_mount_percent": str(
                     psutil.disk_usage(str(root_cfg.ROOT_WORKING_DIR)).percent
                 ),
                 "packet_loss": str(packet_loss),
@@ -321,7 +321,7 @@ class DeviceHealth(Sensor):
                 "ip_address": str(ip_address),
                 "power_status": str(get_throttled_output),
                 "process_list": process_list_str,
-                "rpi_core_version": str(rpi_core_version),
+                "expidite_version": str(rpi_core_version),
             }
 
         except Exception as e:
