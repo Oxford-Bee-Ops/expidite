@@ -151,9 +151,7 @@ class SystemCfg(BaseSettings):
     # (ie will expand to "$HOME/$venv_dir").
     # This will be created if it does not exist.
     venv_dir: str ="venv"
-    # The URL for the Git repo with the RpiCore code.
-    # We only need this while RpiCore is in development.
-    rpi_core_git_url: str ="github.com:Oxford-Bee-Ops/rpi.git"
-    rpi_core_git_branch: str ="main"
+    # The branch of expidite code to use.
+    expidite_git_branch: str ="main"
     # Pydantic-settings helper
     model_config = SettingsConfigDict(extra="ignore")

@@ -110,6 +110,12 @@ export_system_cfg() {
                 echo "Warning: Skipping invalid key '$key' in system.cfg"
             fi
         fi
+
+    # If expidite_git_branch is not set, default to main
+    if [ -z "$expidite_git_branch" ]; then
+        expidite_git_branch="main"
+    fi
+
     done < "$HOME/.expidite/system.cfg"
 }
 
@@ -204,7 +210,7 @@ install_os_packages() {
 
 # Function to install Expidite's RpiCore 
 install_expidite() {
-    # Install RpiCore from GitHub
+    # Install expidite from GitHub
     current_version=$(pip show expidite | grep Version)
     echo "Installing expidite.  Current version: $current_version"
     source "$HOME/$venv_dir/bin/activate" || { echo "Failed to activate virtual environment"; exit 1; }
@@ -213,7 +219,12 @@ install_expidite() {
     # We don't return exit code 1 if the install fails, because we want to continue with the rest of the script
     # and this can happen due to transient network issues causing github.com name resolution to fail.
     ###############################################################################################################
-    pip install git+https://github.com/oxford-bee-ops/expidite.git@main || { echo "Failed to install Expidite"; }
+    # Check if the branch exists
+    if ! git ls-remote --heads https://github.com/oxford-bee-ops/expidite.git "$expidite_git_branch" > /dev/null; then
+        echo "Warning: Branch '$expidite_git_branch' does not exist in the repository."
+    fi
+
+    pip install "git+https://github.com/oxford-bee-ops/expidite.git@$expidite_git_branch" || { echo "Failed to install Expidite"; }
     updated_version=$(pip show expidite | grep Version)
     echo "Expidite installed successfully.  Now version: $updated_version"
 
