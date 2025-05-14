@@ -6,7 +6,7 @@ from expidite_rpi.core.dp_config_objects import Stream
 from expidite_rpi.core.dp_worker_thread import DPworker
 from expidite_rpi.core.sensor import Sensor, SensorCfg
 
-logger = root_cfg.setup_logger("rpi_core")
+logger = root_cfg.setup_logger("expidite")
 
 
 ############################################################################################################

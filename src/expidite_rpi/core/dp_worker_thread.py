@@ -18,7 +18,7 @@ from expidite_rpi.core.configuration import Mode
 from expidite_rpi.core.device_config_objects import Keys
 from expidite_rpi.core.dp_node import DPnode
 
-logger = root_cfg.setup_logger("rpi_core")
+logger = root_cfg.setup_logger("expidite")
 
 
 class DPworker(Thread):

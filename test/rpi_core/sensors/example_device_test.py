@@ -9,7 +9,7 @@ from expidite_rpi.example.my_processor_example import EXAMPLE_DF_DS_TYPE_ID
 from expidite_rpi.rpi_core import RpiCore
 from expidite_rpi.utils.rpi_emulator import RpiEmulator
 
-logger = root_cfg.setup_logger("rpi_core")
+logger = root_cfg.setup_logger("expidite")
 
 root_cfg.TEST_MODE = root_cfg.MODE.TEST
 

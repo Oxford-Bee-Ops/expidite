@@ -16,7 +16,7 @@ from expidite_rpi.core.dp_config_objects import DPtreeNodeCfg, Stream
 from expidite_rpi.utils.journal_pool import JournalPool
 from expidite_rpi.utils.rpi_emulator import RpiEmulator
 
-logger = root_cfg.setup_logger("rpi_core")
+logger = root_cfg.setup_logger("expidite")
 
 
 @dataclass

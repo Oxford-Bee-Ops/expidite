@@ -4,7 +4,7 @@ import logging
 import pytest
 from expidite_rpi.core import configuration as root_cfg
 
-logger = root_cfg.setup_logger("rpi_core", logging.DEBUG)
+logger = root_cfg.setup_logger("expidite", logging.DEBUG)
 
 class Test_bcli:
     @pytest.mark.quick

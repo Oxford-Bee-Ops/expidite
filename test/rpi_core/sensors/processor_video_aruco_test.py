@@ -4,7 +4,7 @@ import sys
 import pytest
 from expidite_rpi.core import configuration as root_cfg
 
-logger = root_cfg.setup_logger("rpi_core")
+logger = root_cfg.setup_logger("expidite")
 
 
 class Test_video_aruco_processor:

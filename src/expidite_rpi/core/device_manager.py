@@ -14,7 +14,7 @@ from expidite_rpi.core import api
 from expidite_rpi.core import configuration as root_cfg
 from expidite_rpi.utils import utils
 
-logger = root_cfg.setup_logger("rpi_core")
+logger = root_cfg.setup_logger("expidite")
 
 
 class DeviceManager:

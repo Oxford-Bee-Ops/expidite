@@ -6,7 +6,7 @@ from expidite_rpi.core import api, file_naming
 from expidite_rpi.core import configuration as root_cfg
 from expidite_rpi.core.cloud_connector import AsyncCloudConnector, CloudConnector, LocalCloudConnector
 
-logger = root_cfg.setup_logger("rpi_core", level=logging.DEBUG)
+logger = root_cfg.setup_logger("expidite", level=logging.DEBUG)
 
 class TestCloudConnector:
 

@@ -4,7 +4,7 @@ import pytest
 from expidite_rpi.core import configuration as root_cfg
 from expidite_rpi.utils import rpi_emulator
 
-logger = root_cfg.setup_logger("rpi_core", logging.DEBUG)
+logger = root_cfg.setup_logger("expidite", logging.DEBUG)
 
 class Test_rpi_emulator:
     @pytest.mark.quick

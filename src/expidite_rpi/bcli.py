@@ -21,7 +21,7 @@ from expidite_rpi.rpi_core import RpiCore
 from expidite_rpi.utils import utils, utils_clean
 from expidite_rpi.utils.utils_clean import disable_console_logging
 
-logger = root_cfg.setup_logger("rpi_core")
+logger = root_cfg.setup_logger("expidite")
 
 dash_line = "########################################################"
 header = dash_line + "\n\n"
@@ -266,10 +266,12 @@ class InteractiveMenu():
         # for each process in the list, strip any text before "rpi_core"
         # Drop any starting / or . characters
         # And convert the process list to a simple comma-seperated string with no {} or ' or " 
-        # characters                
+        # characters
+        if root_cfg.system_cfg is None:          
+            click.echo("System.cfg is not set. Please check your installation.")
+            return
         process_set = (
-            utils.check_running_processes(search_string="root_cfg.system_cfg.my_start_script").union( 
-            utils.check_running_processes(search_string="python"))
+            utils.check_running_processes(search_string=f"{root_cfg.system_cfg.my_start_script}")
         )
         process_list_str = (
             str(process_set).replace("{", 
@@ -279,6 +281,16 @@ class InteractiveMenu():
         click.echo("# Display running RpiCore processes")
         click.echo(f"{dash_line}\n")
         click.echo(process_list_str)
+
+        # Also display the count of live sensor and dptree threads.
+        since_time = api.utc_now() - timedelta(minutes=30)
+        logs = device_health.get_logs(since=since_time, min_priority=6, grep_str="Sensor threads alive")
+        if logs:
+            click.echo(logs[-1]["message"])
+        logs = device_health.get_logs(since=since_time, min_priority=6, grep_str="DPtrees alive")
+        if logs:
+            click.echo(logs[-1]["message"])
+
 
     def show_recordings(self) -> None:
         # List all files under the root_working_dir
@@ -744,8 +756,16 @@ class InteractiveMenu():
 def main():
     # Disable console logging during CLI execution
     with disable_console_logging("rpi_core"):
-        im = InteractiveMenu()
-        im.interactive_menu()
+        try:
+            im = InteractiveMenu()
+            im.interactive_menu()
+        except (KeyboardInterrupt, click.exceptions.Abort):
+            click.echo("\nExiting...")
+            sys.exit(0)
+        except Exception as e:
+            logger.error(f"Error in CLI: {e}", exc_info=True)
+            click.echo(f"Error in CLI: {e}")
+            sys.exit(1)
 
 if __name__ == "__main__":
     os.chdir(root_cfg.HOME_DIR)

@@ -12,7 +12,7 @@ from expidite_rpi.core.dp_config_objects import SensorCfg
 from expidite_rpi.core.dp_node import DPnode
 from expidite_rpi.utils import utils
 
-logger = root_cfg.setup_logger("rpi_core")
+logger = root_cfg.setup_logger("expidite")
 
 
 #############################################################################################################

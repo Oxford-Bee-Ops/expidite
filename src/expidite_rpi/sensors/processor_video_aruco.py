@@ -17,7 +17,7 @@ from expidite_rpi.core.dp_config_objects import DataProcessorCfg, Stream
 
 cv2.setRNGSeed(42)
 
-logger = root_cfg.setup_logger("rpi_core")
+logger = root_cfg.setup_logger("expidite")
 
 ARUCO_DATA_DS_TYPE_ID = "ARUCO"
 ARUCO_MARKED_UP_VIDEOS_DS_TYPE_ID = "ARUCOMARKED"

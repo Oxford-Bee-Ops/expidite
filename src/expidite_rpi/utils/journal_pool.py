@@ -14,7 +14,7 @@ from expidite_rpi.core.dp_config_objects import Stream
 from expidite_rpi.utils.cloud_journal import CloudJournal
 from expidite_rpi.utils.journal import Journal
 
-logger = root_cfg.setup_logger("rpi_core")
+logger = root_cfg.setup_logger("expidite")
 
 
 class JournalPool(ABC):

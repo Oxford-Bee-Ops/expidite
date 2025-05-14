@@ -4,7 +4,7 @@ from expidite_rpi.core import config_validator
 from expidite_rpi.core import configuration as root_cfg
 from expidite_rpi.example import my_fleet_config
 
-logger = root_cfg.setup_logger("rpi_core")
+logger = root_cfg.setup_logger("expidite")
 root_cfg.TEST_MODE = root_cfg.MODE.TEST
 
 class Test_configuration:

@@ -301,7 +301,7 @@ def setup_logger(name: str,
 def RAISE_WARN() -> str:
     return f"{api.RAISE_WARN_TAG}_{my_device_id}: "
 
-logger = setup_logger("rpi_core")
+logger = setup_logger("expidite")
 
 ################################################################################################
 # Load the keys.env file

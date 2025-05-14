@@ -22,7 +22,7 @@ from expidite_rpi.core import configuration as root_cfg
 from expidite_rpi.core.cloud_connector import CloudConnector, LocalCloudConnector
 from expidite_rpi.core.device_config_objects import DeviceCfg
 
-logger = root_cfg.setup_logger("rpi_core")
+logger = root_cfg.setup_logger("expidite")
 
 @dataclass
 class RpiTestRecording():
