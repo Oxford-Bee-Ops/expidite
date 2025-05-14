@@ -24,6 +24,7 @@ from expidite_rpi.sensors.processor_video_trapcam import (
     DEFAULT_TRAPCAM_DP_CFG,
     TrapcamDp,
 )
+from expidite_rpi.sensors.sensor_aht20 import AHT20, DEFAULT_AHT20_SENSOR_CFG
 from expidite_rpi.sensors.sensor_rpicam_vid import (
     DEFAULT_RPICAM_SENSOR_CFG,
     RPICAM_DATA_TYPE_ID,
@@ -32,7 +33,6 @@ from expidite_rpi.sensors.sensor_rpicam_vid import (
     RpicamSensorCfg,
 )
 from expidite_rpi.sensors.sensor_sht31 import DEFAULT_SHT31_SENSOR_CFG, SHT31
-from expidite_rpi.sensors.sensor_aht20 import DEFAULT_AHT20_SENSOR_CFG, AHT20
 
 logger = root_cfg.setup_logger("expidite")
 
