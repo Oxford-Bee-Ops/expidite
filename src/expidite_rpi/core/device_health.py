@@ -143,6 +143,8 @@ class DeviceHealth(Sensor):
         self.device_id = root_cfg.my_device_id
         self.cum_bytes_written = 0
         self.cum_bytes_sent = 0
+        self.last_ping_success_count_all = 0
+        self.last_ping_failure_count_all = 0
         self.log_counter = 0
         self.device_manager = device_manager
         
@@ -277,11 +279,15 @@ class DeviceHealth(Sensor):
                 packet_loss: float = 0.0
                 ping_failure_count_run: int = 0
             else:
-                packet_loss = (self.device_manager.ping_failure_count_all / 
-                               (self.device_manager.ping_failure_count_all + 
-                                self.device_manager.ping_success_count_all + 1))
                 ping_failure_count_run = self.device_manager.ping_failure_count_run
-
+                fail_count = max(self.device_manager.ping_failure_count_all - 
+                                 self.last_ping_failure_count_all, 0)
+                success_count = max(self.device_manager.ping_success_count_all - 
+                                    self.last_ping_success_count_all, 0)
+                packet_loss = fail_count / (fail_count + success_count + 1)
+                # Reset our local counts
+                self.last_ping_failure_count_all = self.device_manager.ping_failure_count_all
+                self.last_ping_success_count_all = self.device_manager.ping_success_count_all                
 
             # Total memory
             total_memory = psutil.virtual_memory().total
