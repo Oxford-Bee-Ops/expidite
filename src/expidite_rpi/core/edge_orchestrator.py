@@ -44,7 +44,6 @@ class OrchestratorStatus(Enum):
 
 class EdgeOrchestrator:
     """The EdgeOrchestrator manages the state of the sensors and their associated Datastreams.
-
     Started by the SensorFactory, which creates the sensors and registers them with the EdgeOrchestrator.
     The EdgeOrchestrator:
     - interrogates the Sensor to get its Datastreams
@@ -370,11 +369,6 @@ class EdgeOrchestrator:
 #
 # Main loop called from crontab on boot up
 #############################################################################################################
-def _touch_watchdog_file() -> None:
-    """Touch the running file to indicate that the script is running"""
-    root_cfg.EXPIDITE_IS_RUNNING_FLAG.touch()
-
-
 def main() -> None:
     try:
         # Provide diagnostics
@@ -401,10 +395,9 @@ def main() -> None:
                 orchestrator.start_all()
             else:   
                 logger.debug(f"Orchestrator running ({orchestrator._status})")
-                _touch_watchdog_file()
+                root_cfg.EXPIDITE_IS_RUNNING_FLAG.touch()
 
             sleep(root_cfg.WATCHDOG_FREQUENCY)
-
 
     except Exception as e:
         logger.error(
