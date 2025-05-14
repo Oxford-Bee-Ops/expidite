@@ -181,7 +181,7 @@ class DPworker(Thread):
             else:
                 assert False, "ETL mode not implemented yet"
         except Exception as e:
-            logger.error(f"{root_cfg.RAISE_WARN()}Error running {self!r}: {e!s}", 
+            logger.error(f"{root_cfg.RAISE_WARN()}Fatal error running {self!r}: {e!s}", 
                          exc_info=True)
             # @@@ Should we add recovery code? eg call stop_all?
 
