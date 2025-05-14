@@ -10,7 +10,6 @@
 from time import sleep
 
 from expidite_rpi import RpiCore
-
 from expidite_rpi.core import configuration as root_cfg
 
 logger = root_cfg.setup_logger("bee_ops")
