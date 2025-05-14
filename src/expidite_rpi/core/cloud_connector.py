@@ -1,5 +1,5 @@
 import shutil
-from concurrent.futures import Future, ThreadPoolExecutor, as_completed
+from concurrent.futures import ThreadPoolExecutor, as_completed
 from dataclasses import dataclass
 from datetime import datetime, timezone
 from pathlib import Path
@@ -697,12 +697,10 @@ class AsyncCloudConnector(CloudConnector):
         logger.debug("Creating AsyncCloudConnector instance")
         CloudConnector.__init__(self)
         self._stop_requested = False
-        self.futures: list[Future] = []
         self._upload_queue: Queue = Queue()
         self._worker_pool: ThreadPoolExecutor = ThreadPoolExecutor(max_workers=6)
         # Start the worker thread to process the upload queue
         self._worker_pool.submit(self.do_work)
-        #self._worker_pool.submit(self.monitor_futures)
 
     def __del__(self) -> None:
         self._stop_requested = True
@@ -711,18 +709,6 @@ class AsyncCloudConnector(CloudConnector):
             self._upload_queue.put(None)
         if self._worker_pool is not None:
             self._worker_pool.shutdown(cancel_futures=True)
-
-    def block_until_queue_empty(self):
-        """ Method to support unit tests - blocks until queue has been processed """
-        # Only return when there are no items in the queue
-        while not self._upload_queue.empty():
-            sleep(0.5)
-        logger.info("Upload queue is empty")
-        # Now block until the worker pool has completed the current work
-        # We don't want to shut it down, we just want to know when it's done
-        while len(self.futures) > 0:
-            sleep(0.5)
-        logger.info("All ThreadPool tasks completed")
 
     def shutdown(self):
         """ Method to support unit tests - shutdown the worker pool """
@@ -891,9 +877,9 @@ class AsyncCloudConnector(CloudConnector):
                 queue_item = self._upload_queue.get(block=True)
 
                 if isinstance(queue_item, AsyncAppend):
-                    self.futures.append(self._worker_pool.submit(self._async_append, queue_item))
+                    self._worker_pool.submit(self._async_append, queue_item)
                 elif isinstance(queue_item, AsyncUpload):
-                    self.futures.append(self._worker_pool.submit(self._async_upload, queue_item))
+                    self._worker_pool.submit(self._async_upload, queue_item)
                 else:
                     logger.debug("Queue flushed")
                     assert self._stop_requested
@@ -903,17 +889,3 @@ class AsyncCloudConnector(CloudConnector):
                 logger.error(f"{root_cfg.RAISE_WARN()}Error during do_work execution on {queue_item}: {e!s}")
         
         logger.info("do_work completed")
-
-    def monitor_futures(self) -> None:
-        """Monitor the futures to see if they have completed."""
-        while not self._stop_requested:
-            for future in as_completed(self.futures):
-                try:
-                    future.result()
-                    # Remove the future from the list so we don't leak memory
-                    self.futures.remove(future)
-                except Exception as e:
-                    logger.error(f"{root_cfg.RAISE_WARN()}Error during future execution: {e!s}")
-            sleep(1)  # Small delay to avoid busy-waiting
-
-
