@@ -166,6 +166,10 @@ create_and_activate_venv() {
         echo "Creating virtual environment at $venv_dir..."
         python -m venv "$HOME/$venv_dir" --system-site-packages || { echo "Failed to create virtual environment"; exit 1; }
         echo "Virtual environment created successfully."
+
+        # Export a variable to indicate that this was a new install and that an os update is required
+        export new_install="yes"
+        export os_update="yes"
     fi
 
     # Ensure the virtual environment exists before activating
@@ -511,15 +515,24 @@ function reboot_if_required() {
 # 
 ###################################################################################################
 echo "Starting RPi installer.  (os_update=$os_update)"
-# Sleep for 20 seconds to allow the system to settle down after booting
+# On reboot, os_update is set to "no".
+# Sleep for 10 seconds to allow the system to settle down after booting
 sleep 10
 check_prerequisites
 cd "$HOME/.expidite" || { echo "Failed to change directory to $HOME/.expidite"; exit 1; }
 export_system_cfg
 install_ssh_keys
 create_and_activate_venv
-# If the os_update argument is passed on the command line, update the OS
 if [ "$os_update" == "yes" ]; then
+    # OS updates occur on a cron job which could lead to all devices being updated at the same time.
+    # To avoid overloading the network, we stagger updates by a random amount between 0 and 20 minutes.
+    # The system will still be running happily while this script sleeps.
+    # A manual new install will not sleep.
+    if [ "$new_install" != "yes" ]; then
+        sleep_time=$((RANDOM % 1200)) 
+        echo "Sleeping for $sleep_time seconds to stagger updates."
+        sleep $sleep_time
+    fi
     install_os_packages
 fi
 install_expidite
