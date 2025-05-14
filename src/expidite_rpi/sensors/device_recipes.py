@@ -32,8 +32,29 @@ from expidite_rpi.sensors.sensor_rpicam_vid import (
     RpicamSensorCfg,
 )
 from expidite_rpi.sensors.sensor_sht31 import DEFAULT_SHT31_SENSOR_CFG, SHT31
+from expidite_rpi.sensors.sensor_aht20 import DEFAULT_AHT20_SENSOR_CFG, AHT20
 
 logger = root_cfg.setup_logger("rpi_core")
+
+
+######################################################################################################
+# Create SHT31 temp and humidity sensor device
+######################################################################################################
+def create_sht31_device() -> list[DPtree]:
+    cfg = DEFAULT_SHT31_SENSOR_CFG
+    my_sensor = SHT31(cfg)
+    my_tree = DPtree(my_sensor)
+    return [my_tree]
+    
+
+######################################################################################################
+# Create AHT20 temp and humidity sensor device
+######################################################################################################
+def create_aht20_device() -> list[DPtree]:
+    cfg = DEFAULT_AHT20_SENSOR_CFG
+    my_sensor = AHT20(cfg)
+    my_tree = DPtree(my_sensor)
+    return [my_tree]
 
 
 ###################################################################################################
@@ -59,6 +80,7 @@ def create_continuous_video_4fps_device() -> list[DPtree]:
     my_sensor = RpicamSensor(sensor_cfg)
     my_tree = DPtree(my_sensor)
     return [my_tree]
+
 
 ###################################################################################################
 # Trap cameras
@@ -110,6 +132,7 @@ def create_double_trapcam_device() -> list[DPtree]:
     camera2 = create_trapcam_device(sensor_index=1)
     return camera1 + camera2
 
+
 ####################################################################################################
 # Aruco camera device
 ####################################################################################################
@@ -134,12 +157,3 @@ def create_aruco_camera_device(sensor_index: int) -> list[DPtree]:
     )
     return [my_tree]
 
-######################################################################################################
-# Create SHT31 temp and humidity sensor device
-######################################################################################################
-def create_sht31_device() -> list[DPtree]:
-    cfg = DEFAULT_SHT31_SENSOR_CFG
-    my_sensor = SHT31(cfg)
-    my_tree = DPtree(my_sensor)
-    return [my_tree]
-    
