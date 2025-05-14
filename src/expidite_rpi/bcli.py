@@ -89,7 +89,7 @@ def run_cmd_live_echo(cmd: str) -> str:
 
 
 def check_if_setup_required() -> None:
-    """Check if setup is required by verifying keys and Git repo."""
+    """Check if setup is required by verifying keys."""
     attempts = 0
     max_attempts = 3
     while not check_keys_env():
@@ -564,7 +564,7 @@ class InteractiveMenu():
         """Interactive menu for navigating commands."""
         #click.clear()
 
-        # Check if we need to setup keys or git repo
+        # Check if we need to setup keys
         check_if_setup_required()
 
         # Display status
