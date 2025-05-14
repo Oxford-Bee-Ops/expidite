@@ -32,7 +32,10 @@ class DPworker(Thread):
         dp_tree: DPtree,
     ) -> None:
         """Initialise the DPworker."""
-        super().__init__()
+        # Set a custom thread name based on the sensor index
+        thread_name = f"{dp_tree.sensor.config.sensor_type.value}-{dp_tree.sensor.config.sensor_index}"
+        
+        Thread.__init__(self, name=thread_name)
         logger.debug(f"Initialising DPworker {self}")
 
         self._stop_requested = Event()

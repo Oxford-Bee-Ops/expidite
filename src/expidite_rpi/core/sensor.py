@@ -30,7 +30,7 @@ class Sensor(Thread, DPnode, ABC):
         sensor_config: SensorConfig
             The configuration for the sensor.
         """
-        Thread.__init__(self)
+        Thread.__init__(self, name=self.__class__.__name__)
         DPnode.__init__(self, config, config.sensor_index)
 
         logger.info(f"Initialise sensor {self!r}")
