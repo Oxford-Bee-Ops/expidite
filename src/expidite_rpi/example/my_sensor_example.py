@@ -56,7 +56,7 @@ class ExampleSensor(Sensor):
 
         # Main sensor loop
         # All sensor implementations must check for stop_requested to allow the sensor to be stopped cleanly
-        while not self.stop_requested.is_set():
+        while self.continue_recording():
             self.log(stream_index=EXAMPLE_LOG_STREAM_INDEX,
                      sensor_data={"temperature": 25.0})
             fname = file_naming.get_temporary_filename(api.FORMAT.JPG)
