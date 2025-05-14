@@ -756,8 +756,16 @@ class InteractiveMenu():
 def main():
     # Disable console logging during CLI execution
     with disable_console_logging("rpi_core"):
-        im = InteractiveMenu()
-        im.interactive_menu()
+        try:
+            im = InteractiveMenu()
+            im.interactive_menu()
+        except (KeyboardInterrupt, click.exceptions.Abort):
+            click.echo("\nExiting...")
+            sys.exit(0)
+        except Exception as e:
+            logger.error(f"Error in CLI: {e}", exc_info=True)
+            click.echo(f"Error in CLI: {e}")
+            sys.exit(1)
 
 if __name__ == "__main__":
     os.chdir(root_cfg.HOME_DIR)
