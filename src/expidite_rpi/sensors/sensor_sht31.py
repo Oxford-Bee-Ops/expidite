@@ -7,7 +7,7 @@ from expidite_rpi.core import configuration as root_cfg
 from expidite_rpi.core.dp_config_objects import Stream
 from expidite_rpi.core.sensor import Sensor, SensorCfg
 
-logger = root_cfg.setup_logger("rpi_core")
+logger = root_cfg.setup_logger("expidite")
 
 SHT31_STREAM_INDEX = 0
 SHT31_SENSOR_INDEX = 68 # SHT31 i2c address, 0x44(68)

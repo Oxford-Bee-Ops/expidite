@@ -13,7 +13,7 @@ from expidite_rpi.core.dp_config_objects import Stream
 from expidite_rpi.core.sensor import Sensor, SensorCfg
 from expidite_rpi.utils import utils
 
-logger = root_cfg.setup_logger("rpi_core")
+logger = root_cfg.setup_logger("expidite")
 
 RPICAM_DATA_TYPE_ID = "RPICAM"
 RPICAM_STREAM_INDEX: int = 0

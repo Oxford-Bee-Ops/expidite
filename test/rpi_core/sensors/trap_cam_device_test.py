@@ -7,7 +7,7 @@ from expidite_rpi.rpi_core import RpiCore
 from expidite_rpi.sensors import device_recipes
 from expidite_rpi.utils.rpi_emulator import RpiEmulator, RpiTestRecording
 
-logger = root_cfg.setup_logger("rpi_core")
+logger = root_cfg.setup_logger("expidite")
 
 root_cfg.TEST_MODE = root_cfg.MODE.TEST
 

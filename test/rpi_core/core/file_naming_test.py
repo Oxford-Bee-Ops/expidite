@@ -11,7 +11,7 @@ from expidite_rpi.example.my_sensor_example import (
     EXAMPLE_SENSOR_CFG,
 )
 
-logger = root_cfg.setup_logger("rpi_core")
+logger = root_cfg.setup_logger("expidite")
 root_cfg.TEST_MODE = root_cfg.MODE.TEST
 
 class Test_datastream:

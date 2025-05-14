@@ -6,7 +6,7 @@ from expidite_rpi.example import my_fleet_config
 from expidite_rpi.rpi_core import RpiCore
 from expidite_rpi.utils.rpi_emulator import RpiEmulator
 
-logger = root_cfg.setup_logger("rpi_core")
+logger = root_cfg.setup_logger("expidite")
 
 class Test_SensorFactory:
     @pytest.mark.quick

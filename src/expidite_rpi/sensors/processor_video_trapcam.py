@@ -10,7 +10,7 @@ from expidite_rpi.core import configuration as root_cfg
 from expidite_rpi.core.dp import DataProcessor
 from expidite_rpi.core.dp_config_objects import DataProcessorCfg, Stream
 
-logger = root_cfg.setup_logger("rpi_core")
+logger = root_cfg.setup_logger("expidite")
 
 TRAPCAM_TYPE_ID = "TRAPCAM"
 TRAPCAM_STREAM_INDEX: int = 0

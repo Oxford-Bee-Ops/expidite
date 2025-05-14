@@ -10,7 +10,7 @@ from expidite_rpi.example.my_fleet_config import INVENTORY
 from expidite_rpi.rpi_core import RpiCore
 from expidite_rpi.utils import rpi_emulator
 
-logger = root_cfg.setup_logger("rpi_core", level=logging.DEBUG)
+logger = root_cfg.setup_logger("expidite", level=logging.DEBUG)
 
 root_cfg.TEST_MODE = root_cfg.MODE.TEST
 

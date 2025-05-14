@@ -26,7 +26,7 @@ from expidite_rpi.utils.rpi_emulator import RpiEmulator
 # https://pandas.pydata.org/pandas-docs/stable/user_guide/copy_on_write.html#copy-on-write-enabling
 pd.options.mode.copy_on_write = True
 
-logger = root_cfg.setup_logger("rpi_core")
+logger = root_cfg.setup_logger("expidite")
 
 ############################################################################################################
 # OpenCV color constants (BGR format)

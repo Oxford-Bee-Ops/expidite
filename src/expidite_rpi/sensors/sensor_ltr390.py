@@ -10,7 +10,7 @@ from expidite_rpi.core.dp_config_objects import Stream
 from expidite_rpi.core.sensor import Sensor, SensorCfg
 from expidite_rpi.sensors.drivers import ltr390
 
-logger = root_cfg.setup_logger("rpi_core")
+logger = root_cfg.setup_logger("expidite")
 
 LTR390_STREAM_INDEX = 0
 LTR390_SENSOR_INDEX = 83 # LTR390 i2c address, 0x53 (83)

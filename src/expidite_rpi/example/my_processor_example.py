@@ -7,7 +7,7 @@ from expidite_rpi.core import configuration as root_cfg
 from expidite_rpi.core.dp import DataProcessor
 from expidite_rpi.core.dp_config_objects import DataProcessorCfg, Stream
 
-logger = root_cfg.setup_logger("rpi_core")
+logger = root_cfg.setup_logger("expidite")
 
 EXAMPLE_DF_DS_TYPE_ID = "DUMMD"
 EXAMPLE_DF_STREAM_INDEX = 0

@@ -19,7 +19,7 @@ from expidite_rpi.core.sensor import Sensor
 from expidite_rpi.core.stats_tracker import StatTracker
 from expidite_rpi.utils.journal_pool import JournalPool
 
-logger = root_cfg.setup_logger("rpi_core")
+logger = root_cfg.setup_logger("expidite")
 
 class OrchestratorStatus(Enum):
     """Enum for the status of the orchestrator"""

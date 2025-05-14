@@ -11,7 +11,7 @@ from expidite_rpi.core.dp_node import DPnode
 from expidite_rpi.core.dp_tree import DPtree
 from expidite_rpi.core.sensor import SensorCfg
 
-logger = root_cfg.setup_logger("rpi_core")
+logger = root_cfg.setup_logger("expidite")
 
 class ValidationRule(ABC):
     """ Base class for validation rules. Extend this class to implement specific rules. """

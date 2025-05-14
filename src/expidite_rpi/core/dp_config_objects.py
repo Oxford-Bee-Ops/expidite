@@ -4,7 +4,7 @@ from typing import Optional
 from expidite_rpi.core import api, file_naming
 from expidite_rpi.core import configuration as root_cfg
 
-logger = root_cfg.setup_logger("rpi_core")
+logger = root_cfg.setup_logger("expidite")
 
 @dataclass
 class Stream:

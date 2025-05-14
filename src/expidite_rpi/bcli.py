@@ -21,7 +21,7 @@ from expidite_rpi.rpi_core import RpiCore
 from expidite_rpi.utils import utils, utils_clean
 from expidite_rpi.utils.utils_clean import disable_console_logging
 
-logger = root_cfg.setup_logger("rpi_core")
+logger = root_cfg.setup_logger("expidite")
 
 dash_line = "########################################################"
 header = dash_line + "\n\n"

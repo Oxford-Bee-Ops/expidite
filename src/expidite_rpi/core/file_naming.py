@@ -6,7 +6,7 @@ from typing import NamedTuple, Optional
 from expidite_rpi.core import api
 from expidite_rpi.core import configuration as root_cfg
 
-logger = root_cfg.setup_logger("rpi_core")
+logger = root_cfg.setup_logger("expidite")
 
 class DATA_ID(NamedTuple):
     """Datastream ID is composed of {datastream_type_id}_{device_id}_{sensor_id}"""

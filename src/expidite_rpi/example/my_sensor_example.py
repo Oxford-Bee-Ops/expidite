@@ -4,7 +4,7 @@ from expidite_rpi.core import configuration as root_cfg
 from expidite_rpi.core.dp_config_objects import SensorCfg, Stream
 from expidite_rpi.core.sensor import Sensor
 
-logger = root_cfg.setup_logger("rpi_core")
+logger = root_cfg.setup_logger("expidite")
 
 EXAMPLE_LOG_DS_TYPE_ID = "DUMML"
 EXAMPLE_FILE_DS_TYPE_ID = "DUMMF"

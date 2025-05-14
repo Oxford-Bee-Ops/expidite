@@ -34,7 +34,7 @@ from expidite_rpi.sensors.sensor_rpicam_vid import (
 from expidite_rpi.sensors.sensor_sht31 import DEFAULT_SHT31_SENSOR_CFG, SHT31
 from expidite_rpi.sensors.sensor_aht20 import DEFAULT_AHT20_SENSOR_CFG, AHT20
 
-logger = root_cfg.setup_logger("rpi_core")
+logger = root_cfg.setup_logger("expidite")
 
 
 ######################################################################################################

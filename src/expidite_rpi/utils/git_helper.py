@@ -6,7 +6,7 @@ import git
 
 from expidite_rpi.core import configuration as root_cfg
 
-logger = root_cfg.setup_logger("rpi_core")
+logger = root_cfg.setup_logger("expidite")
 
 def initialize_git_repo(git_url: str, 
                         git_branch: str = "main", 

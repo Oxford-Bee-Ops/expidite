@@ -6,7 +6,7 @@ from expidite_rpi.core.dp_config_objects import Stream
 from expidite_rpi.core.sensor import Sensor, SensorCfg
 from expidite_rpi.sensors.drivers.aht20 import AHT20 as AHT20_driver
 
-logger = root_cfg.setup_logger("rpi_core")
+logger = root_cfg.setup_logger("expidite")
 
 AHT20_STREAM_INDEX = 0
 AHT20_SENSOR_INDEX = 56 # AHT20 i2c address, 0x38 (56)

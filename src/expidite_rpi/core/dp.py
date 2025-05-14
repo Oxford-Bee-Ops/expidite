@@ -9,7 +9,7 @@ from expidite_rpi.core import configuration as root_cfg
 from expidite_rpi.core.dp_config_objects import DataProcessorCfg
 from expidite_rpi.core.dp_node import DPnode
 
-logger = root_cfg.setup_logger("rpi_core")
+logger = root_cfg.setup_logger("expidite")
 
 
 ####################################################################################################

@@ -67,7 +67,7 @@ if root_cfg.running_on_rpi:
 
         return logs
 
-logger = root_cfg.setup_logger("rpi_core")
+logger = root_cfg.setup_logger("expidite")
 
 # HEART - special datastream for recording device & system health
 HEART_FIELDS = [
@@ -179,17 +179,17 @@ class DeviceHealth(Sensor):
     def log_warnings(self) -> None:
         """Capture warning and error logs to the WARNING datastream.
         We get these from the system journal and log them to the WARNING datastream.
-        We capture logs tagged with the RAISE_WARN_TAG and all logs with priority <=4 (Warning)."""
+        We capture logs tagged with the RAISE_WARN_TAG and all logs with priority <=3 (Error)."""
 
         if root_cfg.running_on_rpi:
             since_time = self.last_ran
             self.last_ran = api.utc_now()
-            logs = get_logs(since=since_time, min_priority=6)
+            logs = get_logs(since=since_time, min_priority=4)
 
             for log in logs:
                 if api.RAISE_WARN_TAG in log["message"]:
                     self.log(WARNING_STREAM_INDEX, log)
-                elif log["priority"] <= 4:
+                elif log["priority"] <= 3:
                     self.log(WARNING_STREAM_INDEX, log)
             
 

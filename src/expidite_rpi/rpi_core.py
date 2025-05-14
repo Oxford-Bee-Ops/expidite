@@ -7,7 +7,7 @@ from expidite_rpi.core.device_config_objects import DeviceCfg
 from expidite_rpi.core.device_health import DeviceHealth
 from expidite_rpi.core.edge_orchestrator import EdgeOrchestrator
 
-logger = root_cfg.setup_logger("rpi_core")
+logger = root_cfg.setup_logger("expidite")
 
 ####################################################################################################
 # RpiCore provides the public interface to the rpi_core module.
