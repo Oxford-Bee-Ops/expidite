@@ -13,7 +13,7 @@ from expidite_rpi.core import api, file_naming
 from expidite_rpi.core import configuration as root_cfg
 from expidite_rpi.core.configuration import CloudType
 
-logger = root_cfg.setup_logger(name="rpi_core")
+logger = root_cfg.setup_logger("expidite")
 
 
 ##########################################################################################################

@@ -230,9 +230,9 @@ _LOG_LEVEL = logging.INFO
 def set_log_level(level: int) -> None:
     global _LOG_LEVEL
     _LOG_LEVEL = min(level, _LOG_LEVEL)
-    module_logger = logging.getLogger("rpi_core")
+    module_logger = logging.getLogger("expidite")
     module_logger.setLevel(level)
-    module_logger.debug("Debug logging enabled for rpi_core")
+    module_logger.debug("Debug logging enabled for expidite")
 
 
 def setup_logger(name: str, 

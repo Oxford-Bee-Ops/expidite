@@ -245,7 +245,7 @@ class InteractiveMenu():
         click.echo("# RpiCore logs")
         click.echo("# Displaying rpi_core logs for the last 15 minutes")
         click.echo(f"{dash_line}")
-        logs = device_health.get_logs(since=since_time, min_priority=6, grep_str="rpi_core")
+        logs = device_health.get_logs(since=since_time, min_priority=6, grep_str="expidite")
         self.display_logs(logs)
 
 
@@ -263,7 +263,6 @@ class InteractiveMenu():
 
     def display_running_processes(self) -> None:
         # Running processes
-        # for each process in the list, strip any text before "rpi_core"
         # Drop any starting / or . characters
         # And convert the process list to a simple comma-seperated string with no {} or ' or " 
         # characters
@@ -755,7 +754,7 @@ class InteractiveMenu():
 #################################################################################
 def main():
     # Disable console logging during CLI execution
-    with disable_console_logging("rpi_core"):
+    with disable_console_logging("expidite"):
         try:
             im = InteractiveMenu()
             im.interactive_menu()

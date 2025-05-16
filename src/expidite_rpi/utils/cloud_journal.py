@@ -10,7 +10,7 @@ from expidite_rpi.core import configuration as root_cfg
 from expidite_rpi.core.cloud_connector import CloudConnector
 from expidite_rpi.utils.journal import Journal
 
-logger = root_cfg.setup_logger(name="rpi_core")
+logger = root_cfg.setup_logger("expidite")
 
 
 class _CloudJournalManager:
