@@ -38,6 +38,12 @@ class CloudConnector:
 
         self._connection_string = root_cfg.keys.cloud_storage_key
 
+        # Ensure the system containers exist and create them if they don't
+        self.create_container(root_cfg.my_device.cc_for_fair)
+        self.create_container(root_cfg.my_device.cc_for_journals)
+        self.create_container(root_cfg.my_device.cc_for_system_records)
+        self.create_container(root_cfg.my_device.cc_for_upload)
+
     @staticmethod
     def get_instance(type: CloudType) -> "CloudConnector":
         """We use a factory pattern to offer up alternative types of CloudConnector for accessing
@@ -274,6 +280,13 @@ class CloudConnector:
         """Check if the specified container exists"""
         containerClient = self._validate_container(container)
         return containerClient.exists()
+
+    def create_container(self, container: str) -> None:
+        """Create the specified container"""
+        containerClient = self._validate_container(container)
+        if not containerClient.exists():
+            logger.info(f"Creating container {container}")
+            containerClient.create_container()
 
     def exists(self, src_container: str, blob_name: str) -> bool:
         """Check if the specified blob exits"""
@@ -604,6 +617,13 @@ class LocalCloudConnector(CloudConnector):
         if not containerClient.exists():
             containerClient.mkdir(parents=True, exist_ok=True)
         return True
+
+    def create_container(self, container: str) -> None:
+        """Create the specified container"""
+        containerClient = self.local_cloud / container
+        if not containerClient.exists():
+            logger.info(f"Creating container {container}")
+            containerClient.mkdir(parents=True, exist_ok=True)
 
     def exists(self, src_container: str, blob_name: str) -> bool:
         """Check if the specified blob exits"""
