@@ -225,7 +225,7 @@ install_expidite() {
     fi
 
     pip install "git+https://github.com/oxford-bee-ops/expidite.git@$expidite_git_branch" || { echo "Failed to install Expidite"; }
-    updated_version=$(pip show expidite | grep Version)
+    updated_version=$(pip show expidite | grep Version | awk '/Version:/{print $2}')
     echo "Expidite installed successfully.  Now version: $updated_version"
 
     # We store the updated_version in the flags directory for later use in logging
@@ -292,7 +292,7 @@ install_user_code() {
     # and this can happen due to transient network issues causing github.com name resolution to fail.
     ###############################################################################################################
     pip install "git+ssh://git@$my_git_repo_url@$my_git_branch" || { echo "Failed to install $my_git_repo_url@$my_git_branch"; }    
-    updated_version=$(pip show "$project_name" | grep Version)
+    updated_version=$(pip show "$project_name" | grep Version | awk '/Version:/{print $2}')
     echo "User's code installed successfully. Now version: $updated_version"
 
     # We store the updated_version in the flags directory for later use in logging
