@@ -162,8 +162,10 @@ class InteractiveMenu():
             click.echo(f"{dash_line}")
             click.echo("# SYSTEM CONFIGURATION")
             click.echo(f"{dash_line}")
+            expidite_version, user_code_version = root_cfg.get_version_info()
+            click.echo(f"Expidite version: {expidite_version}")
+            click.echo(f"User code version: {user_code_version}")
             click.echo(f"\n{utils_clean.display_dataclass(root_cfg.system_cfg)}")
-
 
         click.echo(f"\n{dash_line}")
         click.echo("# FLEET CONFIGURATION")
@@ -549,6 +551,90 @@ class InteractiveMenu():
     ####################################################################################################
     # Testing menu functions
     ####################################################################################################
+    def validate_device(self) -> None:
+        """Validate the device by running a series of tests."""
+        click.echo(f"{dash_line}")
+        click.echo("# VALIDATE DEVICE")
+        click.echo(f"{dash_line}")
+        if not root_cfg.running_on_rpi:
+            click.echo("This command only works on a Raspberry Pi")
+            return
+
+        if root_cfg.system_cfg is None:
+            click.echo("ERROR: System.cfg is not set. Please check your installation.")
+            return
+        
+        # Check that rpi-connect is running
+        try:
+            output = subprocess.check_output(["rpi-connect", "status"], text=True)
+            if ("Signed in: yes" in output):
+                click.echo("rpi-connect is running.")
+            else:
+                click.echo("ERROR: rpi-connect is not running. Please start it using the "
+                           "maintenance menu.")
+        except Exception:
+            click.echo("ERROR: rpi-connect is not installed.")
+            return
+
+        # Check that the devices configured are working
+        sensors: dict[str, list[int]] = {}
+        edge_orch = EdgeOrchestrator.get_instance()
+        if edge_orch is not None:
+            for i, dptree in enumerate(edge_orch.dp_trees):
+                sensor_cfg = dptree.sensor.config
+                sensors.setdefault(sensor_cfg.sensor_type.value, []).append(sensor_cfg.sensor_index)
+        if sensors:
+            click.echo("Sensors configured:")
+            for sensor_type, indices in sensors.items():
+                click.echo(f"  {sensor_type}: {', '.join(map(str, indices))}")
+
+        if api.SENSOR_TYPE.CAMERA.value in sensors:
+            # Validate that the camera(s) is working
+            camera_indexes = sensors[api.SENSOR_TYPE.CAMERA.value]
+            for index in camera_indexes:
+                camera_test_result = run_cmd(f"libcamera-hello --cameras {index}")
+                if "camera is not available" in camera_test_result:
+                    click.echo(f"ERROR: Camera {index} not found.")
+                else:
+                    click.echo(f"Camera {index} is working.")
+
+        if api.SENSOR_TYPE.USB.value in sensors:
+            # Validate that the USB audio device(s) is working
+            num_usb_devices = len(sensors[api.SENSOR_TYPE.USB.value])
+            click.echo(f"USB devices expected for indices... {num_usb_devices}")
+            click.echo(run_cmd("lsusb"))
+
+            # Assume all USB devices are microphones
+            sound_test = run_cmd("find /sys/devices/ -name id | grep usb | grep sound")
+            # Count the number of instances of "sound" in the output
+            sound_count = sound_test.count("sound")
+            if sound_count == num_usb_devices:
+                click.echo(f"Found the correct number of USB audio device(s).")
+                click.echo(sound_test)
+            else:
+                click.echo(f"ERROR: Found {sound_count} USB audio device(s), "
+                           f"but expected {num_usb_devices}.")
+
+        if api.SENSOR_TYPE.I2C.value in sensors:
+            # Validate that the I2C device(s) is working
+            i2c_indexes = sensors[api.SENSOR_TYPE.I2C.value]
+            i2c_test_result = run_cmd(f"i2cdetect -y 1")
+            for index in i2c_indexes:
+                if str(index) in i2c_test_result:
+                    click.echo(f"I2C device {index} is working.")
+                else:
+                    click.echo(f"ERROR: I2C device {index} not found.")
+
+        # Check for RAISE_WARNING tag in logs
+        since_time = api.utc_now() - timedelta(hours=4)
+        logs = device_health.get_logs(since=since_time, min_priority=4, grep_str="RAISE_WARNING")
+        if logs:
+            click.echo("RAISE_WARNING tag found in logs:")
+            for log in logs:
+                click.echo(f"{log['timestamp']} - {log['priority']} - {log['message']}")
+
+        click.echo(f"{dash_line}")
+
     def run_network_test(self) -> None:
         """Run a network test and display the results."""
         click.echo(f"{dash_line}")
@@ -733,8 +819,9 @@ class InteractiveMenu():
         """Menu for testing commands."""
         while True:
             click.echo(f"{header}Testing Menu:")
-            click.echo("1. Run Network Test")
-            click.echo("2. Back to Main Menu")
+            click.echo("1. Validate device")
+            click.echo("2. Run Network Test")
+            click.echo("3. Back to Main Menu")
             try:
                 choice = click.prompt("\nEnter your choice", type=int)
                 click.echo("\n")
@@ -743,8 +830,11 @@ class InteractiveMenu():
                 continue
 
             if choice == 1:
-                self.run_network_test()
+                click.echo("This option is not yet implemented.")
+                self.validate_device()
             elif choice == 2:
+                self.run_network_test()
+            elif choice == 3:
                 break
             else:
                 click.echo("Invalid choice. Please try again.")
