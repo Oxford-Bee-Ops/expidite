@@ -228,14 +228,14 @@ install_expidite() {
     updated_version=$(pip show expidite | grep Version)
     echo "Expidite installed successfully.  Now version: $updated_version"
 
+    # We store the updated_version in the flags directory for later use in logging
+    echo "$updated_version" > "$HOME/.expidite/expidite_code_version"
+
     # If the version has changed, we need to set a flag so we reboot at the end of the script
     if [ "$current_version" != "$updated_version" ]; then
         echo "Expidite version has changed from $current_version to $updated_version.  Reboot required."
         # Set a flag to indicate that a reboot is required
         touch "$HOME/.expidite/flags/reboot_required"
-
-        # We store the updated_version in the flags directory for later use in logging
-        echo "$updated_version" > "$HOME/.expidite/expidite_code_version"
     fi
 }
 
@@ -294,16 +294,15 @@ install_user_code() {
     pip install "git+ssh://git@$my_git_repo_url@$my_git_branch" || { echo "Failed to install $my_git_repo_url@$my_git_branch"; }    
     updated_version=$(pip show "$project_name" | grep Version)
     echo "User's code installed successfully. Now version: $updated_version"
-    
+
+    # We store the updated_version in the flags directory for later use in logging
+    echo "$updated_version" > "$HOME/.expidite/user_code_version"
+
     # If the version has changed, we need to set a flag so we reboot at the end of the script
     if [ "$current_version" != "$updated_version" ]; then
         echo "User's code version has changed from $current_version to $updated_version.  Reboot required."
         # Set a flag to indicate that a reboot is required
         touch "$HOME/.expidite/flags/reboot_required"
-
-        # We store the updated_version in the flags directory for later use in logging
-        # Write the updated version to a file
-        echo "$updated_version" > "$HOME/.expidite/user_code_version"
     fi
 }
 
