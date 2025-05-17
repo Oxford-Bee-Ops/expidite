@@ -393,9 +393,7 @@ class InteractiveMenu():
 
     def set_hostname(self) -> None:
         """Set the hostname of the Raspberry Pi."""
-        click.echo("Enter the new hostname:")
-        new_hostname = input()
-        click.echo("Are you sure you want to set the hostname to " + new_hostname + "?")
+        click.echo(f"Set the hostname to match the name in DeviceCfg: {root_cfg.my_device.name}?")
         click.echo("  y: yes")
         click.echo("  n: no")
         char = click.getchar()
@@ -404,6 +402,7 @@ class InteractiveMenu():
             click.echo("This command only works on a Raspberry Pi")
             return
         if char == "y":
+            new_hostname = root_cfg.my_device.name
             click.echo("Setting hostname... (ignore temporary error message)")
             run_cmd_live_echo("sudo nmcli general hostname " + new_hostname)
 
