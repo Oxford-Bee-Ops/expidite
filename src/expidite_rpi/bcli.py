@@ -556,9 +556,6 @@ class InteractiveMenu():
         click.echo(f"{dash_line}")
         click.echo("# VALIDATE DEVICE")
         click.echo(f"{dash_line}")
-        if not root_cfg.running_on_rpi:
-            click.echo("This command only works on a Raspberry Pi")
-            return
 
         if root_cfg.system_cfg is None:
             click.echo("ERROR: System.cfg is not set. Please check your installation.")
@@ -566,16 +563,18 @@ class InteractiveMenu():
         
         # Check that rpi-connect is running
         try:
-            output = run_cmd("rpi-connect status")
-            if ("Signed in: yes" in output):
-                click.echo("rpi-connect is running.")
-            else:
-                click.echo("ERROR: rpi-connect is not running. Please start it using the "
-                           "maintenance menu.")
+            if root_cfg.running_on_rpi:
+                output = run_cmd("rpi-connect status")
+                if ("Signed in: yes" in output):
+                    click.echo("rpi-connect is running.")
+                else:
+                    click.echo("ERROR: rpi-connect is not running. Please start it using the "
+                            "maintenance menu.")
 
             # Check that the devices configured are working
             sensors: dict[str, list[int]] = {}
             edge_orch = EdgeOrchestrator.get_instance()
+            edge_orch.load_config()
             if edge_orch is not None:
                 for i, dptree in enumerate(edge_orch.dp_trees):
                     sensor_cfg = dptree.sensor.config
@@ -625,15 +624,17 @@ class InteractiveMenu():
                         click.echo(f"ERROR: I2C device {index} not found.")
 
             # Check for RAISE_WARNING tag in logs
-            since_time = api.utc_now() - timedelta(hours=4)
-            logs = device_health.get_logs(since=since_time, min_priority=4, grep_str="RAISE_WARNING")
-            if logs:
-                click.echo("RAISE_WARNING tag found in logs:")
-                for log in logs:
-                    click.echo(f"{log['timestamp']} - {log['priority']} - {log['message']}")
+            if root_cfg.running_on_rpi:
+                since_time = api.utc_now() - timedelta(hours=4)
+                logs = device_health.get_logs(since=since_time, min_priority=4, grep_str="RAISE_WARNING")
+                if logs:
+                    click.echo("RAISE_WARNING tag found in logs:")
+                    for log in logs:
+                        click.echo(f"{log['timestamp']} - {log['priority']} - {log['message']}")
 
         except Exception as e:
-            click.echo(f"ERROR: exception running validation tests: {e}", exc_info=True)
+            logger.error(f"{root_cfg.RAISE_WARN()}Exception running validation tests: {e}", exc_info=True)
+            click.echo(f"ERROR: exception running validation tests: {e}")
             return
 
         click.echo(f"{dash_line}")
@@ -853,11 +854,9 @@ def main():
             im.interactive_menu()
         except (KeyboardInterrupt, click.exceptions.Abort):
             click.echo("\nExiting...")
-            sys.exit(0)
         except Exception as e:
             logger.error(f"Error in CLI: {e}", exc_info=True)
             click.echo(f"Error in CLI: {e}")
-            sys.exit(1)
 
 if __name__ == "__main__":
     os.chdir(root_cfg.HOME_DIR)
