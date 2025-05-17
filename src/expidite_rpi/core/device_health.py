@@ -302,12 +302,16 @@ class DeviceHealth(Sensor):
                         logger.error(root_cfg.RAISE_WARN() + "Memory usage >95%, rebooting")
                         utils.run_cmd("sudo reboot", ignore_errors=True)
 
-            # Get the version
-            try:
-                from expidite_rpi import __version__
-                rpi_core_version = __version__
-            except Exception:
-                rpi_core_version = "unknown"
+            # Get the expidite version and user code version from the files
+            # Stored in .expidite/user_code_version and .expidite/expidite_code_version
+            expidite_version = "unknown"
+            user_code_version = "unknown"
+            if root_cfg.EXPIDITE_VERSION_FILE.exists():
+                with open(root_cfg.EXPIDITE_VERSION_FILE, "r") as f:
+                    expidite_version = f.read().strip()
+            if root_cfg.USER_CODE_VERSION_FILE.exists():
+                with open(root_cfg.USER_CODE_VERSION_FILE, "r") as f:
+                    user_code_version = f.read().strip()
 
             health = {
                 "boot_time": api.utc_to_iso_str(psutil.boot_time()),
@@ -332,7 +336,8 @@ class DeviceHealth(Sensor):
                 "ip_address": str(ip_address),
                 "power_status": str(get_throttled_output),
                 "process_list": process_list_str,
-                "expidite_version": rpi_core_version,
+                "expidite_version": expidite_version,
+                "user_code_version": user_code_version,
             }
 
         except Exception as e:

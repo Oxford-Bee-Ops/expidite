@@ -185,6 +185,8 @@ for d in dirs:
 
 KEYS_FILE: Path = CFG_DIR / "keys.env"
 SYSTEM_CFG_FILE: Path = CFG_DIR / "system.cfg"
+EXPIDITE_VERSION_FILE: Path = CFG_DIR / "expidite_code_version"
+USER_CODE_VERSION_FILE: Path = CFG_DIR / "user_code_version"
 
 ############################################################################################
 # Mode of operation

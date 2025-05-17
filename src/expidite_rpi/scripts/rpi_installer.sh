@@ -233,6 +233,9 @@ install_expidite() {
         echo "Expidite version has changed from $current_version to $updated_version.  Reboot required."
         # Set a flag to indicate that a reboot is required
         touch "$HOME/.expidite/flags/reboot_required"
+
+        # We store the updated_version in the flags directory for later use in logging
+        echo "$updated_version" > "$HOME/.expidite/expidite_code_version"
     fi
 }
 
@@ -297,6 +300,10 @@ install_user_code() {
         echo "User's code version has changed from $current_version to $updated_version.  Reboot required."
         # Set a flag to indicate that a reboot is required
         touch "$HOME/.expidite/flags/reboot_required"
+
+        # We store the updated_version in the flags directory for later use in logging
+        # Write the updated version to a file
+        echo "$updated_version" > "$HOME/.expidite/user_code_version"
     fi
 }
 

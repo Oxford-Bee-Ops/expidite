@@ -102,12 +102,17 @@ class DPworker(Thread):
         if root_cfg.system_cfg is not None:
             wrap["system_config"] = root_cfg.system_cfg.model_dump()
 
-        # Expidite version
-        try:
-            from expidite_rpi import __version__
-            wrap["expidite_version"] = __version__
-        except Exception:
-            wrap["expidite_version"] = "unknown"
+        # Code version info
+        expidite_version = "unknown"
+        user_code_version = "unknown"
+        if root_cfg.EXPIDITE_VERSION_FILE.exists():
+            with open(root_cfg.EXPIDITE_VERSION_FILE, "r") as f:
+                expidite_version = f.read().strip()
+        if root_cfg.USER_CODE_VERSION_FILE.exists():
+            with open(root_cfg.USER_CODE_VERSION_FILE, "r") as f:
+                user_code_version = f.read().strip()
+        wrap["expidite_version"] = expidite_version
+        wrap["user_code_version"] = user_code_version
 
         # Storage account name
         if root_cfg.keys is not None:
