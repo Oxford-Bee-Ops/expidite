@@ -857,6 +857,12 @@ def main():
         except Exception as e:
             logger.error(f"Error in CLI: {e}", exc_info=True)
             click.echo(f"Error in CLI: {e}")
+        finally:
+            # Ensure the cloud connector is shut down
+            cc = CloudConnector.get_instance(type=root_cfg.CloudType.AZURE)
+            assert isinstance(cc, AsyncCloudConnector)
+            cc.shutdown()
+            click.echo("Done")
 
 if __name__ == "__main__":
     os.chdir(root_cfg.HOME_DIR)
