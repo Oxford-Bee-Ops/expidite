@@ -64,6 +64,11 @@ class DeviceCfg(Configuration):
     device_id: str = "unknown"
     notes: str = "blank"
 
+    # The tags field allows the recording of arbitrary key-value pairs that will be written to the
+    # FAIR record.  This is useful for recording information about the device in a structured way
+    # that can be used in subsequent analysis (eg the location of the deployment).
+    tags: dict[str, str] = field(default_factory=dict)
+
     # Default cloud container for file upload
     cc_for_upload: str = "expidite-upload"
 

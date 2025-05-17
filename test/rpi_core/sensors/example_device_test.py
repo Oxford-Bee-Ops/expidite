@@ -19,6 +19,7 @@ INVENTORY: list[DeviceCfg] = [
         device_id="d01111111111",  # This is the DUMMY MAC address for windows
         notes="Testing example camera device",
         dp_trees_create_method=create_example_device,
+        tags={"Row": "132", "Column": "2", "Location": "Gantry"},
     ),
 ]
 
