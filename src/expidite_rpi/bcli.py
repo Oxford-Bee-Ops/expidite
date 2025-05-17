@@ -89,7 +89,7 @@ def run_cmd_live_echo(cmd: str) -> str:
 
 
 def check_if_setup_required() -> None:
-    """Check if setup is required by verifying keys and Git repo."""
+    """Check if setup is required by verifying keys."""
     attempts = 0
     max_attempts = 3
     while not check_keys_env():
@@ -225,12 +225,12 @@ class InteractiveMenu():
         if root_cfg.running_on_windows:
             click.echo("This command only works on Linux. Exiting...")
             return
-        since_time = api.utc_now() - timedelta(hours=4)
         click.echo("\n")
         click.echo(f"{dash_line}")
         click.echo("# ERROR LOGS")
         click.echo("# Displaying error logs from the last 4 hours")
         click.echo(f"{dash_line}")
+        since_time = api.utc_now() - timedelta(hours=4)
         logs = device_health.get_logs(since=since_time, min_priority=4)
         self.display_logs(logs)
 
@@ -240,11 +240,11 @@ class InteractiveMenu():
         if root_cfg.running_on_windows:
             click.echo("This command only works on Linux. Exiting...")
             return
-        since_time = api.utc_now() - timedelta(minutes=15)
         click.echo(f"{dash_line}")
         click.echo("# RpiCore logs")
         click.echo("# Displaying rpi_core logs for the last 15 minutes")
         click.echo(f"{dash_line}")
+        since_time = api.utc_now() - timedelta(minutes=15)
         logs = device_health.get_logs(since=since_time, min_priority=6, grep_str="expidite")
         self.display_logs(logs)
 
@@ -423,6 +423,7 @@ class InteractiveMenu():
             return
         click.echo("Copy the URL returned by this command to a browser ")
         click.echo("and authenticate the request to your Raspberry Pi connect account.")
+        run_cmd_live_echo("rpi-connect on")
         run_cmd_live_echo("rpi-connect signin")
         click.echo("\nHit any key to continue once you've signed in.")
         click.getchar()
