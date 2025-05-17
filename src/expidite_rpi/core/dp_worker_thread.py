@@ -103,14 +103,7 @@ class DPworker(Thread):
             wrap["system_config"] = root_cfg.system_cfg.model_dump()
 
         # Code version info
-        expidite_version = "unknown"
-        user_code_version = "unknown"
-        if root_cfg.EXPIDITE_VERSION_FILE.exists():
-            with open(root_cfg.EXPIDITE_VERSION_FILE, "r") as f:
-                expidite_version = f.read().strip()
-        if root_cfg.USER_CODE_VERSION_FILE.exists():
-            with open(root_cfg.USER_CODE_VERSION_FILE, "r") as f:
-                user_code_version = f.read().strip()
+        expidite_version, user_code_version = root_cfg.get_version_info()
         wrap["expidite_version"] = expidite_version
         wrap["user_code_version"] = user_code_version
 
