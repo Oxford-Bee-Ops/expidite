@@ -136,7 +136,8 @@ class EdgeOrchestrator:
     def load_config(self) -> None:
         """Load the sensor and data processor config into the EdgeOrchestrator by calling
         the DeviceCfg.dp_trees_create_method()."""
-        self.dp_trees = self._safe_call_create_method(root_cfg.my_device.dp_trees_create_method)
+        self.dp_trees = self._safe_call_create_method(root_cfg.my_device.dp_trees_create_method,
+                                                      root_cfg.my_device.dp_trees_create_kwargs)
         for dptree in self.dp_trees:
             sensor = dptree.sensor
             if sensor in self._sensorThreads:
@@ -147,15 +148,17 @@ class EdgeOrchestrator:
             self._dpworkers.append(DPworker(dptree))
 
     @staticmethod
-    def _safe_call_create_method(create_method: Optional[Callable]) -> list[DPtree]:
+    def _safe_call_create_method(create_method: Optional[Callable],
+                                 create_kwargs: Optional[dict] = None) -> list[DPtree]:
         """Call the create method and return the DPtree object.
         Raises ValueError if the create method does not successfully create any DPtree objects."""
         if create_method is None:
             logger.error(f"{root_cfg.RAISE_WARN()}create_method not defined for {root_cfg.my_device_id}")
             raise ValueError(f"create_method not defined for {root_cfg.my_device_id}")
 
-        logger.info(f"Creating DP trees for {root_cfg.my_device_id} using {create_method}")
-        dp_trees: list[DPtree] = create_method()
+        logger.info(
+            f"Creating DP trees for {root_cfg.my_device_id} using {create_method} and {create_kwargs}")
+        dp_trees: list[DPtree] = create_method(**(create_kwargs or {}))
 
         if not dp_trees:
             logger.error(f"{root_cfg.RAISE_WARN()}No sensors created by {root_cfg.my_device_id} "

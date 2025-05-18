@@ -60,7 +60,8 @@ class RpiCore:
                     continue
                 # Check the device configuration is valid
                 logger.debug(f"Validating device {device.device_id} configuration.")
-                dp_trees = EdgeOrchestrator._safe_call_create_method(device.dp_trees_create_method)
+                dp_trees = EdgeOrchestrator._safe_call_create_method(device.dp_trees_create_method,
+                                                                     device.dp_trees_create_kwargs)
                 is_valid, errors = config_validator.validate_trees(dp_trees)
                 if not is_valid:
                     errors.append(f"Invalid configuration for device {device.device_id}: {errors}")

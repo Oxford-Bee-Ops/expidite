@@ -55,10 +55,11 @@ class DeviceCfg(Configuration):
     """Configuration for a device"""
 
     # DPtree objects define the Sensor and DataProcessor objects that will be used to process the data.
-    # This field holds a list of function references that when called return the instantiated DPtree objects
+    # This field holds a function reference that when called return the instantiated DPtree objects
     # for this device.
-    # We use function references so that we only instantiate the DPtree objects when we need them.
+    # This method can take optional arguments defined in dp_trees_create_kwargs.
     dp_trees_create_method: Optional[Callable] = None
+    dp_trees_create_kwargs: Optional[dict] = None
 
     name: str = "default"
     device_id: str = "unknown"
