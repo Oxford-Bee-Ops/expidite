@@ -607,7 +607,7 @@ class InteractiveMenu():
                 # Count the number of instances of "sound" in the output
                 sound_count = sound_test.count("sound")
                 if sound_count == num_usb_devices:
-                    click.echo(f"\nFound the correct number of USB audio device(s).")
+                    click.echo("\nFound the correct number of USB audio device(s).")
                     click.echo(sound_test)
                 else:
                     click.echo(f"\nERROR: Found {sound_count} USB audio device(s), "
@@ -617,7 +617,7 @@ class InteractiveMenu():
                 # Validate that the I2C device(s) is working
                 click.echo(f"\nI2C devices expected for indices: {sensors[api.SENSOR_TYPE.I2C.value]}")
                 i2c_indexes = sensors[api.SENSOR_TYPE.I2C.value]
-                i2c_test_result = run_cmd(f"i2cdetect -y 1")
+                i2c_test_result = run_cmd("i2cdetect -y 1")
                 for index in i2c_indexes:
                     if str(index) in i2c_test_result:
                         click.echo(f"I2C device {index} is working.")
