@@ -236,6 +236,8 @@ class DPworker(Thread):
                                     except Exception as e:
                                         logger.error(f"{root_cfg.RAISE_WARN()}Failed to unlink {f} {e!s}", 
                                                      exc_info=True)
+                                else:
+                                    logger.error(f"{root_cfg.RAISE_WARN()}File does not exist after DP {f}")
 
                     # Log the processing time
                     exec_time = api.utc_now() - exec_start_time

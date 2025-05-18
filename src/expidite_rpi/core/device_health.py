@@ -187,7 +187,7 @@ class DeviceHealth(Sensor):
             logs = get_logs(since=since_time, min_priority=4)
 
             for log in logs:
-                if api.RAISE_WARN_TAG in log["message"]:
+                if str(log["message"]).startswith(api.RAISE_WARN_TAG):
                     log["priority"] = int(log.get("priority", 4)) - 1
                     self.log(WARNING_STREAM_INDEX, log)
                 elif log["priority"] <= 3:
