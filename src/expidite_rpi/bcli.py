@@ -556,6 +556,8 @@ class InteractiveMenu():
         click.echo("# VALIDATE DEVICE")
         click.echo(f"{dash_line}")
 
+        success = True
+
         if root_cfg.system_cfg is None:
             click.echo("ERROR: System.cfg is not set. Please check your installation.")
             return
@@ -569,6 +571,7 @@ class InteractiveMenu():
                 else:
                     click.echo("\nERROR: rpi-connect is not running. Please start it using the "
                             "maintenance menu.")
+                    success = False
 
             # Check that the devices configured are working
             sensors: dict[str, list[int]] = {}
@@ -593,6 +596,7 @@ class InteractiveMenu():
                     camera_test_result = run_cmd(f"libcamera-hello --cameras {index}")
                     if "camera is not available" in camera_test_result:
                         click.echo(f"ERROR: Camera {index} not found.")
+                        success = False
                     else:
                         click.echo(f"Camera {index} is working.")
 
@@ -612,6 +616,7 @@ class InteractiveMenu():
                 else:
                     click.echo(f"\nERROR: Found {sound_count} USB audio device(s), "
                             f"but expected {num_usb_devices}.")
+                    success = False
 
             if api.SENSOR_TYPE.I2C.value in sensors:
                 # Validate that the I2C device(s) is working
@@ -626,12 +631,14 @@ class InteractiveMenu():
                     else:
                         click.echo(f"ERROR: I2C device {index} ({hex_index}) not found.")
                         click.echo(i2c_test_result)
+                        success = False
 
             # Check for RAISE_WARNING tag in logs
             if root_cfg.running_on_rpi:
                 since_time = api.utc_now() - timedelta(hours=4)
                 logs = device_health.get_logs(since=since_time, min_priority=4, grep_str="RAISE_WARNING")
                 if logs:
+                    success = False
                     click.echo("\nRAISE_WARNING tag found in logs:")
                     for log in logs:
                         click.echo(f"{log['time_logged']} - {log['priority']} - {log['message']}")
@@ -641,7 +648,12 @@ class InteractiveMenu():
         except Exception as e:
             logger.error(f"{root_cfg.RAISE_WARN()}Exception running validation tests: {e}", exc_info=True)
             click.echo(f"ERROR: exception running validation tests: {e}")
-            return
+            success = False
+
+        if success:
+            click.echo("\n ### PASS ###\n")
+        else:
+            click.echo("\n ### FAIL ###\n")
 
         click.echo(f"{dash_line}")
 
