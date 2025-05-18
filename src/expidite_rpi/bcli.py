@@ -619,10 +619,12 @@ class InteractiveMenu():
                 i2c_indexes = sensors[api.SENSOR_TYPE.I2C.value]
                 i2c_test_result = run_cmd("i2cdetect -y 1")
                 for index in i2c_indexes:
-                    if str(index) in i2c_test_result:
-                        click.echo(f"I2C device {index} is working.")
+                    # We need to convert the index from base10 to base16
+                    hex_index = hex(index)[2:].upper()
+                    if str(hex_index) in i2c_test_result:
+                        click.echo(f"I2C device {index} ({hex_index}) is working.")
                     else:
-                        click.echo(f"ERROR: I2C device {index} not found.")
+                        click.echo(f"ERROR: I2C device {index} ({hex_index}) not found.")
                         click.echo(i2c_test_result)
 
             # Check for RAISE_WARNING tag in logs
@@ -632,7 +634,7 @@ class InteractiveMenu():
                 if logs:
                     click.echo("\nRAISE_WARNING tag found in logs:")
                     for log in logs:
-                        click.echo(f"{log['timestamp']} - {log['priority']} - {log['message']}")
+                        click.echo(f"{log['time_logged']} - {log['priority']} - {log['message']}")
                 else:
                     click.echo("\nNo error logs found.")
 
