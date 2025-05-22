@@ -261,11 +261,11 @@ install_user_code() {
     chmod 600 "$HOME/.ssh/$my_git_ssh_private_key_file"
 
     # Set the GIT_SSH_COMMAND with timeout and retry options
-    export GIT_SSH_COMMAND="ssh -i $HOME/.ssh/$my_git_ssh_private_key_file -o IdentitiesOnly=yes -o ConnectTimeout=10 -o ConnectionAttempts=5"
+    export GIT_SSH_COMMAND="ssh -v -i $HOME/.ssh/$my_git_ssh_private_key_file -o IdentitiesOnly=yes -o ConnectTimeout=10 -o ConnectionAttempts=2"
 
     # Persist the GIT_SSH_COMMAND in .bashrc if not already present
     if ! grep -qs "export GIT_SSH_COMMAND=" "$HOME/.bashrc"; then
-        echo "export GIT_SSH_COMMAND='ssh -i \$HOME/.ssh/$my_git_ssh_private_key_file -o IdentitiesOnly=yes -o ConnectTimeout=10 -o ConnectionAttempts=5'" >> "$HOME/.bashrc"
+        echo "export GIT_SSH_COMMAND='ssh -v -i \$HOME/.ssh/$my_git_ssh_private_key_file -o IdentitiesOnly=yes -o ConnectTimeout=10 -o ConnectionAttempts=2'" >> "$HOME/.bashrc"
     fi
 
     # Ensure known_hosts exists and add GitHub key if necessary
