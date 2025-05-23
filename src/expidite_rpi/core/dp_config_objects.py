@@ -30,7 +30,7 @@ class Stream:
     # This string is interpreted by the Sensor or DataProcessor to determine the frequency of 
     # raw data sampling. The format of this string is specific to the Sensor or DataProcessor.
     # The default implementation interprets this string as a float sampling probability (0.0-1.0)
-    sample_probability: Optional[str] = None
+    sample_probability: Optional[str|float] = None
 
     # Storage tier for the data in the cloud storage system.
     # If you're using Azure for storage, see Azure documentation for details:

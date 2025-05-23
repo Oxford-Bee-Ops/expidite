@@ -357,7 +357,7 @@ class DPnode():
         logger.debug("Logged sample data for SCORE & SCORP")
 
     
-    def save_sample(self, sample_probability: str | None) -> bool:
+    def save_sample(self, sample_probability: str | float | None) -> bool:
         """Return True if this node should save sample data to the datastore.
         This method can be subclassed to provide more complex sampling logic.
         In this default implementation, we assume sample_probability is a
@@ -478,15 +478,17 @@ class DPnode():
             new_fname = src_file.rename(new_fname)
 
         # We save stream recordings to the cloud based on the sample_probability defined in the stream.
-        if self.save_sample(stream.sample_probability) and stream.cloud_container is not None:
+        if self.save_sample(stream.sample_probability):
             logger.info(f"Saving sample {new_fname.name} to {stream.cloud_container}; "
                         f"sample_prob={stream.sample_probability}")
+            assert stream.cloud_container is not None
+            assert stream.storage_tier is not None
+            cloud_container = stream.cloud_container
 
             if dst_dir == root_cfg.EDGE_UPLOAD_DIR:
                 # If the file in EDGE_UPLOAD_DIR, it is no longer being touched by any other process.
                 stream = self.get_stream(stream_index)
-                assert stream.cloud_container is not None and stream.storage_tier is not None
-                self._get_cc().upload_to_container(stream.cloud_container, 
+                self._get_cc().upload_to_container(cloud_container, 
                                                     [new_fname], 
                                                     delete_src=True,
                                                     storage_tier=stream.storage_tier)
@@ -496,7 +498,7 @@ class DPnode():
                 # The filename is the same as the recording, but saved to the upload directory
                 sample_fname = file_naming.increment_filename(root_cfg.EDGE_UPLOAD_DIR / new_fname.name)
                 shutil.copy(new_fname, sample_fname)
-                self._get_cc().upload_to_container(stream.cloud_container,
+                self._get_cc().upload_to_container(cloud_container,
                                                     [sample_fname], 
                                                     delete_src=True,
                                                     storage_tier=stream.storage_tier)
