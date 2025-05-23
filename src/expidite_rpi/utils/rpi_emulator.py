@@ -13,6 +13,7 @@ from dataclasses import dataclass
 from pathlib import Path
 from time import sleep
 from typing import Optional
+from threading import Event
 
 import cv2
 import numpy as np
@@ -33,6 +34,7 @@ class RpiTestRecording():
 class RpiEmulator():
     """The test harness enables thorough testing of the sensor code without RPi hardware."""
     _instance = None
+    _is_available = Event()
     ONE_OR_MORE = -1
 
     @staticmethod
@@ -40,11 +42,16 @@ class RpiEmulator():
         """Get the singleton instance of RpiEmulator."""
         if RpiEmulator._instance is None:
             RpiEmulator._instance = RpiEmulator()
+            RpiEmulator._is_available.set()
         return RpiEmulator._instance
 
     def __enter__(self) -> "RpiEmulator":
         """Enter the context manager."""
         logger.info("Entering RpiEmulator context.")
+        # We want to avoid overlapping tests so we wait until the previous test has finished
+        while not RpiEmulator._is_available.is_set():
+            RpiEmulator._is_available.wait()
+        RpiEmulator._is_available.clear()
         self.previous_recordings_index: int = 0
         self.recordings_saved: dict[str, int] = {}
         self.recording_cap: int = -1
@@ -61,13 +68,19 @@ class RpiEmulator():
         root_cfg.JOURNAL_SYNC_FREQUENCY = 1
         root_cfg.WATCHDOG_FREQUENCY = 1
 
+        # Ensure the processing directory is empty
+        root_cfg.EDGE_PROCESSING_DIR.mkdir(parents=True, exist_ok=True)
+        for file in root_cfg.EDGE_PROCESSING_DIR.glob("*"):
+            if file.is_file():
+                file.unlink()
+
         return self
 
     def __exit__(self, exc_type, exc_value, traceback) -> None:
         """Exit the context manager."""
         logger.info("Exiting RpiEmulator context.")
         self.cc.clear_local_cloud()
-        sleep(1)
+        RpiEmulator._is_available.set()
 
     def mock_timers(self, inventory: list[DeviceCfg]) -> list[DeviceCfg]:
         for device in inventory:
