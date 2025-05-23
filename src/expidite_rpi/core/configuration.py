@@ -266,6 +266,7 @@ def setup_logger(name: str,
         for handler in logger.handlers:
             if isinstance(handler, logging.FileHandler):
                 file_handler_count += 1
+                handler.setLevel(_LOG_LEVEL)
             elif isinstance(handler, logging.StreamHandler):
                 handler.setLevel(_LOG_LEVEL)
 
