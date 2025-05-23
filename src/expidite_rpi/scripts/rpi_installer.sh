@@ -293,7 +293,7 @@ install_user_code() {
     ###############################################################################################################
     if [ "$install_type" == "system_test" ]; then
         # On system test installations, we want the test code as well, so we run pip install .[dev]
-        project_dir=$("$HOME/$venv_dir/src/$project_name")
+        project_dir="$HOME/$venv_dir/src/$project_name"
         mkdir -p "$project_dir"
         cd "$project_dir"
         if [ -d "$project_dir/.git" ]; then
