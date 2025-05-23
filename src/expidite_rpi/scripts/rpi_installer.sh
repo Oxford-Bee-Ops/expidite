@@ -239,6 +239,22 @@ install_expidite() {
     fi
 }
 
+fix_my_git_repo() {
+    # Fix the Git repository URL if we're doing a direct git clone for system test installations
+    # Normal URL format: git@github.com/oxford-bee-ops/expidite.git
+    # SSH URL format:    git@github.com:oxford-bee-ops/expidite.git
+    #
+    # Replace the slash following github.com with a colon
+    # This is required for the git clone command to work with SSH
+    # The colon is required for SSH URLs, but not for HTTPS URLs
+    git_repo_url="$1"
+    if [[ $git_repo_url == *"github.com/"* ]]; then
+        # Replace the slash with a colon
+        git_repo_url=${git_repo_url/github.com/github.com:}
+    fi
+    echo "$git_repo_url"
+}
+
 # Function to install user's code
 install_user_code() {
     echo "Installing user's code..."
@@ -300,6 +316,7 @@ install_user_code() {
             # Delete the .git directory to avoid issues with git clone
             rm -rf "$project_dir/.git"
         fi
+        my_git_repo_url=$(fix_my_git_repo "$my_git_repo_url")
         git clone --depth 1 --branch "$my_git_branch" "git@${my_git_repo_url}" "$project_dir"
         pip install .[dev] || { echo "Failed to install system test code"; }
         cd "$HOME/.expidite" 
