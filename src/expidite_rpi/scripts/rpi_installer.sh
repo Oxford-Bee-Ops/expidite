@@ -310,12 +310,12 @@ install_user_code() {
     if [ "$install_type" == "system_test" ]; then
         # On system test installations, we want the test code as well, so we run pip install .[dev]
         project_dir="$HOME/$venv_dir/src/$project_name"
+        if [ -d "$project_dir" ]; then
+            # Delete the .git directory to avoid issues with git clone
+            rm -rf "$project_dir"
+        fi
         mkdir -p "$project_dir"
         cd "$project_dir"
-        if [ -d "$project_dir/.git" ]; then
-            # Delete the .git directory to avoid issues with git clone
-            rm -rf "$project_dir/.git"
-        fi
         my_git_repo_url=$(fix_my_git_repo "$my_git_repo_url")
         git clone --depth 1 --branch "$my_git_branch" "git@${my_git_repo_url}" "$project_dir"
         pip install .[dev] || { echo "Failed to install system test code"; }
