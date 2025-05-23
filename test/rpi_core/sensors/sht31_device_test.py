@@ -22,7 +22,7 @@ class Test_sht31_device:
 
     @pytest.mark.unittest
     def test_sht31_device(self):
-
+        logger.info("Running test_sht31_device")
         with RpiEmulator.get_instance() as th:
             # Mock the timers in the inventory for faster testing
             inventory = th.mock_timers(INVENTORY)

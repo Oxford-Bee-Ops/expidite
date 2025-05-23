@@ -26,15 +26,15 @@ class Test_Orchestrator:
 
     @pytest.mark.unittest
     def test_Orchestrator(self) -> None:
+        logger.info("Run test_Orchestrator test")
+        # We reset cfg.my_device_id to override the computers mac_address
+        # This is a test device defined in BeeOps.cfg to have a DummySensor.
+        root_cfg.update_my_device_id("d01111111111")
+
         with rpi_emulator.RpiEmulator.get_instance() as th:
+            logger.debug("sensor_test: # Test orchestrator")
             # Mock the timers in the inventory for faster testing
             inventory = th.mock_timers(INVENTORY)
-
-            logger.debug("sensor_test: # Test orchestrator")
-            # Standard flow
-            # We reset cfg.my_device_id to override the computers mac_address
-            # This is a test device defined in BeeOps.cfg to have a DummySensor.
-            root_cfg.update_my_device_id("d01111111111")
 
             sc = RpiCore()
             sc.configure(inventory)
@@ -42,7 +42,7 @@ class Test_Orchestrator:
             orchestrator = EdgeOrchestrator.get_instance()
             orchestrator.load_config()
             orchestrator.start_all()
-            sleep(12)
+            sleep(10)
             orchestrator.stop_all()
             sleep(2)
             # Check that we have data in the journals
@@ -74,6 +74,7 @@ class Test_Orchestrator:
     def test_orchestrator_main(self) -> None:
         # We reset cfg.my_device_id to override the computers mac_address
         # This is a test device defined in BeeOps.cfg to have a DummySensor.
+        logger.info("Run test_orchestrator_main test")
         root_cfg.update_my_device_id("d01111111111")
         
         with rpi_emulator.RpiEmulator.get_instance():

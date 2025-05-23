@@ -12,15 +12,18 @@ logger = root_cfg.setup_logger("expidite")
 class Test_utils:
     @pytest.mark.unittest
     def test_display_cfg(self) -> None:
+        logger.info("Run test_display_cfg test")
         assert root_cfg.my_device.display() != ""
 
     @pytest.mark.unittest
     def test_utc_to_str(self) -> None:
+        logger.info("Run test_utc_to_str test")
         timestamp = api.utc_to_fname_str()
         assert len(timestamp) == len("20250101T010101000"), "Invalid timestamp length:" + timestamp
 
     @pytest.mark.unittest
     def test_utc_now(self) -> None:
+        logger.info("Run test_utc_now test")
         # Get datetime_now and convert to a POSIX timestamp (float)
         dt_object = api.utc_now()
         dt_float = dt_object.timestamp()
@@ -39,12 +42,14 @@ class Test_utils:
 
     @pytest.mark.unittest
     def test_raise_warn(self) -> None:
+        logger.info("Run test_raise_warn test")
         logmsg = root_cfg.RAISE_WARN() + "This is a test error message"
         logger.error(logmsg)
         assert logmsg.startswith(api.RAISE_WARN_TAG)
 
     @pytest.mark.unittest
     def test_is_sampling_period(self) -> None:
+        logger.info("Run test_is_sampling_period test")
         assert (utils.is_sampling_period(0.5, 180, datetime(2023, 7, 27, 10, 0, 1))) == (
             utils.is_sampling_period(0.5, 180, datetime(2023, 7, 27, 10, 0, 2))
         )

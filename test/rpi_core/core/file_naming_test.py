@@ -18,6 +18,7 @@ class Test_datastream:
 
     @pytest.mark.unittest
     def test_file_naming(self) -> None:
+        logger.info("Run test_file_naming test")
         my_example_dptree: DPtree = my_fleet_config.create_example_device()[0]
         stream = my_example_dptree.sensor.get_stream(EXAMPLE_FILE_STREAM_INDEX)
         data_id = stream.get_data_id(EXAMPLE_SENSOR_CFG.sensor_index)
@@ -44,6 +45,7 @@ class Test_datastream:
 
     @pytest.mark.unittest
     def test_id_parsing(self) -> None:
+        logger.info("Run test_id_parsing test")
         device_id = "d01111111111"
         type_id = "test"
         sensor_id = 1

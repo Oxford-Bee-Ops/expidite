@@ -29,7 +29,7 @@ class Test_example_device:
 
     @pytest.mark.unittest
     def test_example_device(self):
-
+        logger.info("Running test_example_device")
         with RpiEmulator.get_instance() as th:
             # Mock the timers in the inventory for faster testing
             inventory = th.mock_timers(INVENTORY)
@@ -45,9 +45,7 @@ class Test_example_device:
                 sleep(1)
             while th.recordings_still_to_process():
                 sleep(1)
-            sleep(5)
             sc.stop()
-            sleep(5)
 
             # The example sensor produces:
             # - a stream of jpg files (EXAMPLE_FILE_DS_TYPE_ID) 

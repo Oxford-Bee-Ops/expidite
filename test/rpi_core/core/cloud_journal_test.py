@@ -19,6 +19,7 @@ root_cfg.TEST_MODE = root_cfg.MODE.TEST
 class Test_CloudJournal:
     @pytest.mark.unittest
     def test_CloudJournal(self) -> None:
+        logger.info("Run test_CloudJournal test")
 
         cc = CloudConnector.get_instance(root_cfg.CloudType.AZURE)
         assert isinstance(cc, AsyncCloudConnector)

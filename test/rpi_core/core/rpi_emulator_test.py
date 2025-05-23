@@ -9,6 +9,7 @@ logger = root_cfg.setup_logger("expidite", logging.DEBUG)
 class Test_rpi_emulator:
     @pytest.mark.unittest
     def test_rpi_emulator(self) -> None:
+        logger.info("Run test_rpi_emulator test")
         with rpi_emulator.RpiEmulator.get_instance() as th:
             # Limit the RpiCore to 1 recording so we can easily validate the results
             th.set_recording_cap(1, type_id="test")
