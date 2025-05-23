@@ -20,7 +20,7 @@ INVENTORY: list[DeviceCfg] = [
 
 class Test_sht31_device:
 
-    @pytest.mark.quick
+    @pytest.mark.unittest
     def test_sht31_device(self):
 
         with RpiEmulator.get_instance() as th:

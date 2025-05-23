@@ -676,7 +676,55 @@ class InteractiveMenu():
         run_cmd_live_echo(f"sudo {scripts_dir}/network_test.sh q")
         click.echo(f"{dash_line}")
 
+    def run_system_test(self) -> None:
+        """Invokes my_start_script."""
+        # Check this is a system_test installation
+        if root_cfg.system_cfg is None:
+            click.echo("System.cfg is not set. Please check your installation.")
+            return
+        if root_cfg.system_cfg.install_type != api.INSTALL_TYPE.SYSTEM_TEST:
+            click.echo("This command only works on a system test installation.")
+            return
+        if root_cfg.system_cfg.my_start_script is not None:
+            click.echo(f"Running {root_cfg.system_cfg.my_start_script}...")
+            # my_start_script should be a resolvable module in this environment
+            try:
+                my_start_script = root_cfg.system_cfg.my_start_script
+                # Try creating an instance and calling main()
+                # This will raise an ImportError if the module is not found
+                # or if the main() function is not defined in the module
+                module = __import__(my_start_script, fromlist=["main"])
+                main_func = getattr(module, "main", None)
+                if main_func is None:
+                    click.echo(f"main() function not found in {my_start_script}")
+                    click.echo("Exiting...")
+                    return
+            except ImportError as e:
+                logger.error(f"{root_cfg.RAISE_WARN()}Module {my_start_script} not resolvable ({e})", 
+                             exc_info=True)
+                click.echo(f"Module {my_start_script} not resolvable ({e})")
+                click.echo("Exiting...")
+                return
+            else:
+                if root_cfg.running_on_windows:
+                    # Invoke the module directly from the current thread.
+                    click.echo(f"Found {my_start_script}. Running system test...")
+                    # Call the main function directly
+                    try:
+                        main_func()
+                    except Exception as e:
+                        click.echo(f"Error running {my_start_script}: {e}")
+                        return
+                elif root_cfg.running_on_rpi:
+                    click.echo(f"Found {my_start_script}. Running system test as a background process...")
+                    cmd = (
+                        f"bash -c 'source {root_cfg.HOME_DIR}/{root_cfg.system_cfg.venv_dir}/bin/activate && "
+                        f"nohup python -m {my_start_script} 2>&1 | /usr/bin/logger -t EXPIDITE &'"
+                    )
+                    click.echo(f"Running command: {cmd}")
+                    run_cmd_live_echo(cmd)
 
+                    
     ####################################################################################################
     # Interactive menu functions
     ####################################################################################################
@@ -843,7 +891,8 @@ class InteractiveMenu():
             click.echo(f"{header}Testing Menu:")
             click.echo("1. Validate device")
             click.echo("2. Run Network Test")
-            click.echo("3. Back to Main Menu")
+            click.echo("3. Run system test")
+            click.echo("4. Back to Main Menu")
             try:
                 choice = click.prompt("\nEnter your choice", type=int)
                 click.echo("\n")
@@ -856,9 +905,12 @@ class InteractiveMenu():
             elif choice == 2:
                 self.run_network_test()
             elif choice == 3:
+                self.run_system_test()
+            elif choice == 4:
                 break
             else:
                 click.echo("Invalid choice. Please try again.")
+    
 
 #################################################################################
 # Main function to run the CLI

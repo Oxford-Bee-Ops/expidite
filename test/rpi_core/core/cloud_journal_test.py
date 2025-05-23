@@ -17,7 +17,7 @@ root_cfg.TEST_MODE = root_cfg.MODE.TEST
 # The CloudJournal is a Journal that automatically uploads to the cloud.
 ####################################################################################################
 class Test_CloudJournal:
-    @pytest.mark.quick
+    @pytest.mark.unittest
     def test_CloudJournal(self) -> None:
 
         cc = CloudConnector.get_instance(root_cfg.CloudType.AZURE)

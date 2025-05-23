@@ -23,8 +23,8 @@ from expidite_rpi.utils import utils_clean
 ############################################################################################
 class MODE(Enum):
     """Test modes for the RpiCore"""
-    PRODUCTION: str = "production"
-    TEST: str = "test"
+    PRODUCTION = "production"
+    TEST = "test"
 TEST_MODE: MODE = MODE.PRODUCTION
 
 class CloudType(Enum):
