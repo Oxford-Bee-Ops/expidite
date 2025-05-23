@@ -82,6 +82,9 @@ class DeviceCfg(Configuration):
     # Cloud container for FAIR records
     cc_for_fair: str = "expidite-fair"
 
+    # Cloud storage container for system test results
+    cc_for_system_test: str = "expidite-system-test"
+
     # Frequency of sending device health heart beat
     heart_beat_frequency: int = 60 * 10
 

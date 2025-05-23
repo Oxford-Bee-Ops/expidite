@@ -18,6 +18,7 @@ import cv2
 import numpy as np
 import pandas as pd
 
+from expidite_rpi.core import api, file_naming
 from expidite_rpi.core import configuration as root_cfg
 from expidite_rpi.core.cloud_connector import CloudConnector, LocalCloudConnector
 from expidite_rpi.core.device_config_objects import DeviceCfg
@@ -208,6 +209,24 @@ class RpiEmulator():
         df = pd.read_csv(file, skip_blank_lines=True)
         
         return df
+
+    def record_system_test_run(self,
+                               test_name: str,
+                               test_input: dict) -> None:
+        """Record the system test run to the cloud."""
+        # The keys.env cloud_storage_account will be set to the system test account
+        # We record this test run to an st journal in the storage account
+        test_input["test_name"] = test_name
+        test_input["test_time"] = api.utc_to_iso_str()
+        fname = file_naming.get_system_test_filename(test_name)
+        pd.DataFrame([test_input]).to_csv(fname)
+        
+        cc = CloudConnector.get_instance(root_cfg.CloudType.AZURE)
+        cc.append_to_cloud(
+            dst_container=root_cfg.my_device.cc_for_system_test,
+            src_file=fname,
+            delete_src=True)
+
 
     ##################################################################################################
     # Internal implementation functions
