@@ -58,3 +58,16 @@ class Test_trap_cam_device:
                             {"*": 0})
             th.assert_records("expidite-upload", 
                             {"V3_TRAPCAM*": 1})
+            th.assert_records("expidite-system-records", 
+                            {"V3_SCORE": 1, "V3_SCORP": 1, "V3_HEART": 1, "V3_WARNING": 0})
+            score_df = th.get_journal_as_df("expidite-system-records", "V3_SCORE*")
+            # Groupby observed_type_id
+            grouped_df = score_df.groupby("observed_type_id").agg(
+                {
+                    "count": "sum",
+                }
+            )
+            assert len(grouped_df) > 0, "No records found in the score datastream"
+            # Assert that the count of RPICAM is 1
+            assert grouped_df.loc["RPICAM", "count"] == 1, "RPICAM count is not 1"
+            assert grouped_df.loc["TRAPCAM", "count"] == 1, "RPICAM count is not 1"
