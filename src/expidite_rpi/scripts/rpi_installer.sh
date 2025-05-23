@@ -293,12 +293,14 @@ install_user_code() {
     ###############################################################################################################
     if [ "$install_type" == "system_test" ]; then
         # On system test installations, we want the test code as well, so we run pip install .[dev]
-        cd "$HOME/$venv_dir/src/$project_name"
-        if [ -d "$HOME/$venv_dir/src/$project_name/.git" ]; then
+        project_dir=$("$HOME/$venv_dir/src/$project_name")
+        mkdir -p "$project_dir"
+        cd "$project_dir"
+        if [ -d "$project_dir/.git" ]; then
             # Delete the .git directory to avoid issues with git clone
-            rm -rf "$HOME/$venv_dir/src/$project_name/.git"
+            rm -rf "$project_dir/.git"
         fi
-        git clone --depth 1 --branch "$my_git_branch" "git@${my_git_repo_url}" "$HOME/$venv_dir/src/$project_name"
+        git clone --depth 1 --branch "$my_git_branch" "git@${my_git_repo_url}" "$project_dir"
         pip install .[dev] || { echo "Failed to install system test code"; }
         cd "$HOME/.expidite" 
     else
