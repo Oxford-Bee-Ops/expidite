@@ -1,6 +1,7 @@
 from datetime import datetime, timedelta
 
 import pytest
+
 from expidite_rpi.core import api, file_naming
 from expidite_rpi.core import configuration as root_cfg
 from expidite_rpi.core.dp_tree import DPtree
@@ -16,7 +17,7 @@ root_cfg.TEST_MODE = root_cfg.MODE.TEST
 
 class Test_datastream:
 
-    @pytest.mark.quick
+    @pytest.mark.unittest
     def test_file_naming(self) -> None:
         my_example_dptree: DPtree = my_fleet_config.create_example_device()[0]
         stream = my_example_dptree.sensor.get_stream(EXAMPLE_FILE_STREAM_INDEX)
@@ -42,7 +43,7 @@ class Test_datastream:
         assert fields[api.RECORD_ID.SUFFIX.value] == output_format.value
 
 
-    @pytest.mark.quick
+    @pytest.mark.unittest
     def test_id_parsing(self) -> None:
         device_id = "d01111111111"
         type_id = "test"

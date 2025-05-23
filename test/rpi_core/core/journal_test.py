@@ -2,6 +2,7 @@ import os
 
 import pandas as pd
 import pytest
+
 from expidite_rpi.core import configuration as root_cfg
 from expidite_rpi.utils.journal import Journal
 
@@ -10,7 +11,7 @@ root_cfg.TEST_MODE = root_cfg.MODE.TEST
 
 
 class Test_journal:
-    @pytest.mark.quick
+    @pytest.mark.unittest
     def test_journal_basics(self) -> None:
         tmp_dir = root_cfg.TMP_DIR
         test_file = tmp_dir.joinpath("test.csv")
@@ -66,7 +67,7 @@ class Test_journal:
         j.delete()
         assert not test_file.exists()
 
-    @pytest.mark.quick
+    @pytest.mark.unittest
     def test_journal_existing(self) -> None:
         tmp_dir = root_cfg.TMP_DIR
         test_file = tmp_dir.joinpath("test.csv")

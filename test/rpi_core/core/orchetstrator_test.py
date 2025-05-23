@@ -3,6 +3,7 @@ from threading import Thread
 from time import sleep
 
 import pytest
+
 from expidite_rpi.core import api, edge_orchestrator
 from expidite_rpi.core import configuration as root_cfg
 from expidite_rpi.core.edge_orchestrator import EdgeOrchestrator
@@ -15,7 +16,7 @@ logger = root_cfg.setup_logger("expidite", level=logging.DEBUG)
 root_cfg.TEST_MODE = root_cfg.MODE.TEST
 
 class Test_Orchestrator:
-    @pytest.mark.quick
+    @pytest.mark.unittest
     def test_RpiCore_status(self) -> None:
         sc = RpiCore()
         sc.configure(INVENTORY)
@@ -24,7 +25,7 @@ class Test_Orchestrator:
         assert message is not None
 
 
-    @pytest.mark.quick
+    @pytest.mark.unittest
     def test_Orchestrator(self) -> None:
         with rpi_emulator.RpiEmulator.get_instance() as th:
             # Mock the timers in the inventory for faster testing

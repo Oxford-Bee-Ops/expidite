@@ -52,6 +52,7 @@ ALL_RECORD_ID_FIELDS = [*REQD_RECORD_ID_FIELDS,
 ############################################################
 class INSTALL_TYPE(Enum):
     RPI_SENSOR = "rpi_sensor"  # Sensor installation
+    SYSTEM_TEST = "system_test"  # System test installation
     ETL = "etl"  # ETL installation
     NOT_SET = "NOT_SET"  # Invalid but used to declare the SensorCfg object
 

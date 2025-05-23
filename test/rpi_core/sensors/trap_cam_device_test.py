@@ -1,6 +1,7 @@
 from time import sleep
 
 import pytest
+
 from expidite_rpi.core import configuration as root_cfg
 from expidite_rpi.core.device_config_objects import DeviceCfg
 from expidite_rpi.rpi_core import RpiCore
@@ -22,7 +23,7 @@ INVENTORY: list[DeviceCfg] = [
 
 class Test_trap_cam_device:
 
-    @pytest.mark.quick
+    @pytest.mark.unittest
     def test_trap_cam_device(self):
 
         with RpiEmulator.get_instance() as th:

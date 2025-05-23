@@ -24,17 +24,17 @@ except importlib.metadata.PackageNotFoundError:
 
 # Optionally, define an explicit __all__ to control what gets imported with "from rpi.core import *"
 __all__ = [
-    "api",
-    "configuration",
+    "DPtree",
     "DataProcessor",
     "DataProcessorCfg",
-    "DPtree",
     "DeviceCfg",
-    "file_naming",
+    "RpiCore",
     "Sensor",
     "SensorCfg",
-    "RpiCore",
-    "rpi_emulator",
     "Stream",
     "WifiClient",
+    "api",
+    "configuration",
+    "file_naming",
+    "rpi_emulator",
 ]

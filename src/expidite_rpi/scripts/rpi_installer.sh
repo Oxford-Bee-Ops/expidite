@@ -279,7 +279,7 @@ install_user_code() {
 
     ##############################################
     # Do the Git clone
-    ###############################################
+    ##############################################
     # [Re-]install the latest version of the user's code in the virtual environment
     # Extract the project name from the URL
     project_name=$(git_project_name "$my_git_repo_url")
@@ -291,7 +291,20 @@ install_user_code() {
     # We don't return exit code 1 if the install fails, because we want to continue with the rest of the script
     # and this can happen due to transient network issues causing github.com name resolution to fail.
     ###############################################################################################################
-    pip install "git+ssh://git@$my_git_repo_url@$my_git_branch" || { echo "Failed to install $my_git_repo_url@$my_git_branch"; }    
+    if [ "$install_type" == "system_test" ]; then
+        # On system test installations, we want the test code as well, so we run pip install .[dev]
+        cd "$HOME/$venv_dir/src/$project_name"
+        if [ -d "$HOME/$venv_dir/src/$project_name/.git" ]; then
+            # Delete the .git directory to avoid issues with git clone
+            rm -rf "$HOME/$venv_dir/src/$project_name/.git"
+        fi
+        git clone --depth 1 --branch "$my_git_branch" "git@${my_git_repo_url}" "$HOME/$venv_dir/src/$project_name"
+        pip install .[dev] || { echo "Failed to install system test code"; }
+        cd "$HOME/.expidite" 
+    else
+        pip install "git+ssh://git@$my_git_repo_url@$my_git_branch" || { echo "Failed to install $my_git_repo_url@$my_git_branch"; }    
+    fi
+    
     updated_version=$(pip show "$project_name" | grep Version)
     echo "User's code installed successfully. Now version: $updated_version"
 
@@ -304,6 +317,7 @@ install_user_code() {
         # Set a flag to indicate that a reboot is required
         touch "$HOME/.expidite/flags/reboot_required"
     fi
+
 }
 
 # Install the Uncomplicated Firewall and set appropriate rules.
@@ -469,7 +483,8 @@ function alias_bcli() {
 # Autostart if requested in system.cfg
 ################################################
 function auto_start_if_requested() {
-    if [ "$auto_start" == "Yes" ]; then
+    # We make this conditional on both auto_start and this not being a system_test install
+    if [ "$auto_start" == "Yes" ] && [ "$install_type" != "system_test" ]; then
         echo "Auto-starting Expidite RpiCore..."
         
         # Check the script is not already running
@@ -480,7 +495,7 @@ function auto_start_if_requested() {
         echo "Calling $my_start_script in $HOME/$venv_dir"
         nohup python -m $my_start_script 2>&1 | /usr/bin/logger -t EXPIDITE &
     else
-        echo "Auto-start is not enabled in system.cfg."
+        echo "Auto-start is not enabled in system.cfg or not appropriate to this install type."
     fi
 }
 
@@ -511,6 +526,18 @@ function make_persistent() {
         echo "Script added to crontab to run on reboot and every night at 2am."
         (crontab -l 2>/dev/null; echo "@reboot $rpi_installer_cmd") | crontab -
         (crontab -l 2>/dev/null; echo "0 2 * * * $rpi_cmd_os_update") | crontab -
+    fi
+
+    # If this is a system_test install, we add an additional line to crontab to run my_start_script
+    # every night at 4am
+    if [ "$install_type" == "system_test" ]; then
+        # Delete and re-add any lines containing $my_start_script from crontab
+        crontab -l | grep -v "$my_start_script" | crontab -        
+        echo "Script added to crontab to run $my_start_script every night at 4am."
+        # Activate the virtual environment and run the script
+        # We use nohup to run the script in the background and redirect output to logger
+        (crontab -l 2>/dev/null; \
+        echo "0 4 * * * $HOME/$venv_dir/bin/python -m $my_start_script 2>&1 | /usr/bin/logger -t EXPIDITE") | crontab -
     fi
 }
 

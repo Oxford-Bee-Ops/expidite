@@ -1,13 +1,14 @@
 import logging
 
 import pytest
+
 from expidite_rpi.core import configuration as root_cfg
 from expidite_rpi.utils import rpi_emulator
 
 logger = root_cfg.setup_logger("expidite", logging.DEBUG)
 
 class Test_rpi_emulator:
-    @pytest.mark.quick
+    @pytest.mark.unittest
     def test_rpi_emulator(self) -> None:
         with rpi_emulator.RpiEmulator.get_instance() as th:
             # Limit the RpiCore to 1 recording so we can easily validate the results

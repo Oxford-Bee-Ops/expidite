@@ -1,6 +1,7 @@
 from time import sleep
 
 import pytest
+
 from expidite_rpi.core import configuration as root_cfg
 from expidite_rpi.example import my_fleet_config
 from expidite_rpi.rpi_core import RpiCore
@@ -9,7 +10,7 @@ from expidite_rpi.utils.rpi_emulator import RpiEmulator
 logger = root_cfg.setup_logger("expidite")
 
 class Test_SensorFactory:
-    @pytest.mark.quick
+    @pytest.mark.unittest
     def test_RpiCore_status(self) -> None:
         sc = RpiCore()
         sc.configure(my_fleet_config.INVENTORY)
@@ -17,7 +18,7 @@ class Test_SensorFactory:
         logger.info(message)
         assert message is not None
 
-    @pytest.mark.quick
+    @pytest.mark.unittest
     def test_RpiCore_cycle(self) -> None:
         # Standard flow
         # We reset cfg.my_device_id to override the computers mac_address

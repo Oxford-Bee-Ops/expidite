@@ -104,6 +104,11 @@ class DeviceCfg(Configuration):
     # These are the networks that the device will connect to if they are available.
     wifi_clients: list[WifiClient] = field(default_factory=list)
 
+    # List the tests that a system test installation should run.
+    # This will be passed to pytest to identify and invoke the tests.
+    # This is parameter is passed as the -k option in pytest.
+    tests_to_run: list[str] = field(default_factory=list)
+
 
 ############################################################################################
 # Define the two .env files that hold the keys and the RpiCore configuration class ref
@@ -135,17 +140,33 @@ class SystemCfg(BaseSettings):
     ############################################################
     # The URL for the Git repo with the user's config and custom sensor code.
     my_git_repo_url: str = FAILED_TO_LOAD
+    # The name of the branch in the Git repo to use.
     my_git_branch: str = FAILED_TO_LOAD
+    # The name of the SSH key file in the .expidite directory that 
+    # gives access to the Git repo if it is private.
+    # This can field can be left at FAILED_TO_LOAD if the repo is public.
     my_git_ssh_private_key_file: str = FAILED_TO_LOAD
+    # The fully-qualified object name of the fleet config inventory.
+    # eg "my_project.my_fleet_config.INVENTORY"
     my_fleet_config: str = FAILED_TO_LOAD
+    # The fully-qualified module name to call to start the device.
+    # eg "my_project.my_start_script"
+    # For RPI_SENSOR installations, this is called on reboot or when expidite is started via bcli.
+    # For SYSTEM_TEST installations, this is called at a scheduled time or via bcli.
     my_start_script: str = FAILED_TO_LOAD
+
     ############################################################
     # Default-able settings
     ############################################################
+    # Install type is one of api.INSTALL_TYPE:
+    #   - api.INSTALL_TYPE.RPI_SENSOR for a normal sensor installation
+    #   - api.INSTALL_TYPE.SYSTEM_TEST to use the device as a system test device
+    #   - api.INSTALL_TYPE.ETL to use the device as an ETL device
     install_type: api.INSTALL_TYPE = api.INSTALL_TYPE.RPI_SENSOR
     # Logging and storage settings
     enable_volatile_logs: str ="Yes"
     # Do you want RpiCore to start automatically after running the rpi_installer.sh script?
+    # Anything other than "Yes" will disable auto-start.
     auto_start: str ="Yes"
     # Enable the UFW firewall
     enable_firewall: str = "Yes"
