@@ -323,10 +323,6 @@ class EdgeOrchestrator:
         jp.flush_journals()
         jp.stop()
         # jp.stop will also stop the cloud connector threadpool
-        # Clean up and exit
-        cc = CloudConnector.get_instance(type=root_cfg.CloudType.AZURE)
-        assert isinstance(cc, AsyncCloudConnector)
-        cc.shutdown()
 
         # Clear our thread lists
         self.reset_orchestrator_state()

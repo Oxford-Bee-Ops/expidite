@@ -7,7 +7,7 @@ import pandas as pd
 
 from expidite_rpi.core import api
 from expidite_rpi.core import configuration as root_cfg
-from expidite_rpi.core.cloud_connector import CloudConnector
+from expidite_rpi.core.cloud_connector import CloudConnector, AsyncCloudConnector
 from expidite_rpi.utils.journal import Journal
 
 logger = root_cfg.setup_logger("expidite")
@@ -57,6 +57,9 @@ class _CloudJournalManager:
     def stop(self) -> None:
         self._stop_requested.set()
         self._sync_timer.cancel()
+        cc = CloudConnector.get_instance(root_cfg.CLOUD_TYPE)
+        if isinstance(cc, AsyncCloudConnector):
+            cc.shutdown()
 
     def add(self, journal: "CloudJournal", data: list[dict]) -> None:
         """Add data to the local data queue
