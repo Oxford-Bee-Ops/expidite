@@ -6,6 +6,7 @@ from pathlib import Path
 from queue import Queue
 from time import sleep
 from typing import Optional
+from threading import Event
 
 from azure.storage.blob import BlobClient, BlobLeaseClient, ContainerClient
 
@@ -716,26 +717,20 @@ class AsyncCloudConnector(CloudConnector):
     def __init__(self) -> None:
         logger.debug("Creating AsyncCloudConnector instance")
         CloudConnector.__init__(self)
-        self._stop_requested = False
+        self._stop_requested = Event()
         self._upload_queue: Queue = Queue()
         self._worker_pool: ThreadPoolExecutor = ThreadPoolExecutor(max_workers=6)
         # Start the worker thread to process the upload queue
         self._worker_pool.submit(self.do_work)
 
-    def __del__(self) -> None:
-        self._stop_requested = True
-        # Flush the queue by putting an empty object on it
-        if self._upload_queue is not None:
-            self._upload_queue.put(None)
-        if self._worker_pool is not None:
-            self._worker_pool.shutdown(cancel_futures=True)
-
     def shutdown(self):
         """ Method to support unit tests - shutdown the worker pool """
-        self._stop_requested = True
+        self._stop_requested.set()
         # Flush the queue by putting an empty object on it
-        self._upload_queue.put(None)
-        self._worker_pool.shutdown(cancel_futures=True)
+        if hasattr(self, "_upload_queue") and self._upload_queue is not None:
+            self._upload_queue.put(None)
+        if hasattr(self, "_worker_pool") and self._worker_pool is not None:
+            self._worker_pool.shutdown(wait=True, cancel_futures=True)
 
     #################################################################################################
     # Public methods
@@ -892,7 +887,7 @@ class AsyncCloudConnector(CloudConnector):
 
     def do_work(self) -> None:
         """Process the upload queue."""
-        while not self._stop_requested:
+        while not self._stop_requested.is_set():
             try:
                 queue_item = self._upload_queue.get(block=True)
 
