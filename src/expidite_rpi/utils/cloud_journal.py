@@ -7,7 +7,7 @@ import pandas as pd
 
 from expidite_rpi.core import api
 from expidite_rpi.core import configuration as root_cfg
-from expidite_rpi.core.cloud_connector import CloudConnector, AsyncCloudConnector
+from expidite_rpi.core.cloud_connector import AsyncCloudConnector, CloudConnector
 from expidite_rpi.utils.journal import Journal
 
 logger = root_cfg.setup_logger("expidite")

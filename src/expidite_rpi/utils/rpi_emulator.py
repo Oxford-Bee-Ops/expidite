@@ -11,9 +11,8 @@ import shutil
 import time
 from dataclasses import dataclass
 from pathlib import Path
-from time import sleep
-from typing import Optional
 from threading import Event
+from typing import Optional
 
 import cv2
 import numpy as np

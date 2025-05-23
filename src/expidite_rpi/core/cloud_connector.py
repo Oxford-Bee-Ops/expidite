@@ -4,9 +4,9 @@ from dataclasses import dataclass
 from datetime import datetime, timezone
 from pathlib import Path
 from queue import Queue
+from threading import Event
 from time import sleep
 from typing import Optional
-from threading import Event
 
 from azure.storage.blob import BlobClient, BlobLeaseClient, ContainerClient
 

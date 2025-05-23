@@ -9,7 +9,6 @@ from typing import Callable, Optional
 
 from expidite_rpi.core import api
 from expidite_rpi.core import configuration as root_cfg
-from expidite_rpi.core.cloud_connector import AsyncCloudConnector, CloudConnector
 from expidite_rpi.core.device_health import DeviceHealth
 from expidite_rpi.core.device_manager import DeviceManager
 from expidite_rpi.core.dp_node import DPnode

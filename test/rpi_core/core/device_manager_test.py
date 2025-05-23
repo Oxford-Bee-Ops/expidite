@@ -1,7 +1,6 @@
 import pytest
-from expidite_rpi.core import device_manager
-
 from expidite_rpi.core import configuration as root_cfg
+from expidite_rpi.core import device_manager
 
 logger = root_cfg.setup_logger("expidite")
 

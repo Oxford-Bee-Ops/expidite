@@ -5,8 +5,8 @@ from expidite_rpi.core import configuration as root_cfg
 from expidite_rpi.core.device_config_objects import DeviceCfg
 from expidite_rpi.rpi_core import RpiCore
 from expidite_rpi.sensors import device_recipes
-from expidite_rpi.utils.rpi_emulator import RpiEmulator, RpiTestRecording
 from expidite_rpi.sensors.sensor_rpicam_vid import RPICAM_DATA_TYPE_ID
+from expidite_rpi.utils.rpi_emulator import RpiEmulator, RpiTestRecording
 
 logger = root_cfg.setup_logger("expidite")
 
