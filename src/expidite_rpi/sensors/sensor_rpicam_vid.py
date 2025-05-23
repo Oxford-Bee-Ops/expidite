@@ -42,6 +42,7 @@ DEFAULT_RPICAM_SENSOR_CFG = RpicamSensorCfg(
             index=RPICAM_STREAM_INDEX,
             format=api.FORMAT.MP4,
             cloud_container="expidite-upload",
+            sample_probability="0.0",
         )
     ],
     rpicam_cmd = "rpicam-vid --framerate 15 --width 640 --height 480 -o FILENAME -t 5000",

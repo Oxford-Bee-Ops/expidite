@@ -26,7 +26,7 @@ class Stream:
     # "DF" data is uploaded to the DeviceCfg.cc_for_journals container.
     cloud_container: Optional[str] = None
 
-    # Some sources support saving of sample raw recordings to the archive.
+    # Some sources support saving of recordings to the archive.
     # This string is interpreted by the Sensor or DataProcessor to determine the frequency of 
     # raw data sampling. The format of this string is specific to the Sensor or DataProcessor.
     # The default implementation interprets this string as a float sampling probability (0.0-1.0)

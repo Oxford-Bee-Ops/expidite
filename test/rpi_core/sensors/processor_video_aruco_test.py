@@ -2,7 +2,6 @@ import logging
 import sys
 
 import pytest
-
 from expidite_rpi.core import configuration as root_cfg
 
 logger = root_cfg.setup_logger("expidite")

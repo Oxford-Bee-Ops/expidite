@@ -1,7 +1,6 @@
 from time import sleep
 
 import pytest
-
 from expidite_rpi.core import configuration as root_cfg
 from expidite_rpi.example import my_fleet_config
 from expidite_rpi.rpi_core import RpiCore

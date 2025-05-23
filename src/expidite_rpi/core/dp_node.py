@@ -477,32 +477,29 @@ class DPnode():
                 new_fname = file_naming.increment_filename(new_fname)
             new_fname = src_file.rename(new_fname)
 
+        # We save stream recordings to the cloud based on the sample_probability defined in the stream.
         if self.save_sample(stream.sample_probability) and stream.cloud_container is not None:
-            # Generate a *copy* of the raw sample file because the original is in the Processing directory
-            # and may soon by picked up by a DataProcessor.
-            # The filename is the same as the recording, but saved to the upload directory
-            if new_fname.parent == root_cfg.EDGE_UPLOAD_DIR:
-                logger.warning(f"All recordings are being saved, but we're also saving samples."
-                               f" Config error in {self.get_data_id(stream_index)} config?")
-                
-            sample_fname = file_naming.increment_filename(root_cfg.EDGE_UPLOAD_DIR / new_fname.name)
-            shutil.copy(new_fname, sample_fname)
-            self._get_cc().upload_to_container(stream.cloud_container,
-                                                [sample_fname], 
-                                                delete_src=True,
-                                                storage_tier=stream.storage_tier)
-            logger.info(f"Raw sample saved to {stream.cloud_container}; "
+            logger.info(f"Saving sample {new_fname.name} to {stream.cloud_container}; "
                         f"sample_prob={stream.sample_probability}")
 
-
-        # If the dst_dir is EDGE_UPLOAD_DIR, we can use direct upload to the cloud
-        if dst_dir == root_cfg.EDGE_UPLOAD_DIR:
-            stream = self.get_stream(stream_index)
-            assert stream.cloud_container is not None and stream.storage_tier is not None
-            self._get_cc().upload_to_container(stream.cloud_container, 
-                                                [new_fname], 
-                                                delete_src=True,
-                                                storage_tier=stream.storage_tier)
+            if dst_dir == root_cfg.EDGE_UPLOAD_DIR:
+                # If the file in EDGE_UPLOAD_DIR, it is no longer being touched by any other process.
+                stream = self.get_stream(stream_index)
+                assert stream.cloud_container is not None and stream.storage_tier is not None
+                self._get_cc().upload_to_container(stream.cloud_container, 
+                                                    [new_fname], 
+                                                    delete_src=True,
+                                                    storage_tier=stream.storage_tier)
+            else:
+                # If it is not in EDGE_UPLOAD, generate a *copy* of the raw sample file 
+                # because the original is in the Processing directory and may soon by picked up by a DP.
+                # The filename is the same as the recording, but saved to the upload directory
+                sample_fname = file_naming.increment_filename(root_cfg.EDGE_UPLOAD_DIR / new_fname.name)
+                shutil.copy(new_fname, sample_fname)
+                self._get_cc().upload_to_container(stream.cloud_container,
+                                                    [sample_fname], 
+                                                    delete_src=True,
+                                                    storage_tier=stream.storage_tier)
 
         # Track the number of measurements recorded
         with self._stats_lock:
