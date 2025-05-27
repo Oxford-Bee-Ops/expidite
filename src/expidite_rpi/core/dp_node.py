@@ -503,6 +503,13 @@ class DPnode():
                 new_fname = file_naming.increment_filename(new_fname)
             src_file.rename(new_fname)
 
+        # If we need it, src_file should have been moved to the new_fname or sample_fname.
+        # If it still exists, we delete it.
+        if src_file.exists():
+            assert (not save_for_dp) and (not save_sample), \
+                f"src_file {src_file.name} should not exist if save_for_dp or save_sample is True"
+            src_file.unlink()
+
         # Track the number of measurements recorded
         if save_for_dp or save_sample:
             with self._stats_lock:
