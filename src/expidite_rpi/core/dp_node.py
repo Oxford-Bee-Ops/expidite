@@ -501,14 +501,14 @@ class DPnode():
             if new_fname.exists():
                 # Increment the new_fname to avoid overwriting existing files
                 new_fname = file_naming.increment_filename(new_fname)
-            new_fname = src_file.rename(new_fname)
+            src_file.rename(new_fname)
 
         # Track the number of measurements recorded
         if save_for_dp or save_sample:
             with self._stats_lock:
                 self._dpnode_score_stats.setdefault(stream.type_id, DPnodeStat()).record(1)
 
-        logger.debug(f"Saved_for_dp:{save_for_dp}; save_sample:{save_sample}; "
+        logger.info(f"Saved_for_dp:{save_for_dp}; save_sample:{save_sample}; "
                      f"src={src_file.name}; final={new_fname.name}")
 
         return new_fname
