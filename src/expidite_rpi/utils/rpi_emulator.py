@@ -11,13 +11,14 @@ import shutil
 import time
 from dataclasses import dataclass
 from pathlib import Path
-from time import sleep
+from threading import Event
 from typing import Optional
 
 import cv2
 import numpy as np
 import pandas as pd
 
+from expidite_rpi.core import api, file_naming
 from expidite_rpi.core import configuration as root_cfg
 from expidite_rpi.core.cloud_connector import CloudConnector, LocalCloudConnector
 from expidite_rpi.core.device_config_objects import DeviceCfg
@@ -32,18 +33,27 @@ class RpiTestRecording():
 class RpiEmulator():
     """The test harness enables thorough testing of the sensor code without RPi hardware."""
     _instance = None
+    _is_available = Event()
     ONE_OR_MORE = -1
+
+    def __init__(self) -> None:
+        self.recordings: list[RpiTestRecording] = []
 
     @staticmethod
     def get_instance() -> "RpiEmulator":
         """Get the singleton instance of RpiEmulator."""
         if RpiEmulator._instance is None:
             RpiEmulator._instance = RpiEmulator()
+            RpiEmulator._is_available.set()
         return RpiEmulator._instance
 
     def __enter__(self) -> "RpiEmulator":
         """Enter the context manager."""
         logger.info("Entering RpiEmulator context.")
+        # We want to avoid overlapping tests so we wait until the previous test has finished
+        while not RpiEmulator._is_available.is_set():
+            RpiEmulator._is_available.wait()
+        RpiEmulator._is_available.clear()
         self.previous_recordings_index: int = 0
         self.recordings_saved: dict[str, int] = {}
         self.recording_cap: int = -1
@@ -60,13 +70,19 @@ class RpiEmulator():
         root_cfg.JOURNAL_SYNC_FREQUENCY = 1
         root_cfg.WATCHDOG_FREQUENCY = 1
 
+        # Ensure the processing directory is empty
+        root_cfg.EDGE_PROCESSING_DIR.mkdir(parents=True, exist_ok=True)
+        for file in root_cfg.EDGE_PROCESSING_DIR.glob("*"):
+            if file.is_file():
+                file.unlink()
+
         return self
 
     def __exit__(self, exc_type, exc_value, traceback) -> None:
         """Exit the context manager."""
         logger.info("Exiting RpiEmulator context.")
         self.cc.clear_local_cloud()
-        sleep(1)
+        RpiEmulator._is_available.set()
 
     def mock_timers(self, inventory: list[DeviceCfg]) -> list[DeviceCfg]:
         for device in inventory:
@@ -122,6 +138,25 @@ class RpiEmulator():
                 return True
         return False
 
+
+    def fix_recording_device_id(self, fname: Path) -> Path:
+        """We use real recordings in system test which means they have the wrong
+        device ID.  We want to replace the device_id with that of this device otherwise
+        expidite won't find the recordings in the EDGE_PROCESSING_DIR.
+        """
+        # Get the current device ID
+        current_device_id = root_cfg.my_device.device_id
+        
+        # The device id is always the 3rd part of the filename
+        parts = fname.name.split("_")
+        if len(parts) < 3:
+            raise ValueError(f"Filename {fname} does not have enough parts to contain a device ID.")
+        
+        # Replace the device ID with the current device ID
+        parts[2] = current_device_id
+        new_fname = fname.parent / "_".join(parts)
+        
+        return new_fname
 
     def assert_records(self, 
                        container: str, 
@@ -209,6 +244,24 @@ class RpiEmulator():
         
         return df
 
+    def record_system_test_run(self,
+                               test_name: str,
+                               test_input: dict) -> None:
+        """Record the system test run to the cloud."""
+        # The keys.env cloud_storage_account will be set to the system test account
+        # We record this test run to an st journal in the storage account
+        test_input["test_name"] = test_name
+        test_input["test_time"] = api.utc_to_iso_str()
+        fname = file_naming.get_system_test_filename(test_name)
+        pd.DataFrame([test_input]).to_csv(fname)
+        
+        cc = CloudConnector.get_instance(root_cfg.CloudType.AZURE)
+        cc.append_to_cloud(
+            dst_container=root_cfg.my_device.cc_for_system_test,
+            src_file=fname,
+            delete_src=True)
+
+
     ##################################################################################################
     # Internal implementation functions
     ##################################################################################################
@@ -224,7 +277,7 @@ class RpiEmulator():
         -------
         Path | None
             The path to the recording file if a match is found, None otherwise.
-        """
+        """        
         for recording in self.recordings:
             if cmd.startswith(recording.cmd_prefix):
                 return recording.recordings

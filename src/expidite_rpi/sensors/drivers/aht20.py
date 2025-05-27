@@ -6,9 +6,24 @@ This is free and unencumbered software released into the public domain.
 For more information, please refer to <https://unlicense.org>
 """
 
+import sys
 import time
+import types
 
 from expidite_rpi.sensors.drivers.crc8_helper import AHT20_crc8_check
+
+# SMBus is not properly supported on Windows, so we need to mock it
+# for testing purposes. This prevents "ModuleNotFoundError: No module named 'fcntl'".
+if sys.platform == "win32":
+    class MockSMBus:
+        def __init__(self, *args, **kwargs): pass
+        def write_i2c_block_data(self, *args, **kwargs): pass
+        def read_i2c_block_data(self, *args, **kwargs): return [0]*7
+
+    mock_smbus2 = types.ModuleType("smbus2")
+    mock_smbus2.SMBus = MockSMBus  # type: ignore
+    sys.modules['smbus2'] = mock_smbus2
+    
 from smbus2 import SMBus
 
 

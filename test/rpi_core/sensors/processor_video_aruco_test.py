@@ -13,8 +13,9 @@ class Test_video_aruco_processor:
     handler.setLevel(logging.DEBUG)
     logger.addHandler(handler)
 
-    @pytest.mark.quick
+    @pytest.mark.unittest
     def test_aruco_processor_basic(self):
+        logger.info("Run test_aruco_processor_basic test")
         pass
         #file = (
         #    root_cfg.CODE_DIR / "rpi_core" 

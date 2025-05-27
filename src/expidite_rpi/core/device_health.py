@@ -187,7 +187,8 @@ class DeviceHealth(Sensor):
             logs = get_logs(since=since_time, min_priority=4)
 
             for log in logs:
-                if api.RAISE_WARN_TAG in log["message"]:
+                if str(log["message"]).startswith(api.RAISE_WARN_TAG):
+                    log["priority"] = int(log.get("priority", 4)) - 1
                     self.log(WARNING_STREAM_INDEX, log)
                 elif log["priority"] <= 3:
                     self.log(WARNING_STREAM_INDEX, log)
@@ -302,12 +303,9 @@ class DeviceHealth(Sensor):
                         logger.error(root_cfg.RAISE_WARN() + "Memory usage >95%, rebooting")
                         utils.run_cmd("sudo reboot", ignore_errors=True)
 
-            # Get the version
-            try:
-                from expidite_rpi import __version__
-                rpi_core_version = __version__
-            except Exception:
-                rpi_core_version = "unknown"
+            # Get the expidite version and user code version from the files
+            # Stored in .expidite/user_code_version and .expidite/expidite_code_version
+            expidite_version, user_code_version = root_cfg.get_version_info()
 
             health = {
                 "boot_time": api.utc_to_iso_str(psutil.boot_time()),
@@ -332,7 +330,8 @@ class DeviceHealth(Sensor):
                 "ip_address": str(ip_address),
                 "power_status": str(get_throttled_output),
                 "process_list": process_list_str,
-                "expidite_version": rpi_core_version,
+                "expidite_version": expidite_version,
+                "user_code_version": user_code_version,
             }
 
         except Exception as e:

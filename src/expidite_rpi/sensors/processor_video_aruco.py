@@ -77,6 +77,7 @@ DEFAULT_AUROCO_PROCESSOR_CFG = ArucoProcessorCfg(
             index=ARUCO_MARKED_UP_VIDEOS_STREAM_INDEX,
             format=api.FORMAT.MP4,
             cloud_container="expidite-upload",
+            sample_probability="0.1",
         )
     ],
     aruco_dict_name = "DICT_4X4_50",

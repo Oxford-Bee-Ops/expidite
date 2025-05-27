@@ -100,6 +100,7 @@ class Rule4_cloud_container_specified(ValidationRule):
         return True, ""
 
 # Rule5: check that all cloud_containers exist in the blobstore using cloud_connector.container_exists()
+# If they don't exist, create them.
 class Rule5_cloud_container_exists(ValidationRule):
     def validate(self, dpnode: DPnode) -> tuple[bool, str]:
         cc = CloudConnector.get_instance(root_cfg.CLOUD_TYPE)
@@ -108,12 +109,15 @@ class Rule5_cloud_container_exists(ValidationRule):
             for stream in outputs:
                 if stream.format not in api.DATA_FORMATS:
                     # Check the Datastream's cloud_container exists
-                    if (stream.cloud_container is not None and 
-                        not cc.container_exists(stream.cloud_container)):
-                        return False, (
-                            f"cloud_container {stream.cloud_container} does not exist in "
-                            f"{dpnode}"
-                        )
+                    if stream.cloud_container is not None:
+                        try:
+                            # Create_container checks if the container exists
+                            # and only creates it if it doesn't
+                            cc.create_container(stream.cloud_container)
+                        except Exception as e:
+                            return False, (
+                                f"Failed to create cloud container {stream.cloud_container} in {dpnode}: {e}"
+                            )
         return True, ""
 
 # Rule 6: any datastream of type log, csv or df must have output fields set

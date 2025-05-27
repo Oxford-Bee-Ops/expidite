@@ -13,7 +13,7 @@ logger = root_cfg.setup_logger("expidite")
 # Datastreams produced by the RpiCore system
 #############################################################################################################
 
-# SCORE - DatastreamType for recording sample count / duration from the data pipeline
+# SCORE - DatastreamType for recording sample counts from the data pipeline
 SCORE_FIELDS = [
     "observed_type_id",
     "observed_sensor_index",

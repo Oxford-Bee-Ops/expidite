@@ -77,6 +77,7 @@ class TestCloudConnector:
 
     def set_of_cc_tests(self, cc: CloudConnector) -> None:
         """Standard set of actions that should work on any type of CloudConnector."""
+        logger.info("Running standard set of CloudConnector tests")
         # Test upload with a dummy file and container name
         # Create a temporary file for testing
         src_file = file_naming.get_temporary_filename(api.FORMAT.TXT)
@@ -143,5 +144,7 @@ class TestCloudConnector:
         # Delete the test file in the cloud and check it is gone
         cc.delete(dst_container, src_file.name)
         assert not cc.exists(dst_container, src_file.name), "File still exists after delete"
+
+        sleep(1)
 
 

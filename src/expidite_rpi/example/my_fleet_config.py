@@ -76,6 +76,11 @@ INVENTORY: list[DeviceCfg] = [
         notes="Using Dummy as an all-defaults camera in Experiment A",
         dp_trees_create_method=create_example_device,
         wifi_clients=WIFI_CLIENTS,
+        tags={
+            "Row": "132",
+            "Column": "2",
+            "Location": "Gantry",
+        },
     ),
 ]
 

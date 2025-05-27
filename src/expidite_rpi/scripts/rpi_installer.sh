@@ -228,12 +228,31 @@ install_expidite() {
     updated_version=$(pip show expidite | grep Version)
     echo "Expidite installed successfully.  Now version: $updated_version"
 
+    # We store the updated_version in the flags directory for later use in logging
+    echo "$updated_version" > "$HOME/.expidite/expidite_code_version"
+
     # If the version has changed, we need to set a flag so we reboot at the end of the script
     if [ "$current_version" != "$updated_version" ]; then
         echo "Expidite version has changed from $current_version to $updated_version.  Reboot required."
         # Set a flag to indicate that a reboot is required
         touch "$HOME/.expidite/flags/reboot_required"
     fi
+}
+
+fix_my_git_repo() {
+    # Fix the Git repository URL if we're doing a direct git clone for system test installations
+    # Normal URL format: git@github.com/oxford-bee-ops/expidite.git
+    # SSH URL format:    git@github.com:oxford-bee-ops/expidite.git
+    #
+    # Replace the slash following github.com with a colon
+    # This is required for the git clone command to work with SSH
+    # The colon is required for SSH URLs, but not for HTTPS URLs
+    git_repo_url="$1"
+    if [[ $git_repo_url == *"github.com/"* ]]; then
+        # Replace the slash with a colon
+        git_repo_url=${git_repo_url/github.com/github.com:}
+    fi
+    echo "$git_repo_url"
 }
 
 # Function to install user's code
@@ -258,11 +277,11 @@ install_user_code() {
     chmod 600 "$HOME/.ssh/$my_git_ssh_private_key_file"
 
     # Set the GIT_SSH_COMMAND with timeout and retry options
-    export GIT_SSH_COMMAND="ssh -i $HOME/.ssh/$my_git_ssh_private_key_file -o IdentitiesOnly=yes -o ConnectTimeout=10 -o ConnectionAttempts=5"
+    export GIT_SSH_COMMAND="ssh -v -i $HOME/.ssh/$my_git_ssh_private_key_file -o IdentitiesOnly=yes -o ConnectTimeout=10 -o ConnectionAttempts=2"
 
     # Persist the GIT_SSH_COMMAND in .bashrc if not already present
     if ! grep -qs "export GIT_SSH_COMMAND=" "$HOME/.bashrc"; then
-        echo "export GIT_SSH_COMMAND='ssh -i \$HOME/.ssh/$my_git_ssh_private_key_file -o IdentitiesOnly=yes -o ConnectTimeout=10 -o ConnectionAttempts=5'" >> "$HOME/.bashrc"
+        echo "export GIT_SSH_COMMAND='ssh -v -i \$HOME/.ssh/$my_git_ssh_private_key_file -o IdentitiesOnly=yes -o ConnectTimeout=10 -o ConnectionAttempts=2'" >> "$HOME/.bashrc"
     fi
 
     # Ensure known_hosts exists and add GitHub key if necessary
@@ -276,7 +295,7 @@ install_user_code() {
 
     ##############################################
     # Do the Git clone
-    ###############################################
+    ##############################################
     # [Re-]install the latest version of the user's code in the virtual environment
     # Extract the project name from the URL
     project_name=$(git_project_name "$my_git_repo_url")
@@ -288,16 +307,36 @@ install_user_code() {
     # We don't return exit code 1 if the install fails, because we want to continue with the rest of the script
     # and this can happen due to transient network issues causing github.com name resolution to fail.
     ###############################################################################################################
-    pip install "git+ssh://git@$my_git_repo_url@$my_git_branch" || { echo "Failed to install $my_git_repo_url@$my_git_branch"; }    
+    if [ "$install_type" == "system_test" ]; then
+        # On system test installations, we want the test code as well, so we run pip install .[dev]
+        project_dir="$HOME/$venv_dir/src/$project_name"
+        if [ -d "$project_dir" ]; then
+            # Delete the .git directory to avoid issues with git clone
+            rm -rf "$project_dir"
+        fi
+        mkdir -p "$project_dir"
+        cd "$project_dir"
+        my_git_repo_url=$(fix_my_git_repo "$my_git_repo_url")
+        git clone --depth 1 --branch "$my_git_branch" "git@${my_git_repo_url}" "$project_dir"
+        pip install .[dev] || { echo "Failed to install system test code"; }
+        cd "$HOME/.expidite" 
+    else
+        pip install "git+ssh://git@$my_git_repo_url@$my_git_branch" || { echo "Failed to install $my_git_repo_url@$my_git_branch"; }    
+    fi
+    
     updated_version=$(pip show "$project_name" | grep Version)
     echo "User's code installed successfully. Now version: $updated_version"
-    
+
+    # We store the updated_version in the flags directory for later use in logging
+    echo "$updated_version" > "$HOME/.expidite/user_code_version"
+
     # If the version has changed, we need to set a flag so we reboot at the end of the script
     if [ "$current_version" != "$updated_version" ]; then
         echo "User's code version has changed from $current_version to $updated_version.  Reboot required."
         # Set a flag to indicate that a reboot is required
         touch "$HOME/.expidite/flags/reboot_required"
     fi
+
 }
 
 # Install the Uncomplicated Firewall and set appropriate rules.
@@ -463,7 +502,8 @@ function alias_bcli() {
 # Autostart if requested in system.cfg
 ################################################
 function auto_start_if_requested() {
-    if [ "$auto_start" == "Yes" ]; then
+    # We make this conditional on both auto_start and this not being a system_test install
+    if [ "$auto_start" == "Yes" ] && [ "$install_type" != "system_test" ]; then
         echo "Auto-starting Expidite RpiCore..."
         
         # Check the script is not already running
@@ -474,7 +514,7 @@ function auto_start_if_requested() {
         echo "Calling $my_start_script in $HOME/$venv_dir"
         nohup python -m $my_start_script 2>&1 | /usr/bin/logger -t EXPIDITE &
     else
-        echo "Auto-start is not enabled in system.cfg."
+        echo "Auto-start is not enabled in system.cfg or not appropriate to this install type."
     fi
 }
 
@@ -505,6 +545,18 @@ function make_persistent() {
         echo "Script added to crontab to run on reboot and every night at 2am."
         (crontab -l 2>/dev/null; echo "@reboot $rpi_installer_cmd") | crontab -
         (crontab -l 2>/dev/null; echo "0 2 * * * $rpi_cmd_os_update") | crontab -
+    fi
+
+    # If this is a system_test install, we add an additional line to crontab to run my_start_script
+    # every night at 4am
+    if [ "$install_type" == "system_test" ]; then
+        # Delete and re-add any lines containing $my_start_script from crontab
+        crontab -l | grep -v "$my_start_script" | crontab -        
+        echo "Script added to crontab to run $my_start_script every night at 4am."
+        # Activate the virtual environment and run the script
+        # We use nohup to run the script in the background and redirect output to logger
+        (crontab -l 2>/dev/null; \
+        echo "0 4 * * * $HOME/$venv_dir/bin/python -m $my_start_script 2>&1 | /usr/bin/logger -t EXPIDITE") | crontab -
     fi
 }
 
@@ -554,6 +606,7 @@ create_mount
 set_predictable_network_interface_names
 enable_i2c
 alias_bcli
+set_hostname
 auto_start_if_requested
 make_persistent
 reboot_if_required

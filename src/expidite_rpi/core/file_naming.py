@@ -26,6 +26,7 @@ def create_data_id(device_id: str,
     """Returns a standard, universally unique, identifier for the Datastream"""
     return f"{type_id}_{device_id}_{sensor_index:02d}_{stream_index:02d}"
 
+
 def parse_data_id(data_id: str) -> DATA_ID:
     """Parse a Datastream ID into its components.
 
@@ -131,6 +132,7 @@ def parse_record_filename(fname: Path | str) -> dict:
     logger.debug(f"Parsed fname {fname} to {fields_dict}")
     return fields_dict
 
+
 def get_file_datetime(fname: Path | str) -> datetime:
     """Get the UTC timestamp from the filename."""
     if isinstance(fname, str):
@@ -139,13 +141,13 @@ def get_file_datetime(fname: Path | str) -> datetime:
     fname = fname.stem
 
     # Check that the filename has at least 4 "_"
-    if fname.count("_") < 4:
+    if fname.count("_") < 5:
         logger.warning(f"Invalid filename format - too few _ in {fname}")
         return datetime.min
 
     # Extract the fields from the filename, parsing with the "_" delimiter
     fields = fname.split("_")
-    start_time = api.utc_from_str(fields[4])
+    start_time = api.utc_from_str(fields[5])
     return start_time
     
 
@@ -255,6 +257,7 @@ def get_log_filename() -> Path:
     """Generate a filename for a log file in the upload directory."""
     return root_cfg.EDGE_UPLOAD_DIR / f"V3_{root_cfg.my_device_id}_{api.utc_to_fname_str()}.log"
 
+
 def get_FAIR_filename(sensor_type: api.SENSOR_TYPE, sensor_index: int, suffix: str) -> Path:
     """Generate a filename for a fair file."""
     return (
@@ -262,3 +265,9 @@ def get_FAIR_filename(sensor_type: api.SENSOR_TYPE, sensor_index: int, suffix: s
         f"V3_{root_cfg.my_device_id}_{sensor_type.value}_{sensor_index}_"
         f"{api.utc_to_fname_str()}.{suffix}"
     )
+
+
+def get_system_test_filename(st_type: str) -> Path:
+    """Generate a filename for a system test file."""
+    t = api.utc_now()
+    return root_cfg.EDGE_UPLOAD_DIR / f"V3_{root_cfg.my_device_id}_{st_type}_{t.strftime('%Y%m%d')}.csv"

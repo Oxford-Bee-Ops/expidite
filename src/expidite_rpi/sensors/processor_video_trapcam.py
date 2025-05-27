@@ -32,7 +32,7 @@ DEFAULT_TRAPCAM_DP_CFG = TrapcamDpCfg(
             index=TRAPCAM_STREAM_INDEX,
             format=api.FORMAT.MP4,
             cloud_container="expidite-upload",
-            sample_probability="0.1",
+            sample_probability="1.0",
         )
     ],
 )
@@ -170,7 +170,8 @@ class TrapcamDp(DataProcessor):
                         sample_duration = (sample_end_time - sample_start_time).total_seconds()
                         if (sample_last_movement_frame - sample_first_frame) > discard_threshold:
                             # Save the video segment to the derived datastream
-                            logger.info(f"Saving video of {sample_duration}s to {self}")
+                            logger.info(f"Saving video of {sample_duration}s starting {sample_start_time}"
+                                        f" to {self}")
                             self.save_recording(
                                 stream_index=TRAPCAM_STREAM_INDEX,
                                 temporary_file=temp_filename,
