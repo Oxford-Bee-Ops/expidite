@@ -854,11 +854,14 @@ class AsyncCloudConnector(CloudConnector):
             target_container = self._validate_container(action.dst_container)
             blob_client = target_container.get_blob_client(action.src_fname)
 
+            # Check if the blob exists and create it if it doesn't
             if not blob_client.exists():
                 blob_client.create_append_blob()
+
+            if blob_client.get_blob_properties().append_blob_committed_block_count == 0:            
                 # Include the Headers
                 data_to_append = "".join(action.data[:])
-            else:
+            else:               
                 if action.safe_mode and not self._headers_match(blob_client, action.data[0]):
                     # We bin out rather than set inconsistent fields
                     logger.error(
@@ -870,12 +873,14 @@ class AsyncCloudConnector(CloudConnector):
 
             # Append the data
             blob_client.append_block(data_to_append)
+
         except Exception as e:
             logger.warning(f"Upload failed for {action.src_fname} on iter {action.iteration}: {e!s}")
 
             # Failsafe
             if action.iteration > 100:
-                logger.error(f"Upload failed for {action.src_fname} too many times; giving up")
+                logger.error(f"{root_cfg.RAISE_WARN()}Upload failed for {action.src_fname} too many times;"
+                             f" giving up")
                 return
 
             # Re-queue the upload @@@ but only if it was a transient failure!

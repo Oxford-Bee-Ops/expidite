@@ -28,15 +28,17 @@ class Test_CloudJournal:
         reqd_columns = ["field1", "field2", "field3"]
         test_data = {"field1": 1, "field2": 2, "field3": 3}
         test_journal_path = root_cfg.TMP_DIR.joinpath("test.csv")
+
+        # Delete any old files locally and in the cloud
         if test_journal_path.exists():
             test_journal_path.unlink()
+        if cc.exists(root_cfg.my_device.cc_for_upload, test_journal_path.name):
+            cc.delete(root_cfg.my_device.cc_for_upload, test_journal_path.name)
+
         test_journal = Journal(test_journal_path, reqd_columns=reqd_columns)
 
         test_journal.add_row(test_data)
         test_journal.save()
-
-        if cc.exists(root_cfg.my_device.cc_for_upload, test_journal_path.name):
-            cc.delete(root_cfg.my_device.cc_for_upload, test_journal_path.name)
 
         # Create the CloudJournal and add the test data
         cj = CloudJournal(
@@ -44,6 +46,8 @@ class Test_CloudJournal:
             root_cfg.my_device.cc_for_upload,
             reqd_columns=reqd_columns,
         )
+        # This is asynchronous, so we need to wait for the worker thread to start
+        sleep(1)
 
         cj.add_rows_from_df(test_journal.as_df())
         cj.flush_all()
