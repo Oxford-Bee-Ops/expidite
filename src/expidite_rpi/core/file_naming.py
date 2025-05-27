@@ -141,13 +141,13 @@ def get_file_datetime(fname: Path | str) -> datetime:
     fname = fname.stem
 
     # Check that the filename has at least 4 "_"
-    if fname.count("_") < 4:
+    if fname.count("_") < 5:
         logger.warning(f"Invalid filename format - too few _ in {fname}")
         return datetime.min
 
     # Extract the fields from the filename, parsing with the "_" delimiter
     fields = fname.split("_")
-    start_time = api.utc_from_str(fields[4])
+    start_time = api.utc_from_str(fields[5])
     return start_time
     
 
