@@ -139,6 +139,25 @@ class RpiEmulator():
         return False
 
 
+    def fix_recording_device_id(fname: Path) -> Path:
+        """We use real recordings in system test which means they have the wrong
+        device ID.  We want to replace the device_id with that of this device otherwise
+        expidite won't find the recordings in the EDGE_PROCESSING_DIR.
+        """
+        # Get the current device ID
+        current_device_id = root_cfg.my_device.device_id
+        
+        # The device id is always the 3rd part of the filename
+        parts = fname.name.split("_")
+        if len(parts) < 3:
+            raise ValueError(f"Filename {fname} does not have enough parts to contain a device ID.")
+        
+        # Replace the device ID with the current device ID
+        parts[2] = current_device_id
+        new_fname = fname.parent / "_".join(parts)
+        
+        return new_fname
+
     def assert_records(self, 
                        container: str, 
                        expected_files: dict[str, int],

@@ -270,4 +270,4 @@ def get_FAIR_filename(sensor_type: api.SENSOR_TYPE, sensor_index: int, suffix: s
 def get_system_test_filename(st_type: str) -> Path:
     """Generate a filename for a system test file."""
     t = api.utc_now()
-    return root_cfg.EDGE_UPLOAD_DIR / f"V3_{root_cfg.my_device_id}_{st_type}_{t.strftime('%Y%m%d')}.log"
+    return root_cfg.EDGE_UPLOAD_DIR / f"V3_{root_cfg.my_device_id}_{st_type}_{t.strftime('%Y%m%d')}.csv"
