@@ -498,6 +498,29 @@ function alias_bcli() {
     source ~/.bashrc
 }
 
+###############################################
+# Set the hostname of the device
+###############################################
+function set_hostname() {
+    if [ -z "$name" ]; then
+        echo "Error: name is not set in system.cfg"
+        exit 1
+    fi
+
+    # Check if the hostname is already set
+    current_hostname=$(hostname)
+    if [ "$current_hostname" == "$name" ]; then
+        echo "Hostname is already set to $name."
+        return
+    fi
+
+    # Set the hostname
+    echo "Setting hostname to $name..."
+    sudo hostnamectl set-hostname "$name" || { echo "Failed to set hostname"; exit 1; }
+    
+    # Update /etc/hosts file
+    sudo sed -i "s/^127\.0\.1\.1\s.*/
+
 ################################################
 # Autostart if requested in system.cfg
 ################################################
@@ -606,6 +629,7 @@ create_mount
 set_predictable_network_interface_names
 enable_i2c
 alias_bcli
+set_hostname
 auto_start_if_requested
 make_persistent
 reboot_if_required
