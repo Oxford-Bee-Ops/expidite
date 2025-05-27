@@ -46,6 +46,14 @@ ALL_RECORD_ID_FIELDS = [*REQD_RECORD_ID_FIELDS,
                         RECORD_ID.NAME.value]
 
 ############################################################
+# Sampling override options
+############################################################
+class OVERRIDE(StrEnum):
+    AUTO = "auto"  # No override
+    SAVE = "save"  # Override to save sample
+    DISCARD = "discard"  # Override to discard sample
+
+############################################################
 # Installation types
 #
 # Used in DUA & BCLI
