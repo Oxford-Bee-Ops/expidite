@@ -139,7 +139,7 @@ class RpiEmulator():
         return False
 
 
-    def fix_recording_device_id(fname: Path) -> Path:
+    def fix_recording_device_id(self, fname: Path) -> Path:
         """We use real recordings in system test which means they have the wrong
         device ID.  We want to replace the device_id with that of this device otherwise
         expidite won't find the recordings in the EDGE_PROCESSING_DIR.
