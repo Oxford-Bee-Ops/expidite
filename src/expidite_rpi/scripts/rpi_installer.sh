@@ -519,7 +519,9 @@ function set_hostname() {
     sudo hostnamectl set-hostname "$name" || { echo "Failed to set hostname"; exit 1; }
     
     # Update /etc/hosts file
-    sudo sed -i "s/^127\.0\.1\.1\s.*/
+    sudo sed -i '/^127.0.1.1/d' /etc/hosts
+    echo '127.0.1.1 {new_hostname}' | sudo tee -a /etc/hosts
+}
 
 ################################################
 # Autostart if requested in system.cfg
