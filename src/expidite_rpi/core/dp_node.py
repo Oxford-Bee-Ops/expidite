@@ -336,7 +336,7 @@ class DPnode():
                     "observed_type_id": type_id,
                     "observed_sensor_index": self.sensor_index,
                     "sample_period": api.utc_to_iso_str(sample_period_start_time),
-                    "count": str(stat.count),
+                    "count": str(stat.sum),
                 }
             )
 
@@ -357,7 +357,7 @@ class DPnode():
         logger.debug("Logged sample data for SCORE & SCORP")
 
     
-    def save_sample(self, sample_probability: str | None) -> bool:
+    def save_sample(self, sample_probability: str | float | None) -> bool:
         """Return True if this node should save sample data to the datastore.
         This method can be subclassed to provide more complex sampling logic.
         In this default implementation, we assume sample_probability is a
@@ -468,52 +468,55 @@ class DPnode():
                     src_file.unlink()
                 return new_fname
 
-        # Move the file to the dst_dir (EDGE_UPLOAD_DIR or EDGE_PROCESSING_DIR)
-        # This will be the first step in the processing of the file
-        # After processing, the file will be moved to the appropriate datastore
-        if new_fname != src_file:
-            if new_fname.exists():
-                # Increment the new_fname to avoid overwriting existing files
-                new_fname = file_naming.increment_filename(new_fname)
-            new_fname = src_file.rename(new_fname)
+        # There now fork based on:
+        # - a) do we need to pass this file to a DP
+        # - b) do we need to save this file to the cloud
+        #
+        # If save_for_dp, only do this AFTER taking a copy, otherwise we have a race condition.
+        save_sample = self.save_sample(stream.sample_probability)
+        save_for_dp = (dst_dir == root_cfg.EDGE_PROCESSING_DIR)
 
-        if self.save_sample(stream.sample_probability) and stream.cloud_container is not None:
-            # Generate a *copy* of the raw sample file because the original is in the Processing directory
-            # and may soon by picked up by a DataProcessor.
+        if save_sample:
+            # Generate a *copy* of the raw sample file so we can move the original to the Processing 
+            # directory, without causeing a race condition with the DP.
             # The filename is the same as the recording, but saved to the upload directory
-            if new_fname.parent == root_cfg.EDGE_UPLOAD_DIR:
-                logger.warning(f"All recordings are being saved, but we're also saving samples."
-                               f" Config error in {self.get_data_id(stream_index)} config?")
-                
             sample_fname = file_naming.increment_filename(root_cfg.EDGE_UPLOAD_DIR / new_fname.name)
-            shutil.copy(new_fname, sample_fname)
-            self._get_cc().upload_to_container(stream.cloud_container,
+            if save_for_dp:
+                # Take a copy
+                shutil.copy(src_file, sample_fname)
+            else:
+                # Move the original
+                src_file.rename(sample_fname)
+
+            assert stream.cloud_container is not None
+            cloud_container = stream.cloud_container
+            self._get_cc().upload_to_container(cloud_container,
                                                 [sample_fname], 
                                                 delete_src=True,
                                                 storage_tier=stream.storage_tier)
-            logger.info(f"Raw sample saved to {stream.cloud_container}; "
-                        f"sample_prob={stream.sample_probability}")
 
+        if save_for_dp:
+            # Move the file to the EDGE_PROCESSING_DIR
+            assert new_fname != src_file
+            if new_fname.exists():
+                # Increment the new_fname to avoid overwriting existing files
+                new_fname = file_naming.increment_filename(new_fname)
+            src_file.rename(new_fname)
 
-        # If the dst_dir is EDGE_UPLOAD_DIR, we can use direct upload to the cloud
-        if dst_dir == root_cfg.EDGE_UPLOAD_DIR:
-            stream = self.get_stream(stream_index)
-            assert stream.cloud_container is not None and stream.storage_tier is not None
-            self._get_cc().upload_to_container(stream.cloud_container, 
-                                                [new_fname], 
-                                                delete_src=True,
-                                                storage_tier=stream.storage_tier)
+        # If we need it, src_file should have been moved to the new_fname or sample_fname.
+        # If it still exists, we delete it.
+        if src_file.exists():
+            assert (not save_for_dp) and (not save_sample), \
+                f"src_file {src_file.name} should not exist if save_for_dp or save_sample is True"
+            src_file.unlink()
 
         # Track the number of measurements recorded
-        with self._stats_lock:
-            if end_time is None:
+        if save_for_dp or save_sample:
+            with self._stats_lock:
                 self._dpnode_score_stats.setdefault(stream.type_id, DPnodeStat()).record(1)
-            else:
-                # Track duration if this file represents a period
-                self._dpnode_score_stats.setdefault(stream.type_id, DPnodeStat()).record(
-                    (end_time - start_time).total_seconds())
 
-        logger.debug(f"Saved recording {src_file.name} as {new_fname.name}")
+        logger.info(f"Saved_for_dp:{save_for_dp}; save_sample:{save_sample}; "
+                     f"src={src_file.name}; final={new_fname.name}")
 
         return new_fname
 

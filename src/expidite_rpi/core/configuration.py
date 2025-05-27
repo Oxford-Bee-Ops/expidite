@@ -23,8 +23,8 @@ from expidite_rpi.utils import utils_clean
 ############################################################################################
 class MODE(Enum):
     """Test modes for the RpiCore"""
-    PRODUCTION: str = "production"
-    TEST: str = "test"
+    PRODUCTION = "production"
+    TEST = "test"
 TEST_MODE: MODE = MODE.PRODUCTION
 
 class CloudType(Enum):
@@ -185,6 +185,8 @@ for d in dirs:
 
 KEYS_FILE: Path = CFG_DIR / "keys.env"
 SYSTEM_CFG_FILE: Path = CFG_DIR / "system.cfg"
+EXPIDITE_VERSION_FILE: Path = CFG_DIR / "expidite_code_version"
+USER_CODE_VERSION_FILE: Path = CFG_DIR / "user_code_version"
 
 ############################################################################################
 # Mode of operation
@@ -230,9 +232,9 @@ _LOG_LEVEL = logging.INFO
 def set_log_level(level: int) -> None:
     global _LOG_LEVEL
     _LOG_LEVEL = min(level, _LOG_LEVEL)
-    module_logger = logging.getLogger("rpi_core")
+    module_logger = logging.getLogger("expidite")
     module_logger.setLevel(level)
-    module_logger.debug("Debug logging enabled for rpi_core")
+    module_logger.debug("Debug logging enabled for expidite")
 
 
 def setup_logger(name: str, 
@@ -264,6 +266,7 @@ def setup_logger(name: str,
         for handler in logger.handlers:
             if isinstance(handler, logging.FileHandler):
                 file_handler_count += 1
+                handler.setLevel(_LOG_LEVEL)
             elif isinstance(handler, logging.StreamHandler):
                 handler.setLevel(_LOG_LEVEL)
 
@@ -456,4 +459,15 @@ def display_config(device_id: Optional[str] = None) -> str:
     display_str += INVENTORY[device_id].display()
     return display_str
 
+def get_version_info() -> tuple[str, str]:
+    """Get the version string of the expidite code and the user code."""
+    expidite_version = "unknown"
+    user_code_version = "unknown"
+    if EXPIDITE_VERSION_FILE.exists():
+        with open(EXPIDITE_VERSION_FILE, "r") as f:
+            expidite_version = f.read().strip()
+    if USER_CODE_VERSION_FILE.exists():
+        with open(USER_CODE_VERSION_FILE, "r") as f:
+            user_code_version = f.read().strip()
 
+    return (expidite_version, user_code_version)

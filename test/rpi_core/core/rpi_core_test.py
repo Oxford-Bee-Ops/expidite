@@ -9,7 +9,7 @@ from expidite_rpi.utils.rpi_emulator import RpiEmulator
 logger = root_cfg.setup_logger("expidite")
 
 class Test_SensorFactory:
-    @pytest.mark.quick
+    @pytest.mark.unittest
     def test_RpiCore_status(self) -> None:
         sc = RpiCore()
         sc.configure(my_fleet_config.INVENTORY)
@@ -17,8 +17,9 @@ class Test_SensorFactory:
         logger.info(message)
         assert message is not None
 
-    @pytest.mark.quick
+    @pytest.mark.unittest
     def test_RpiCore_cycle(self) -> None:
+        logger.info("Run test_RpiCore_cycle test")
         # Standard flow
         # We reset cfg.my_device_id to override the computers mac_address
         # This is a test device defined in BeeOps.cfg to have a DummySensor.

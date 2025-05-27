@@ -61,7 +61,8 @@ def create_aht20_device() -> list[DPtree]:
 # Low FPS continuous video reording device
 ###################################################################################################
 def create_continuous_video_4fps_device() -> list[DPtree]:
-    """Create a standard camera device."""
+    """Create a standard camera device.
+    No recordings are saved to the cloud - it is assumed a DP will process the recordings locally."""
     sensor_index = 0
     sensor_cfg = RpicamSensorCfg(
         description="Low FPS continuous video recording device",
@@ -73,6 +74,7 @@ def create_continuous_video_4fps_device() -> list[DPtree]:
                 index=RPICAM_STREAM_INDEX,
                 format=api.FORMAT.MP4,
                 cloud_container="expidite-upload",
+                sample_probability="0.0",
             )
         ],
         rpicam_cmd="rpicam-vid --framerate 4 --width 640 --height 480 -o FILENAME -t 180000 -v 0"
@@ -110,6 +112,7 @@ def create_trapcam_device(sensor_index: Optional[int] = 0) -> list[DPtree]:
                     index=RPICAM_STREAM_INDEX,
                     format=api.FORMAT.MP4,
                     cloud_container="expidite-upload",
+                    sample_probability="0.0",
                 )
             ],
             rpicam_cmd = "rpicam-vid --framerate 15 --width 640 --height 480 -o FILENAME -t 180000",

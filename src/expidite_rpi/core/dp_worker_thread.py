@@ -102,12 +102,10 @@ class DPworker(Thread):
         if root_cfg.system_cfg is not None:
             wrap["system_config"] = root_cfg.system_cfg.model_dump()
 
-        # Expidite version
-        try:
-            from expidite_rpi import __version__
-            wrap["expidite_version"] = __version__
-        except Exception:
-            wrap["expidite_version"] = "unknown"
+        # Code version info
+        expidite_version, user_code_version = root_cfg.get_version_info()
+        wrap["expidite_version"] = expidite_version
+        wrap["user_code_version"] = user_code_version
 
         # Storage account name
         if root_cfg.keys is not None:
@@ -238,6 +236,8 @@ class DPworker(Thread):
                                     except Exception as e:
                                         logger.error(f"{root_cfg.RAISE_WARN()}Failed to unlink {f} {e!s}", 
                                                      exc_info=True)
+                                else:
+                                    logger.error(f"{root_cfg.RAISE_WARN()}File does not exist after DP {f}")
 
                     # Log the processing time
                     exec_time = api.utc_now() - exec_start_time

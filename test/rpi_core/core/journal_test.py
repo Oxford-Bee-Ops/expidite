@@ -10,8 +10,9 @@ root_cfg.TEST_MODE = root_cfg.MODE.TEST
 
 
 class Test_journal:
-    @pytest.mark.quick
+    @pytest.mark.unittest
     def test_journal_basics(self) -> None:
+        logger.info("Run test_journal_basics test")
         tmp_dir = root_cfg.TMP_DIR
         test_file = tmp_dir.joinpath("test.csv")
         if test_file.exists():
@@ -66,7 +67,7 @@ class Test_journal:
         j.delete()
         assert not test_file.exists()
 
-    @pytest.mark.quick
+    @pytest.mark.unittest
     def test_journal_existing(self) -> None:
         tmp_dir = root_cfg.TMP_DIR
         test_file = tmp_dir.joinpath("test.csv")

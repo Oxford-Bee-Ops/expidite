@@ -14,17 +14,20 @@ class Test_configuration:
             ("('d01111111111','name')", "DUMMY"),
         ],
     )
-    @pytest.mark.quick
+    @pytest.mark.unittest
     def test_get_field(self, test_input: str, expected: str) -> None:
+        logger.info("Run test_get_field test")
         _, key = eval(test_input)
         assert root_cfg.my_device.get_field(key) == expected
 
-    @pytest.mark.quick
+    @pytest.mark.unittest
     def test_display_cfg(self) -> None:
+        logger.info("Run test_display_cfg test")
         assert root_cfg.my_device.display() != ""
 
-    @pytest.mark.quick
+    @pytest.mark.unittest
     def test_config_validator(self) -> None:
+        logger.info("Run test_config_validator test")
         # Check the configuration is valid
         dptrees = my_fleet_config.create_example_device()
         is_valid, error_message = config_validator.validate_trees(dptrees)

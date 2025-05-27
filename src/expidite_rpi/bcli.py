@@ -89,7 +89,7 @@ def run_cmd_live_echo(cmd: str) -> str:
 
 
 def check_if_setup_required() -> None:
-    """Check if setup is required by verifying keys and Git repo."""
+    """Check if setup is required by verifying keys."""
     attempts = 0
     max_attempts = 3
     while not check_keys_env():
@@ -162,8 +162,10 @@ class InteractiveMenu():
             click.echo(f"{dash_line}")
             click.echo("# SYSTEM CONFIGURATION")
             click.echo(f"{dash_line}")
+            expidite_version, user_code_version = root_cfg.get_version_info()
+            click.echo(f"Expidite version: {expidite_version}")
+            click.echo(f"User code version: {user_code_version}")
             click.echo(f"\n{utils_clean.display_dataclass(root_cfg.system_cfg)}")
-
 
         click.echo(f"\n{dash_line}")
         click.echo("# FLEET CONFIGURATION")
@@ -225,12 +227,12 @@ class InteractiveMenu():
         if root_cfg.running_on_windows:
             click.echo("This command only works on Linux. Exiting...")
             return
-        since_time = api.utc_now() - timedelta(hours=4)
         click.echo("\n")
         click.echo(f"{dash_line}")
         click.echo("# ERROR LOGS")
         click.echo("# Displaying error logs from the last 4 hours")
         click.echo(f"{dash_line}")
+        since_time = api.utc_now() - timedelta(hours=4)
         logs = device_health.get_logs(since=since_time, min_priority=4)
         self.display_logs(logs)
 
@@ -240,12 +242,12 @@ class InteractiveMenu():
         if root_cfg.running_on_windows:
             click.echo("This command only works on Linux. Exiting...")
             return
-        since_time = api.utc_now() - timedelta(minutes=15)
         click.echo(f"{dash_line}")
         click.echo("# RpiCore logs")
         click.echo("# Displaying rpi_core logs for the last 15 minutes")
         click.echo(f"{dash_line}")
-        logs = device_health.get_logs(since=since_time, min_priority=6, grep_str="rpi_core")
+        since_time = api.utc_now() - timedelta(minutes=15)
+        logs = device_health.get_logs(since=since_time, min_priority=6, grep_str="expidite")
         self.display_logs(logs)
 
 
@@ -263,7 +265,6 @@ class InteractiveMenu():
 
     def display_running_processes(self) -> None:
         # Running processes
-        # for each process in the list, strip any text before "rpi_core"
         # Drop any starting / or . characters
         # And convert the process list to a simple comma-seperated string with no {} or ' or " 
         # characters
@@ -392,9 +393,7 @@ class InteractiveMenu():
 
     def set_hostname(self) -> None:
         """Set the hostname of the Raspberry Pi."""
-        click.echo("Enter the new hostname:")
-        new_hostname = input()
-        click.echo("Are you sure you want to set the hostname to " + new_hostname + "?")
+        click.echo(f"Set the hostname to match the name in DeviceCfg: {root_cfg.my_device.name}?")
         click.echo("  y: yes")
         click.echo("  n: no")
         char = click.getchar()
@@ -403,6 +402,7 @@ class InteractiveMenu():
             click.echo("This command only works on a Raspberry Pi")
             return
         if char == "y":
+            new_hostname = root_cfg.my_device.name
             click.echo("Setting hostname... (ignore temporary error message)")
             run_cmd_live_echo("sudo nmcli general hostname " + new_hostname)
 
@@ -424,6 +424,7 @@ class InteractiveMenu():
             return
         click.echo("Copy the URL returned by this command to a browser ")
         click.echo("and authenticate the request to your Raspberry Pi connect account.")
+        run_cmd_live_echo("rpi-connect on")
         run_cmd_live_echo("rpi-connect signin")
         click.echo("\nHit any key to continue once you've signed in.")
         click.getchar()
@@ -549,6 +550,113 @@ class InteractiveMenu():
     ####################################################################################################
     # Testing menu functions
     ####################################################################################################
+    def validate_device(self) -> None:
+        """Validate the device by running a series of tests."""
+        click.echo(f"{dash_line}")
+        click.echo("# VALIDATE DEVICE")
+        click.echo(f"{dash_line}")
+
+        success = True
+
+        if root_cfg.system_cfg is None:
+            click.echo("ERROR: System.cfg is not set. Please check your installation.")
+            return
+        
+        # Check that rpi-connect is running
+        try:
+            if root_cfg.running_on_rpi:
+                output = run_cmd("rpi-connect status")
+                if ("Signed in: yes" in output):
+                    click.echo("\nrpi-connect is running.")
+                else:
+                    click.echo("\nERROR: rpi-connect is not running. Please start it using the "
+                            "maintenance menu.")
+                    success = False
+
+            # Check that the devices configured are working
+            sensors: dict[str, list[int]] = {}
+            edge_orch = EdgeOrchestrator.get_instance()
+            edge_orch.load_config()
+            if edge_orch is not None:
+                for i, dptree in enumerate(edge_orch.dp_trees):
+                    sensor_cfg = dptree.sensor.config
+                    sensors.setdefault(sensor_cfg.sensor_type.value, []).append(sensor_cfg.sensor_index)
+            if sensors:
+                click.echo("\nSensors configured:")
+                for sensor_type, indices in sensors.items():
+                    click.echo(f"  {sensor_type}: {', '.join(map(str, indices))}")
+            else:
+                click.echo("\nNo sensors configured.")
+
+            if api.SENSOR_TYPE.CAMERA.value in sensors:
+                # Validate that the camera(s) is working
+                click.echo(f"\nCameras expected for indices: {sensors[api.SENSOR_TYPE.CAMERA.value]}")
+                camera_indexes = sensors[api.SENSOR_TYPE.CAMERA.value]
+                for index in camera_indexes:
+                    camera_test_result = run_cmd(f"libcamera-hello --cameras {index}")
+                    if "camera is not available" in camera_test_result:
+                        click.echo(f"ERROR: Camera {index} not found.")
+                        success = False
+                    else:
+                        click.echo(f"Camera {index} is working.")
+
+            if api.SENSOR_TYPE.USB.value in sensors:
+                # Validate that the USB audio device(s) is working
+                num_usb_devices = len(sensors[api.SENSOR_TYPE.USB.value])
+                click.echo(f"\nUSB devices expected for indices... {num_usb_devices}")
+                click.echo(run_cmd("lsusb"))
+
+                # Assume all USB devices are microphones
+                sound_test = run_cmd("find /sys/devices/ -name id | grep usb | grep sound")
+                # Count the number of instances of "sound" in the output
+                sound_count = sound_test.count("sound")
+                if sound_count == num_usb_devices:
+                    click.echo("\nFound the correct number of USB audio device(s).")
+                    click.echo(sound_test)
+                else:
+                    click.echo(f"\nERROR: Found {sound_count} USB audio device(s), "
+                            f"but expected {num_usb_devices}.")
+                    success = False
+
+            if api.SENSOR_TYPE.I2C.value in sensors:
+                # Validate that the I2C device(s) is working
+                click.echo(f"\nI2C devices expected for indices: {sensors[api.SENSOR_TYPE.I2C.value]}")
+                i2c_indexes = sensors[api.SENSOR_TYPE.I2C.value]
+                i2c_test_result = run_cmd("i2cdetect -y 1")
+                for index in i2c_indexes:
+                    # We need to convert the index from base10 to base16
+                    hex_index = hex(index)[2:].upper()
+                    if str(hex_index) in i2c_test_result:
+                        click.echo(f"I2C device {index} ({hex_index}) is working.")
+                    else:
+                        click.echo(f"ERROR: I2C device {index} ({hex_index}) not found.")
+                        click.echo(i2c_test_result)
+                        success = False
+
+            # Check for RAISE_WARNING tag in logs
+            if root_cfg.running_on_rpi:
+                since_time = api.utc_now() - timedelta(hours=4)
+                logs = device_health.get_logs(since=since_time, min_priority=4, grep_str="RAISE_WARNING")
+                if logs:
+                    success = False
+                    click.echo("\nRAISE_WARNING tag found in logs:")
+                    for log in logs:
+                        click.echo(f"{log['time_logged']} - {log['priority']} - {log['message']}")
+                else:
+                    click.echo("\nNo error logs found.")
+
+        except Exception as e:
+            logger.error(f"{root_cfg.RAISE_WARN()}Exception running validation tests: {e}", exc_info=True)
+            click.echo(f"ERROR: exception running validation tests: {e}")
+            success = False
+
+        if success:
+            click.echo("\n ### PASS ###\n")
+        else:
+            click.echo("\n ### FAIL ###\n")
+
+        click.echo(f"{dash_line}")
+
     def run_network_test(self) -> None:
         """Run a network test and display the results."""
         click.echo(f"{dash_line}")
@@ -568,7 +676,55 @@ class InteractiveMenu():
         run_cmd_live_echo(f"sudo {scripts_dir}/network_test.sh q")
         click.echo(f"{dash_line}")
 
+    def run_system_test(self) -> None:
+        """Invokes my_start_script."""
+        # Check this is a system_test installation
+        if root_cfg.system_cfg is None:
+            click.echo("System.cfg is not set. Please check your installation.")
+            return
+        if root_cfg.system_cfg.install_type != api.INSTALL_TYPE.SYSTEM_TEST:
+            click.echo("This command only works on a system test installation.")
+            return
+        if root_cfg.system_cfg.my_start_script is not None:
+            click.echo(f"Running {root_cfg.system_cfg.my_start_script}...")
+            # my_start_script should be a resolvable module in this environment
+            try:
+                my_start_script = root_cfg.system_cfg.my_start_script
+                # Try creating an instance and calling main()
+                # This will raise an ImportError if the module is not found
+                # or if the main() function is not defined in the module
+                module = __import__(my_start_script, fromlist=["main"])
+                main_func = getattr(module, "main", None)
+                if main_func is None:
+                    click.echo(f"main() function not found in {my_start_script}")
+                    click.echo("Exiting...")
+                    return
+            except ImportError as e:
+                logger.error(f"{root_cfg.RAISE_WARN()}Module {my_start_script} not resolvable ({e})", 
+                             exc_info=True)
+                click.echo(f"Module {my_start_script} not resolvable ({e})")
+                click.echo("Exiting...")
+                return
+            else:
+                if root_cfg.running_on_windows:
+                    # Invoke the module directly from the current thread.
+                    click.echo(f"Found {my_start_script}. Running system test...")
+                    # Call the main function directly
+                    try:
+                        main_func()
+                    except Exception as e:
+                        click.echo(f"Error running {my_start_script}: {e}")
+                        return
+                elif root_cfg.running_on_rpi:
+                    click.echo(f"Found {my_start_script}. Running system test as a background process...")
+                    cmd = (
+                        f"bash -c 'source {root_cfg.HOME_DIR}/{root_cfg.system_cfg.venv_dir}/bin/activate && "
+                        f"nohup python -m {my_start_script} 2>&1 | /usr/bin/logger -t EXPIDITE &'"
+                    )
+                    click.echo(f"Running command: {cmd}")
+                    run_cmd_live_echo(cmd)
 
+                    
     ####################################################################################################
     # Interactive menu functions
     ####################################################################################################
@@ -733,8 +889,10 @@ class InteractiveMenu():
         """Menu for testing commands."""
         while True:
             click.echo(f"{header}Testing Menu:")
-            click.echo("1. Run Network Test")
-            click.echo("2. Back to Main Menu")
+            click.echo("1. Validate device")
+            click.echo("2. Run Network Test")
+            click.echo("3. Run system test")
+            click.echo("4. Back to Main Menu")
             try:
                 choice = click.prompt("\nEnter your choice", type=int)
                 click.echo("\n")
@@ -743,11 +901,16 @@ class InteractiveMenu():
                 continue
 
             if choice == 1:
-                self.run_network_test()
+                self.validate_device()
             elif choice == 2:
+                self.run_network_test()
+            elif choice == 3:
+                self.run_system_test()
+            elif choice == 4:
                 break
             else:
                 click.echo("Invalid choice. Please try again.")
+    
 
 #################################################################################
 # Main function to run the CLI
@@ -755,17 +918,21 @@ class InteractiveMenu():
 #################################################################################
 def main():
     # Disable console logging during CLI execution
-    with disable_console_logging("rpi_core"):
+    with disable_console_logging("expidite"):
         try:
             im = InteractiveMenu()
             im.interactive_menu()
         except (KeyboardInterrupt, click.exceptions.Abort):
             click.echo("\nExiting...")
-            sys.exit(0)
         except Exception as e:
             logger.error(f"Error in CLI: {e}", exc_info=True)
             click.echo(f"Error in CLI: {e}")
-            sys.exit(1)
+        finally:
+            # Ensure the cloud connector is shut down
+            cc = CloudConnector.get_instance(type=root_cfg.CloudType.AZURE)
+            assert isinstance(cc, AsyncCloudConnector)
+            cc.shutdown()
+            click.echo("Done")
 
 if __name__ == "__main__":
     os.chdir(root_cfg.HOME_DIR)

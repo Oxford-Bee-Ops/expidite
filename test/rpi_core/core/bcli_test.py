@@ -7,7 +7,7 @@ from expidite_rpi.core import configuration as root_cfg
 logger = root_cfg.setup_logger("expidite", logging.DEBUG)
 
 class Test_bcli:
-    @pytest.mark.quick
+    @pytest.mark.unittest
     def test_bcli(self) -> None:
 
         # This is an interactive CLI.

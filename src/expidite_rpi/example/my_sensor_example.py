@@ -50,6 +50,7 @@ EXAMPLE_SENSOR_CFG = SensorCfg(
 class ExampleSensor(Sensor):
     def __init__(self, config: SensorCfg) -> None:
         super().__init__(config)
+        self.value_ticker = 0
 
     def run(self) -> None:
         """The run method is called when the Sensor is started."""
@@ -57,8 +58,14 @@ class ExampleSensor(Sensor):
         # Main sensor loop
         # All sensor implementations must check for stop_requested to allow the sensor to be stopped cleanly
         while self.continue_recording():
+            self.value_ticker += 1
             self.log(stream_index=EXAMPLE_LOG_STREAM_INDEX,
-                     sensor_data={"temperature": 25.0})
+                     sensor_data={"temperature": self.value_ticker},)
+            
+            # We intentionally kill the thread after 25 iterations to allow the DP processing to complete.
+            if self.value_ticker > 25:
+                break
+
             fname = file_naming.get_temporary_filename(api.FORMAT.JPG)
             # Generate a random image file
             with open(fname, "w") as f:

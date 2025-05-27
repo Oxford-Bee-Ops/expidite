@@ -4,6 +4,7 @@ from dataclasses import dataclass
 from datetime import datetime, timezone
 from pathlib import Path
 from queue import Queue
+from threading import Event
 from time import sleep
 from typing import Optional
 
@@ -13,7 +14,7 @@ from expidite_rpi.core import api, file_naming
 from expidite_rpi.core import configuration as root_cfg
 from expidite_rpi.core.configuration import CloudType
 
-logger = root_cfg.setup_logger(name="rpi_core")
+logger = root_cfg.setup_logger("expidite")
 
 
 ##########################################################################################################
@@ -37,6 +38,13 @@ class CloudConnector:
             raise ValueError("Cloud storage credentials not set; cannot connect to cloud")
 
         self._connection_string = root_cfg.keys.cloud_storage_key
+
+        # Ensure the system containers exist and create them if they don't
+        self.create_container(root_cfg.my_device.cc_for_fair)
+        self.create_container(root_cfg.my_device.cc_for_journals)
+        self.create_container(root_cfg.my_device.cc_for_system_records)
+        self.create_container(root_cfg.my_device.cc_for_upload)
+        self.create_container(root_cfg.my_device.cc_for_system_test)
 
     @staticmethod
     def get_instance(type: CloudType) -> "CloudConnector":
@@ -274,6 +282,13 @@ class CloudConnector:
         """Check if the specified container exists"""
         containerClient = self._validate_container(container)
         return containerClient.exists()
+
+    def create_container(self, container: str) -> None:
+        """Create the specified container"""
+        containerClient = self._validate_container(container)
+        if not containerClient.exists():
+            logger.info(f"Creating container {container}")
+            containerClient.create_container()
 
     def exists(self, src_container: str, blob_name: str) -> bool:
         """Check if the specified blob exits"""
@@ -605,6 +620,13 @@ class LocalCloudConnector(CloudConnector):
             containerClient.mkdir(parents=True, exist_ok=True)
         return True
 
+    def create_container(self, container: str) -> None:
+        """Create the specified container"""
+        containerClient = self.local_cloud / container
+        if not containerClient.exists():
+            logger.info(f"Creating container {container}")
+            containerClient.mkdir(parents=True, exist_ok=True)
+
     def exists(self, src_container: str, blob_name: str) -> bool:
         """Check if the specified blob exits"""
         blob_client = self.local_cloud / src_container / blob_name
@@ -696,26 +718,20 @@ class AsyncCloudConnector(CloudConnector):
     def __init__(self) -> None:
         logger.debug("Creating AsyncCloudConnector instance")
         CloudConnector.__init__(self)
-        self._stop_requested = False
+        self._stop_requested = Event()
         self._upload_queue: Queue = Queue()
         self._worker_pool: ThreadPoolExecutor = ThreadPoolExecutor(max_workers=6)
         # Start the worker thread to process the upload queue
         self._worker_pool.submit(self.do_work)
 
-    def __del__(self) -> None:
-        self._stop_requested = True
-        # Flush the queue by putting an empty object on it
-        if self._upload_queue is not None:
-            self._upload_queue.put(None)
-        if self._worker_pool is not None:
-            self._worker_pool.shutdown(cancel_futures=True)
-
     def shutdown(self):
         """ Method to support unit tests - shutdown the worker pool """
-        self._stop_requested = True
+        self._stop_requested.set()
         # Flush the queue by putting an empty object on it
-        self._upload_queue.put(None)
-        self._worker_pool.shutdown(cancel_futures=True)
+        if hasattr(self, "_upload_queue") and self._upload_queue is not None:
+            self._upload_queue.put(None)
+        if hasattr(self, "_worker_pool") and self._worker_pool is not None:
+            self._worker_pool.shutdown(wait=True, cancel_futures=True)
 
     #################################################################################################
     # Public methods
@@ -839,11 +855,14 @@ class AsyncCloudConnector(CloudConnector):
             target_container = self._validate_container(action.dst_container)
             blob_client = target_container.get_blob_client(action.src_fname)
 
+            # Check if the blob exists and create it if it doesn't
             if not blob_client.exists():
                 blob_client.create_append_blob()
+
+            if blob_client.get_blob_properties().append_blob_committed_block_count == 0:            
                 # Include the Headers
                 data_to_append = "".join(action.data[:])
-            else:
+            else:               
                 if action.safe_mode and not self._headers_match(blob_client, action.data[0]):
                     # We bin out rather than set inconsistent fields
                     logger.error(
@@ -855,12 +874,14 @@ class AsyncCloudConnector(CloudConnector):
 
             # Append the data
             blob_client.append_block(data_to_append)
+
         except Exception as e:
             logger.warning(f"Upload failed for {action.src_fname} on iter {action.iteration}: {e!s}")
 
             # Failsafe
             if action.iteration > 100:
-                logger.error(f"Upload failed for {action.src_fname} too many times; giving up")
+                logger.error(f"{root_cfg.RAISE_WARN()}Upload failed for {action.src_fname} too many times;"
+                             f" giving up")
                 return
 
             # Re-queue the upload @@@ but only if it was a transient failure!
@@ -872,7 +893,7 @@ class AsyncCloudConnector(CloudConnector):
 
     def do_work(self) -> None:
         """Process the upload queue."""
-        while not self._stop_requested:
+        while not self._stop_requested.is_set():
             try:
                 queue_item = self._upload_queue.get(block=True)
 

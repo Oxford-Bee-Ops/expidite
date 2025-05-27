@@ -1,4 +1,5 @@
 from datetime import datetime, timedelta
+from zoneinfo import ZoneInfo
 
 import pytest
 from expidite_rpi.core import api, file_naming
@@ -16,8 +17,9 @@ root_cfg.TEST_MODE = root_cfg.MODE.TEST
 
 class Test_datastream:
 
-    @pytest.mark.quick
+    @pytest.mark.unittest
     def test_file_naming(self) -> None:
+        logger.info("Run test_file_naming test")
         my_example_dptree: DPtree = my_fleet_config.create_example_device()[0]
         stream = my_example_dptree.sensor.get_stream(EXAMPLE_FILE_STREAM_INDEX)
         data_id = stream.get_data_id(EXAMPLE_SENSOR_CFG.sensor_index)
@@ -42,8 +44,9 @@ class Test_datastream:
         assert fields[api.RECORD_ID.SUFFIX.value] == output_format.value
 
 
-    @pytest.mark.quick
+    @pytest.mark.unittest
     def test_id_parsing(self) -> None:
+        logger.info("Run test_id_parsing test")
         device_id = "d01111111111"
         type_id = "test"
         sensor_id = 1
@@ -57,3 +60,10 @@ class Test_datastream:
         assert output.type_id == type_id
         assert output.sensor_index == sensor_id
         assert output.stream_index == stream_index
+
+    @pytest.mark.unittest
+    def test_get_datetime(self) -> None:
+        logger.info("Run test_get_datetime test")
+        fname = "V3_TRAPCAM_d83adde765e4_01_00_20250523T172338065_20250523T172340565.mp4"
+        dt = file_naming.get_file_datetime(fname)
+        assert dt.replace(microsecond=0) == datetime(2025, 5, 23, 17, 23, 38, tzinfo=ZoneInfo("UTC"))
