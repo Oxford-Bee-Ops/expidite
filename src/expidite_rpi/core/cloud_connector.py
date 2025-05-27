@@ -44,6 +44,7 @@ class CloudConnector:
         self.create_container(root_cfg.my_device.cc_for_journals)
         self.create_container(root_cfg.my_device.cc_for_system_records)
         self.create_container(root_cfg.my_device.cc_for_upload)
+        self.create_container(root_cfg.my_device.cc_for_system_test)
 
     @staticmethod
     def get_instance(type: CloudType) -> "CloudConnector":
