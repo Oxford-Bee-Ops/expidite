@@ -199,6 +199,7 @@ class DPnode():
         temporary_file: Path,
         start_time: datetime,
         end_time: Optional[datetime] = None,
+        override_sampling: Optional[api.OVERRIDE] = api.OVERRIDE.AUTO,
     ) -> Path:
         """Called by a Sensor or DataProcessor to save a recording file to the appropriate datastore.
         This should only be used by Sensors or **primary** datastreams.
@@ -238,6 +239,7 @@ class DPnode():
             start_time=start_time,
             suffix=self.get_stream(stream_index).format,
             end_time=end_time,
+            override_sampling=override_sampling,
         )
         # Logged in _save_recording()
 
@@ -252,6 +254,7 @@ class DPnode():
         end_time: Optional[datetime] = None,
         offset_index: Optional[int] = None,
         secondary_offset_index: Optional[int] = None,
+        override_sampling: Optional[api.OVERRIDE] = api.OVERRIDE.AUTO,
     ) -> Path:
         """Called by DataProcessors to save sub-sample recording files to the appropriate datastore.
         Note: save_sub_recording() will *rename* (ie delete) the supplied temporary_file
@@ -300,6 +303,7 @@ class DPnode():
             end_time=end_time,
             offset_index=offset_index,
             secondary_offset_index=secondary_offset_index,
+            override_sampling=override_sampling,
         )
         # Logged in _save_recording()
 
@@ -398,6 +402,7 @@ class DPnode():
         end_time: Optional[datetime] = None,
         offset_index: Optional[int] = None,
         secondary_offset_index: Optional[int] = None,
+        override_sampling: Optional[api.OVERRIDE] = api.OVERRIDE.AUTO,
     ) -> Path:
         """Private method that handles saving of recordings from Datastreams or DataProcessors.
 
@@ -410,7 +415,7 @@ class DPnode():
         suffix: str
             The file extension of the recording.
         end_time:datetime
-            Tthe time that the recording ended.
+            The time that the recording ended.
         offset_index: optional int
             Typically a frame number in the recording, if applicable.
         secondary_offset_index: optional int
@@ -468,12 +473,19 @@ class DPnode():
                     src_file.unlink()
                 return new_fname
 
-        # There now fork based on:
+        # Determine if we should save the recording to the cloud.
+        if override_sampling is None or override_sampling == api.OVERRIDE.AUTO:
+            save_sample = self.save_sample(stream.sample_probability)
+        elif override_sampling == api.OVERRIDE.SAVE:
+            save_sample = True
+        else: # override_sampling == api.OVERRIDE.DISCARD:
+            save_sample = False
+            
+        # There is now a fork based on:
         # - a) do we need to pass this file to a DP
         # - b) do we need to save this file to the cloud
         #
         # If save_for_dp, only do this AFTER taking a copy, otherwise we have a race condition.
-        save_sample = self.save_sample(stream.sample_probability)
         save_for_dp = (dst_dir == root_cfg.EDGE_PROCESSING_DIR)
 
         if save_sample:
