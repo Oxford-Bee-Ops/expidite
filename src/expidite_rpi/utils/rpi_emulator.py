@@ -36,6 +36,9 @@ class RpiEmulator():
     _is_available = Event()
     ONE_OR_MORE = -1
 
+    def __init__(self) -> None:
+        self.recordings: list[RpiTestRecording] = []
+
     @staticmethod
     def get_instance() -> "RpiEmulator":
         """Get the singleton instance of RpiEmulator."""
@@ -255,7 +258,7 @@ class RpiEmulator():
         -------
         Path | None
             The path to the recording file if a match is found, None otherwise.
-        """
+        """        
         for recording in self.recordings:
             if cmd.startswith(recording.cmd_prefix):
                 return recording.recordings
