@@ -134,7 +134,8 @@ class RpiEmulator():
         return self.recordings_saved.get(type_id, 0) >= cap
  
 
-    def recordings_still_to_process(self) -> bool:
+    @staticmethod
+    def recordings_still_to_process() -> bool:
         """Check if there are recordings remaining to process."""
         # Look for any files remaining in the processing directory
         for file in  root_cfg.EDGE_PROCESSING_DIR.glob("*"):
@@ -143,7 +144,8 @@ class RpiEmulator():
         return False
 
 
-    def fix_recording_device_id(self, fname: Path) -> Path:
+    @staticmethod
+    def fix_recording_device_id(fname: Path) -> Path:
         """We use real recordings in system test which means they have the wrong
         device ID.  We want to replace the device_id with that of this device otherwise
         expidite won't find the recordings in the EDGE_PROCESSING_DIR.
@@ -248,8 +250,9 @@ class RpiEmulator():
         
         return df
 
-    def record_system_test_run(self,
-                               test_name: str,
+
+    @staticmethod
+    def record_system_test_run(test_name: str,
                                test_input: dict) -> None:
         """Record the system test run to the cloud."""
         # The keys.env cloud_storage_account will be set to the system test account
