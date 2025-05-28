@@ -38,6 +38,10 @@ class RpiEmulator():
 
     def __init__(self) -> None:
         self.recordings: list[RpiTestRecording] = []
+        self.previous_recordings_index: int = 0
+        self.recordings_saved: dict[str, int] = {}
+        self.recording_cap: int = -1
+        self.recording_cap_dict: dict[str, int] = {}
 
     @staticmethod
     def get_instance() -> "RpiEmulator":
