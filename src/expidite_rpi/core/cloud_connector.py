@@ -3,7 +3,7 @@ from concurrent.futures import ThreadPoolExecutor, as_completed
 from dataclasses import dataclass
 from datetime import datetime, timezone
 from pathlib import Path
-from queue import Queue
+from queue import Empty, Queue
 from threading import Event
 from time import sleep
 from typing import Optional
@@ -400,8 +400,8 @@ class CloudConnector:
                     lh == ch for lh, ch in zip(local_headers, cloud_headers)
                 ):
                     # They don't match
-                    logger.warning(f"Local and remote headers do not match in {blob_client.blob_name}: "
-                                   f"{local_headers}, {cloud_headers}")
+                    logger.warning(f"{root_cfg.RAISE_WARN()}Local and remote headers do not match in "
+                                   f"{blob_client.blob_name}: {local_headers}, {cloud_headers}")
                     return False
         # We can't find any issues
         return True
@@ -725,12 +725,18 @@ class AsyncCloudConnector(CloudConnector):
         self._worker_pool.submit(self.do_work)
 
     def shutdown(self):
-        """ Method to support unit tests - shutdown the worker pool """
+        """ Method to support unit tests - shutdown the worker pool.
+        Will wait until scheduled uploads are complete before returning."""
+        
+        # Try to schedule any remaining uploads (waits up to 1sec for the queue to be processed)
+        logger.debug("AsyncCloudConnector.shutdown() called")
+        self.do_work(block=False)
+
         self._stop_requested.set()
         # Flush the queue by putting an empty object on it
-        if hasattr(self, "_upload_queue") and self._upload_queue is not None:
+        if self._upload_queue is not None:
             self._upload_queue.put(None)
-        if hasattr(self, "_worker_pool") and self._worker_pool is not None:
+        if self._worker_pool is not None:
             self._worker_pool.shutdown(wait=True, cancel_futures=True)
 
     #################################################################################################
@@ -830,7 +836,8 @@ class AsyncCloudConnector(CloudConnector):
                     logger.error(f"{root_cfg.RAISE_WARN()}Temporary directory {tmp_dir} does not exist")
         except Exception as e:
             # Check all the src_files still exist and drop any that don't
-            logger.warning(f"Upload failed for {action.src_files} on iter {action.iteration}: {e!s}")
+            logger.warning(f"{root_cfg.RAISE_WARN()}Upload failed for {action.src_files} on iter "
+                           f"{action.iteration}: {e!s}")
             for file in action.src_files:
                 if not file.exists():
                     action.src_files.remove(file)
@@ -876,7 +883,8 @@ class AsyncCloudConnector(CloudConnector):
             blob_client.append_block(data_to_append)
 
         except Exception as e:
-            logger.warning(f"Upload failed for {action.src_fname} on iter {action.iteration}: {e!s}")
+            logger.warning(f"{root_cfg.RAISE_WARN()}Upload failed for {action.src_fname} on iter "
+                           f"{action.iteration}: {e!s}")
 
             # Failsafe
             if action.iteration > 100:
@@ -891,21 +899,28 @@ class AsyncCloudConnector(CloudConnector):
             sleep(2 * action.iteration)
 
 
-    def do_work(self) -> None:
+    def do_work(self, block: bool = True) -> None:
         """Process the upload queue."""
         while not self._stop_requested.is_set():
             try:
-                queue_item = self._upload_queue.get(block=True)
+                if block:
+                    queue_item = self._upload_queue.get()
+                else:
+                    queue_item = self._upload_queue.get(block=False, timeout=1)
 
                 if isinstance(queue_item, AsyncAppend):
                     self._worker_pool.submit(self._async_append, queue_item)
                 elif isinstance(queue_item, AsyncUpload):
                     self._worker_pool.submit(self._async_upload, queue_item)
                 else:
-                    logger.debug("Queue flushed")
-                    assert self._stop_requested
+                    logger.debug(f"Queue flushed using {queue_item}")
+                    assert self._stop_requested.is_set(), "Queue flushed but stop_requested is not set"
 
                 self._upload_queue.task_done()
+            except Empty:
+                assert not block, "Queue.get returned but block is True"
+                logger.debug("Shutting down upload queue")
+                break
             except Exception as e:
                 logger.error(f"{root_cfg.RAISE_WARN()}Error during do_work execution on {queue_item}: {e!s}")
         
