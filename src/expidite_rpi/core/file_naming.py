@@ -81,7 +81,7 @@ def parse_record_filename(fname: Path | str) -> dict:
 
     # Check that the filename has at least 5 "_"
     if fname.name.count("_") < 5:
-        logger.warning(f"Invalid filename format - too few _ in {fname.name}")
+        logger.warning(f"{root_cfg.RAISE_WARN()}Invalid filename format - too few _ in {fname.name}")
         return {}
 
     stem = fname.stem
@@ -142,7 +142,7 @@ def get_file_datetime(fname: Path | str) -> datetime:
 
     # Check that the filename has at least 4 "_"
     if fname.count("_") < 5:
-        logger.warning(f"Invalid filename format - too few _ in {fname}")
+        logger.warning(f"{root_cfg.RAISE_WARN()}Invalid filename format - too few _ in {fname}")
         return datetime.min
 
     # Extract the fields from the filename, parsing with the "_" delimiter

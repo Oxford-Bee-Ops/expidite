@@ -317,7 +317,7 @@ class DPnode():
         This is used by EdgeOrchestrator to periodically log observability data
         """
         if DPnode._selftracker is None:
-            logger.warning(f"{root_cfg.RAISE_WARN}SelfTracker not set; cannot log sample data")
+            logger.error(f"{root_cfg.RAISE_WARN}SelfTracker not set; cannot log sample data")
             return
 
         # Lock the dictionary to prevent concurrent access
@@ -580,7 +580,7 @@ class DPnode():
                     and (field not in api.ALL_RECORD_ID_FIELDS)
                 ):
                     logger.warning(
-                        f"{field} in output from {data_id} "
+                        f"{root_cfg.RAISE_WARN()}{field} in output from {data_id} "
                         f"but not in defined fields: {stream.fields}"
                     )
 

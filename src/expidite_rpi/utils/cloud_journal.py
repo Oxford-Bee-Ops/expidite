@@ -46,7 +46,7 @@ class _CloudJournalManager:
         try:
             self.flush_all()
         except Exception as e:
-            logger.error(f"Error in CloudJournalManager sync_run: {e}", exc_info=True)
+            logger.error(f"{root_cfg.RAISE_WARN()}Error in CloudJournalManager sync_run: {e}", exc_info=True)
         finally:
             logger.debug("Schedule next CloudJournalManager sync timer")
             if not self._stop_requested.is_set():

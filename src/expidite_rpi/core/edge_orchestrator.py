@@ -113,7 +113,7 @@ class EdgeOrchestrator:
         sensors_alive = 0
         for sensor in self._sensorThreads:
             if not sensor.is_alive():
-                logger.warning(f"Sensor thread {sensor} is not alive")
+                logger.info(f"Sensor thread {sensor} is not alive")
             else:
                 sensors_alive += 1
         dps_alive = 0
@@ -387,7 +387,8 @@ def main() -> None:
         while not orchestrator.is_stop_requested():
             if root_cfg.RESTART_EXPIDITE_FLAG.exists():
                 # Restart the re-load and re-start the EdgeOrchestrator if it fails.
-                logger.error(f"Orchestrator failed; restarting; {orchestrator._status}")
+                logger.error(f"{root_cfg.RAISE_WARN()}Orchestrator failed; restarting; "
+                             f"{orchestrator._status}")
                 orchestrator.stop_all()
                 orchestrator.load_config()
                 orchestrator.start_all()
