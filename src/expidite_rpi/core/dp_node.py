@@ -317,7 +317,7 @@ class DPnode():
         This is used by EdgeOrchestrator to periodically log observability data
         """
         if DPnode._selftracker is None:
-            logger.warning(f"{root_cfg.RAISE_WARN}SelfTracker not set; cannot log sample data")
+            logger.error(f"{root_cfg.RAISE_WARN}SelfTracker not set; cannot log sample data")
             return
 
         # Lock the dictionary to prevent concurrent access
@@ -473,6 +473,7 @@ class DPnode():
                     src_file.unlink()
                 return new_fname
 
+        # Determine if we should save the recording to the cloud.
         if override_sampling is None or override_sampling == api.OVERRIDE.AUTO:
             save_sample = self.save_sample(stream.sample_probability)
         elif override_sampling == api.OVERRIDE.SAVE:
@@ -480,7 +481,7 @@ class DPnode():
         else: # override_sampling == api.OVERRIDE.DISCARD:
             save_sample = False
             
-        # There now fork based on:
+        # There is now a fork based on:
         # - a) do we need to pass this file to a DP
         # - b) do we need to save this file to the cloud
         #
@@ -579,7 +580,7 @@ class DPnode():
                     and (field not in api.ALL_RECORD_ID_FIELDS)
                 ):
                     logger.warning(
-                        f"{field} in output from {data_id} "
+                        f"{root_cfg.RAISE_WARN()}{field} in output from {data_id} "
                         f"but not in defined fields: {stream.fields}"
                     )
 

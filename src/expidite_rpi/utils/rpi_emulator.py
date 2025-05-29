@@ -38,6 +38,10 @@ class RpiEmulator():
 
     def __init__(self) -> None:
         self.recordings: list[RpiTestRecording] = []
+        self.previous_recordings_index: int = 0
+        self.recordings_saved: dict[str, int] = {}
+        self.recording_cap: int = -1
+        self.recording_cap_dict: dict[str, int] = {}
 
     @staticmethod
     def get_instance() -> "RpiEmulator":
@@ -54,10 +58,10 @@ class RpiEmulator():
         while not RpiEmulator._is_available.is_set():
             RpiEmulator._is_available.wait()
         RpiEmulator._is_available.clear()
-        self.previous_recordings_index: int = 0
-        self.recordings_saved: dict[str, int] = {}
-        self.recording_cap: int = -1
-        self.recording_cap_dict: dict[str, int] = {}
+        self.previous_recordings_index = 0
+        self.recordings_saved = {}
+        self.recording_cap = -1
+        self.recording_cap_dict = {}
         root_cfg.TEST_MODE = root_cfg.MODE.TEST
         root_cfg.CLOUD_TYPE = root_cfg.CloudType.LOCAL_EMULATOR
         cc = CloudConnector.get_instance(root_cfg.CLOUD_TYPE)
@@ -130,7 +134,8 @@ class RpiEmulator():
         return self.recordings_saved.get(type_id, 0) >= cap
  
 
-    def recordings_still_to_process(self) -> bool:
+    @staticmethod
+    def recordings_still_to_process() -> bool:
         """Check if there are recordings remaining to process."""
         # Look for any files remaining in the processing directory
         for file in  root_cfg.EDGE_PROCESSING_DIR.glob("*"):
@@ -139,7 +144,8 @@ class RpiEmulator():
         return False
 
 
-    def fix_recording_device_id(self, fname: Path) -> Path:
+    @staticmethod
+    def fix_recording_device_id(fname: Path) -> Path:
         """We use real recordings in system test which means they have the wrong
         device ID.  We want to replace the device_id with that of this device otherwise
         expidite won't find the recordings in the EDGE_PROCESSING_DIR.
@@ -244,8 +250,9 @@ class RpiEmulator():
         
         return df
 
-    def record_system_test_run(self,
-                               test_name: str,
+
+    @staticmethod
+    def record_system_test_run(test_name: str,
                                test_input: dict) -> None:
         """Record the system test run to the cloud."""
         # The keys.env cloud_storage_account will be set to the system test account
