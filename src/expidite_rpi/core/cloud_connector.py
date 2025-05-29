@@ -757,10 +757,14 @@ class AsyncCloudConnector(CloudConnector):
         if not isinstance(src_files, list):
             src_files = [src_files]
 
+        verified_files = []
         for file in src_files:
             if not file.exists():
                 logger.error(f"{root_cfg.RAISE_WARN()}Upload of file {file} aborted; does not exist")
-                src_files.remove(file)
+            else:
+                verified_files.append(file)
+
+        src_files = verified_files
 
         if delete_src:
             # Rename the files so that they are effectively deleted from the callers perspective
@@ -840,9 +844,14 @@ class AsyncCloudConnector(CloudConnector):
             # Check all the src_files still exist and drop any that don't
             logger.warning(f"{root_cfg.RAISE_WARN()}Upload failed for {action.src_files} on iter "
                            f"{action.iteration}: {e!s}")
+            verified_files = []
             for file in action.src_files:
                 if not file.exists():
-                    action.src_files.remove(file)
+                    logger.error(f"{root_cfg.RAISE_WARN()}Upload of file {file} aborted; does not exist")
+                else:
+                    verified_files.append(file)
+                    
+            action.src_files = verified_files
 
             if action.src_files:
                 # Re-queue the upload if any src_files still exist

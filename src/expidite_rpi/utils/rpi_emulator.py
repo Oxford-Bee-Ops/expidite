@@ -58,10 +58,10 @@ class RpiEmulator():
         while not RpiEmulator._is_available.is_set():
             RpiEmulator._is_available.wait()
         RpiEmulator._is_available.clear()
-        self.previous_recordings_index: int = 0
-        self.recordings_saved: dict[str, int] = {}
-        self.recording_cap: int = -1
-        self.recording_cap_dict: dict[str, int] = {}
+        self.previous_recordings_index = 0
+        self.recordings_saved = {}
+        self.recording_cap = -1
+        self.recording_cap_dict = {}
         root_cfg.TEST_MODE = root_cfg.MODE.TEST
         root_cfg.CLOUD_TYPE = root_cfg.CloudType.LOCAL_EMULATOR
         cc = CloudConnector.get_instance(root_cfg.CLOUD_TYPE)
