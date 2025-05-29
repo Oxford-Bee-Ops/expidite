@@ -141,6 +141,7 @@ class CloudConnector:
         folder_prefix_len: Optional; first n characters of the file name to use as a subfolder
         files: Optional; list of files to download from src_datastore; if None, all files in the container
             will be downloaded; useful for chunking downloads
+        overwrite: Optional; if False, function will skip downloading files that already existing in dst_dir
         """
 
         download_container = self._validate_container(src_container)
@@ -686,6 +687,7 @@ class LocalCloudConnector(CloudConnector):
             # The Azure timezone is UTC but it's not explicitly set; set it
             return datetime.fromtimestamp(last_modified, tz=timezone.utc)
         else:
+            logger.warning(f"Blob {blob_name} does not exist in container {container}")
             return datetime.min.replace(tzinfo=timezone.utc)
 
 #####################################################################################################
