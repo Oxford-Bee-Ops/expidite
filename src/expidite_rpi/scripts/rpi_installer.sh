@@ -542,9 +542,9 @@ function make_persistent() {
         crontab -l | grep -v "rpi_installer" | crontab -
 
         # Add the script to crontab to run on reboot
-        echo "Script added to crontab to run on reboot and every night at 2am."
+        echo "Script added to crontab to run on reboot and Saturday night at 2am."
         (crontab -l 2>/dev/null; echo "@reboot $rpi_installer_cmd") | crontab -
-        (crontab -l 2>/dev/null; echo "0 2 * * * $rpi_cmd_os_update") | crontab -
+        (crontab -l 2>/dev/null; echo "0 2 * * 6 $rpi_cmd_os_update") | crontab -
     fi
 
     # If this is a system_test install, we add an additional line to crontab to run my_start_script
