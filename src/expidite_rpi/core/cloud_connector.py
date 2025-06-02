@@ -38,13 +38,7 @@ class CloudConnector:
             raise ValueError("Cloud storage credentials not set; cannot connect to cloud")
 
         self._connection_string = root_cfg.keys.cloud_storage_key
-
-        # Ensure the system containers exist and create them if they don't
-        self.create_container(root_cfg.my_device.cc_for_fair)
-        self.create_container(root_cfg.my_device.cc_for_journals)
-        self.create_container(root_cfg.my_device.cc_for_system_records)
-        self.create_container(root_cfg.my_device.cc_for_upload)
-        self.create_container(root_cfg.my_device.cc_for_system_test)
+        self._validated_containers: dict[str, ContainerClient] = {}
 
     @staticmethod
     def get_instance(type: CloudType) -> "CloudConnector":
@@ -76,6 +70,7 @@ class CloudConnector:
 
         else:
             raise ValueError(f"Unsupported cloud type: {type}")
+
 
     def upload_to_container(
         self,
@@ -295,10 +290,7 @@ class CloudConnector:
 
     def create_container(self, container: str) -> None:
         """Create the specified container"""
-        containerClient = self._validate_container(container)
-        if not containerClient.exists():
-            logger.info(f"Creating container {container}")
-            containerClient.create_container()
+        self._validate_container(container)
 
     def exists(self, src_container: str, blob_name: str) -> bool:
         """Check if the specified blob exits"""
@@ -376,14 +368,24 @@ class CloudConnector:
             my_file.write(download_stream.readall())
         return dst_file.name
 
-
     def _validate_container(self, container: str) -> ContainerClient:
+        """Validate a container string or ContainerClient and return a ContainerClient instance.
+        Create the container if it does not already exist."""
         if isinstance(container, str):
-            return ContainerClient.from_connection_string(
+            container_client = ContainerClient.from_connection_string(
                 conn_str=self._get_connection_string(), container_name=container
             )
         else:
-            return container
+            container_client = container
+
+        # Only do an external check if we haven't already validated this container        
+        if container_client.container_name not in self._validated_containers:
+            if not container_client.exists():
+                logger.info(f"Creating container {container}")
+                container_client.create_container()
+            self._validated_containers[container_client.container_name] = container_client
+
+        return container_client
 
     def _get_connection_string(self) -> str:
         return self._connection_string
