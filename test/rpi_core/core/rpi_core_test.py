@@ -1,6 +1,7 @@
 from time import sleep
 
 import pytest
+import pytest_socket
 from expidite_rpi.core import configuration as root_cfg
 from expidite_rpi.example import my_fleet_config
 from expidite_rpi.rpi_core import RpiCore
@@ -29,14 +30,18 @@ class Test_SensorFactory:
 
             root_cfg.update_my_device_id("d01111111111")
 
+            # Test starting RpiCore without internet access
+            pytest_socket.disable_socket()
             sc = RpiCore()
             sc.configure(inventory)
             sc.start()
             sleep(2)
             sc.status()
-            # This should be rejected because the sensor is already running
-            #with pytest.raises(Exception):
-            #    sc.configure("example.my_fleet_config.Inventory")
+
+            # Re-enable internet access and check status
+            pytest_socket.enable_socket()
+            sleep(2)
+            sc.status()
             sc.stop()
             sc.status()
 
