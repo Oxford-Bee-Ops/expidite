@@ -65,6 +65,15 @@ class CloudConnector:
                 CloudConnector._instance = LocalCloudConnector()
             return CloudConnector._instance
         
+        elif type == CloudType.SYNC_AZURE:
+            if CloudConnector._instance is None or isinstance(CloudConnector._instance, AsyncCloudConnector):
+                logger.debug("Creating synchronous CloudConnector instance")
+                if CloudConnector._instance is not None:
+                    # Shutdown the previous AsyncCloudConnector
+                    CloudConnector._instance.shutdown()
+                CloudConnector._instance = CloudConnector()
+            return CloudConnector._instance
+
         else:
             raise ValueError(f"Unsupported cloud type: {type}")
 
