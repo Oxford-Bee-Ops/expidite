@@ -391,31 +391,6 @@ class InteractiveMenu():
         return
 
 
-    def set_hostname(self) -> None:
-        """Set the hostname of the Raspberry Pi."""
-        click.echo(f"Set the hostname to match the name in DeviceCfg: {root_cfg.my_device.name}?")
-        click.echo("  y: yes")
-        click.echo("  n: no")
-        char = click.getchar()
-        click.echo(char)
-        if not root_cfg.running_on_rpi:
-            click.echo("This command only works on a Raspberry Pi")
-            return
-        if char == "y":
-            new_hostname = root_cfg.my_device.name
-            click.echo("Setting hostname... (ignore temporary error message)")
-            run_cmd_live_echo("sudo nmcli general hostname " + new_hostname)
-
-            # Also need to set hostname in /etc/hosts separately...
-            # Delete the line starting with '127.0.1.1' from /etc/hosts
-            run_cmd_live_echo("sudo sed -i '/^127.0.1.1/d' /etc/hosts")
-            # Add a new line with the new hostname
-            run_cmd_live_echo(f"echo '127.0.1.1 {new_hostname}' | sudo tee -a /etc/hosts")
-            click.echo("\nHostname set to " + new_hostname + ".\n")
-        else:
-            click.echo("Exiting...")
-
-
     def enable_rpi_connect(self) -> None:
         """Enable the RPi Connect service."""
         click.echo("Enabling RPi Connect service...")
@@ -824,11 +799,10 @@ class InteractiveMenu():
             click.echo("2. Start RpiCore")
             click.echo("3. Stop RpiCore (graceful stop)")
             click.echo("4. Hard stop RpiCore (pkill)")
-            click.echo("5. Set Hostname")
-            click.echo("6. Enable rpi-connect")
-            click.echo("7. Restart the Device")
-            click.echo("8. Update storage key")
-            click.echo("9. Back to Main Menu")  
+            click.echo("5. Enable rpi-connect")
+            click.echo("6. Restart the Device")
+            click.echo("7. Update storage key")
+            click.echo("8. Back to Main Menu")  
             try:
                 choice = click.prompt("\nEnter your choice", type=int)
                 click.echo("\n")
@@ -845,14 +819,12 @@ class InteractiveMenu():
             elif choice == 4:
                 self.stop_rpi_core(pkill=True) 
             elif choice == 5:
-                self.set_hostname()
-            elif choice == 6:
                 self.enable_rpi_connect()
-            elif choice == 7: 
+            elif choice == 6: 
                 self.reboot_device()
-            elif choice == 8: 
+            elif choice == 7: 
                 self.update_storage_key()
-            elif choice == 9:
+            elif choice == 8:
                 break
             else:
                 click.echo("Invalid choice. Please try again.")

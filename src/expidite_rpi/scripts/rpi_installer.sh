@@ -485,6 +485,42 @@ function enable_i2c() {
 }
 
 ##############################################
+# Set hostname to "expidite-<device_id>"
+# The device_id is the wlan0 mac address with the colons removed
+##############################################
+function set_hostname() {
+    if [ ! -f /sys/class/net/wlan0/address ]; then
+        echo "Error: wlan0 interface not found."
+        return 1
+    fi 
+    mac_address=$(cat /sys/class/net/wlan0/address)
+    device_id=$(echo "$mac_address" | tr -d ':')
+
+    # Set the hostname to expidite-<device_id>
+    new_hostname="expidite-$device_id"
+    
+    # Check if the hostname is already set correctly
+    current_hostname=$(hostname)
+    if [ "$current_hostname" == "$new_hostname" ]; then
+        echo "Hostname is already set to $new_hostname."
+        return 0
+    fi
+
+    # Set the new hostname
+    echo "Setting hostname to $new_hostname..."
+    sudo hostnamectl set-hostname "$new_hostname" || { echo "Failed to set hostname"; exit 1; }
+    
+    # Update /etc/hosts file
+    if ! grep -q "$new_hostname" /etc/hosts; then
+        echo "Updating /etc/hosts file..."
+        # Remove any line starting with "127.0.1.1"
+        sudo sed -i '/^127\.0\.1\.1/d' /etc/hosts
+        # Insert the new hostname at the end of the file
+        echo "127.0.1.1 $new_hostname" | sudo tee -a /etc/hosts > /dev/null
+    fi
+}
+
+##############################################
 # Create an alias for the bcli command
 ##############################################
 function alias_bcli() {
