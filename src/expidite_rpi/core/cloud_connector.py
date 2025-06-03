@@ -45,27 +45,33 @@ class CloudConnector:
         """We use a factory pattern to offer up alternative types of CloudConnector for accessing
         different cloud storage providers and / or the local emulator."""
         if type == CloudType.AZURE:
-            if CloudConnector._instance is None or isinstance(CloudConnector._instance, LocalCloudConnector):
-                logger.debug("Creating AsyncCloudConnector instance")
+            if CloudConnector._instance is None:
+                CloudConnector._instance = AsyncCloudConnector()
+            elif not isinstance(CloudConnector._instance, AsyncCloudConnector):
+                logger.warning(
+                    f"{root_cfg.RAISE_WARN()}Replacing CloudConnector instance with AsyncCloudConnector")
+                CloudConnector._instance.shutdown()
                 CloudConnector._instance = AsyncCloudConnector()
             return CloudConnector._instance
         
         elif type == CloudType.LOCAL_EMULATOR:
-            if CloudConnector._instance is None or isinstance(CloudConnector._instance, AsyncCloudConnector):
-                logger.debug("Creating LocalCloudConnector instance")
-                if CloudConnector._instance is not None:
-                    # Shutdown the previous AsyncCloudConnector
-                    CloudConnector._instance.shutdown()
+            if CloudConnector._instance is None:
+                CloudConnector._instance = LocalCloudConnector()
+            elif not isinstance(CloudConnector._instance, LocalCloudConnector):
+                logger.warning(
+                    f"{root_cfg.RAISE_WARN()}Replacing CloudConnector instance with LocalCloudConnector")
+                CloudConnector._instance.shutdown()
                 CloudConnector._instance = LocalCloudConnector()
             return CloudConnector._instance
         
         elif type == CloudType.SYNC_AZURE:
-            if CloudConnector._instance is None or isinstance(CloudConnector._instance, AsyncCloudConnector):
-                logger.debug("Creating synchronous CloudConnector instance")
-                if CloudConnector._instance is not None:
-                    # Shutdown the previous AsyncCloudConnector
-                    CloudConnector._instance.shutdown()
-                CloudConnector._instance = CloudConnector()
+            if CloudConnector._instance is None:
+                CloudConnector._instance = SyncCloudConnector()
+            elif not isinstance(CloudConnector._instance, SyncCloudConnector):
+                logger.warning(
+                    f"{root_cfg.RAISE_WARN()}Replacing CloudConnector instance with SyncCloudConnector")
+                CloudConnector._instance.shutdown()
+                CloudConnector._instance = SyncCloudConnector()
             return CloudConnector._instance
 
         else:
@@ -355,6 +361,13 @@ class CloudConnector:
         else:
             return datetime.min.replace(tzinfo=timezone.utc)
 
+    def shutdown(self) -> None:
+        """Shutdown the CloudConnector instance"""
+        logger.debug("Shutting down CloudConnector")
+        # No resources to release in this implementation, but we could close any open connections if needed
+        self._validated_containers.clear()
+        CloudConnector._instance = None
+
     ####################################################################################################
     # Private utility methods
     ####################################################################################################
@@ -420,6 +433,22 @@ class CloudConnector:
 
 
 #########################################################################################################
+# SyncCloudConnector class
+#
+# This class is simply the original CloudConnector with no subclassed methods.
+# But we need it to be able to use the CloudConnector.get_instance() method
+#########################################################################################################
+class SyncCloudConnector(CloudConnector):
+    def __init__(self) -> None:
+        logger.debug("Creating SyncCloudConnector instance")
+        super().__init__()
+
+    def shutdown(self) -> None:
+        """Shutdown the SyncCloudConnector instance"""
+        logger.debug("Shutting down SyncCloudConnector")
+        super().shutdown()
+
+#########################################################################################################
 # LocalCloudConnector class
 #
 # This class is used to connect to the local cloud emulator.  It is a subclass of CloudConnector and
@@ -431,6 +460,8 @@ local_cloud: Path = local_cloud_root / api.utc_to_fname_str()
 class LocalCloudConnector(CloudConnector):
     def __init__(self) -> None:
         logger.debug("Creating LocalCloudConnector instance")
+        super().__init__()
+
         if root_cfg.my_device is None:
             raise ValueError("System configuration not set; cannot connect to cloud")
         self.local_cloud = local_cloud
@@ -730,7 +761,7 @@ class AsyncCloudConnector(CloudConnector):
 
     def __init__(self) -> None:
         logger.debug("Creating AsyncCloudConnector instance")
-        CloudConnector.__init__(self)
+        super().__init__()
         self._stop_requested = Event()
         self._upload_queue: Queue = Queue()
         self._worker_pool: ThreadPoolExecutor = ThreadPoolExecutor(max_workers=6)
@@ -738,7 +769,7 @@ class AsyncCloudConnector(CloudConnector):
         self._worker_pool.submit(self.do_work)
 
     def shutdown(self):
-        """ Method to support unit tests - shutdown the worker pool.
+        """ Shutdown the worker pool.
         Will wait until scheduled uploads are complete before returning."""
         
         # Try to schedule any remaining uploads (waits up to 1sec for the queue to be processed)
@@ -751,6 +782,8 @@ class AsyncCloudConnector(CloudConnector):
             self._upload_queue.put(None)
         if self._worker_pool is not None:
             self._worker_pool.shutdown(wait=True, cancel_futures=True)
+
+        super().shutdown()  # Call the parent shutdown method
 
     #################################################################################################
     # Public methods
