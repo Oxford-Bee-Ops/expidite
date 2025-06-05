@@ -117,13 +117,13 @@ class CloudJournalPool(JournalPool):
 
     def flush_journals(self) -> None:
         """Flush all journals to disk and onwards to archive"""
-        logger.debug(f"Lock: flush_journals")
+        logger.debug("Lock: flush_journals")
         with self.jlock:
             # We can call flush_all on any CloudJournal in the pool and all will get flushed
             for cj in self._cj_pool.values():
                 cj.flush_all()
                 break
-        logger.debug(f"Unlock: flush_journals")
+        logger.debug("Unlock: flush_journals")
 
     def stop(self) -> None:
         """Stop the CloudJournalPool, flush all data and exit any threads"""
