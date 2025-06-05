@@ -91,6 +91,7 @@ HEART_FIELDS = [
     "power_status",
     "process_list",
     "expidite_version",
+    "user_code_version",
 ]
 
 # WARNING - special datastream for capturing warning and error logs from any component
