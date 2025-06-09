@@ -243,8 +243,8 @@ class InteractiveMenu():
             click.echo("This command only works on Linux. Exiting...")
             return
         click.echo(f"{dash_line}")
-        click.echo("# RpiCore logs")
-        click.echo("# Displaying rpi_core logs for the last 15 minutes")
+        click.echo("# Expidite logs")
+        click.echo("# Displaying expidite logs for the last 15 minutes")
         click.echo(f"{dash_line}")
         since_time = api.utc_now() - timedelta(minutes=15)
         logs = device_health.get_logs(since=since_time, min_priority=6, grep_str="expidite")
@@ -257,8 +257,8 @@ class InteractiveMenu():
             return
         since_time = api.utc_now() - timedelta(minutes=30)
         click.echo(f"{dash_line}")
-        click.echo("# RpiCore logs")
-        click.echo("# Displaying rpi_core logs for the last 30 minutes")
+        click.echo("# Sensor logs")
+        click.echo("# Displaying sensor output logs from the last 30 minutes")
         click.echo(f"{dash_line}")
         logs = device_health.get_logs(since=since_time, min_priority=6, grep_str=api.TELEM_TAG)
         self.display_logs(logs)
@@ -389,31 +389,6 @@ class InteractiveMenu():
         if pkill and root_cfg.system_cfg:
                 run_cmd(f"sudo pkill -f 'python -m {root_cfg.system_cfg.my_start_script}'")
         return
-
-
-    def set_hostname(self) -> None:
-        """Set the hostname of the Raspberry Pi."""
-        click.echo(f"Set the hostname to match the name in DeviceCfg: {root_cfg.my_device.name}?")
-        click.echo("  y: yes")
-        click.echo("  n: no")
-        char = click.getchar()
-        click.echo(char)
-        if not root_cfg.running_on_rpi:
-            click.echo("This command only works on a Raspberry Pi")
-            return
-        if char == "y":
-            new_hostname = root_cfg.my_device.name
-            click.echo("Setting hostname... (ignore temporary error message)")
-            run_cmd_live_echo("sudo nmcli general hostname " + new_hostname)
-
-            # Also need to set hostname in /etc/hosts separately...
-            # Delete the line starting with '127.0.1.1' from /etc/hosts
-            run_cmd_live_echo("sudo sed -i '/^127.0.1.1/d' /etc/hosts")
-            # Add a new line with the new hostname
-            run_cmd_live_echo(f"echo '127.0.1.1 {new_hostname}' | sudo tee -a /etc/hosts")
-            click.echo("\nHostname set to " + new_hostname + ".\n")
-        else:
-            click.echo("Exiting...")
 
 
     def enable_rpi_connect(self) -> None:
@@ -783,8 +758,8 @@ class InteractiveMenu():
             click.echo(f"{header}Debugging Menu:")
             click.echo("1. Journalctl")
             click.echo("2. Display errors")
-            click.echo("3. Display RpiCore Logs")
-            click.echo("4. Display logs from sensors")
+            click.echo("3. Display all expidite logs")
+            click.echo("4. Display sensor output logs")
             click.echo("5. Display running processes")
             click.echo("6. Show recordings and data files")
             click.echo("7. Show Crontab Entries")
@@ -824,11 +799,10 @@ class InteractiveMenu():
             click.echo("2. Start RpiCore")
             click.echo("3. Stop RpiCore (graceful stop)")
             click.echo("4. Hard stop RpiCore (pkill)")
-            click.echo("5. Set Hostname")
-            click.echo("6. Enable rpi-connect")
-            click.echo("7. Restart the Device")
-            click.echo("8. Update storage key")
-            click.echo("9. Back to Main Menu")  
+            click.echo("5. Enable rpi-connect")
+            click.echo("6. Restart the Device")
+            click.echo("7. Update storage key")
+            click.echo("8. Back to Main Menu")  
             try:
                 choice = click.prompt("\nEnter your choice", type=int)
                 click.echo("\n")
@@ -845,14 +819,12 @@ class InteractiveMenu():
             elif choice == 4:
                 self.stop_rpi_core(pkill=True) 
             elif choice == 5:
-                self.set_hostname()
-            elif choice == 6:
                 self.enable_rpi_connect()
-            elif choice == 7: 
+            elif choice == 6: 
                 self.reboot_device()
-            elif choice == 8: 
+            elif choice == 7: 
                 self.update_storage_key()
-            elif choice == 9:
+            elif choice == 8:
                 break
             else:
                 click.echo("Invalid choice. Please try again.")

@@ -37,6 +37,7 @@ class JournalPool(ABC):
     def get(mode: Mode) -> JournalPool:
         """Get the singleton instance of the JournalPool"""
         if JournalPool._instance is None:
+            logger.debug(f"Creating JournalPool instance for mode: {mode}")
             JournalPool._instance = CloudJournalPool()
         return JournalPool._instance
 
@@ -93,9 +94,11 @@ class CloudJournalPool(JournalPool):
         All data MUST relate to the same DAY as timestamp."""
 
         assert timestamp is not None, "Timestamp must be provided for add_rows_from_df with CloudJournalPool"
+        logger.debug(f"Lock: adding rows for stream {stream.type_id}")
         with self.jlock:
             cj = self._get_journal(stream, timestamp)
             cj.add_rows(data)
+        logger.debug(f"Unlock: added rows for stream {stream.type_id}")
 
     def add_rows_from_df(
         self, stream: Stream, data: pd.DataFrame, timestamp: Optional[datetime] = None
@@ -106,25 +109,31 @@ class CloudJournalPool(JournalPool):
         if timestamp is None:
             timestamp = api.utc_now()
 
+        logger.debug(f"Lock: adding rows for stream {stream.type_id}")
         with self.jlock:
             cj = self._get_journal(stream, timestamp)
             cj.add_rows_from_df(data)
+        logger.debug(f"Unlock: added rows for stream {stream.type_id}")
 
     def flush_journals(self) -> None:
         """Flush all journals to disk and onwards to archive"""
+        logger.debug("Lock: flush_journals")
         with self.jlock:
             # We can call flush_all on any CloudJournal in the pool and all will get flushed
             for cj in self._cj_pool.values():
                 cj.flush_all()
                 break
+        logger.debug("Unlock: flush_journals")
 
     def stop(self) -> None:
         """Stop the CloudJournalPool, flush all data and exit any threads"""
+        logger.debug("Lock: stopping CloudJournalPool")
         with self.jlock:
             # We can call stop on any CloudJournal in the pool and all will get stopped
             for cj in self._cj_pool.values():
                 cj.stop()
                 break
+        logger.debug("Unlock: stopped CloudJournalPool")
 
     def _get_journal(self, stream: Stream, day: datetime) -> CloudJournal:
         """Generate the CloudJournal filename for a DPtreeNodeCfg.

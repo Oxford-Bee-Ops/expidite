@@ -5,7 +5,6 @@ from abc import ABC, abstractmethod
 
 from expidite_rpi.core import api
 from expidite_rpi.core import configuration as root_cfg
-from expidite_rpi.core.cloud_connector import CloudConnector
 from expidite_rpi.core.dp_config_objects import Stream
 from expidite_rpi.core.dp_node import DPnode
 from expidite_rpi.core.dp_tree import DPtree
@@ -101,24 +100,7 @@ class Rule4_cloud_container_specified(ValidationRule):
 
 # Rule5: check that all cloud_containers exist in the blobstore using cloud_connector.container_exists()
 # If they don't exist, create them.
-class Rule5_cloud_container_exists(ValidationRule):
-    def validate(self, dpnode: DPnode) -> tuple[bool, str]:
-        cc = CloudConnector.get_instance(root_cfg.CLOUD_TYPE)
-        outputs = dpnode.get_config().outputs
-        if outputs:
-            for stream in outputs:
-                if stream.format not in api.DATA_FORMATS:
-                    # Check the Datastream's cloud_container exists
-                    if stream.cloud_container is not None:
-                        try:
-                            # Create_container checks if the container exists
-                            # and only creates it if it doesn't
-                            cc.create_container(stream.cloud_container)
-                        except Exception as e:
-                            return False, (
-                                f"Failed to create cloud container {stream.cloud_container} in {dpnode}: {e}"
-                            )
-        return True, ""
+# No longer required as the cloud connector will create them on upload.
 
 # Rule 6: any datastream of type log, csv or df must have output fields set
 class Rule6_csv_output_fields(ValidationRule):
@@ -154,7 +136,6 @@ RULE_SET: list[ValidationRule] = [
     Rule2_sensor_type_model_set(),
     Rule3_no_underscore_in_type_id(),
     Rule4_cloud_container_specified(),
-    Rule5_cloud_container_exists(),
     Rule6_csv_output_fields(),
     Rule7_reserved_fieldnames(),
 ]

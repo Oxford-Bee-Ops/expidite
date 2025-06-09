@@ -30,6 +30,7 @@ TEST_MODE: MODE = MODE.PRODUCTION
 class CloudType(Enum):
     """Enum for the supported cloud types"""
     AZURE = "azure"
+    SYNC_AZURE = "sync_azure" # Enforced synchronous mode
     LOCAL_EMULATOR = "local"
 
 CLOUD_TYPE: CloudType = CloudType.AZURE

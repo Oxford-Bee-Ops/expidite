@@ -85,7 +85,7 @@ class RpiEmulator():
     def __exit__(self, exc_type, exc_value, traceback) -> None:
         """Exit the context manager."""
         logger.info("Exiting RpiEmulator context.")
-        self.cc.clear_local_cloud()
+        #self.cc.clear_local_cloud()
         RpiEmulator._is_available.set()
 
     def mock_timers(self, inventory: list[DeviceCfg]) -> list[DeviceCfg]:

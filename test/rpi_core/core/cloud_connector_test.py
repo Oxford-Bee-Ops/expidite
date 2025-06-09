@@ -37,7 +37,7 @@ class TestCloudConnector:
         delete_src: bool = False,
         blob_tier: Enum =BlobTier.COOL,
     def append_to_cloud(
-        self, dst_container: str, src_file: Path, safe_mode: Optional[bool] = False
+        self, dst_container: str, src_file: Path
     def container_exists(self, container: str) -> bool:
     def exists(self, src_container: str, blob_name: str) -> bool:
     def delete(self, container: str, blob_name: str) -> None:
@@ -121,7 +121,7 @@ class TestCloudConnector:
         assert modified_time is not None, "Modified time is None"
 
         # Append to the same file again
-        cc.append_to_cloud(dst_container, append_file, delete_src=True, safe_mode=True)
+        cc.append_to_cloud(dst_container, append_file, delete_src=True)
         sleep(1)
         assert cc.exists(dst_container, append_file.name), "Appended file does not exist in cloud container"
         assert not append_file.exists(), "Append file exists after second append despre delete_src=True"

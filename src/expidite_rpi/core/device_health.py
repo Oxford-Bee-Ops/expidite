@@ -91,6 +91,7 @@ HEART_FIELDS = [
     "power_status",
     "process_list",
     "expidite_version",
+    "user_code_version",
 ]
 
 # WARNING - special datastream for capturing warning and error logs from any component
@@ -182,9 +183,8 @@ class DeviceHealth(Sensor):
         We capture logs tagged with the RAISE_WARN_TAG and all logs with priority <=3 (Error)."""
 
         if root_cfg.running_on_rpi:
-            since_time = self.last_ran
+            logs = get_logs(since=self.last_ran, min_priority=4)
             self.last_ran = api.utc_now()
-            logs = get_logs(since=since_time, min_priority=4)
 
             for log in logs:
                 if str(log["message"]).startswith(api.RAISE_WARN_TAG):
