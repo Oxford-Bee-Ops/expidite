@@ -63,9 +63,20 @@ class Test_CloudJournal:
         test_data["field4"] = 4
         cj.add_row(test_data)
         cj.flush_all()
+        sleep(2)
 
+        # Download the file again to check the data integrity
+        # This will fail if pandas can't parse the file
+        cj.download()
+
+        ###########################################################################
         # Repeat after having changed the reqd_columns
         # We'll only ever encounter this when we change the coded definition
+        ###########################################################################
+        # Because CC only checks for mismatched columns when it is first writing to a new file,
+        # we need to delete it's cache of known files
+        cc._validated_append_files = set()
+
         reqd_columns = ["field1", "field2", "field3", "field4"]
         test_data = {"field1": 1, "field2": 2, "field3": 3, "field4": 4}
         test_journal = Journal(test_journal_path, reqd_columns=reqd_columns)
@@ -76,6 +87,11 @@ class Test_CloudJournal:
         )
         cj.add_row(test_data)
         cj.flush_all()
+        sleep(2)
+
+        # Download the file again to check the data integrity
+        # This will fail if pandas can't parse the file
+        cj.download()
 
         # Stop the worker thread so we exit
         cj.manager.stop()

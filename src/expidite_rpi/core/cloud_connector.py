@@ -1,3 +1,5 @@
+import csv
+import io
 import shutil
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from dataclasses import dataclass
@@ -8,7 +10,8 @@ from threading import Event
 from time import sleep
 from typing import Optional
 
-from azure.storage.blob import BlobClient, BlobLeaseClient, ContainerClient
+import pandas as pd
+from azure.storage.blob import BlobClient, ContainerClient
 
 from expidite_rpi.core import api, file_naming
 from expidite_rpi.core import configuration as root_cfg
@@ -18,14 +21,11 @@ logger = root_cfg.setup_logger("expidite")
 
 
 ##########################################################################################################
-
-
 # Default implementation of the CloudConnector class and interface definition.
+#
 # This class is used to connect to the cloud storage provider (Azure Blob Storage) but does so 
 # # synchronously.
 ##########################################################################################################
-
-
 class CloudConnector:
 
     _instance: Optional["CloudConnector"] = None
@@ -39,6 +39,7 @@ class CloudConnector:
 
         self._connection_string = root_cfg.keys.cloud_storage_key
         self._validated_containers: dict[str, ContainerClient] = {}
+        self._validated_append_files: set[str] = set()
 
     @staticmethod
     def get_instance(type: CloudType) -> "CloudConnector":
@@ -244,8 +245,7 @@ class CloudConnector:
     def append_to_cloud(self, 
                         dst_container: str, 
                         src_file: Path, 
-                        delete_src: bool, 
-                        safe_mode: bool = False,
+                        delete_src: bool,
     ) -> bool:
         """Append a block of CSV data to an existing CSV file in the cloud
 
@@ -253,22 +253,27 @@ class CloudConnector:
         ----------
         dst_container: destination container
         src_file: source file Path
-        safe_mode: if safe_mode is enabled, the function checks the local and remote column headers are 
-        consistent
+        delete_src: delete the local src_file instance after successful upload
 
         Return
         ------
         bool indicating whether data was successfully written to the blob
 
         If the remote file doesn't already exist it will be created.
-        If the remote file does exist, the first line (headers) in the src_file will be dropped
+        If the remote file exists, the first line (headers) in the src_file will be dropped
         so that we don't duplicate a header row.
-        It the responsibility of the calling function to ensure that the columns & headers in the
-        CSV data are consistent between local and remote files"""
+
+        We need to cope with changes in software versions which may change the headers in the CSV file.
+        Each file in the cloud will only ever be written to by one device (ie this one), so we only need
+        to check the headers once at start up.
+        If this is the first time we're writing to this remote file, but the file already exists,
+        we check that the headers in the local file match the headers in the remote file.  If they do not 
+        match, we download the remote file, merge the data to create a coherent set of headers and push 
+        the aggregated data back to the remote file.
+        """
 
         try:
             logger.debug(f"CloudConnector.append_to_cloud() with delete_src={delete_src} for {src_file}")
-            target_container = self._validate_container(dst_container)
 
             # Read the local file data ready to append
             with src_file.open("r") as file:
@@ -276,33 +281,77 @@ class CloudConnector:
                 if len(local_lines) == 1:
                     return False  # No data beyond headers
 
-            blob_client = target_container.get_blob_client(src_file.name)
+            result = self._append_data_to_blob(dst_container=dst_container,
+                                               dst_file=src_file.name,
+                                               lines_to_append=local_lines)
 
-            if not blob_client.exists():
-                blob_client.create_append_blob()
-                # Include the Headers
-                data_to_append = "".join(local_lines[:])
-            else:
-                if safe_mode and not self._headers_match(blob_client, local_lines[0]):
-                    # We bin out rather than set inconsistent fields
-                    logger.error(
-                        f"{root_cfg.RAISE_WARN()}Failed due to inconsistent headers: local={local_lines[0]}"
-                    )
-                    return False
-                # Drop the Headers in the first line so we don't have repeat header rows
-                data_to_append = "".join(local_lines[1:])
-
-            # Append the data
-            blob_client.append_block(data_to_append)
-            if delete_src:
+            if result and delete_src:
                 logger.debug(f"Deleting append file: {src_file}")
                 src_file.unlink()
 
+            return result
+        except Exception as e:
+            logger.error(f"{root_cfg.RAISE_WARN()}Failed to append data to {src_file}: {e!s}")
+            return False
+        
+    def _append_data_to_blob(self, 
+                            dst_container: str,
+                            dst_file: str,
+                            lines_to_append: list[str]) -> bool:
+        try:
+            target_container = self._validate_container(dst_container)
+            blob_client = target_container.get_blob_client(dst_file)
+
+            if not blob_client.exists():
+                # Create the blob and include the Headers
+                blob_client.create_append_blob()
+                data_to_append = "".join(lines_to_append[:])
+                self._validated_append_files.add(dst_file)
+            elif dst_file not in self._validated_append_files:
+                # It's our first time writing to this file since reboot
+                # Validate that the headers match
+                if self._headers_match(blob_client, lines_to_append[0]):
+                    logger.debug(f"Headers match for {blob_client.blob_name}, appending data")
+                    # Drop the Headers in the first line so we don't have repeat header rows
+                    data_to_append = "".join(lines_to_append[1:])
+                else:
+                    logger.warning(f"{root_cfg.RAISE_WARN()}Headers do not match for {dst_file}, "
+                                      "downloading remote file to merge headers")
+                    # Download the remote file
+                    tmp_file = file_naming.get_temporary_filename(api.FORMAT.CSV)
+                    self.download_from_container(
+                        src_container=dst_container,
+                        src_file=dst_file,
+                        dst_file=tmp_file,
+                    )
+                    # Merge the dataframes
+                    orig_df = pd.read_csv(tmp_file)
+                    append_df = pd.read_csv(io.StringIO("".join(lines_to_append)))
+                    merged_df = pd.concat([orig_df, append_df], ignore_index=True)
+
+                    # Generate the CSV data to append (including the headers)
+                    csv_buffer = io.StringIO()
+                    merged_df.to_csv(csv_buffer, index=False)
+                    data_to_append = csv_buffer.getvalue()
+                    tmp_file.unlink()  # Clean up the temporary file
+
+                    # Re-create the append_blob - this replaces the existing file
+                    blob_client.create_append_blob()
+
+                # Record that we've validated this file
+                self._validated_append_files.add(dst_file)
+            else:
+                # Drop the Headers in the first line so we don't have repeat header rows
+                data_to_append = "".join(lines_to_append[1:])
+
+            # Append the data
+            blob_client.append_block(data_to_append)
+
             return True
         except Exception as e:
-            logger.error(f"{root_cfg.RAISE_WARN()}Failed to append data to {blob_client.blob_name}: {e!s}")
+            logger.error(f"{root_cfg.RAISE_WARN()}Failed to append data to {dst_file}: {e!s}")
             return False
-
+        
     def container_exists(self, container: str) -> bool:
         """Check if the specified container exists"""
         containerClient = self._validate_container(container)
@@ -417,33 +466,39 @@ class CloudConnector:
     def _get_connection_string(self) -> str:
         return self._connection_string
 
-    def _get_lease(self, src_container: ContainerClient, blob_name: Path) -> object:
-        blob_client = src_container.get_blob_client(blob_name.name)
-        return blob_client.acquire_lease(60)
-
-    def _release_lease(self, lease: object) -> None:
-        assert isinstance(lease, BlobLeaseClient)
-        lease.release()
-
     def _headers_match(self, blob_client: BlobClient, local_line: str) -> bool:
-        # Check the local and remote headers match
+        """Check if the headers in the local file match the headers in the remote file.
+        Will return false if either is empty or if the headers do not match."""
         start_of_contents = blob_client.download_blob(encoding="utf-8").read(chars=1000) 
-        if start_of_contents is not None and start_of_contents != "":
-            # Get the first line from start_of_contents
-            cloud_lines = start_of_contents.splitlines()
-            if len(cloud_lines) >= 1:
-                # We have headers from local and cloud files; check headers match
-                local_headers = local_line.strip().split(",")
-                cloud_headers = cloud_lines[0].strip().split(",")
-                if len(local_headers) != len(cloud_headers) or not all(
-                    lh == ch for lh, ch in zip(local_headers, cloud_headers)
-                ):
-                    # They don't match
-                    logger.warning(f"{root_cfg.RAISE_WARN()}Local and remote headers do not match in "
-                                   f"{blob_client.blob_name}: {local_headers}, {cloud_headers}")
-                    return False
-        # We can't find any issues
-        return True
+
+        if not start_of_contents:
+            return False  # No contents in the remote file
+
+        if not local_line.strip():
+            logger.warning(f"{root_cfg.RAISE_WARN()}Local file {blob_client.blob_name} has no headers")
+            return False  # No headers in the local file
+        
+        # Get the first line from start_of_contents
+        cloud_lines = start_of_contents.splitlines()
+        if len(cloud_lines) >= 1:
+            # We have headers from local and cloud files; check headers match
+            local_reader = csv.reader([local_line])
+            cloud_reader = csv.reader([cloud_lines[0]])
+            local_headers = next(local_reader)
+            cloud_headers = next(cloud_reader)
+            if local_headers != cloud_headers:
+                logger.warning(
+                    f"{root_cfg.RAISE_WARN()}Local and remote headers do not match in "
+                    f"{blob_client.blob_name}: {local_headers}, {cloud_headers}"
+                )
+                return False
+            else:
+                # All is good; headers match
+                logger.debug(f"Headers match for {blob_client.blob_name}: {local_headers}")
+                return True
+        else:
+            logger.warning(f"{root_cfg.RAISE_WARN()}Remote file {blob_client.blob_name} has no headers")
+            return False
 
 
 #########################################################################################################
@@ -612,8 +667,7 @@ class LocalCloudConnector(CloudConnector):
     def append_to_cloud(self, 
                         dst_container: str, 
                         src_file: Path, 
-                        delete_src: bool, 
-                        safe_mode: bool = False,
+                        delete_src: bool,
     ) -> bool:
         """Append a block of CSV data to an existing CSV file in the cloud
 
@@ -621,8 +675,7 @@ class LocalCloudConnector(CloudConnector):
         ----------
         dst_container: destination container
         src_file: source file Path
-        safe_mode: if safe_mode is enabled, the function checks the local and remote column headers are 
-        consistent
+        delete_src: delete the local src_file instance after successful upload
 
         Return
         ------
@@ -715,7 +768,6 @@ class LocalCloudConnector(CloudConnector):
         """
         containerClient = self.local_cloud / container
 
-        files = file_paths = []
         if prefix is not None:
             query = f"{prefix}*"
         else:
@@ -768,7 +820,6 @@ class AsyncAppend():
     src_fname: str
     delete_src: bool
     data: list[str]
-    safe_mode: bool = False
     iteration: int = 0
 
 class AsyncCloudConnector(CloudConnector):
@@ -841,7 +892,6 @@ class AsyncCloudConnector(CloudConnector):
                         dst_container: str, 
                         src_file: Path, 
                         delete_src: bool, 
-                        safe_mode: bool = False,
     ) -> bool:
         """
         Async version of append_to_cloud.
@@ -868,7 +918,6 @@ class AsyncCloudConnector(CloudConnector):
         self._upload_queue.put(AsyncAppend(dst_container, 
                                            src_file.name, 
                                            delete_src, 
-                                           safe_mode=safe_mode,
                                            data = data))
 
         return True
@@ -925,47 +974,30 @@ class AsyncCloudConnector(CloudConnector):
         """A wrapper to handle failure when uploading append data to the cloud asynchronously.
         We re-queue the append if it fails.
         This method is called on a thread from the ThreadPoolExecutor."""
+        succeeded: bool = False
         try:
             logger.debug(f"_async_append iteration {action.iteration} for {action.src_fname}")
 
-            target_container = self._validate_container(action.dst_container)
-            blob_client = target_container.get_blob_client(action.src_fname)
-
-            # Check if the blob exists and create it if it doesn't
-            if not blob_client.exists():
-                blob_client.create_append_blob()
-
-            if blob_client.get_blob_properties().append_blob_committed_block_count == 0:            
-                # Include the Headers
-                data_to_append = "".join(action.data[:])
-            else:               
-                if action.safe_mode and not self._headers_match(blob_client, action.data[0]):
-                    # We bin out rather than set inconsistent fields
-                    logger.error(
-                        f"{root_cfg.RAISE_WARN()}Failed due to inconsistent headers: local={action.data[0]}"
-                    )
-                    return
-                # Drop the Headers in the first line so we don't have repeat header rows
-                data_to_append = "".join(action.data[1:])
-
-            # Append the data
-            blob_client.append_block(data_to_append)
+            succeeded = self._append_data_to_blob(dst_container=action.dst_container,
+                                                  dst_file=action.src_fname,
+                                                  lines_to_append=action.data)
 
         except Exception as e:
             logger.warning(f"{root_cfg.RAISE_WARN()}Upload failed for {action.src_fname} on iter "
                            f"{action.iteration}: {e!s}")
+        finally:
+            if not succeeded:
+                if action.iteration > 100:
+                    # Failsafe
+                    logger.error(f"{root_cfg.RAISE_WARN()}Upload failed for {action.src_fname}"
+                                 " too many times; giving up")
+                    return
 
-            # Failsafe
-            if action.iteration > 100:
-                logger.error(f"{root_cfg.RAISE_WARN()}Upload failed for {action.src_fname} too many times;"
-                             f" giving up")
-                return
-
-            # Re-queue the upload @@@ but only if it was a transient failure!
-            action.iteration += 1
-            self._upload_queue.put(action)
-            # Back off for a bit before re-trying the upload
-            sleep(2 * action.iteration)
+                # Re-queue the upload @@@ but only if it was a transient failure!
+                action.iteration += 1
+                self._upload_queue.put(action)
+                # Back off for a bit before re-trying the upload
+                sleep(2 * action.iteration)
 
 
     def do_work(self, block: bool = True) -> None:
@@ -975,7 +1007,7 @@ class AsyncCloudConnector(CloudConnector):
                 if block:
                     queue_item = self._upload_queue.get()
                 else:
-                    queue_item = self._upload_queue.get(block=False, timeout=1)
+                    queue_item = self._upload_queue.get(timeout=1)
 
                 if isinstance(queue_item, AsyncAppend):
                     self._worker_pool.submit(self._async_append, queue_item)
@@ -985,6 +1017,7 @@ class AsyncCloudConnector(CloudConnector):
                     logger.debug(f"Queue flushed using {queue_item}")
                     assert self._stop_requested.is_set(), "Queue flushed but stop_requested is not set"
 
+                # Mark the task as done, in the sense that we've scheduled it for processing
                 self._upload_queue.task_done()
             except Empty:
                 assert not block, "Queue.get returned but block is True"

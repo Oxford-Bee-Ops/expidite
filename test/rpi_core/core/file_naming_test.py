@@ -7,7 +7,7 @@ from expidite_rpi.core import configuration as root_cfg
 from expidite_rpi.core.dp_tree import DPtree
 from expidite_rpi.example import my_fleet_config
 from expidite_rpi.example.my_sensor_example import (
-    EXAMPLE_FILE_DS_TYPE_ID,
+    EXAMPLE_FILE_TYPE_ID,
     EXAMPLE_FILE_STREAM_INDEX,
     EXAMPLE_SENSOR_CFG,
 )
@@ -33,7 +33,7 @@ class Test_datastream:
         )
         print(fname)
         fields = file_naming.parse_record_filename(fname)
-        assert fields[api.RECORD_ID.DATA_TYPE_ID.value] == EXAMPLE_FILE_DS_TYPE_ID
+        assert fields[api.RECORD_ID.DATA_TYPE_ID.value] == EXAMPLE_FILE_TYPE_ID
         assert fields[api.RECORD_ID.DEVICE_ID.value] == "d01111111111"
         assert fields[api.RECORD_ID.SENSOR_INDEX.value] == EXAMPLE_SENSOR_CFG.sensor_index
         assert isinstance(fields[api.RECORD_ID.TIMESTAMP.value], datetime)

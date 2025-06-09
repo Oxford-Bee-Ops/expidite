@@ -6,8 +6,8 @@ from expidite_rpi.core.sensor import Sensor
 
 logger = root_cfg.setup_logger("expidite")
 
-EXAMPLE_LOG_DS_TYPE_ID = "DUMML"
-EXAMPLE_FILE_DS_TYPE_ID = "DUMMF"
+EXAMPLE_LOG_TYPE_ID = "DUMML"
+EXAMPLE_FILE_TYPE_ID = "DUMMF"
 
 EXAMPLE_FILE_STREAM_INDEX = 0
 EXAMPLE_LOG_STREAM_INDEX = 1
@@ -28,14 +28,14 @@ EXAMPLE_SENSOR_CFG = SensorCfg(
     # The list of data output streams from the sensor.
     outputs=[
         Stream("Example image file stream",
-                EXAMPLE_FILE_DS_TYPE_ID, 
+                EXAMPLE_FILE_TYPE_ID, 
                 EXAMPLE_FILE_STREAM_INDEX, 
                 api.FORMAT.JPG, 
                 ["temperature"],
                 cloud_container="expidite-upload",
                 sample_probability="1.0"),
         Stream("Example log file stream",
-                EXAMPLE_LOG_DS_TYPE_ID, 
+                EXAMPLE_LOG_TYPE_ID, 
                 EXAMPLE_LOG_STREAM_INDEX, 
                 api.FORMAT.LOG, 
                 ["temperature"]),
