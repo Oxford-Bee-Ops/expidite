@@ -139,15 +139,19 @@ def get_file_datetime(fname: Path | str) -> datetime:
         fname = Path(fname)
 
     fname = fname.stem
-
-    # Check that the filename has at least 4 "_"
-    if fname.count("_") < 5:
-        logger.warning(f"{root_cfg.RAISE_WARN()}Invalid filename format - too few _ in {fname}")
-        return datetime.min
-
-    # Extract the fields from the filename, parsing with the "_" delimiter
+    de_count = fname.count("_")
     fields = fname.split("_")
-    start_time = api.utc_from_str(fields[5])
+
+    if (de_count < 3) or (de_count == 4):
+        logger.warning(f"{root_cfg.RAISE_WARN()}Invalid filename format: {fname}")
+        return datetime.min
+    elif de_count == 3:
+        # We have a journal name of the form V3_EXITTRACKER_2ccf6791818a_20250522.csv
+        start_time = datetime.strptime(fields[-1], "%Y%m%d").replace(tzinfo=api.UTC)
+    else:
+        # We have a regular record filename
+        start_time = api.utc_from_str(fields[5])
+
     return start_time
     
 
