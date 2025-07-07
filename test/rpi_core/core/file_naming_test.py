@@ -61,9 +61,17 @@ class Test_datastream:
         assert output.sensor_index == sensor_id
         assert output.stream_index == stream_index
 
+    @pytest.mark.parametrize(
+        "fname, expected",
+        [
+            ("V3_EXITTRACKER_2ccf6791818a_20250522.csv", 
+             datetime(2025, 5, 22, tzinfo=ZoneInfo("UTC"))),
+            ("V3_TRAPCAM_d83adde765e4_01_00_20250523T172338065_20250523T172340565.mp4", 
+             datetime(2025, 5, 23, 17, 23, 38, tzinfo=ZoneInfo("UTC"))),
+        ],
+    )
     @pytest.mark.unittest
-    def test_get_datetime(self) -> None:
-        logger.info("Run test_get_datetime test")
-        fname = "V3_TRAPCAM_d83adde765e4_01_00_20250523T172338065_20250523T172340565.mp4"
+    def test_get_datetime(self, fname: str, expected: datetime) -> None:
+        logger.info(f"Run test_get_datetime test with fname: {fname} and expected: {expected}")
         dt = file_naming.get_file_datetime(fname)
-        assert dt.replace(microsecond=0) == datetime(2025, 5, 23, 17, 23, 38, tzinfo=ZoneInfo("UTC"))
+        assert dt.replace(microsecond=0) == expected

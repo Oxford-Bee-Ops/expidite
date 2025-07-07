@@ -1,4 +1,5 @@
 from datetime import datetime
+from zoneinfo import ZoneInfo
 from pathlib import Path
 from random import random
 from typing import NamedTuple, Optional
@@ -147,7 +148,7 @@ def get_file_datetime(fname: Path | str) -> datetime:
         return datetime.min
     elif de_count == 3:
         # We have a journal name of the form V3_EXITTRACKER_2ccf6791818a_20250522.csv
-        start_time = datetime.strptime(fields[-1], "%Y%m%d").replace(tzinfo=api.UTC)
+        start_time = datetime.strptime(fields[-1], "%Y%m%d").replace(tzinfo=ZoneInfo("UTC"))
     else:
         # We have a regular record filename
         start_time = api.utc_from_str(fields[5])
