@@ -203,7 +203,9 @@ class DeviceHealth(Sensor):
         try:
             cpu_temp: str = ""
             bytes_written = 0
+            latest_bytes_written = 0
             bytes_sent = 0
+            latest_bytes_sent = 0
             sc_mount_size = ""
             get_throttled_output = ""
             process_list_str = ""
@@ -272,8 +274,8 @@ class DeviceHealth(Sensor):
             snicaddr = psutil.net_if_addrs().get(target_interface, [])
             if snicaddr:
                 ip_addresses = [addr.address for addr in snicaddr if addr.family == socket.AF_INET]
-            if ip_addresses:
-                ip_address = str(ip_addresses[0])
+                if ip_addresses:
+                    ip_address = str(ip_addresses[0])
 
             # Packet loss - this is the number of ping failures divided by the number of pings sent
             if self.device_manager is None:
@@ -369,32 +371,31 @@ class DeviceHealth(Sensor):
     @staticmethod
     def get_wifi_ssid_and_signal() -> tuple[str, str]:
         """
-        Get the SSID of the wlan0 interface using the `iw` command.
+        Get the SSID of the wlan0 interface.
 
         Returns:
             The SSID as a string, or "Not connected" if no SSID is found.
         """
         if root_cfg.running_on_rpi:
             try:
-                #output = utils.run_cmd(cmd="/usr/sbin/iw dev wlan0 link", ignore_errors=True).strip()
-                #logger.debug(f"iw output: {output}")
-                #for line in output.split("\n"):
-                #    if "SSID:" in line:
-                #        logger.debug(f"Found SSID line: {line}")
-                #        return line.split("SSID:")[1].strip()
-                #return "Not connected"
                 output = utils.run_cmd(cmd="nmcli -g SSID,IN-USE,SIGNAL device wifi | grep '*'", 
                                        ignore_errors=True)
                 # The return output contains a string like "SSID:*:95".  We need to strip out the ":*"
-                # and return just the SSID and the 95
+                # and return just the SSID and the signal strength
                 if output:
-                    ssid = output.split(":")[0]
-                    signal_strength = output.split(":")[2]
-                    return (ssid, signal_strength)
+                    parts = output.split(":")
+                    if len(parts) >= 3:
+                        ssid = parts[0]
+                        signal_strength = str(int(parts[2]))
+                        return (ssid, signal_strength)
+                    else:
+                        logger.warning(f"Unexpected nmcli output format: {output}")
+                        return ("Not connected", "0")
                 else:
+                    logger.warning(f"No nmcli output")
                     return ("Not connected", "0")
             except Exception as e:
-                logger.info(f"Failed to get SSID: {e}")
+                logger.warning(f"Failed to get SSID: {e}")
                 return ("Not connected", "-1")
         elif root_cfg.running_on_windows:
             try:
