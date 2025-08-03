@@ -262,10 +262,13 @@ class EdgeOrchestrator:
         logger.info(f"stop_all on {self!r} called by {threading.current_thread().name}")
 
         with EdgeOrchestrator._status_lock:
-            if not self._status == OrchestratorStatus.RUNNING:
-                logger.warning(f"EdgeOrchestrator not running when stop called; {self}")
+            if self._status == OrchestratorStatus.STOPPING:
+                logger.info(f"EdgeOrchestrator already stopping when stop called; {self}")
                 logger.info(self.status())
-                self.reset_orchestrator_state()
+                return
+            elif not self._status == OrchestratorStatus.RUNNING:
+                logger.info(f"EdgeOrchestrator not running when stop called; {self}")
+                logger.info(self.status())
                 return
 
             self._status = OrchestratorStatus.STOPPING
