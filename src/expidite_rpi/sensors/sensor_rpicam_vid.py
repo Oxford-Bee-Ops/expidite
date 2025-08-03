@@ -106,13 +106,13 @@ class RpicamSensor(Sensor):
                                     filename, 
                                     start_time=start_time, 
                                     end_time=api.utc_now())
+                
+                exception_count = 0  # Reset exception count on success
 
-            except FileNotFoundError as e:
-                logger.error(f"{root_cfg.RAISE_WARN()}FileNotFoundError in RpicamSensor: {e}", exc_info=True)
             except Exception as e:
                 logger.error(f"{root_cfg.RAISE_WARN()}Error in RpicamSensor: {e}", exc_info=True)
                 exception_count += 1
-            finally:
+
                 # On the assumption that the error is transient, we will continue to run but sleep for 60s
                 self.stop_requested.wait(60)
                 if exception_count > 30:
