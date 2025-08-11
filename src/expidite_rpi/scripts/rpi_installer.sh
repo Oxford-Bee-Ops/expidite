@@ -194,13 +194,12 @@ create_and_activate_venv() {
 install_os_packages() {
     echo "Installing OS packages..."
     sudo apt-get update && sudo apt-get upgrade -y || { echo "Failed to update package list"; }
-    sudo apt-get install -y pip git libsystemd-dev python3-scipy python3-pandas python3-opencv || { echo "Failed to install base packages"; }
+    sudo apt-get install -y pip git libsystemd-dev ffmpeg python3-scipy python3-pandas python3-opencv || { echo "Failed to install base packages"; }
     sudo apt-get install -y libcamera-dev python3-picamera2 python3-smbus || { echo "Failed to install sensor packages"; }
     # If we install the lite version (no desktop), we need to install the full version of rpicam-apps
     # Otherwise we get ERROR: *** Unable to find an appropriate H.264 codec ***
     sudo apt-get purge -y rpicam-apps-lite || { echo "Failed to remove rpicam-apps-lite"; }
-    sudo apt-get install -y rpi-connect-lite || { echo "Failed to install rpi-connect-lite"; }
-    sudo apt-get install -y rpicam-apps || { echo "Failed to install rpicam-apps"; }
+    sudo apt-get install -y rpi-connect-lite rpicam-apps || { echo "Failed to install rpi connect and rpicam-apps"; }
     sudo apt-get autoremove -y || { echo "Failed to remove unnecessary packages"; }
     echo "OS packages installed successfully."
     # A reboot is always required after installing packages, otherwise the system is unstable 
@@ -277,11 +276,11 @@ install_user_code() {
     chmod 600 "$HOME/.ssh/$my_git_ssh_private_key_file"
 
     # Set the GIT_SSH_COMMAND with timeout and retry options
-    export GIT_SSH_COMMAND="ssh -v -i $HOME/.ssh/$my_git_ssh_private_key_file -o IdentitiesOnly=yes -o ConnectTimeout=10 -o ConnectionAttempts=2"
+    export GIT_SSH_COMMAND="ssh -i $HOME/.ssh/$my_git_ssh_private_key_file -o IdentitiesOnly=yes -o ConnectTimeout=10 -o ConnectionAttempts=2"
 
     # Persist the GIT_SSH_COMMAND in .bashrc if not already present
     if ! grep -qs "export GIT_SSH_COMMAND=" "$HOME/.bashrc"; then
-        echo "export GIT_SSH_COMMAND='ssh -v -i \$HOME/.ssh/$my_git_ssh_private_key_file -o IdentitiesOnly=yes -o ConnectTimeout=10 -o ConnectionAttempts=2'" >> "$HOME/.bashrc"
+        echo "export GIT_SSH_COMMAND='ssh -i \$HOME/.ssh/$my_git_ssh_private_key_file -o IdentitiesOnly=yes -o ConnectTimeout=10 -o ConnectionAttempts=2'" >> "$HOME/.bashrc"
     fi
 
     # Ensure known_hosts exists and add GitHub key if necessary
@@ -303,25 +302,45 @@ install_user_code() {
     echo "Reinstalling user code. Current version: $current_version"
     source "$HOME/$venv_dir/bin/activate" || { echo "Failed to activate virtual environment"; exit 1; }
 
-    ###############################################################################################################
-    # We don't return exit code 1 if the install fails, because we want to continue with the rest of the script
-    # and this can happen due to transient network issues causing github.com name resolution to fail.
-    ###############################################################################################################
-    if [ "$install_type" == "system_test" ]; then
-        # On system test installations, we want the test code as well, so we run pip install .[dev]
-        project_dir="$HOME/$venv_dir/src/$project_name"
-        if [ -d "$project_dir" ]; then
-            # Delete the .git directory to avoid issues with git clone
-            rm -rf "$project_dir"
-        fi
-        mkdir -p "$project_dir"
-        cd "$project_dir"
-        my_git_repo_url=$(fix_my_git_repo "$my_git_repo_url")
-        git clone --depth 1 --branch "$my_git_branch" "git@${my_git_repo_url}" "$project_dir"
-        pip install .[dev] || { echo "Failed to install system test code"; }
-        cd "$HOME/.expidite" 
+    # 1. Get remote HEAD commit hash
+    REMOTE_HASH=$(git ls-remote "git@$my_git_repo_url" "refs/heads/$my_git_branch" | awk '{print $1}')
+
+    # 2. Load last-installed hash (if any)
+    HASH_FILE="$HOME/.expidite/flags/user-repo-last-hash"
+    if [[ -f "$HASH_FILE" ]]; then
+        LOCAL_HASH=$(<"$HASH_FILE")
     else
-        pip install "git+ssh://git@$my_git_repo_url@$my_git_branch" || { echo "Failed to install $my_git_repo_url@$my_git_branch"; }    
+        LOCAL_HASH=""
+    fi
+
+    # 3. Compare and install only if changed
+    if [[ "$REMOTE_HASH" != "$LOCAL_HASH" ]]; then
+        echo "Detected new commit $REMOTE_HASH on branch $my_git_branch."
+
+        # We don't return exit code 1 if the install fails, because we want to continue with the rest of the script
+        # and this can happen due to transient network issues causing github.com name resolution to fail.
+        if [ "$install_type" == "system_test" ]; then
+            # On system test installations, we want the test code as well, so we run pip install .[dev]
+            project_dir="$HOME/$venv_dir/src/$project_name"
+            if [ -d "$project_dir" ]; then
+                # Delete the .git directory to avoid issues with git clone
+                rm -rf "$project_dir"
+            fi
+            mkdir -p "$project_dir"
+            cd "$project_dir"
+            my_git_repo_url=$(fix_my_git_repo "$my_git_repo_url")
+            git clone --depth 1 --branch "$my_git_branch" "git@${my_git_repo_url}" "$project_dir"
+            pip install .[dev] || { echo "Failed to install system test code"; }
+            cd "$HOME/.expidite" 
+        else
+            pip install "git+ssh://git@$my_git_repo_url@$my_git_branch" || { echo "Failed to install $my_git_repo_url@$my_git_branch"; }    
+        fi
+
+        # Cache the new hash
+        echo "$REMOTE_HASH" > "$HASH_FILE"
+        echo "Installation complete; hash updated."
+    else
+        echo "No changes on $BRANCH ($REMOTE_HASH). Skipping install."
     fi
     
     updated_version=$(pip show "$project_name" | grep Version)
@@ -336,7 +355,6 @@ install_user_code() {
         # Set a flag to indicate that a reboot is required
         touch "$HOME/.expidite/flags/reboot_required"
     fi
-
 }
 
 # Install the Uncomplicated Firewall and set appropriate rules.
