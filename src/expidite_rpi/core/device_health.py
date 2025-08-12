@@ -392,7 +392,7 @@ class DeviceHealth(Sensor):
                         logger.warning(f"Unexpected nmcli output format: {output}")
                         return ("Not connected", "0")
                 else:
-                    logger.warning(f"No nmcli output")
+                    logger.warning("No nmcli output")
                     return ("Not connected", "0")
             except Exception as e:
                 logger.warning(f"Failed to get SSID: {e}")
