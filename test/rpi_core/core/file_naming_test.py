@@ -7,8 +7,8 @@ from expidite_rpi.core import configuration as root_cfg
 from expidite_rpi.core.dp_tree import DPtree
 from expidite_rpi.example import my_fleet_config
 from expidite_rpi.example.my_sensor_example import (
-    EXAMPLE_FILE_TYPE_ID,
     EXAMPLE_FILE_STREAM_INDEX,
+    EXAMPLE_FILE_TYPE_ID,
     EXAMPLE_SENSOR_CFG,
 )
 
