@@ -1,6 +1,6 @@
-import pytest
-import logging
 import time
+
+import pytest
 from expidite_rpi.core import configuration as root_cfg
 from expidite_rpi.core.cloud_connector import CloudConnector
 
@@ -28,9 +28,11 @@ def log_test_lifecycle(request):
     test_result = "PASSED" if not request.node.rep_call.failed else "FAILED"
     
     if test_result == "PASSED":
-        test_logger.info(f"[PYTEST END] {module_name}::{test_name} - {test_result} (Duration: {duration:.3f}s)")
+        test_logger.info(f"[PYTEST END] {module_name}::{test_name} - "
+                         f"{test_result} (Duration: {duration:.3f}s)")
     else:
-        test_logger.error(f"[PYTEST END] {module_name}::{test_name} - {test_result} (Duration: {duration:.3f}s)")
+        test_logger.error(f"[PYTEST END] {module_name}::{test_name} - "
+                          f"{test_result} (Duration: {duration:.3f}s)")
 
 
 @pytest.hookimpl(tryfirst=True, hookwrapper=True)
