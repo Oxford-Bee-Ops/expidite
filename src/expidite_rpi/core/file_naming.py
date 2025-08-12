@@ -1,8 +1,8 @@
 from datetime import datetime
-from zoneinfo import ZoneInfo
 from pathlib import Path
 from random import random
 from typing import NamedTuple, Optional
+from zoneinfo import ZoneInfo
 
 from expidite_rpi.core import api
 from expidite_rpi.core import configuration as root_cfg
