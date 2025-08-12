@@ -31,14 +31,14 @@ Implementation Notes
 
 from struct import unpack
 
-from adafruit_bus_device import i2c_device
-from micropython import const
+from adafruit_bus_device import i2c_device  # type: ignore
+from micropython import const  # type: ignore
 
 try:
     from typing import Dict, Tuple
 
     # This is only needed for typing
-    import busio
+    import busio  # type: ignore
 except ImportError:
     pass
 
@@ -186,8 +186,8 @@ class ADXL345:
         self._write_register_byte(_REG_POWER_CTL, 0x08)
         self._write_register_byte(_REG_INT_ENABLE, 0x0)
 
-        self._enabled_interrupts = {}
-        self._event_status = {}
+        self._enabled_interrupts: dict = {}
+        self._event_status: dict = {}
 
     @property
     def acceleration(self) -> Tuple[int, int, int]:
@@ -394,8 +394,7 @@ class ADXL345:
         rate_register = self._read_register_unpacked(_REG_BW_RATE)
         return rate_register & 0x0F
 
-    @data_rate.setter
-    def data_rate(self, val: int) -> None:
+    def set_data_rate(self, val: int) -> None:
         self._write_register_byte(_REG_BW_RATE, val)
 
     @property
@@ -404,8 +403,7 @@ class ADXL345:
         range_register = self._read_register_unpacked(_REG_DATA_FORMAT)
         return range_register & 0x03
 
-    @range.setter
-    def range(self, val: int) -> None:
+    def set_range(self, val: int) -> None:
         # read the current value of the data format register
         format_register = self._read_register_unpacked(_REG_DATA_FORMAT)
 
@@ -442,7 +440,7 @@ class ADXL345:
     def _read_register_unpacked(self, register: int) -> int:
         return unpack("<b", self._read_register(register, 1))[0]
 
-    def _read_register(self, register: int, length: int) -> int:
+    def _read_register(self, register: int, length: int) -> bytes:
         self._buffer[0] = register & 0xFF
         with self._i2c as i2c:
             i2c.write(self._buffer, start=0, end=1)
