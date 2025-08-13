@@ -186,7 +186,7 @@ class ADXL345:
             i2c = board.I2C()
         else:
             # Alternative implementation or raise appropriate error
-            raise RuntimeError("Board module not available - install adafruit-blinka for Raspberry Pi support")
+            raise RuntimeError("Board module not available - install adafruit-blinka for Raspberry Pi")
 
         self._i2c = i2c_device.I2CDevice(i2c, address)
         self._buffer = bytearray(6)

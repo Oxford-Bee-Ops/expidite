@@ -2,15 +2,14 @@
 # Modified from original to improve type checking and PEP adherence
 from struct import pack_into, unpack_from
 from time import sleep
-from typing import Iterable, Optional, Tuple
+from typing import ClassVar, Iterable, Optional, Tuple
 
-from adafruit_bus_device import i2c_device # type: ignore
-from adafruit_register.i2c_bit import ROBit, RWBit # type: ignore
-from adafruit_register.i2c_bits import RWBits # type: ignore
-from adafruit_register.i2c_struct import ROUnaryStruct, Struct # type: ignore
+from adafruit_bus_device import i2c_device  # type: ignore
+from adafruit_register.i2c_bit import ROBit, RWBit  # type: ignore
+from adafruit_register.i2c_bits import RWBits  # type: ignore
+from adafruit_register.i2c_struct import ROUnaryStruct, Struct  # type: ignore
 
 try:
-    import busio # type: ignore
     import board  # type: ignore
 except ImportError:
     # Running on non-CircuitPython environment (Windows/standard Python)
@@ -128,10 +127,10 @@ class UnalignedStruct(Struct):
 
 class CV:
     """struct helper"""
-    string: dict[int, str] = {}
-    lsb: dict[int, float] = {}
-    factor: dict[int, float] = {}
-    integration: dict[int, float] = {}
+    string: ClassVar[dict[int, str]] = {}
+    lsb: ClassVar[dict[int, float]] = {}
+    factor: ClassVar[dict[int, float]] = {}
+    integration: ClassVar[dict[int, float]] = {}
 
     @classmethod
     def add_values(
@@ -329,7 +328,7 @@ class LTR390Driver:  # pylint:disable=too-many-instance-attributes
             i2c = board.I2C()
         else:
             # Alternative implementation or raise appropriate error
-            raise RuntimeError("Board module not available - install adafruit-blinka for Raspberry Pi support")
+            raise RuntimeError("Board module not available - install adafruit-blinka for Raspberry Pi")
 
         self.i2c_device = i2c_device.I2CDevice(i2c, address)
         if self._id_reg != 0xB2:
