@@ -3,7 +3,6 @@
 ##########################################################################################################
 from dataclasses import dataclass
 
-import board
 from expidite_rpi.core import api
 from expidite_rpi.core import configuration as root_cfg
 from expidite_rpi.core.dp_config_objects import Stream
@@ -57,8 +56,7 @@ class LTR390(Sensor):
         while self.continue_recording():
             try:
                 if sensor is None:
-                    i2c = board.I2C()  # uses board.SCL and board.SDA
-                    sensor = ltr390.LTR390Driver(i2c)  # type: ignore
+                    sensor = ltr390.LTR390Driver()
 
                 self.log(
                     stream_index=LTR390_STREAM_INDEX,

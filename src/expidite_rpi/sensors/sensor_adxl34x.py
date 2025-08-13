@@ -4,7 +4,6 @@
 import time
 from dataclasses import dataclass
 
-import board
 import pandas as pd
 from expidite_rpi.core import api
 from expidite_rpi.core import configuration as root_cfg
@@ -61,8 +60,7 @@ class ADXL34X(Sensor):
         while self.continue_recording():
             try:
                 if accelerometer is None:
-                    i2c = board.I2C()  # uses board.SCL and board.SDA
-                    accelerometer = adafruit_adxl34x.ADXL343(i2c)  # type: ignore
+                    accelerometer = adafruit_adxl34x.ADXL343()
                     accelerometer.set_data_rate(adafruit_adxl34x.DataRate.RATE_400_HZ)
                     accelerometer.set_range(adafruit_adxl34x.Range.RANGE_4_G)
 

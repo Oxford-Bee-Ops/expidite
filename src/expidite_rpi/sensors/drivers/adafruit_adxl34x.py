@@ -30,16 +30,17 @@ Implementation Notes
 """
 
 from struct import unpack
+from typing import Dict, Tuple
 
 from adafruit_bus_device import i2c_device  # type: ignore
 from micropython import const  # type: ignore
 
 try:
-    from typing import Dict, Tuple
-
     # This is only needed for typing
-    import busio  # type: ignore
+    import board  # type: ignore
 except ImportError:
+    # Running on non-CircuitPython environment (Windows/standard Python)
+    board = None
     pass
 
 __version__ = "0.0.0+auto.0"
@@ -146,7 +147,7 @@ class Range:
     RANGE_4_G: int = const(0b01)  # +/- 4g
     RANGE_2_G: int = const(0b00)  # +/- 2g (default value)
 
-
+    
 class ADXL345:
     """Driver for the ADXL345 3 axis accelerometer
 
@@ -179,7 +180,14 @@ class ADXL345:
 
     """
 
-    def __init__(self, i2c: busio.I2C, address: int = _ADXL345_DEFAULT_ADDRESS):
+    def __init__(self, address: int = _ADXL345_DEFAULT_ADDRESS):
+        if board is not None:
+            # CircuitPython/Raspberry Pi with Blinka
+            i2c = board.I2C()
+        else:
+            # Alternative implementation or raise appropriate error
+            raise RuntimeError("Board module not available - install adafruit-blinka for Raspberry Pi support")
+
         self._i2c = i2c_device.I2CDevice(i2c, address)
         self._buffer = bytearray(6)
         # set the 'measure' bit in to enable measurement

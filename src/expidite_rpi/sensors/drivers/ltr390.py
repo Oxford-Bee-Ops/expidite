@@ -1,19 +1,22 @@
-# type: ignore
+
 # Modified from original to improve type checking and PEP adherence
 from struct import pack_into, unpack_from
 from time import sleep
+from typing import Iterable, Optional, Tuple
 
-from adafruit_bus_device import i2c_device
-from adafruit_register.i2c_bit import ROBit, RWBit
-from adafruit_register.i2c_bits import RWBits
-from adafruit_register.i2c_struct import ROUnaryStruct, Struct
+from adafruit_bus_device import i2c_device # type: ignore
+from adafruit_register.i2c_bit import ROBit, RWBit # type: ignore
+from adafruit_register.i2c_bits import RWBits # type: ignore
+from adafruit_register.i2c_struct import ROUnaryStruct, Struct # type: ignore
 
 try:
-    from typing import Iterable, Optional, Tuple
-
-    from busio import I2C
+    import busio # type: ignore
+    import board  # type: ignore
 except ImportError:
+    # Running on non-CircuitPython environment (Windows/standard Python)
+    board = None
     pass
+
 """
 The MIT License (MIT)
 
@@ -125,6 +128,10 @@ class UnalignedStruct(Struct):
 
 class CV:
     """struct helper"""
+    string: dict[int, str] = {}
+    lsb: dict[int, float] = {}
+    factor: dict[int, float] = {}
+    integration: dict[int, float] = {}
 
     @classmethod
     def add_values(
@@ -141,9 +148,11 @@ class CV:
             name, value, string, lsb, factor, integration = value_tuple
             setattr(cls, name, value)
             cls.string[value] = string
-            cls.lsb[value] = lsb
+            if lsb is not None:
+                cls.lsb[value] = lsb
             cls.factor[value] = factor
-            cls.integration[value] = integration
+            if integration is not None:
+                cls.integration[value] = integration
 
     @classmethod
     def is_valid(cls, value: int) -> bool:
@@ -252,7 +261,6 @@ MeasurementDelay.add_values(
     )
 )
 
-
 class LTR390Driver:  # pylint:disable=too-many-instance-attributes
     """Class to use the LTR390 Ambient Light and UV sensor
 
@@ -315,12 +323,19 @@ class LTR390Driver:  # pylint:disable=too-many-instance-attributes
 
     Once read, this property will be False until it is updated in the next measurement cycle"""
 
-    def __init__(self, i2c: I2C, address: int = _DEFAULT_I2C_ADDR) -> None:
+    def __init__(self, address: int = _DEFAULT_I2C_ADDR) -> None:
+        if board is not None:
+            # CircuitPython/Raspberry Pi with Blinka
+            i2c = board.I2C()
+        else:
+            # Alternative implementation or raise appropriate error
+            raise RuntimeError("Board module not available - install adafruit-blinka for Raspberry Pi support")
+
         self.i2c_device = i2c_device.I2CDevice(i2c, address)
         if self._id_reg != 0xB2:
             raise RuntimeError("Unable to find LTR390; check your wiring")
 
-        self._mode_cache = None
+        self._mode_cache: Optional[bool] = None
         self.initialize()
 
     def initialize(self) -> None:
@@ -331,19 +346,19 @@ class LTR390Driver:  # pylint:disable=too-many-instance-attributes
         self._enable_bit = True
         if not self._enable_bit:
             raise RuntimeError("Unable to enable sensor")
-        self._mode = UV
-        self.gain = Gain.GAIN_3X  # pylint:disable=no-member
+        self.set_mode(bool(UV))
+        self.set_gain(Gain.GAIN_3X) # type: ignore
 
         # Note: This code doesn't work for anything other than 16-bit resolution !!!
         # Suspect a bug in the UnalignedStruct class, which doesn't use the bitwidth parameter
-        self.resolution = Resolution.RESOLUTION_16BIT  # pylint:disable=no-member
-        self._window_factor = 1  # default window transmission factor
+        self.set_resolution(Resolution.RESOLUTION_16BIT)  # type: ignore
+        self.set_window_factor(1)  # default window transmission factor
 
         # ltr.setThresholds(100, 1000);
         # self.low_threshold = 100
         # self.high_threshold = 1000
         # ltr.configInterrupt(true, LTR390_MODE_UVS);
-
+        
     def _reset(self) -> None:
         # The LTR390 software reset is ill behaved and can leave I2C bus in bad state.
         # Instead, just manually set register reset values per datasheet.
@@ -360,8 +375,7 @@ class LTR390Driver:  # pylint:disable=too-many-instance-attributes
     def _mode(self) -> bool:
         return self._mode_bit
 
-    @_mode.setter
-    def _mode(self, value: bool) -> None:
+    def set_mode(self, value: bool) -> None:
         if value not in [ALS, UV]:
             raise AttributeError("Mode must be ALS or UV")
         if self._mode_cache != value:
@@ -375,8 +389,8 @@ class LTR390Driver:  # pylint:disable=too-many-instance-attributes
         """The calculated UV value"""
         # SW: because we're limited to 16-bit resolution, it's easy to max out the sensor
         # To balance low UV and high ALS, we set gain on UV to 18X and ALS to 1X
-        self.gain = Gain.GAIN_18X  # pylint:disable=no-member
-        self._mode = UV
+        self.set_gain(Gain.GAIN_18X)  # type: ignore
+        self.set_mode(bool(UV))
         while not self.data_ready:
             sleep(0.010)
         return self._uvs_data_reg
@@ -386,8 +400,8 @@ class LTR390Driver:  # pylint:disable=too-many-instance-attributes
         """The currently measured ambient light level"""
         # SW: because we're limited to 16-bit resolution, it's easy to max out the sensor
         # To balance low UV and high ALS, we set gain on UV to 18X and ALS to 1X
-        self.gain = Gain.GAIN_1X  # pylint:disable=no-member
-        self._mode = ALS
+        self.set_gain(Gain.GAIN_1X)  # type: ignore
+        self.set_mode(bool(ALS))
         while not self.data_ready:
             sleep(0.010)
         return self._als_data_reg
@@ -397,8 +411,7 @@ class LTR390Driver:  # pylint:disable=too-many-instance-attributes
         """The amount of gain the raw measurements are multiplied by"""
         return self._gain_bits
 
-    @gain.setter
-    def gain(self, value: int):
+    def set_gain(self, value: int):
         if not Gain.is_valid(value):
             raise AttributeError("gain must be a Gain")
         self._gain_bits = value
@@ -408,8 +421,7 @@ class LTR390Driver:  # pylint:disable=too-many-instance-attributes
         """Set the precision of the internal ADC used to read the light measurements"""
         return self._resolution_bits
 
-    @resolution.setter
-    def resolution(self, value: int):
+    def set_resolution(self, value: int):
         if not Resolution.is_valid(value):
             raise AttributeError("resolution must be a Resolution")
         self._resolution_bits = value
@@ -438,8 +450,7 @@ class LTR390Driver:  # pylint:disable=too-many-instance-attributes
         affects the sensor power usage."""
         return self._measurement_delay_bits
 
-    @measurement_delay.setter
-    def measurement_delay(self, value: int) -> None:
+    def set_measurement_delay(self, value: int) -> None:
         if not MeasurementDelay.is_valid(value):
             raise AttributeError("measurement_delay must be a MeasurementDelay")
         self._measurement_delay_bits = value
@@ -469,8 +480,7 @@ class LTR390Driver:  # pylint:disable=too-many-instance-attributes
         """
         return self._window_factor
 
-    @window_factor.setter
-    def window_factor(self, factor: float = 1) -> None:
+    def set_window_factor(self, factor: float = 1) -> None:
         if factor < 1:
             raise ValueError("window transmission factor must be a value of 1.0 or greater")
         self._window_factor = factor
