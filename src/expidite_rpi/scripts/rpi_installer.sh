@@ -189,9 +189,16 @@ create_and_activate_venv() {
 # and we want to use the system package manager to install them.
 install_os_packages() {
     echo "Installing OS packages..."
-    sudo apt-get update && sudo apt-get upgrade -y || { echo "Failed to update package list"; }
-    sudo apt-get install -y pip git libsystemd-dev ffmpeg python3-scipy python3-pandas python3-opencv || { echo "Failed to install base packages"; }
-    sudo apt-get install -y libcamera-dev python3-picamera2 python3-smbus || { echo "Failed to install sensor packages"; }
+    sudo apt-get update && sudo apt-get \
+        -o Dpkg::Options::="--force-confdef" \
+        -o Dpkg::Options::="--force-confold" \
+        upgrade -y || { echo "Failed to update package list"; }
+    sudo apt-get \
+        -o Dpkg::Options::="--force-confdef" \
+        -o Dpkg::Options::="--force-confold" \
+        install -y \
+        pip git libsystemd-dev ffmpeg python3-scipy python3-pandas python3-opencv \
+        libcamera-dev python3-picamera2 python3-smbus || { echo "Failed to install sensor packages"; }
     # If we install the lite version (no desktop), we need to install the full version of rpicam-apps
     # Otherwise we get ERROR: *** Unable to find an appropriate H.264 codec ***
     sudo apt-get purge -y rpicam-apps-lite || { echo "Failed to remove rpicam-apps-lite"; }
