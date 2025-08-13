@@ -263,6 +263,10 @@ install_user_code() {
         exit 1
     fi
 
+    # Fix the Git repository URL format for SSH
+    ssh_git_repo_url=$(fix_my_git_repo "$my_git_repo_url")
+    echo "SSH Git Repository URL: $ssh_git_repo_url"
+
     ############################################
     # Manage SSH prep
     ############################################
@@ -303,7 +307,7 @@ install_user_code() {
     source "$HOME/$venv_dir/bin/activate" || { echo "Failed to activate virtual environment"; exit 1; }
 
     # 1. Get remote HEAD commit hash
-    REMOTE_HASH=$(git ls-remote "git@$my_git_repo_url" "refs/heads/$my_git_branch" | awk '{print $1}')
+    REMOTE_HASH=$(git ls-remote "git@$ssh_git_repo_url" "refs/heads/$my_git_branch" | awk '{print $1}')
 
     # 2. Load last-installed hash (if any)
     HASH_FILE="$HOME/.expidite/flags/user-repo-last-hash"
@@ -328,8 +332,7 @@ install_user_code() {
             fi
             mkdir -p "$project_dir"
             cd "$project_dir"
-            my_git_repo_url=$(fix_my_git_repo "$my_git_repo_url")
-            git clone --depth 1 --branch "$my_git_branch" "git@${my_git_repo_url}" "$project_dir"
+            git clone --depth 1 --branch "$my_git_branch" "git@$ssh_git_repo_url" "$project_dir"
             pip install .[dev] || { echo "Failed to install system test code"; }
             cd "$HOME/.expidite" 
         else
