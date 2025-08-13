@@ -236,8 +236,16 @@ install_ufw() {
 # Function to install expidite's RpiCore 
 install_expidite() {
     # Install expidite from GitHub
+    EXP_HASH_FILE="$HOME/.expidite/flags/expidite-repo-last-hash"
     current_version=$(pip show expidite | grep Version)
     echo "Installing expidite.  Current version: $current_version"
+
+    # If the current version is blank, remove any existing EXP_HASH_FILE which might be left over 
+    # from a previous installation
+    if [ -z "$current_version" ]; then
+        rm -f "$EXP_HASH_FILE"
+    fi
+
     source "$HOME/$venv_dir/bin/activate" || { echo "Failed to activate virtual environment"; exit 1; }
 
     ###############################################################################################################
@@ -253,7 +261,6 @@ install_expidite() {
     EXP_REMOTE_HASH=$(git ls-remote "git@github.com:oxford-bee-ops/expidite.git" "refs/heads/$expidite_git_branch" | awk '{print $1}')
 
     # 2. Load last-installed hash (if any)
-    EXP_HASH_FILE="$HOME/.expidite/flags/expidite-repo-last-hash"
     if [[ -f "$EXP_HASH_FILE" ]]; then
         EXP_LOCAL_HASH=$(<"$EXP_HASH_FILE")
     else
@@ -349,18 +356,27 @@ install_user_code() {
     project_name=$(git_project_name "$my_git_repo_url")
     current_version=$(pip show "$project_name" | grep Version)
     echo "Reinstalling user code. Current version: $current_version"
+
+    # If the current version is blank, remove any existing HASH_FILE which might be left over 
+    # from a previous installation
+    HASH_FILE="$HOME/.expidite/flags/user-repo-last-hash"
+    if [ -z "$current_version" ]; then
+        rm -f "$HASH_FILE"
+    fi
+
     source "$HOME/$venv_dir/bin/activate" || { echo "Failed to activate virtual environment"; exit 1; }
 
     # 1. Get remote HEAD commit hash
     REMOTE_HASH=$(git ls-remote "git@$ssh_git_repo_url" "refs/heads/$my_git_branch" | awk '{print $1}')
 
     # 2. Load last-installed hash (if any)
-    HASH_FILE="$HOME/.expidite/flags/user-repo-last-hash"
     if [[ -f "$HASH_FILE" ]]; then
         LOCAL_HASH=$(<"$HASH_FILE")
     else
         LOCAL_HASH=""
     fi
+    echo "Remote and local hashes: $REMOTE_HASH $LOCAL_HASH"
+    echo "New install flag: $new_install"
 
     # 3. Compare and install only if changed (or if [ "$new_install" == "yes" ])
     if [[ "$REMOTE_HASH" != "$LOCAL_HASH" || "$new_install" == "yes" ]]; then
@@ -397,9 +413,9 @@ install_user_code() {
     # We store the updated_version in the flags directory for later use in logging
     echo "$updated_version" > "$HOME/.expidite/user_code_version"
 
-    # If the version has changed, we need to set a flag so we reboot at the end of the script
-    if [ "$current_version" != "$updated_version" ]; then
-        echo "User's code version has changed from $current_version to $updated_version.  Reboot required."
+    # If the code has changed, we need to set a flag so we reboot at the end of the script
+    if [ "$REMOTE_HASH" != "$LOCAL_HASH" ]; then
+        echo "User's code hash has changed updated_version.  Reboot required."
         # Set a flag to indicate that a reboot is required
         touch "$HOME/.expidite/flags/reboot_required"
     fi
