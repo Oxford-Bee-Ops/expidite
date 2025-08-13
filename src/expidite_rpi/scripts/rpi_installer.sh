@@ -260,8 +260,8 @@ install_expidite() {
         EXP_LOCAL_HASH=""
     fi
 
-    # 3. Compare and install only if changed
-    if [[ "$EXP_REMOTE_HASH" != "$EXP_LOCAL_HASH" ]]; then
+    # 3. Compare and install only if changed (or if [ "$new_install" == "yes" ])
+    if [[ "$EXP_REMOTE_HASH" != "$EXP_LOCAL_HASH" || "$new_install" == "yes" ]]; then
         echo "Detected new commit $EXP_REMOTE_HASH on branch $expidite_git_branch."
         pip install "git+https://github.com/oxford-bee-ops/expidite.git@$expidite_git_branch" || { echo "Failed to install Expidite"; }
         updated_version=$(pip show expidite | grep Version)
@@ -362,8 +362,8 @@ install_user_code() {
         LOCAL_HASH=""
     fi
 
-    # 3. Compare and install only if changed
-    if [[ "$REMOTE_HASH" != "$LOCAL_HASH" ]]; then
+    # 3. Compare and install only if changed (or if [ "$new_install" == "yes" ])
+    if [[ "$REMOTE_HASH" != "$LOCAL_HASH" || "$new_install" == "yes" ]]; then
         echo "Detected new commit $REMOTE_HASH on branch $my_git_branch."
 
         # We don't return exit code 1 if the install fails, because we want to continue with the rest of the script
