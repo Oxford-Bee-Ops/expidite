@@ -162,6 +162,7 @@ create_and_activate_venv() {
     # Check if the venv directory already exists
     if [ -d "$HOME/$venv_dir" ]; then
         echo "Virtual environment already exists at $HOME/$venv_dir"
+        export new_install="no"
     else
         # Create the virtual environment
         echo "Creating virtual environment at $venv_dir..."
@@ -355,13 +356,15 @@ install_user_code() {
     # Extract the project name from the URL
     project_name=$(git_project_name "$my_git_repo_url")
     current_version=$(pip show "$project_name" | grep Version)
-    echo "Reinstalling user code. Current version: $current_version"
 
     # If the current version is blank, remove any existing HASH_FILE which might be left over 
     # from a previous installation
     HASH_FILE="$HOME/.expidite/flags/user-repo-last-hash"
     if [ -z "$current_version" ]; then
         rm -f "$HASH_FILE"
+        echo "New install flag: $new_install"
+    else
+        echo "Current version: $current_version"
     fi
 
     source "$HOME/$venv_dir/bin/activate" || { echo "Failed to activate virtual environment"; exit 1; }
@@ -376,7 +379,6 @@ install_user_code() {
         LOCAL_HASH=""
     fi
     echo "Remote and local hashes: $REMOTE_HASH $LOCAL_HASH"
-    echo "New install flag: $new_install"
 
     # 3. Compare and install only if changed (or if [ "$new_install" == "yes" ])
     if [[ "$REMOTE_HASH" != "$LOCAL_HASH" || "$new_install" == "yes" ]]; then
