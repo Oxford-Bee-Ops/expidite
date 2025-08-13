@@ -207,7 +207,38 @@ install_os_packages() {
     touch "$HOME/.expidite/flags/reboot_required"
 }
 
-# Function to install Expidite's RpiCore 
+# Install the Uncomplicated Firewall and set appropriate rules.
+install_ufw() {
+    # If enable_firewall="Yes"
+    if [ "$enable_firewall" != "Yes" ]; then
+        echo "Firewall installation skipped as enable_firewall is not set to 'Yes'."
+        return
+    fi
+    sudo apt-get install -y ufw
+
+    # Clear any current rules
+    sudo ufw --force reset
+
+    # Allow IGMP broadcast traffic
+    sudo ufw allow proto igmp from any to 224.0.0.1
+    sudo ufw allow proto igmp from any to 224.0.0.251
+    # Allow SSH on 22 and FTP on 21
+    #sudo ufw allow 21
+    sudo ufw allow 22
+    # Allow DNS on 53
+    sudo ufw allow 53
+    # Allow DHCP on 67 / 68
+    sudo ufw allow 67/udp
+    sudo ufw allow 68/udp
+    # Allow NTP on 123
+    #sudo ufw allow 123
+    # Allow HTTPS on 443
+    sudo ufw allow 443
+    # Re-enable the firewall
+    sudo ufw --force enable
+}
+
+# Install Expidite's RpiCore 
 install_expidite() {
     # Install expidite from GitHub
     current_version=$(pip show expidite | grep Version)
@@ -223,18 +254,36 @@ install_expidite() {
         echo "Warning: Branch '$expidite_git_branch' does not exist in the repository."
     fi
 
-    pip install "git+https://github.com/oxford-bee-ops/expidite.git@$expidite_git_branch" || { echo "Failed to install Expidite"; }
-    updated_version=$(pip show expidite | grep Version)
-    echo "Expidite installed successfully.  Now version: $updated_version"
+    # 1. Get remote HEAD commit hash
+    EXP_REMOTE_HASH=$(git ls-remote "git@github.com:oxford-bee-ops/expidite.git" "refs/heads/$expidite_git_branch" | awk '{print $1}')
 
-    # We store the updated_version in the flags directory for later use in logging
-    echo "$updated_version" > "$HOME/.expidite/expidite_code_version"
+    # 2. Load last-installed hash (if any)
+    EXP_HASH_FILE="$HOME/.expidite/flags/expidite-repo-last-hash"
+    if [[ -f "$EXP_HASH_FILE" ]]; then
+        EXP_LOCAL_HASH=$(<"$EXP_HASH_FILE")
+    else
+        EXP_LOCAL_HASH=""
+    fi
 
-    # If the version has changed, we need to set a flag so we reboot at the end of the script
-    if [ "$current_version" != "$updated_version" ]; then
-        echo "Expidite version has changed from $current_version to $updated_version.  Reboot required."
-        # Set a flag to indicate that a reboot is required
-        touch "$HOME/.expidite/flags/reboot_required"
+    # 3. Compare and install only if changed
+    if [[ "$EXP_REMOTE_HASH" != "$EXP_LOCAL_HASH" ]]; then
+        echo "Detected new commit $EXP_REMOTE_HASH on branch $expidite_git_branch."
+        pip install "git+https://github.com/oxford-bee-ops/expidite.git@$expidite_git_branch" || { echo "Failed to install Expidite"; }
+        updated_version=$(pip show expidite | grep Version)
+        echo "Expidite installed successfully.  Now version: $updated_version"
+
+        # We store the updated_version in the flags directory for later use in logging
+        echo "$updated_version" > "$HOME/.expidite/expidite_code_version"
+        echo "$EXP_REMOTE_HASH" > "$EXP_HASH_FILE"
+
+        # If the version has changed, we need to set a flag so we reboot at the end of the script
+        if [ "$current_version" != "$updated_version" ]; then
+            echo "Expidite version has changed from $current_version to $updated_version.  Reboot required."
+            # Set a flag to indicate that a reboot is required
+            touch "$HOME/.expidite/flags/reboot_required"
+        fi
+    else
+        echo "No changes detected on branch $expidite_git_branch. Skipping install."
     fi
 }
 
@@ -343,7 +392,7 @@ install_user_code() {
         echo "$REMOTE_HASH" > "$HASH_FILE"
         echo "Installation complete; hash updated."
     else
-        echo "No changes on $BRANCH ($REMOTE_HASH). Skipping install."
+        echo "No changes on $my_git_branch ($REMOTE_HASH). Skipping install."
     fi
     
     updated_version=$(pip show "$project_name" | grep Version)
@@ -358,37 +407,6 @@ install_user_code() {
         # Set a flag to indicate that a reboot is required
         touch "$HOME/.expidite/flags/reboot_required"
     fi
-}
-
-# Install the Uncomplicated Firewall and set appropriate rules.
-install_ufw() {
-    # If enable_firewall="Yes"
-    if [ "$enable_firewall" != "Yes" ]; then
-        echo "Firewall installation skipped as enable_firewall is not set to 'Yes'."
-        return
-    fi
-    sudo apt-get install -y ufw
-
-    # Clear any current rules
-    sudo ufw --force reset
-
-    # Allow IGMP broadcast traffic
-    sudo ufw allow proto igmp from any to 224.0.0.1
-    sudo ufw allow proto igmp from any to 224.0.0.251
-    # Allow SSH on 22 and FTP on 21
-    #sudo ufw allow 21
-    sudo ufw allow 22
-    # Allow DNS on 53
-    sudo ufw allow 53
-    # Allow DHCP on 67 / 68
-    sudo ufw allow 67/udp
-    sudo ufw allow 68/udp
-    # Allow NTP on 123
-    #sudo ufw allow 123
-    # Allow HTTPS on 443
-    sudo ufw allow 443
-    # Re-enable the firewall
-    sudo ufw --force enable
 }
 
 ###############################################
@@ -642,7 +660,7 @@ check_prerequisites
 cd "$HOME/.expidite" || { echo "Failed to change directory to $HOME/.expidite"; exit 1; }
 export_system_cfg
 install_ssh_keys
-create_and_activate_venv
+create_and_activate_venv # Sets os_update=yes if creating a new venv
 if [ "$os_update" == "yes" ]; then
     # OS updates occur on a cron job which could lead to all devices being updated at the same time.
     # To avoid overloading the network, we stagger updates by a random amount between 0 and 20 minutes.
@@ -654,10 +672,10 @@ if [ "$os_update" == "yes" ]; then
         sleep $sleep_time
     fi
     install_os_packages
+    install_ufw
 fi
 install_expidite
 install_user_code
-install_ufw
 set_log_storage_volatile
 create_mount
 set_predictable_network_interface_names
