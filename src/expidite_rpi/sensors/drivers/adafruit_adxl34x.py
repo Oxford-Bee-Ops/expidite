@@ -38,7 +38,7 @@ from micropython import const  # type: ignore
 try:
     # This is only needed for typing
     import board  # type: ignore
-except ImportError:
+except (ImportError, NotImplementedError):
     # Running on non-CircuitPython environment (Windows/standard Python)
     board = None
     pass

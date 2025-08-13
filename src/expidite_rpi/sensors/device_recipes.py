@@ -24,6 +24,7 @@ from expidite_rpi.sensors.processor_video_trapcam import (
     DEFAULT_TRAPCAM_DP_CFG,
     TrapcamDp,
 )
+from expidite_rpi.sensors.sensor_adxl34x import ADXL34X, DEFAULT_ADXL34X_SENSOR_CFG
 from expidite_rpi.sensors.sensor_aht20 import AHT20, DEFAULT_AHT20_SENSOR_CFG
 from expidite_rpi.sensors.sensor_rpicam_vid import (
     DEFAULT_RPICAM_SENSOR_CFG,
@@ -53,6 +54,16 @@ def create_sht31_device() -> list[DPtree]:
 def create_aht20_device() -> list[DPtree]:
     cfg = DEFAULT_AHT20_SENSOR_CFG
     my_sensor = AHT20(cfg)
+    my_tree = DPtree(my_sensor)
+    return [my_tree]
+
+
+######################################################################################################
+# Create ADXL34x acceleration sensor device
+######################################################################################################
+def create_adxl34x_device() -> list[DPtree]:
+    cfg = DEFAULT_ADXL34X_SENSOR_CFG
+    my_sensor = ADXL34X(cfg)
     my_tree = DPtree(my_sensor)
     return [my_tree]
 
