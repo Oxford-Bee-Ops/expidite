@@ -249,7 +249,7 @@ fix_my_git_repo() {
     git_repo_url="$1"
     if [[ $git_repo_url == *"github.com/"* ]]; then
         # Replace the slash with a colon
-        git_repo_url=${git_repo_url/github.com/github.com:}
+        git_repo_url="${git_repo_url/github.com\//github.com:}"
     fi
     echo "$git_repo_url"
 }
