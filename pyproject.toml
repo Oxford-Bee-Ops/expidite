@@ -13,8 +13,6 @@ authors = [
   {name = "Stuart", email = "stuart@bee-ops.com"},
 ]
 dependencies = [
-    'adafruit-blinka; sys_platform == "win32"',
-    'adafruit-circuitpython-busdevice; sys_platform == "win32"',
     "azure-storage-blob",
     "click",
     "python-crontab",
