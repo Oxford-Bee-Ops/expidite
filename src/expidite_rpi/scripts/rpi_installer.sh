@@ -2,7 +2,7 @@
 
 # RPI installer
 #
-# This script installs / updates RpiCore code according to the ~/.expidite/system.cfg file.
+# This script installs / updates Expidite's RpiCore code according to the ~/.expidite/system.cfg file.
 # This script is also called from crontab on reboot to restart RpiCore (if auto-start is enabled).
 # It is safe to re-run this script multiple times.
 #
@@ -28,13 +28,8 @@
 # - auto_start_if_requested to start RpiCore & DeviceManager automatically if requested in system.cfg
 # - make_persistent by adding this script to crontab to run on reboot
 #
-# This script can be called with a no_os_update argument to skip the OS update and package installation steps.
-# This is used when this script is called from crontab on reboot.
-
-# We expect that 1 argument may be passed to this script:
-# - no_os_update: if this argument is passed, we skip the OS update and package installation steps
-# Check for this argument and set a flag
-# to skip the OS update and package installation steps
+# This script can be called with an os_update=yes argument to trigger an OS update. Otherwise, OS update is skipped.
+# 
 if [ "$1" == "os_update" ]; then
     os_update="yes"
 else
@@ -207,7 +202,7 @@ install_os_packages() {
     touch "$HOME/.expidite/flags/reboot_required"
 }
 
-# Install the Uncomplicated Firewall and set appropriate rules.
+# Function to install the Uncomplicated Firewall and set appropriate rules.
 install_ufw() {
     # If enable_firewall="Yes"
     if [ "$enable_firewall" != "Yes" ]; then
@@ -238,7 +233,7 @@ install_ufw() {
     sudo ufw --force enable
 }
 
-# Install Expidite's RpiCore 
+# Function to install expidite's RpiCore 
 install_expidite() {
     # Install expidite from GitHub
     current_version=$(pip show expidite | grep Version)
@@ -287,6 +282,7 @@ install_expidite() {
     fi
 }
 
+# Utility function to fix Git repository URLs
 fix_my_git_repo() {
     # Fix the Git repository URL if we're doing a direct git clone for system test installations
     # Normal URL format: git@github.com/oxford-bee-ops/expidite.git
