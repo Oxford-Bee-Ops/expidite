@@ -18,7 +18,8 @@ ADXL34X_SENSOR_INDEX = 83 # ADXL34X i2c address, 0x53 (83)
 ADXL34X_SENSOR_TYPE_ID = "ADXL34X"
 ADXL34X_FIELDS = ["RMS_X", "RMS_Y", "RMS_Z", "RMS_MAGNITUDE",
                   "PEAK_X", "PEAK_Y", "PEAK_Z", "PEAK_MAGNITUDE",
-                  "STD_DEV_X", "STD_DEV_Y", "STD_DEV_Z", "STD_DEV_MAGNITUDE"]
+                  "STD_DEV_X", "STD_DEV_Y", "STD_DEV_Z", "STD_DEV_MAGNITUDE",
+                  "SAMPLES"]
 
 @dataclass
 class ADXL34XSensorCfg(SensorCfg):
@@ -65,6 +66,7 @@ class ADXL34X(Sensor):
                     accelerometer.set_range(adafruit_adxl34x.Range.RANGE_4_G)
 
                 # Capture approximately 1 second of X, Y, and Z instantaneous accelerations readings
+                # And stay aligned to 1 real-time second boundaries
                 start_time = api.utc_now()
                 xyz_df = self.capture_data_block(accelerometer)
                 xyz_df['magnitude'] = (xyz_df['aX']**2 + xyz_df['aY']**2 + xyz_df['aZ']**2) ** 0.5
@@ -77,6 +79,8 @@ class ADXL34X(Sensor):
 
                 # Calculate the standard deviation for each of X, Y, Z and overall vector
                 std_dev = xyz_df.std()
+
+                num_observations = xyz_df.shape[0]
 
                 self.log(
                     stream_index=ADXL34X_STREAM_INDEX,
@@ -94,6 +98,7 @@ class ADXL34X(Sensor):
                         "STD_DEV_Y": ("%.1f" % std_dev['aY']),
                         "STD_DEV_Z": ("%.1f" % std_dev['aZ']),
                         "STD_DEV_MAGNITUDE": ("%.1f" % std_dev['magnitude']),
+                        "SAMPLES": num_observations,
                     },
                 )
 
@@ -101,9 +106,10 @@ class ADXL34X(Sensor):
                 logger.error(f"{root_cfg.RAISE_WARN()}Error in ADXL34X sensor run: {e}", exc_info=True)
 
     def capture_data_block(self, accelerometer: adafruit_adxl34x.ADXL343) -> pd.DataFrame:
-        """ Capture approximately 1 second of readings"""
+        """ Capture approximately 1 second of readings, but stop at a realtime second boundary
+        so that captures stay aligned and don't drift over time."""
         data = []
-        start_time = time.monotonic()
+        start_time = int(time.monotonic()) # Round to realtime boundary
         while time.monotonic() - start_time < 1:
             data.append(accelerometer.acceleration)
 
