@@ -230,8 +230,10 @@ class EdgeOrchestrator:
 
         # Only once we've started the datastreams, do we start the Sensor threads
         # otherwise we get a "Datastream not started" error.
-        for sensor in self._sensorThreads:
-            sensor.start()
+        # If the device is being used for re-processing, we don't start the sensors
+        if root_cfg.system_cfg and not root_cfg.system_cfg.reprocessor == "Yes":
+            for sensor in self._sensorThreads:
+                sensor.start()
 
         # Dump status to log
         logger.info(f"EdgeOrchestrator started: {self.status()}")
@@ -291,20 +293,21 @@ class EdgeOrchestrator:
             self.device_manager.stop()
 
         # Stop all the sensor threads
-        for sensor in self._sensorThreads:
-            sensor.stop()
+        if root_cfg.system_cfg and not root_cfg.system_cfg.reprocessor == "Yes":
+            for sensor in self._sensorThreads:
+                sensor.stop()
 
-        # Block until all Sensor threads have exited
-        for sensor in self._sensorThreads:
-            # We need the check that the thread we're waiting on is not our own thread,
-            # because that will cause a RuntimeError
-            our_thread = threading.current_thread().ident
-            if (sensor.ident != our_thread) and sensor.is_alive():
-                logger.info(f"Waiting for sensor thread {sensor}")
-                sensor.join()
-                logger.info(f"Waiting over. Sensor thread {sensor} stopped")
-            else:
-                logger.info(f"Sensor thread {sensor} already stopped")
+            # Block until all Sensor threads have exited
+            for sensor in self._sensorThreads:
+                # We need the check that the thread we're waiting on is not our own thread,
+                # because that will cause a RuntimeError
+                our_thread = threading.current_thread().ident
+                if (sensor.ident != our_thread) and sensor.is_alive():
+                    logger.info(f"Waiting for sensor thread {sensor}")
+                    sensor.join()
+                    logger.info(f"Waiting over. Sensor thread {sensor} stopped")
+                else:
+                    logger.info(f"Sensor thread {sensor} already stopped")
 
         # Stop all the dataprocessor threads
         for dpe in self._dpworkers:

@@ -103,6 +103,10 @@ class RpiCore:
         # Load the configuration
         root_cfg.set_inventory(fleet_config)
 
+        # If this device is a re-processor, reset the device_id to emulate the original device
+        if root_cfg.system_cfg and root_cfg.system_cfg.reprocessor == "Yes":
+            root_cfg.update_my_device_id(root_cfg.system_cfg.reprocess_device_id)
+
     def start(self) -> None:
         """
         Start the rpi_core to begin data collection.

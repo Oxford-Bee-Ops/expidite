@@ -1,7 +1,6 @@
 # ExPiDITE
 
-ExPiDITE makes it as easy to use Raspberry Pi SBCs for scientific data collection
-in long-running experiments. ExPiDITE is a pre-baked set of functionality and design choices that reduce the complexity & risk in managing devices, sensors, and data flows.
+ExPiDITE makes it as easy to use Raspberry Pi SBCs for scientific data collection in long-running experiments. ExPiDITE is a pre-baked set of functionality and design choices that reduce the complexity & risk in managing devices, sensors, and data flows.
 
 
 SENSOR INTEGRATION
@@ -27,7 +26,7 @@ DEVICE MANAGEMENT
 
 Key design decisions:
 - Python: The system is written in Python to make it easy to extend and modify.
-- Push-to-cloud: The system pushes data to cloud storage rather than persistently storing it on device.
+- Push-to-cloud: The system pushes data to cloud storage in near-real-time rather than persistently storing it on device.
 - Memory-as-disk: The system uses memory-as-disk to reduce wear on the SD card (a key single point of failure).
 - Strict file naming: The system enforces strict file naming conventions to ensure that data is easily identifiable and manageable, and related to FAIR records.
 - Configuration is stored in Git.
@@ -45,38 +44,30 @@ And follow the instructions in Usage > User Flow below.
 ## Usage
 ### PRE-REQUISITES
 You will need: 
+- a Raspberry Pi SBC and some sensors!
 - a GitHub account to store your *fleet* configuration and any custom code you choose to write
 - an Azure account for storage of your sensor output
-- a Raspberry Pi SBC and some sensors!
 - some basic experience with Python coding
 
 
 ### USER FLOW - INITIAL SETUP
 The following steps enable you to run the default example sensor on your RPi.  Do this first to prove that your cloud storage config is working and to learn the basics.  Then you can move on to defining your actual experimental setup!
 
-- In your Azure storage account, create the following containers:
-    - `expidite-journals` - this is where your experimental data will end up 
-    - `expidite-system-records` - this is where the RpiCore records will go that show you how your devices are performing
-    - `expidite-upload` - this is the default location for uploading recordings from your devices
-    - `expidite-fair` - this is where the FAIR records will go that snapshot your experimental configuration.
 - Physically build your Raspberry Pi and attach your chosen sensors.
 - Get an SD card with the Raspberry Pi OS.  If you use Raspberry Pi Imager, enabling SSH access and including default Wifi config will make your life easier.
-- Install the SD card with and power up your Pi.
+- Install the SD card and power up your Pi.
 - Copy the **keys.env** and **system.cfg** files from the expidite repo `/src/example` folder to your own computer / dev environment / git project.
 - Edit **keys.env**:
     - Set `cloud_storage_key` to the Shared Access Signature for your Azure Storage accounts (see explanatory notes in keys.env).
-    - For security reasons, do **not** check keys.env into Git.
+    - For security reasons, do **not** check your keys.env into Git.
 - Log in to your RPi:
-    - create a **.expidite** folder in your user home directory 
+    - create an **.expidite** folder in your user home directory 
         - `mkdir ~/.expidite`
     - copy your **keys.env** and **system.cfg** to the .expidite folder
     - copy the **rpi_installer.sh** files from `/src/expidite_rpi/scripts` to the .expidite folder
     - run the rpi_installer.sh script:
-        - `cd ~/.expidite`
-        - `dos2unix *.sh`
-        - `chmod +x *.sh`
-        - `./rpi_installer.sh`
-        - this will take a few minutes as it creates a virtual environment, installs Expidite's RpiCore and its dependencies, and sets up the RPi ready for use as a sensor.
+        - `cd ~/.expidite &&  dos2unix *.sh && chmod +x *.sh && ./rpi_installer.sh`
+        - this will take a few minutes as it creates a virtual environment, updates to the latest OS packages, installs Expidite's RpiCore and its dependencies, and sets up the RPi ready for use as a sensor.
     - once RpiCore is installed, you can test it using either:
         - CLI at a shell prompt:
             - `bcli`
@@ -92,14 +83,13 @@ The following steps enable you to run the default example sensor on your RPi.  D
 To execute your particular experimental setup, you need to configure your devices in a "fleet config" python file.  You will want to maintain this configuration in Git.
 
 - Create your own Git repo if you haven't already got one
-    - You might want to install `uv` or similar to help you with initial project setup (`uv init`)
 - Copy the `/src/expidite_rpi/example` folder into your Git repo as a starting point for your own config and code customizations.
 - Edit **my_fleet_config.py** to add configuration for your device(s)
     - You will need the mac address of the device's wlan0 interface as the identifier of the device
     - To get the mac address run `cat /sys/class/net/wlan0/address`
     - See the example fleet_config.py for more details.
 - Edit the **system.cfg**:
-    - If you want RpiCore to auto-update your devices each night with the latest code from your git repo, you will need to set `my_git_repo_url`.
+    - If you want RpiCore to regularly auto-update your devices the latest code from your git repo, you will need to set `my_git_repo_url`.
     - See the system.cfg file in `/src/expidite_rpi/example` for more details and more options.
 
 ### USER FLOW - PRODUCTION PROCESS FOR AN EXPERIMENT WITH MANY DEVICES
@@ -183,15 +173,9 @@ FC=Fleet config; SC=system.cfg; KE=keys.env
 | Git repo | SC:`my_git_repo_url` | URL of your Git repo containing your configuration and any custom code
 | Git branch | SC:`my_git_branch` | Name of the Git branch to use if not main
 
-
-## Class model
-
-- bcli | CLI to RpiCore
-- rpi.RpiCore is the primary entry point for programmatic integration
-    - edge_orchestrator.EdgeOrchestrator manages overall program flow and start/stop of threads
-        - dp_node.DPnode superclass implements saving of data to Streams
-        - 
-        - sensor.Sensor superclass; there will be one per physical sensor
-        - dp.DataProcessor superclass; subclasses implement different processing of sensor data 
-        - Streams define the data produced by Sensors and DataProcessors
-        - dp_node
+## Re-processing data
+If you want to re-run your data processing over original raw recordings, you can configure a spare RPI as a re-processor.
+In system.cfg, set `reprocessor="Yes"` and set `reprocess_device_id` to the device_id of the original device.
+The device will start running as usual, but with the sensors disabled.  
+Any recording files placed into the $HOME/expidite/processing directory will be re-processed as they would have been if they had been processed on the original device, but using whatever the latest code is running on this device.
+You can only reprocess files in this way if the device_id embedded in the filename matches the `reprocess_device_id`.

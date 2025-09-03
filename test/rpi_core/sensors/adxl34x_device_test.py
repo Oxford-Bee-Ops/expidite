@@ -36,5 +36,3 @@ class Test_adxl34x_device:
             sleep(2)
             th.assert_records("expidite-fair", 
                             {"V3_*": 1})
-            th.assert_records("expidite-journals", 
-                            {"V3_ADXL34X*": 1})

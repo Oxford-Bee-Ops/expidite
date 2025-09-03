@@ -185,3 +185,9 @@ class SystemCfg(BaseSettings):
     expidite_git_branch: str ="main"
     # Pydantic-settings helper
     model_config = SettingsConfigDict(extra="ignore")
+
+    ###########################################################
+    # Re-processor settings
+    ###########################################################
+    reprocessor: str = "No"
+    reprocess_device_id: str = "unknown"

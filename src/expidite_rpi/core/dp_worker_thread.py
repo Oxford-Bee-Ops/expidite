@@ -44,9 +44,6 @@ class DPworker(Thread):
         # sensor_cfg is a SensorCfg object describing the sensor that produces this datastream.
         self.dp_tree: DPtree = dp_tree
 
-        # device_id is the machine ID (mac address) of the device that produces this datastream.
-        self.device_id = root_cfg.my_device_id
-
         # sensor_id is an index (eg port number) identifying the sensor that produces this datastream.
         # This is not unique on the device, but must be unique in combination with the datastream_type_id.
         self.sensor_index = dp_tree.sensor.config.sensor_index
@@ -88,7 +85,7 @@ class DPworker(Thread):
         wrap: dict[str, dict | str | list] = {}
         wrap[api.RECORD_ID.VERSION.value] = "V3"
         wrap[api.RECORD_ID.DATA_TYPE_ID.value] = sensor_type.value
-        wrap[api.RECORD_ID.DEVICE_ID.value] = self.device_id
+        wrap[api.RECORD_ID.DEVICE_ID.value] = root_cfg.my_device_id
         wrap[api.RECORD_ID.SENSOR_INDEX.value] = str(self.sensor_index)
         wrap[api.RECORD_ID.TIMESTAMP.value] = api.utc_to_iso_str()
 
