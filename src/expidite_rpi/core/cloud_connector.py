@@ -523,17 +523,16 @@ class SyncCloudConnector(CloudConnector):
 # This class is used to connect to the local cloud emulator.  It is a subclass of CloudConnector and
 # implements the same interface.  It is used for testing purposes only and should not be used in production.
 #########################################################################################################
-local_cloud_root = root_cfg.ROOT_WORKING_DIR / "local_cloud"
-local_cloud: Path = local_cloud_root / api.utc_to_fname_str()
-
 class LocalCloudConnector(CloudConnector):
     def __init__(self) -> None:
         logger.debug("Creating LocalCloudConnector instance")
         super().__init__()
 
-        if root_cfg.my_device is None:
+        if root_cfg.my_device is None or root_cfg.system_cfg is None:
             raise ValueError("System configuration not set; cannot connect to cloud")
-        self.local_cloud = local_cloud
+
+        self.local_cloud = root_cfg.ROOT_WORKING_DIR / root_cfg.system_cfg.local_cloud / \
+            root_cfg.my_device_id / api.utc_to_fname_str()
         
     def get_local_cloud(self) -> Path:
         """Creates a local cloud directory.  Usually called by RpiEmulator.__enter__() as

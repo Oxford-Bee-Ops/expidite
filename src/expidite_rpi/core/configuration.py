@@ -27,13 +27,6 @@ class MODE(Enum):
     TEST = "test"
 TEST_MODE: MODE = MODE.PRODUCTION
 
-class CloudType(Enum):
-    """Enum for the supported cloud types"""
-    AZURE = "azure"
-    SYNC_AZURE = "sync_azure" # Enforced synchronous mode
-    LOCAL_EMULATOR = "local"
-
-CLOUD_TYPE: CloudType = CloudType.AZURE
 
 ############################################################################################
 # System timers
@@ -378,6 +371,20 @@ def _load_system_cfg() -> Optional[SystemCfg | None]:
         return SystemCfg()
 
 system_cfg = _load_system_cfg()
+
+############################################################################################
+# Cloud configuration
+############################################################################################
+class CloudType(Enum):
+    """Enum for the supported cloud types"""
+    AZURE = "azure"
+    SYNC_AZURE = "sync_azure" # Enforced synchronous mode
+    LOCAL_EMULATOR = "local"
+
+CLOUD_TYPE: CloudType = CloudType.AZURE
+if system_cfg and system_cfg.use_local_cloud.lower() == "yes":
+    CLOUD_TYPE = CloudType.LOCAL_EMULATOR
+    
 
 #############################################################################################
 # Store the provided inventory

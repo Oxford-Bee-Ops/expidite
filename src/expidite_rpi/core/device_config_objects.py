@@ -187,7 +187,11 @@ class SystemCfg(BaseSettings):
     model_config = SettingsConfigDict(extra="ignore")
 
     ###########################################################
-    # Re-processor settings
+    # System test and re-processor settings
     ###########################################################
+    # Use local cloud storage for testing if set to "Yes"
+    use_local_cloud: str = "No"
+    # Local cloud is appended on to the root_working_dir (/expidite)
+    local_cloud: str = "local_cloud"
     reprocessor: str = "No"
     reprocess_device_id: str = "unknown"
