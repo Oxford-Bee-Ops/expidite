@@ -539,8 +539,8 @@ class LocalCloudConnector(CloudConnector):
         when the RpiEmulator is used as a context manager.
 
         This is an unpredictable string so we don't clash with other local cloud instances."""
-        if self.local_cloud.exists():
-            shutil.rmtree(self.local_cloud)
+        #if self.local_cloud.exists():
+        #    shutil.rmtree(self.local_cloud)
         self.local_cloud.mkdir(parents=True, exist_ok=True)
         return self.local_cloud
 
