@@ -96,6 +96,9 @@ export_system_cfg() {
     fi
     dos2unix -q "$HOME/.expidite/system.cfg" || { echo "Failed to convert system.cfg to Unix format"; exit 1; }
     while IFS='=' read -r key value; do
+        # Strip any surrounding whitespace from key and value
+        key=$(echo "$key" | xargs)
+        value=$(echo "$value" | xargs) 
         if [[ $key != \#* && $key != "" ]]; then
             if [[ $key =~ ^[a-zA-Z_][a-zA-Z0-9_]*$ ]]; then
                 # Strip surrounding quotes from the value
