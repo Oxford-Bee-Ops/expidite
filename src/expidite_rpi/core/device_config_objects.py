@@ -194,4 +194,3 @@ class SystemCfg(BaseSettings):
     # Local cloud is appended on to the root_working_dir (/expidite)
     local_cloud: str = "local_cloud"
     reprocessor: str = "No"
-    reprocess_device_id: str = "unknown"

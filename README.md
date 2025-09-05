@@ -173,9 +173,3 @@ FC=Fleet config; SC=system.cfg; KE=keys.env
 | Git repo | SC:`my_git_repo_url` | URL of your Git repo containing your configuration and any custom code
 | Git branch | SC:`my_git_branch` | Name of the Git branch to use if not main
 
-## Re-processing data
-If you want to re-run your data processing over original raw recordings, you can configure a spare RPI as a re-processor.
-In system.cfg, set `reprocessor="Yes"` and set `reprocess_device_id` to the device_id of the original device.
-The device will start running as usual, but with the sensors disabled.  
-Any recording files placed into the $HOME/expidite/processing directory will be re-processed as they would have been if they had been processed on the original device, but using whatever the latest code is running on this device.
-You can only reprocess files in this way if the device_id embedded in the filename matches the `reprocess_device_id`.
