@@ -295,6 +295,19 @@ install_expidite() {
     else
         echo "No changes detected on branch $expidite_git_branch. Skipping install."
     fi
+
+    # Make sure the rpi_installer.sh script is executable
+    # Check the script is in the venv directory
+    if [ ! -f "$HOME/$venv_dir/scripts/rpi_installer.sh" ]; then
+        echo "Error: rpi_installer.sh not found in $HOME/$venv_dir/scripts/"
+        exit 1
+    fi
+    # Check if the script is already executable
+    if [ ! -x "$HOME/$venv_dir/scripts/rpi_installer.sh" ]; then
+        chmod +x "$HOME/$venv_dir/scripts/rpi_installer.sh" || { echo "Failed to make rpi_installer.sh executable"; exit 1; }
+        echo "rpi_installer.sh made executable."
+    fi
+
 }
 
 # Utility function to fix Git repository URLs
@@ -619,18 +632,7 @@ function auto_start_if_requested() {
 # to run on reboot
 ###############################################
 function make_persistent() {
-    if [ "$auto_start" == "Yes" ]; then
-        # Check the script is in the venv directory
-        if [ ! -f "$HOME/$venv_dir/scripts/rpi_installer.sh" ]; then
-            echo "Error: rpi_installer.sh not found in $HOME/$venv_dir/scripts/"
-            exit 1
-        fi
-        # Check if the script is already executable
-        if [ ! -x "$HOME/$venv_dir/scripts/rpi_installer.sh" ]; then
-            chmod +x "$HOME/$venv_dir/scripts/rpi_installer.sh" || { echo "Failed to make rpi_installer.sh executable"; exit 1; }
-            echo "rpi_installer.sh made executable."
-        fi
-        
+    if [ "$auto_start" == "Yes" ]; then        
         rpi_installer_cmd="/bin/bash $HOME/$venv_dir/scripts/rpi_installer.sh 2>&1 | /usr/bin/logger -t EXPIDITE"
         rpi_cmd_os_update="/bin/bash $HOME/$venv_dir/scripts/rpi_installer.sh os_update 2>&1 | /usr/bin/logger -t EXPIDITE"
         
