@@ -238,6 +238,53 @@ def get_journal_filename(type_id: str) -> Path:
     """Filenaming for live journals that are in use; they get renamed with a timestamp when closed."""
     return root_cfg.EDGE_STAGING_DIR.joinpath(f"V3_{type_id}_{root_cfg.my_device_id}.csv")
 
+def parse_journal_filename(fname: Path | str) -> dict:
+    """Parse a journal filename to extract its components.
+
+    Parameters
+    ----------
+    fname - Path or string containing the filename to be parse
+
+    Return
+    ------
+    A dictionary with the following components derived from the filename:
+        bapi.RECORD_ID.VERSION          - always
+        bapi.RECORD_ID.DS_TYPE_ID       - always
+        bapi.RECORD_ID.DEVICE_ID        - always
+        bapi.RECORD_ID.TIMESTAMP        - always
+        bapi.RECORD_ID.SUFFIX           - always
+    """
+    if isinstance(fname, str):
+        fname = Path(fname)
+
+    # Check that the filename has at least 3 "_"
+    if fname.name.count("_") < 3:
+        logger.warning(f"{root_cfg.RAISE_WARN()}Invalid journal filename format - too few _ in {fname.name}")
+        return {}
+
+    stem = fname.stem
+
+    # Extract the fields from the filename, parsing with the "_" delimiter
+    fields = stem.split("_")
+    # Version is the first field, 2 characters like 'V3'
+    version = fields[0]
+    datastream_type_id = fields[1]
+    device_id = fields[2]
+    if len(device_id) != 12:
+        raise ValueError(f"Error parsing journal filename device_id:{fname}")
+    timestamp = None
+    if len(fields) > 3:
+        timestamp = datetime.strptime(fields[3], "%Y%m%d").replace(tzinfo=ZoneInfo("UTC"))
+
+    fields_dict = {
+        api.RECORD_ID.VERSION.value: version,
+        api.RECORD_ID.DEVICE_ID.value: device_id,
+        api.RECORD_ID.DATA_TYPE_ID.value: datastream_type_id,
+        api.RECORD_ID.TIMESTAMP.value: timestamp,
+        api.RECORD_ID.SUFFIX.value: fname.suffix[1:],
+    }
+    logger.debug(f"Parsed journal fname {fname} to {fields_dict}")
+    return fields_dict
 
 def get_temporary_filename(format: api.FORMAT) -> Path:
     """Generate a temporary filename in the TMP_DIR with the specified suffix."""
