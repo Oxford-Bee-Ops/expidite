@@ -1,21 +1,16 @@
 from __future__ import annotations
 
-from dataclasses import asdict
 from datetime import datetime
-from enum import Enum
 from pathlib import Path
 from threading import Event, Thread
 from typing import Optional
 
 import pandas as pd
-import yaml
-from yaml import Dumper
 
-from expidite_rpi import DataProcessor, DPtree, SensorCfg, Stream, api, file_naming
+from expidite_rpi import DataProcessor, DPtree, SensorCfg, Stream, api
 from expidite_rpi.core import configuration as root_cfg
 from expidite_rpi.core.cloud_connector import CloudConnector
 from expidite_rpi.core.configuration import Mode
-from expidite_rpi.core.device_config_objects import Keys
 from expidite_rpi.core.dp_node import DPnode
 
 logger = root_cfg.setup_logger("expidite")
@@ -58,89 +53,6 @@ class DPworker(Thread):
     # Public methods called by the Sensor or DataProcessor to log or save data
     #
     #########################################################################################################
-
-    def save_FAIR_record(self) -> None:
-        """Save a FAIR record describing this Sensor and associated data processing to the FAIR archive.
-        We save one FAIR record to the expidite-fair (where we store all snapshots) and one to 
-        expidite-fair-latest (which is just the latest snapshot; overriding the old one)."""
-        logger.debug(f"Save FAIR record for {self}")
-
-        # Custom representer for Enum
-        def enum_representer(dumper: Dumper, data: Enum) -> yaml.Node:
-            """Represent an Enum as a plain string in YAML"""
-            return dumper.represent_scalar('tag:yaml.org,2002:str', str(data.value))
-
-        # Create a custom Dumper class
-        class CustomDumper(Dumper):
-            pass
-
-        # Register the custom representer with the custom Dumper
-        CustomDumper.add_representer(Enum, enum_representer)
-
-        # We don't save FAIR records for system datastreams
-        if self.dp_tree.sensor.config.sensor_type == api.SENSOR_TYPE.SYS:
-            return
-
-        sensor_type = self.dp_tree.sensor.config.sensor_type
-
-        # Wrap the "record" data in a FAIR record
-        wrap: dict[str, dict | str | list] = {}
-        wrap[api.RECORD_ID.VERSION.value] = "V3"
-        wrap[api.RECORD_ID.DATA_TYPE_ID.value] = sensor_type.value
-        wrap[api.RECORD_ID.DEVICE_ID.value] = root_cfg.my_device_id
-        wrap[api.RECORD_ID.SENSOR_INDEX.value] = str(self.sensor_index)
-        wrap[api.RECORD_ID.TIMESTAMP.value] = api.utc_to_iso_str()
-
-        # Dump all the config from the DPtree
-        wrap["sensor_config"] = self.dp_tree.export()
-
-        # Dump the device config
-        wrap["device_config"] = asdict(root_cfg.my_device)
-
-        # Add system config
-        if root_cfg.system_cfg is not None:
-            wrap["system_config"] = root_cfg.system_cfg.model_dump()
-
-        # Code version info
-        expidite_version, user_code_version = root_cfg.get_version_info()
-        wrap["expidite_version"] = expidite_version
-        wrap["user_code_version"] = user_code_version
-
-        # Storage account name
-        if root_cfg.keys is not None:
-            wrap["storage_account"] = Keys.get_storage_account(root_cfg.keys)
-
-        # We always include the list of mac addresses for all devices in this experiment (fleet_config).
-        # This enables the dashboard to check that all devices are present and working.
-        # We filter to those  devices in the inventory that use the same datastore rather than including 
-        # all devices in the fleet.
-        fleet_macs = root_cfg.INVENTORY.keys()
-        fleet_macs = [mac for mac in fleet_macs 
-                      if root_cfg.INVENTORY[mac].datastore == root_cfg.my_device.datastore]
-        fleet_names = [root_cfg.INVENTORY[mac].name for mac in fleet_macs]
-        fleet_dict = {mac: name for mac, name in zip(fleet_macs, fleet_names)}
-        wrap["fleet"] = fleet_dict
-
-        # Save the FAIR record as a YAML file to the FAIR archive
-        fair_fname = file_naming.get_FAIR_filename(sensor_type, self.sensor_index, suffix="yaml")
-        Path(fair_fname).parent.mkdir(parents=True, exist_ok=True)
-        with open(fair_fname, "w") as f:
-            yaml.dump(wrap, f, Dumper=CustomDumper)
-        self.cc.upload_to_container(root_cfg.my_device.cc_for_fair, 
-                                    [fair_fname], 
-                                    delete_src=False,
-                                    storage_tier=api.StorageTier.COOL)
-        
-        # Also save to the "latest" container.  This is used by the dashboard so that it can get the latest
-        # data without having to sort through an ever-growing list of files.
-        fair_latest_fname = root_cfg.EDGE_UPLOAD_DIR / \
-            f"V3_{root_cfg.my_device_id}_{sensor_type.value}_{self.sensor_index}.yaml"
-        fair_fname.rename(fair_latest_fname)
-        self.cc.upload_to_container(root_cfg.my_device.cc_for_fair_latest,
-                                    [fair_latest_fname],
-                                    delete_src=True,
-                                    storage_tier=api.StorageTier.COOL)
-
 
     def log_sample_data(self, sample_period_start_time: datetime) -> None:
         """Provide the count & duration of data samples recorded (environmental, media, etc)
@@ -199,9 +111,6 @@ class DPworker(Thread):
 
     def edge_run(self) -> None:
         """Main Datastream loop processing files, logs or data generated by Sensors"""
-
-        # Create the FAIR record for this sensor and associated processing
-        self.save_FAIR_record()
 
         # If there are no data processors, we can exit the thread because data will be saved 
         # directly to the cloud

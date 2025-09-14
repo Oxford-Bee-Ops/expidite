@@ -310,12 +310,11 @@ def get_log_filename() -> Path:
     return root_cfg.EDGE_UPLOAD_DIR / f"V3_{root_cfg.my_device_id}_{api.utc_to_fname_str()}.log"
 
 
-def get_FAIR_filename(sensor_type: api.SENSOR_TYPE, sensor_index: int, suffix: str) -> Path:
+def get_FAIR_filename(suffix: str) -> Path:
     """Generate a filename for a fair file."""
     return (
-        root_cfg.EDGE_UPLOAD_DIR / 
-        f"V3_{root_cfg.my_device_id}_{sensor_type.value}_{sensor_index}_"
-        f"{api.utc_to_fname_str()}.{suffix}"
+        root_cfg.EDGE_UPLOAD_DIR /
+        f"V3_{root_cfg.my_device_id}_{api.utc_to_fname_str()}.{suffix}"
     )
 
 

@@ -2,13 +2,19 @@
 # EdgeOrchestrator: Manages the state of the sensor threads
 ####################################################################################################
 import threading
+from dataclasses import asdict
 from datetime import timedelta
 from enum import Enum
+from pathlib import Path
 from time import sleep
 from typing import Callable, Optional
 
-from expidite_rpi.core import api
+import yaml
+from yaml import Dumper
+
+from expidite_rpi.core import api, file_naming
 from expidite_rpi.core import configuration as root_cfg
+from expidite_rpi.core.cloud_connector import CloudConnector
 from expidite_rpi.core.device_health import DeviceHealth
 from expidite_rpi.core.device_manager import DeviceManager
 from expidite_rpi.core.dp_node import DPnode
@@ -224,6 +230,9 @@ class EdgeOrchestrator:
         if root_cfg.running_on_rpi:
             self.device_manager.start()
 
+        # Save a FAIR record of the device configuration
+        self.save_FAIR_record()
+
         # Start the DPworker threads
         for dpe in self._dpworkers:
             dpe.start()
@@ -367,6 +376,90 @@ class EdgeOrchestrator:
         # If we get here, the file exists, was touched within the last 2x _FREQUENCY seconds,
         # and the timestamp is > than the timestamp on the STOP_EXPIDITE_FLAG file.
         return True
+
+
+    def save_FAIR_record(self) -> None:
+        """Save a FAIR record describing this Device, its Sensor and associated data processing.
+        We save one FAIR record to the expidite-fair (where we store all snapshots) and one to 
+        expidite-fair-latest (which is just the latest snapshot; overriding the old one)."""
+        logger.debug(f"Save FAIR record for {self}")
+
+        # Custom representer for Enum
+        def enum_representer(dumper: Dumper, data: Enum) -> yaml.Node:
+            """Represent an Enum as a plain string in YAML"""
+            return dumper.represent_scalar('tag:yaml.org,2002:str', str(data.value))
+
+        # Create a custom Dumper class
+        class CustomDumper(Dumper):
+            pass
+
+        # Register the custom representer with the custom Dumper
+        CustomDumper.add_representer(Enum, enum_representer)
+
+        # Wrap the "record" data in a FAIR record
+        wrap: dict[str, dict | str | list] = {}
+        wrap[api.RECORD_ID.VERSION.value] = "V3"
+        wrap[api.RECORD_ID.DEVICE_ID.value] = root_cfg.my_device_id
+        wrap[api.RECORD_ID.TIMESTAMP.value] = api.utc_to_iso_str()
+
+        # Dump the device config
+        wrap["device_config"] = asdict(root_cfg.my_device)
+
+        # Add system config
+        if root_cfg.system_cfg is not None:
+            wrap["system_config"] = root_cfg.system_cfg.model_dump()
+
+        # Code version info
+        expidite_version, user_code_version = root_cfg.get_version_info()
+        wrap["expidite_version"] = expidite_version
+        wrap["user_code_version"] = user_code_version
+
+        # Storage account name
+        if root_cfg.keys is not None:
+            wrap["storage_account"] = root_cfg.Keys.get_storage_account(root_cfg.keys)
+
+        # Dump the sensor config
+        sensors: dict[str, dict] = {}
+        for dp_tree in self.dp_trees:        
+            # We don't save FAIR records for system datastreams
+            if dp_tree.sensor.config.sensor_type == api.SENSOR_TYPE.SYS:
+                continue
+            key = f"{dp_tree.sensor.config.sensor_type.value}_{dp_tree.sensor.sensor_index}"
+            sensors[key] = dp_tree.export()
+
+        wrap["sensors"] = sensors
+
+        # We always include the list of mac addresses for all devices in this experiment (fleet_config).
+        # This enables the dashboard to check that all devices are present and working.
+        # We filter to those  devices in the inventory that use the same datastore rather than including 
+        # all devices in the fleet.
+        fleet_macs = list(root_cfg.INVENTORY.keys())
+        fleet_macs = [mac for mac in fleet_macs 
+                      if root_cfg.INVENTORY[mac].datastore == root_cfg.my_device.datastore]
+        fleet_names = [root_cfg.INVENTORY[mac].name for mac in fleet_macs]
+        fleet_dict = {mac: name for mac, name in zip(fleet_macs, fleet_names)}
+        wrap["fleet"] = fleet_dict
+
+        cc = CloudConnector.get_instance(root_cfg.CLOUD_TYPE)
+
+        # Save the FAIR record as a YAML file to the FAIR archive
+        fair_fname = file_naming.get_FAIR_filename(suffix="yaml")
+        Path(fair_fname).parent.mkdir(parents=True, exist_ok=True)
+        with open(fair_fname, "w") as f:
+            yaml.dump(wrap, f, Dumper=CustomDumper)
+        cc.upload_to_container(root_cfg.my_device.cc_for_fair, 
+                                [fair_fname], 
+                                delete_src=False,
+                                storage_tier=api.StorageTier.COOL)
+        
+        # Also save to the "latest" container.  This is used by the dashboard so that it can get the latest
+        # data without having to sort through an ever-growing list of files.
+        fair_latest_fname = root_cfg.EDGE_UPLOAD_DIR / f"V3_{root_cfg.my_device_id}.yaml"
+        fair_fname.rename(fair_latest_fname)
+        cc.upload_to_container(root_cfg.my_device.cc_for_fair_latest,
+                                [fair_latest_fname],
+                                delete_src=True,
+                                storage_tier=api.StorageTier.COOL)
 
 #############################################################################################################
 # Orchestrator main loop
