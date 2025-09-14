@@ -111,7 +111,8 @@ class _CloudJournalManager:
                     # Append the contents of lj to the cloud blob
                     cc.append_to_cloud(journal.cloud_container, 
                                         journal.local_fname,
-                                        delete_src=True)
+                                        delete_src=True,
+                                        col_order=journal.reqd_columns)
 
             time_diff = (api.utc_now() - start_time).total_seconds()
             logger.debug(f"Completed flush_all started at {start_time} after {time_diff} seconds")
