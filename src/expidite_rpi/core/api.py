@@ -27,6 +27,7 @@ class RECORD_ID(StrEnum):
     SUFFIX = "file_suffix"
     INCREMENT = "increment"
     NAME = "device_name"  # Not used programmatically, but helpful for users
+    TAGS = "tags"  # Not used programmatically, but helpful for users
 
 REQD_RECORD_ID_FIELDS = [
     RECORD_ID.VERSION.value,
@@ -43,7 +44,9 @@ ALL_RECORD_ID_FIELDS = [*REQD_RECORD_ID_FIELDS,
                         RECORD_ID.SECONDARY_OFFSET.value, 
                         RECORD_ID.SUFFIX.value,
                         RECORD_ID.INCREMENT.value,
-                        RECORD_ID.NAME.value]
+                        RECORD_ID.NAME.value,
+                        RECORD_ID.TAGS.value
+                        ]
 
 ############################################################
 # Sampling override options

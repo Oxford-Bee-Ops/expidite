@@ -559,8 +559,6 @@ class DPnode():
                     output_data[field] = stream.type_id
                 elif field == api.RECORD_ID.STREAM_INDEX.value:
                     output_data[field] = stream.index
-                elif field == api.RECORD_ID.NAME.value:
-                   output_data[field] = root_cfg.my_device.name
                 else:
                     assert False, f"Unknown RECORD_ID field {field}"    
         # Check the values in the RECORD_ID are not nan or empty
@@ -570,6 +568,10 @@ class DPnode():
                            f" {data_id}")
                 logger.error(err_str)
                 raise Exception(err_str)
+
+        # Add name and tags fields
+        output_data[api.RECORD_ID.NAME.value] = root_cfg.my_device.name
+        output_data[api.RECORD_ID.TAGS.value] = root_cfg.my_device.tags
 
         # Warn about superfluous fields that will get dropped
         if stream.fields is not None and len(stream.fields) > 0:

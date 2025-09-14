@@ -60,7 +60,9 @@ class DPworker(Thread):
     #########################################################################################################
 
     def save_FAIR_record(self) -> None:
-        """Save a FAIR record describing this Sensor and associated data processing to the FAIR archive."""
+        """Save a FAIR record describing this Sensor and associated data processing to the FAIR archive.
+        We save one FAIR record to the expidite-fair (where we store all snapshots) and one to 
+        expidite-fair-latest (which is just the latest snapshot; overriding the old one)."""
         logger.debug(f"Save FAIR record for {self}")
 
         # Custom representer for Enum
@@ -108,9 +110,13 @@ class DPworker(Thread):
         if root_cfg.keys is not None:
             wrap["storage_account"] = Keys.get_storage_account(root_cfg.keys)
 
-        # We always include the list of mac addresses for all devices in this experiment (fleet_config)
+        # We always include the list of mac addresses for all devices in this experiment (fleet_config).
         # This enables the dashboard to check that all devices are present and working.
+        # We filter to those  devices in the inventory that use the same datastore rather than including 
+        # all devices in the fleet.
         fleet_macs = root_cfg.INVENTORY.keys()
+        fleet_macs = [mac for mac in fleet_macs 
+                      if root_cfg.INVENTORY[mac].datastore == root_cfg.my_device.datastore]
         fleet_names = [root_cfg.INVENTORY[mac].name for mac in fleet_macs]
         fleet_dict = {mac: name for mac, name in zip(fleet_macs, fleet_names)}
         wrap["fleet"] = fleet_dict
@@ -122,8 +128,19 @@ class DPworker(Thread):
             yaml.dump(wrap, f, Dumper=CustomDumper)
         self.cc.upload_to_container(root_cfg.my_device.cc_for_fair, 
                                     [fair_fname], 
+                                    delete_src=False,
+                                    storage_tier=api.StorageTier.COOL)
+        
+        # Also save to the "latest" container.  This is used by the dashboard so that it can get the latest
+        # data without having to sort through an ever-growing list of files.
+        fair_latest_fname = root_cfg.EDGE_UPLOAD_DIR / \
+            f"V3_{root_cfg.my_device_id}_{sensor_type.value}_{self.sensor_index}.yaml"
+        fair_fname.rename(fair_latest_fname)
+        self.cc.upload_to_container(root_cfg.my_device.cc_for_fair_latest,
+                                    [fair_latest_fname],
                                     delete_src=True,
                                     storage_tier=api.StorageTier.COOL)
+
 
     def log_sample_data(self, sample_period_start_time: datetime) -> None:
         """Provide the count & duration of data samples recorded (environmental, media, etc)

@@ -70,6 +70,11 @@ class DeviceCfg(Configuration):
     # that can be used in subsequent analysis (eg the location of the deployment).
     tags: dict[str, str] = field(default_factory=dict)
 
+    # The datastore field identifies the blob datastore that this device will use.
+    # This string must match the keys_<DATASTORE>.env file name.
+    # If the value is "default", then the keys.env file will be used.
+    datastore: str = "default"
+
     # Default cloud container for file upload
     cc_for_upload: str = "expidite-upload"
 
@@ -81,6 +86,7 @@ class DeviceCfg(Configuration):
 
     # Cloud container for FAIR records
     cc_for_fair: str = "expidite-fair"
+    cc_for_fair_latest: str = "expidite-fair-device-latest"
 
     # Cloud storage container for system test results
     cc_for_system_test: str = "expidite-system-test"
