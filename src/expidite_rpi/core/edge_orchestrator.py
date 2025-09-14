@@ -449,13 +449,14 @@ class EdgeOrchestrator:
             yaml.dump(wrap, f, Dumper=CustomDumper)
         cc.upload_to_container(root_cfg.my_device.cc_for_fair, 
                                 [fair_fname], 
-                                delete_src=False,
+                                delete_src=True,
                                 storage_tier=api.StorageTier.COOL)
         
         # Also save to the "latest" container.  This is used by the dashboard so that it can get the latest
         # data without having to sort through an ever-growing list of files.
         fair_latest_fname = root_cfg.EDGE_UPLOAD_DIR / f"V3_{root_cfg.my_device_id}.yaml"
-        fair_fname.rename(fair_latest_fname)
+        with open(fair_latest_fname, "w") as f:
+            yaml.dump(wrap, f, Dumper=CustomDumper)
         cc.upload_to_container(root_cfg.my_device.cc_for_fair_latest,
                                 [fair_latest_fname],
                                 delete_src=True,
