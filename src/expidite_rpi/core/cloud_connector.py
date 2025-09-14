@@ -246,6 +246,7 @@ class CloudConnector:
                         dst_container: str, 
                         src_file: Path, 
                         delete_src: bool,
+                        col_order: Optional[list[str]] = None
     ) -> bool:
         """Append a block of CSV data to an existing CSV file in the cloud
 
@@ -283,7 +284,8 @@ class CloudConnector:
 
             result = self._append_data_to_blob(dst_container=dst_container,
                                                dst_file=src_file.name,
-                                               lines_to_append=local_lines)
+                                               lines_to_append=local_lines,
+                                               col_order=col_order)
 
             if result and delete_src:
                 logger.debug(f"Deleting append file: {src_file}")
@@ -297,7 +299,8 @@ class CloudConnector:
     def _append_data_to_blob(self, 
                             dst_container: str,
                             dst_file: str,
-                            lines_to_append: list[str]) -> bool:
+                            lines_to_append: list[str],
+                            col_order: Optional[list[str]] = None) -> bool:
         try:
             target_container = self._validate_container(dst_container)
             blob_client = target_container.get_blob_client(dst_file)
@@ -331,7 +334,7 @@ class CloudConnector:
 
                     # Generate the CSV data to append (including the headers)
                     csv_buffer = io.StringIO()
-                    merged_df.to_csv(csv_buffer, index=False)
+                    merged_df.to_csv(csv_buffer, index=False, columns=col_order)
                     data_to_append = csv_buffer.getvalue()
                     tmp_file.unlink()  # Clean up the temporary file
 
@@ -667,6 +670,7 @@ class LocalCloudConnector(CloudConnector):
                         dst_container: str, 
                         src_file: Path, 
                         delete_src: bool,
+                        col_order: Optional[list[str]] = None
     ) -> bool:
         """Append a block of CSV data to an existing CSV file in the cloud
 
@@ -820,6 +824,7 @@ class AsyncAppend():
     delete_src: bool
     data: list[str]
     iteration: int = 0
+    col_order: Optional[list[str]] = None
 
 class AsyncCloudConnector(CloudConnector):
 
@@ -891,6 +896,7 @@ class AsyncCloudConnector(CloudConnector):
                         dst_container: str, 
                         src_file: Path, 
                         delete_src: bool, 
+                        col_order: Optional[list[str]] = None
     ) -> bool:
         """
         Async version of append_to_cloud.
@@ -917,7 +923,8 @@ class AsyncCloudConnector(CloudConnector):
         self._upload_queue.put(AsyncAppend(dst_container, 
                                            src_file.name, 
                                            delete_src, 
-                                           data = data))
+                                           data = data,
+                                           col_order=col_order))
 
         return True
 
@@ -979,7 +986,8 @@ class AsyncCloudConnector(CloudConnector):
 
             succeeded = self._append_data_to_blob(dst_container=action.dst_container,
                                                   dst_file=action.src_fname,
-                                                  lines_to_append=action.data)
+                                                  lines_to_append=action.data,
+                                                  col_order=action.col_order)
 
         except Exception as e:
             logger.warning(f"{root_cfg.RAISE_WARN()}Upload failed for {action.src_fname} on iter "
