@@ -73,16 +73,16 @@ class SHT40(Sensor):
 
                     self.log(
                         stream_index=SHT40_STREAM_INDEX,
-                        sensor_data={"temperature": ("%.1f" % temperature),
-                                     "humidity": ("%.1f" % humidity)},
+                        sensor_data={"temperature": ("%.1f" % temperature.value),
+                                     "humidity": ("%.1f" % humidity.value)},
                     )
                     logger.debug(f"SHT40 sensor {self.sensor_index} data: "
-                                 f"{temperature:.1f}C, {humidity:.1f}%")
+                                 f"{temperature.value:.1f}C, {humidity.value:.1f}%")
 
                     # If the humidity is high, run a heating cycle to prevent condensation
                     # We do it after measurement to avoid affecting the reading
                     # It takes a few seconds to heat up and cool down
-                    if humidity > 90:
+                    if humidity.value > 90:
                         sensor.activate_medium_heater_power_long()
 
                 except Exception as e:
