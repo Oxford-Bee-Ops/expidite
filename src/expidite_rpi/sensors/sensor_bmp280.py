@@ -55,7 +55,7 @@ class BMP280(Sensor):
     def run(self):
 
         i2c = board.I2C()
-        sensor = adafruit_bmp280.Adafruit_BMP280_I2C(i2c)
+        sensor = adafruit_bmp280.Adafruit_BMP280_I2C(i2c, address=BMP280_SENSOR_INDEX)
 
         while self.continue_recording():
             try:
