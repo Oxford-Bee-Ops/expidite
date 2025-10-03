@@ -2,12 +2,21 @@
 # RpiCore wrapper for LTR390
 ##########################################################################################################
 from dataclasses import dataclass
+import adafruit_ltr390
 
 from expidite_rpi.core import api
 from expidite_rpi.core import configuration as root_cfg
 from expidite_rpi.core.dp_config_objects import Stream
 from expidite_rpi.core.sensor import Sensor, SensorCfg
 from expidite_rpi.sensors.drivers import ltr390
+
+try:
+    # This is only needed for typing
+    import board  # type: ignore
+except (ImportError, NotImplementedError):
+    # Running on non-CircuitPython environment (Windows/standard Python)
+    board = None
+    pass
 
 logger = root_cfg.setup_logger("expidite")
 
@@ -52,12 +61,12 @@ class LTR390(Sensor):
         self.config = config
 
     def run(self):
-        sensor = None
+
+        i2c = board.I2C()
+        sensor = adafruit_ltr390.LTR390(i2c)
+
         while self.continue_recording():
             try:
-                if sensor is None:
-                    sensor = ltr390.LTR390Driver()
-
                 self.log(
                     stream_index=LTR390_STREAM_INDEX,
                     sensor_data={"ambient_light": ("%.1f" % sensor.light),

@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "expidite"
-version = "0.1.79"
+version = "0.1.80"
 description = "Python module to support using Raspberry Pi for scientific data collection"
 readme = "README.md"
 requires-python = ">=3.11"
@@ -16,6 +16,7 @@ dependencies = [
     "adafruit-blinka",
     "adafruit-circuitpython-busdevice",
     "adafruit-circuitpython-bmp280",
+    "adafruit-circuitpython-ltr390",
     "azure-storage-blob",
     "click",
     "python-crontab",
