@@ -151,7 +151,8 @@ class InteractiveMenu():
             click.echo("# Expidite sensor output")
             click.echo(f"{dash_line}")
             utils.run_cmd("journalctl --since '30 minutes ago' | grep 'DPnode:SCORE_' "
-                          "| grep -oP '\\{[^}]*\\}' | grep -Ev 'HEART|SCORE|SCORP'", echo=True)
+                          "| grep -oP '\\{[^}]*\\}' | grep -Ev 'HEART|SCORE|SCORP'",
+                          ignore_errors=True)
             click.echo(f"{dash_line}\n")
         except Exception as e:
             click.echo(f"Error in script start up: {e}")
@@ -268,7 +269,8 @@ class InteractiveMenu():
         click.echo(f"{dash_line}")
         click.echo("# ERROR LOGS (journalctl cross-check)")
         click.echo(f"{dash_line}")
-        utils.run_cmd("journalctl --since '4 hours ago' | grep -i 'ERROR'", echo=True)
+        utils.run_cmd("journalctl --since '4 hours ago' | grep -i 'ERROR'", 
+                      ignore_errors=True)
 
     def display_rpi_core_logs(self) -> None:
         """Display regular rpi_core logs."""
@@ -293,7 +295,7 @@ class InteractiveMenu():
         click.echo("# Displaying sensor output logs from the last 30 minutes")
         click.echo(f"{dash_line}")
         utils.run_cmd("journalctl --since '30 minutes ago' | grep -Ev 'HEART|SCORE|SCORP' "
-                      "| grep -oP '(?<=TELEM#V1: ).*'", echo=True)
+                      "| grep -oP '(?<=TELEM#V1: ).*'", ignore_errors=True)
 
     def display_score_logs(self) -> None:
         """View the SCORE logs."""
@@ -306,7 +308,7 @@ class InteractiveMenu():
             click.echo("# Expidite SCORE logs of sensor output")
             click.echo(f"{dash_line}")
             utils.run_cmd("journalctl --since '30 minutes ago' | grep 'DPnode:SCORE_' "
-                          "| grep -oP '\\{[^}]*\\}'", echo=True)
+                          "| grep -oP '\\{[^}]*\\}'", ignore_errors=True)
             click.echo(f"{dash_line}\n")
         except Exception as e:
             click.echo(f"Error in script: {e}")
@@ -517,7 +519,7 @@ class InteractiveMenu():
             with open(test_file, "w") as f:
                 f.write(f"cloud_storage_key=\"{new_key}\"\n")
             cc = CloudConnector.get_instance(root_cfg.CloudType.AZURE)
-            cc.set_keys(cloud_storage_key=test_file)
+            cc.set_keys(keys_file=test_file)
             cc.list_cloud_files(root_cfg.my_device.cc_for_fair)
             click.echo("Storage key test passed.")
         except Exception as e:
