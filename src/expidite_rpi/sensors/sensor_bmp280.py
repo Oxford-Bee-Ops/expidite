@@ -29,12 +29,12 @@ class BMP280SensorCfg(SensorCfg):
     sensor_type: api.SENSOR_TYPE = api.SENSOR_TYPE.I2C
     sensor_index: int = BMP280_SENSOR_INDEX
     sensor_model: str = "BMP280"
-    description: str = "BMP280 Temperature and Humidity sensor"
+    description: str = "BMP280 Atmospheric pressure sensor"
 
 DEFAULT_BMP280_SENSOR_CFG = BMP280SensorCfg(
     outputs=[
         Stream(
-            description="Temperature and humidity data from BMP280",
+            description="Atmospheric pressure data from BMP280",
             type_id=BMP280_SENSOR_TYPE_ID,
             index=BMP280_STREAM_INDEX,
             format=api.FORMAT.LOG,
