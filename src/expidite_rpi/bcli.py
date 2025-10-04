@@ -40,6 +40,15 @@ def run_cmd(cmd: str) -> str:
     except Exception as e:
         return f"Error: {e}"
 
+def run_grep(cmd: str) -> str:
+    """Run a grep command and return its output or an error message.
+    We need to allow a series of |d commands to be run, so we use bash -c"""
+    if not root_cfg.running_on_rpi:
+        return "This command only works on a Raspberry Pi"
+    try:
+        return utils.run_cmd(f"bash -c '{cmd}'", ignore_errors=True)
+    except Exception as e:
+        return f"Error: {e}"
 
 def reader(proc: subprocess.Popen, queue: queue.Queue) -> None:
     """
@@ -150,9 +159,8 @@ class InteractiveMenu():
             click.echo(f"\n{dash_line}")
             click.echo("# Expidite sensor output")
             click.echo(f"{dash_line}")
-            utils.run_cmd("journalctl --since '30 minutes ago' | grep 'DPnode:SCORE_' "
-                          "| grep -oP '\\{[^}]*\\}' | grep -Ev 'HEART|SCORE|SCORP'",
-                          ignore_errors=True)
+            run_grep("journalctl --since '30 minutes ago' | grep 'DPnode:SCORE_' "
+                    "| grep -oP '\\{[^}]*\\}' | grep -Ev 'HEART|SCORE|SCORP'")
             click.echo(f"{dash_line}\n")
         except Exception as e:
             click.echo(f"Error in script start up: {e}")
@@ -269,8 +277,7 @@ class InteractiveMenu():
         click.echo(f"{dash_line}")
         click.echo("# ERROR LOGS (journalctl cross-check)")
         click.echo(f"{dash_line}")
-        utils.run_cmd("journalctl --since '4 hours ago' | grep -i 'ERROR'", 
-                      ignore_errors=True)
+        run_grep("journalctl --since '4 hours ago' | grep -i 'ERROR'")
 
     def display_rpi_core_logs(self) -> None:
         """Display regular rpi_core logs."""
@@ -294,8 +301,8 @@ class InteractiveMenu():
         click.echo("# Sensor logs")
         click.echo("# Displaying sensor output logs from the last 30 minutes")
         click.echo(f"{dash_line}")
-        utils.run_cmd("journalctl --since '30 minutes ago' | grep -Ev 'HEART|SCORE|SCORP' "
-                      "| grep -oP '(?<=TELEM#V1: ).*'", ignore_errors=True)
+        run_grep("journalctl --since '30 minutes ago' | grep -Ev 'HEART|SCORE|SCORP' "
+                "| grep -oP '(?<=TELEM#V1: ).*'")
 
     def display_score_logs(self) -> None:
         """View the SCORE logs."""
@@ -307,8 +314,8 @@ class InteractiveMenu():
             click.echo(f"\n{dash_line}")
             click.echo("# Expidite SCORE logs of sensor output")
             click.echo(f"{dash_line}")
-            utils.run_cmd("journalctl --since '30 minutes ago' | grep 'DPnode:SCORE_' "
-                          "| grep -oP '\\{[^}]*\\}'", ignore_errors=True)
+            run_grep("journalctl --since '30 minutes ago' | grep 'DPnode:SCORE_' "
+                    "| grep -oP '\\{[^}]*\\}'")
             click.echo(f"{dash_line}\n")
         except Exception as e:
             click.echo(f"Error in script: {e}")
@@ -326,7 +333,7 @@ class InteractiveMenu():
         )
         process_list_str = (
             str(process_set).replace("{", 
-                                        "").replace("}", "").replace("'", "").replace('"', "").strip()
+                                     "").replace("}", "").replace("'", "").replace('"', "").strip()
         )
         click.echo(f"{dash_line}")
         click.echo("# Display running RpiCore processes")
@@ -782,12 +789,13 @@ class InteractiveMenu():
             click.echo("1. Journalctl")
             click.echo("2. Display errors")
             click.echo("3. Display all expidite logs")
-            click.echo("4. Display sensor output logs")
-            click.echo("5. Display running processes")
-            click.echo("6. Show recordings and data files")
-            click.echo("7. Show Crontab Entries")
+            click.echo("4. Display sensor measurement logs")
+            click.echo("5. Display SCORE sensor activity logs")
+            click.echo("6. Display running processes")
+            click.echo("7. Show recordings and data files")
+            click.echo("8. Show Crontab Entries")
             try:
-                choice = click.prompt("\nEnter your choice", type=int, default=0)
+                choice = click.prompt("\nEnter your choice", type=int, default=0, )
                 click.echo("\n")
             except ValueError:
                 click.echo("Invalid input. Please enter a number.")
@@ -802,10 +810,12 @@ class InteractiveMenu():
             elif choice == 4:
                 self.display_sensor_logs()
             elif choice == 5:
-                self.display_running_processes()
+                self.display_score_logs()
             elif choice == 6:
-                self.show_recordings()
+                self.display_running_processes()
             elif choice == 7:
+                self.show_recordings()
+            elif choice == 8:
                 self.show_crontab_entries()
             elif choice == 0:
                 break
