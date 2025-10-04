@@ -525,6 +525,7 @@ class InteractiveMenu():
     ####################################################################################################
     # Testing menu functions
     ####################################################################################################
+    LED_STATUS_FILE: Path = Path(os.environ.get("LED_STATUS_FILE", "/.expidite/flags/led_status"))
     def validate_device(self) -> None:
         """Validate the device by running a series of tests."""
         click.echo(f"{dash_line}")
@@ -629,6 +630,14 @@ class InteractiveMenu():
             click.echo("\n ### PASS ###\n")
         else:
             click.echo("\n ### FAIL ###\n")
+
+        # Now flash the LED green and then red
+        LED_STATUS_FILE: Path = Path(os.environ.get("LED_STATUS_FILE", "/.expidite/flags/led_status"))
+        with open(LED_STATUS_FILE, "w") as f:
+            f.write("red:blink:0.25")  # Flash red
+            time.sleep(2)
+            f.write("green:blink:0.25")  # Flash green  
+            time.sleep(2)
 
         click.echo(f"{dash_line}")
 

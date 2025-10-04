@@ -316,9 +316,13 @@ install_expidite() {
         exit 1
     fi
     # Ensure the scripts are executable
-    chmod +x "$HOME/$venv_dir/scripts/*" || { echo "Failed to make scripts executable"; exit 1; }
-    echo "Scripts made executable."
-
+    if [ -d "$HOME/$venv_dir/scripts" ]; then
+        chmod +x $HOME/$venv_dir/scripts/*.sh || { echo "Failed to make $HOME/$venv_dir/scripts/*.sh executable"; exit 1; }
+        chmod +x $HOME/$venv_dir/scripts/*.py || { echo "Failed to make $HOME/$venv_dir/scripts/*.py executable"; exit 1; }
+        echo "Scripts made executable."
+    else
+        echo "Error: $HOME/$venv_dir/scripts/ directory not found"
+    fi
 }
 
 # Utility function to fix Git repository URLs
@@ -676,7 +680,6 @@ make_persistent() {
 ###############################################
 install_leds_service() {
     if [ "$manage_leds" == "Yes" ]; then
-        # Check if the led_manager.py script exists
         if [ -f "/etc/systemd/system/led-manager.service" ]; then
             echo "led-manager.service already exists."
         elif [ ! -f "$HOME/$venv_dir/scripts/led_control.py" ]; then
@@ -684,7 +687,7 @@ install_leds_service() {
         elif [ ! -f "$HOME/$venv_dir/scripts/led-manager.service" ]; then
             echo "Error: led-manager.service file not found in $HOME/$venv_dir/scripts/"
         else
-            # Create the led-manager.service by copying the led_manager.service file from the scripts directory
+            # Create the led-manager.service by copying the led-manager.service file from the scripts directory
             sudo cp "$HOME/$venv_dir/scripts/led-manager.service" /etc/systemd/system/led-manager.service
 
             # Enable and start the led-manager service
