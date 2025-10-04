@@ -178,6 +178,7 @@ def main():
             reset_status()
             last_text = text
             colour, mode, rate = parse_status(text)
+            print(f"led_control status: {colour}:{mode}:{rate if mode=='blink' else ''}")
             pin = PINS[colour]
             if mode == "on":
                 set_high(pin)
