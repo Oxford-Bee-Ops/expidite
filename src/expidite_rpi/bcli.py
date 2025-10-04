@@ -46,7 +46,7 @@ def run_grep(cmd: str) -> str:
     if not root_cfg.running_on_rpi:
         return "This command only works on a Raspberry Pi"
     try:
-        return utils.run_cmd(f"bash -c '{cmd}'", ignore_errors=True)
+        return utils.run_cmd(f"bash -c \"{cmd}\"", ignore_errors=True)
     except Exception as e:
         return f"Error: {e}"
 
