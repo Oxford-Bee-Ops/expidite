@@ -1,0 +1,13 @@
+[Unit]
+Description=LED Manager Service
+After=multi-user.target
+
+[Service]
+User=bee-ops
+ExecStart=/usr/bin/python3 /home/bee-ops/venv/scripts/led_control.py
+Restart=on-failure
+RestartSec=2
+LimitNOFILE=1024
+
+[Install]
+WantedBy=multi-user.target

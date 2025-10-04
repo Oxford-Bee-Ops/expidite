@@ -117,6 +117,16 @@ export_system_cfg() {
     done < "$HOME/.expidite/system.cfg"
 }
 
+# Function to set the LEDs on (if available)
+# We just need to write "red:blink:0.5" to /.expidite/flags/led_status
+set_leds_on() {
+    echo "red:blink:0.25" > "$HOME/.expidite/flags/led_status" || { echo "Failed to set LED status"; }
+}
+
+set_leds_off() {
+    echo "red:blink:0.9" > "$HOME/.expidite/flags/led_status" || { echo "Failed to set LED status"; }
+}
+
 # Install SSH keys from the ./expidite directory to the ~/.ssh directory
 install_ssh_keys() {
     echo "Installing SSH keys..."
@@ -305,11 +315,9 @@ install_expidite() {
         echo "Error: rpi_installer.sh not found in $HOME/$venv_dir/scripts/"
         exit 1
     fi
-    # Check if the script is already executable
-    if [ ! -x "$HOME/$venv_dir/scripts/rpi_installer.sh" ]; then
-        chmod +x "$HOME/$venv_dir/scripts/rpi_installer.sh" || { echo "Failed to make rpi_installer.sh executable"; exit 1; }
-        echo "rpi_installer.sh made executable."
-    fi
+    # Ensure the scripts are executable
+    chmod +x "$HOME/$venv_dir/scripts/*" || { echo "Failed to make scripts executable"; exit 1; }
+    echo "Scripts made executable."
 
 }
 
@@ -661,6 +669,35 @@ function make_persistent() {
     fi
 }
 
+###############################################
+# Manage LEDs based on system.cfg settings
+# Check /etc/systemd/system/led-manager.service exists - and if not create it
+# Enable and reload service.
+###############################################
+function install_leds_service() {
+    if [ "$manage_leds" == "Yes" ]; then
+        # Check if the led_manager.py script exists
+        if [ -f "/etc/systemd/system/led-manager.service" ]; then
+            echo "led-manager.service already exists."
+        elif [ ! -f "$HOME/$venv_dir/scripts/led_control.py" ]; then
+            echo "Error: led_control.py script not found in $HOME/$venv_dir/scripts/"
+        elif [ ! -f "$HOME/$venv_dir/scripts/led-manager.service" ]; then
+            echo "Error: led_manager.service file not found in $HOME/$venv_dir/scripts/"
+        else
+            # Create the led-manager.service by copying the led_manager.service file from the scripts directory
+            sudo cp "$HOME/$venv_dir/scripts/led-manager.service" /etc/systemd/system/led-manager.service
+
+            # Enable and start the led-manager service
+            sudo systemctl daemon-reload
+            sudo systemctl enable led-manager.service
+            sudo systemctl restart led-manager.service || { echo "Failed to start led-manager.service"; exit 1; }
+            echo "led-manager.service enabled and started."
+        fi
+    else
+        echo "LED management is disabled."
+    fi
+}
+
 ################################################
 # Reboot if required
 ################################################
@@ -685,6 +722,7 @@ sleep 10
 check_prerequisites
 cd "$HOME/.expidite" || { echo "Failed to change directory to $HOME/.expidite"; exit 1; }
 export_system_cfg
+set_leds_on
 install_ssh_keys
 create_and_activate_venv # Sets os_update=yes if creating a new venv
 if [ "$os_update" == "yes" ]; then
@@ -710,7 +748,9 @@ alias_bcli
 set_hostname
 auto_start_if_requested
 make_persistent
+install_leds_service
 reboot_if_required
+set_leds_off
 
 # Add a flag file in the .expidite directory to indicate that the installer has run
 # We use the timestamp on this flag to determine the last update time

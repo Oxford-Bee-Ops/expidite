@@ -1,11 +1,22 @@
 #!/usr/bin/env python3
 """
 LED manager: reflect status file in GPIO using pinctrl.
-Status file example contents:
-  on
-  off
-  blink:0.25
+The text is always a colour (green|red) followed by a status (on|off|blink:N), with an optional
+blink rate.
+For example:
+    green:on
+    red:blink:0.25
+    green:off
+Anything else will result in red:on.
+
+The status is set as follows:
+    - red:on indicates initial power up or error state
+    - red:blink (fast) indicates rpi_installer start up running
+    - red:blink (slow) indicates rpi_installer completed
+    - green:on indicates expidite running normally
+    - green:blink indicates expidite has lost wifi connectivity
 """
+
 import os
 import signal
 import subprocess
@@ -16,7 +27,7 @@ from pathlib import Path
 from threading import Event, Thread
 from typing import Optional
 
-STATUS_FILE: Path = Path(os.environ.get("LED_STATUS_FILE", "/expidite/flags/led_status"))
+STATUS_FILE: Path = Path(os.environ.get("LED_STATUS_FILE", "/.expidite/flags/led_status"))
 LOCK_FILE: Path = Path("/var/lock/led_control.lock")
 
 @dataclass

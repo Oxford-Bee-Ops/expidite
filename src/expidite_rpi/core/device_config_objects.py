@@ -107,7 +107,6 @@ class DeviceCfg(Configuration):
 
     # Device management
     attempt_wifi_recovery: bool = True
-    manage_leds: bool = True
 
     # Wifi networks
     # These are the networks that the device will connect to if they are available.
@@ -191,6 +190,8 @@ class SystemCfg(BaseSettings):
     expidite_git_branch: str ="main"
     # Pydantic-settings helper
     model_config = SettingsConfigDict(extra="ignore")
+    # Manage the LED status indicator
+    manage_leds: str = "Yes"
 
     ###########################################################
     # System test and re-processor settings
