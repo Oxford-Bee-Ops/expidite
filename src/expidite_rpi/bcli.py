@@ -147,6 +147,12 @@ class InteractiveMenu():
         """View the current status of the device."""
         try:
             click.echo(self.sc.status(verbose=False))
+            click.echo(f"\n{dash_line}")
+            click.echo("# Expidite sensor output")
+            click.echo(f"{dash_line}")
+            utils.run_cmd("journalctl --since '30 minutes ago' | grep 'DPnode:SCORE_' "
+                          "| grep -oP '\\{[^}]*\\}' | grep -Ev 'HEART|SCORE|SCORP'", echo=True)
+            click.echo(f"{dash_line}\n")
         except Exception as e:
             click.echo(f"Error in script start up: {e}")
 
@@ -168,9 +174,22 @@ class InteractiveMenu():
             click.echo(f"\n{utils_clean.display_dataclass(root_cfg.system_cfg)}")
 
         click.echo(f"\n{dash_line}")
-        click.echo("# FLEET CONFIGURATION")
+        click.echo("# EXPIDITE CONFIGURATION")
         click.echo(f"{dash_line}")        
         click.echo(f"{self.sc.display_configuration()}")
+        click.echo("\nSensors & their primary datastreams configured:\n")
+        edge_orch = EdgeOrchestrator.get_instance()
+        if edge_orch is not None:
+            edge_orch.load_config()
+            for i, dptree in enumerate(edge_orch.dp_trees):
+                sensor_cfg = dptree.sensor.config
+                click.echo(f"{i}> {sensor_cfg.sensor_type} {sensor_cfg.sensor_index} "
+                           f" {sensor_cfg.sensor_model}")
+                streams = dptree.sensor.config.outputs
+                if streams is not None:
+                    for stream in streams:
+                        click.echo(f"  {stream.type_id}: - {stream.description}")
+
 
 
     ####################################################################################################
@@ -235,7 +254,12 @@ class InteractiveMenu():
         since_time = api.utc_now() - timedelta(hours=4)
         logs = device_health.get_logs(since=since_time, min_priority=4)
         self.display_logs(logs)
-
+        # Cross check with simple journalctl command
+        click.echo("\n")
+        click.echo(f"{dash_line}")
+        click.echo("# ERROR LOGS (journalctl cross-check)")
+        click.echo(f"{dash_line}")
+        utils.run_cmd("journalctl --since '4 hours ago' | grep -i 'ERROR'", echo=True)
 
     def display_rpi_core_logs(self) -> None:
         """Display regular rpi_core logs."""
@@ -255,13 +279,28 @@ class InteractiveMenu():
         if root_cfg.running_on_windows:
             click.echo("This command only works on Linux. Exiting...")
             return
-        since_time = api.utc_now() - timedelta(minutes=30)
         click.echo(f"{dash_line}")
         click.echo("# Sensor logs")
         click.echo("# Displaying sensor output logs from the last 30 minutes")
         click.echo(f"{dash_line}")
-        logs = device_health.get_logs(since=since_time, min_priority=6, grep_str=api.TELEM_TAG)
-        self.display_logs(logs)
+        utils.run_cmd("journalctl --since '30 minutes ago' | grep -Ev 'HEART|SCORE|SCORP' "
+                      "| grep -oP '(?<=TELEM#V1: ).*'", echo=True)
+
+    def display_score_logs(self) -> None:
+        """View the SCORE logs."""
+        if root_cfg.running_on_windows:
+            click.echo("This command only works on Linux. Exiting...")
+            return
+        try:
+            click.echo(self.sc.status(verbose=False))
+            click.echo(f"\n{dash_line}")
+            click.echo("# Expidite SCORE logs of sensor output")
+            click.echo(f"{dash_line}")
+            utils.run_cmd("journalctl --since '30 minutes ago' | grep 'DPnode:SCORE_' "
+                          "| grep -oP '\\{[^}]*\\}'", echo=True)
+            click.echo(f"{dash_line}\n")
+        except Exception as e:
+            click.echo(f"Error in script: {e}")
 
     def display_running_processes(self) -> None:
         # Running processes
@@ -428,8 +467,13 @@ class InteractiveMenu():
         if not root_cfg.running_on_rpi:
             click.echo("This command only works on a Raspberry Pi")
             return
+        click.echo("Are you sure you want to reboot the device? (y/n)")
+        if click.getchar().lower() != "y":
+            click.echo("Reboot cancelled.")
+            return
         click.echo("Rebooting the device...")
         run_cmd_live_echo("sudo reboot")
+
 
     def update_storage_key(self) -> None:
         """Update the storage key in ~/.expidite/keys.env."""
@@ -454,74 +498,31 @@ class InteractiveMenu():
         if not new_key or "core.windows.net" not in new_key:
             click.echo("That doesn't look like a valid key. Please try again.")
             return
-        
+
+
+        # Check the key is valid by trying to create a CloudConnector instance
+        try:
+            test_file = root_cfg.KEYS_FILE.with_suffix(".test")
+            if test_file.exists():
+                test_file.unlink()
+            with open(test_file, "w") as f:
+                f.write(f"cloud_storage_key=\"{new_key}\"\n")
+            cc = CloudConnector.get_instance(root_cfg.CloudType.AZURE)
+            cc.set_keys(cloud_storage_key=test_file)
+            cc.list_cloud_files(root_cfg.my_device.cc_for_fair)
+            click.echo("Storage key test passed.")
+        except Exception as e:
+            click.echo(f"Storage key test failed: {e}")
+            test_file.unlink()
+            return
+       
         click.echo(f"Saving old file as {root_cfg.KEYS_FILE.with_suffix('.bak')}")
         root_cfg.KEYS_FILE.rename(root_cfg.KEYS_FILE.with_suffix(".bak"))
 
         click.echo(f"Updating the storage key in {root_cfg.KEYS_FILE}")
-        with open(root_cfg.KEYS_FILE, "w") as f:
-            f.write(f"cloud_storage_key=\"{new_key}\"\n")
+        test_file.rename(root_cfg.KEYS_FILE)
+
         
-
-
-    ####################################################################################################
-    # Sensor menu functions
-    ####################################################################################################
-    def display_sensors(self) -> None:
-        """Display the list of configured sensors."""
-        click.echo(f"{dash_line}")
-        click.echo("\nSensors & their primary datastreams configured:\n")
-        edge_orch = EdgeOrchestrator.get_instance()
-        if edge_orch is not None:
-            for i, dptree in enumerate(edge_orch.dp_trees):
-                sensor_cfg = dptree.sensor.config
-                click.echo(f"{i}> {sensor_cfg.sensor_type} {sensor_cfg.sensor_index} "
-                           f" {sensor_cfg.sensor_model}")
-                streams = dptree.sensor.config.outputs
-                if streams is not None:
-                    for stream in streams:
-                        click.echo(f"  {stream.type_id}: - {stream.description}")
-        click.echo("\nUSB devices discovered:")
-        click.echo(run_cmd("lsusb") + "\n")
-        click.echo("Associated sounds cards:")
-        click.echo(run_cmd("find /sys/devices/ -name id | grep usb | grep sound"))
-        click.echo("\nCamera:")
-        camera_info = run_cmd("libcamera-hello --list-cameras")
-        if camera_info == "":
-            click.echo("No camera found.\n")
-        else:
-            click.echo(camera_info + "\n")
-        click.echo("I2C devices discovered:")
-        click.echo(run_cmd("i2cdetect -y 1") + "\n")
-
-
-    def test_audio(self) -> None:
-        """Test the audio sensor using the 'arecord' command."""
-        pass
-
-
-    def test_camera(self) -> None:
-        """Test the camera function."""
-        camera_info = run_cmd("libcamera-hello --list-cameras")
-        if camera_info == "":
-            click.echo("No camera found.\n")
-            return
-        
-        click.echo("You can enter any valid rpicam command as per the rpicam documentation.")
-        click.echo("An example would be:")
-        click.echo("rpicam-vid --framerate 15 --width 640 --height 480 -o test.mp4 -t 5000")
-        click.echo("\nEnter the rpicam command:")
-
-        rpicam_cmd = input()
-        try:
-            run_cmd_live_echo(rpicam_cmd)
-            click.echo("\nCommand completed.")
-        except Exception as e:
-            click.echo(f"Error: {e}")
-            click.echo("WARNING: This failure may be because expidite is running. "
-                       "Use maintenance > stop to pause expidite.")
-
-
     ####################################################################################################
     # Testing menu functions
     ####################################################################################################
@@ -728,13 +729,12 @@ class InteractiveMenu():
         click.echo(f"# RpiCore CLI on {root_cfg.my_device_id} {root_cfg.my_device.name}")
         while True:
             click.echo(f"{header}Main Menu:")
+            click.echo("0. Exit")
             click.echo("1. View Config")
             click.echo("2. View Status")
-            click.echo("3. Sensor Commands")
+            click.echo("3. Maintenance Commands")
             click.echo("4. Debugging Commands")
-            click.echo("5. Maintenance Commands")
-            click.echo("6. Testing Commands")
-            click.echo("7. Exit")
+            click.echo("5. Testing Commands")
             try:
                 choice = click.prompt("\nEnter your choice", type=int)
                 click.echo("\n")
@@ -747,14 +747,12 @@ class InteractiveMenu():
             elif choice == 2:
                 self.view_status()
             elif choice == 3:
-                self.sensors_menu()
+                self.maintenance_menu()
             elif choice == 4:
                 self.debug_menu()
             elif choice == 5:
-                self.maintenance_menu()
-            elif choice == 6:
                 self.testing_menu()
-            elif choice == 7:
+            elif choice == 0:
                 click.echo("Exiting...")
                 break
             else:
@@ -769,6 +767,7 @@ class InteractiveMenu():
         """Menu for debugging commands."""
         while True:
             click.echo(f"{header}Debugging Menu:")
+            click.echo("0. Back to Main Menu")
             click.echo("1. Journalctl")
             click.echo("2. Display errors")
             click.echo("3. Display all expidite logs")
@@ -776,7 +775,6 @@ class InteractiveMenu():
             click.echo("5. Display running processes")
             click.echo("6. Show recordings and data files")
             click.echo("7. Show Crontab Entries")
-            click.echo("8. Back to Main Menu")
             try:
                 choice = click.prompt("\nEnter your choice", type=int)
                 click.echo("\n")
@@ -798,7 +796,7 @@ class InteractiveMenu():
                 self.show_recordings()
             elif choice == 7:
                 self.show_crontab_entries()
-            elif choice == 8:
+            elif choice == 0:
                 break
             else:
                 click.echo("Invalid choice. Please try again.")
@@ -808,14 +806,14 @@ class InteractiveMenu():
         """Menu for maintenance commands."""
         while True:
             click.echo(f"{header}Maintenance Menu:")
+            click.echo("0. Back to Main Menu")  
             click.echo("1. Update Software")
-            click.echo("2. Start RpiCore")
-            click.echo("3. Stop RpiCore (graceful stop)")
-            click.echo("4. Hard stop RpiCore (pkill)")
-            click.echo("5. Enable rpi-connect")
-            click.echo("6. Restart the Device")
+            click.echo("2. Enable rpi-connect")
+            click.echo("3. Start RpiCore")
+            click.echo("4. Stop RpiCore (graceful stop)")
+            click.echo("5. Hard stop RpiCore (pkill)")
+            click.echo("6. Reboot the Device")
             click.echo("7. Update storage key")
-            click.echo("8. Back to Main Menu")  
             try:
                 choice = click.prompt("\nEnter your choice", type=int)
                 click.echo("\n")
@@ -826,45 +824,18 @@ class InteractiveMenu():
             if choice == 1:
                 self.update_software()
             elif choice == 2:
-                self.start_rpi_core()
-            elif choice == 3:
-                self.stop_rpi_core(pkill=False)
-            elif choice == 4:
-                self.stop_rpi_core(pkill=True) 
-            elif choice == 5:
                 self.enable_rpi_connect()
+            elif choice == 3:
+                self.start_rpi_core()
+            elif choice == 4:
+                self.stop_rpi_core(pkill=False)
+            elif choice == 5:
+                self.stop_rpi_core(pkill=True) 
             elif choice == 6: 
                 self.reboot_device()
             elif choice == 7: 
                 self.update_storage_key()
-            elif choice == 8:
-                break
-            else:
-                click.echo("Invalid choice. Please try again.")
-
-
-    def sensors_menu(self) -> None:
-        """Menu for sensor commands."""
-        while True:
-            click.echo(f"{header}Sensor Menu:")
-            click.echo("1. Display Sensors")
-            click.echo("2. Test Audio")
-            click.echo("3. Test camera")
-            click.echo("4. Back to Main Menu")
-            try:
-                choice = click.prompt("\nEnter your choice", type=int)
-                click.echo("\n")
-            except ValueError:
-                click.echo("Invalid input. Please enter a number.")
-                continue
-
-            if choice == 1:
-                self.display_sensors()
-            elif choice == 2:
-                self.test_audio()
-            elif choice == 3:
-                self.test_camera()
-            elif choice == 4:
+            elif choice == 0:
                 break
             else:
                 click.echo("Invalid choice. Please try again.")
@@ -874,10 +845,10 @@ class InteractiveMenu():
         """Menu for testing commands."""
         while True:
             click.echo(f"{header}Testing Menu:")
+            click.echo("0. Back to Main Menu")
             click.echo("1. Validate device")
             click.echo("2. Run Network Test")
             click.echo("3. Run system test")
-            click.echo("4. Back to Main Menu")
             try:
                 choice = click.prompt("\nEnter your choice", type=int)
                 click.echo("\n")
@@ -891,7 +862,7 @@ class InteractiveMenu():
                 self.run_network_test()
             elif choice == 3:
                 self.run_system_test()
-            elif choice == 4:
+            elif choice == 0:
                 break
             else:
                 click.echo("Invalid choice. Please try again.")
