@@ -680,7 +680,7 @@ make_persistent() {
 # Enable and reload service.
 ###############################################
 install_leds_service() {
-    if [ "$manage_leds" == "Yes" ]; then
+    if [ "$manage_leds" != "No" ]; then
         if [ -f "/etc/systemd/system/led-manager.service" ]; then
             echo "led-manager.service already exists."
         elif [ ! -f "$HOME/$venv_dir/scripts/led_control.py" ]; then
