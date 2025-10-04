@@ -18,7 +18,7 @@ from expidite_rpi.core import configuration as root_cfg
 from expidite_rpi.core.cloud_connector import AsyncCloudConnector, CloudConnector
 from expidite_rpi.core.edge_orchestrator import EdgeOrchestrator
 from expidite_rpi.rpi_core import RpiCore
-from expidite_rpi.utils import utils, utils_clean
+from expidite_rpi.utils import utils
 from expidite_rpi.utils.utils_clean import disable_console_logging
 
 logger = root_cfg.setup_logger("expidite")
@@ -163,21 +163,9 @@ class InteractiveMenu():
         if not check_keys_env():
             return
 
-        # Display system.cfg
-        if root_cfg.system_cfg:
-            click.echo(f"{dash_line}")
-            click.echo("# SYSTEM CONFIGURATION")
-            click.echo(f"{dash_line}")
-            expidite_version, user_code_version = root_cfg.get_version_info()
-            click.echo(f"Expidite version: {expidite_version}")
-            click.echo(f"User code version: {user_code_version}")
-            click.echo(f"\n{utils_clean.display_dataclass(root_cfg.system_cfg)}")
-
         click.echo(f"\n{dash_line}")
-        click.echo("# EXPIDITE CONFIGURATION")
-        click.echo(f"{dash_line}")        
-        click.echo(f"{self.sc.display_configuration()}")
-        click.echo("\nSensors & their primary datastreams configured:\n")
+        click.echo("# Sensors & datastreams")
+        click.echo(f"{dash_line}\n")
         edge_orch = EdgeOrchestrator.get_instance()
         if edge_orch is not None:
             edge_orch.load_config()
@@ -189,6 +177,27 @@ class InteractiveMenu():
                 if streams is not None:
                     for stream in streams:
                         click.echo(f"  {stream.type_id}: - {stream.description}")
+
+
+        # Display system.cfg
+        if root_cfg.system_cfg:
+            click.echo(f"\n{dash_line}")
+            click.echo("# SYSTEM CONFIGURATION")
+            click.echo(f"{dash_line}")
+            expidite_version, user_code_version = root_cfg.get_version_info()
+            click.echo(f"Expidite version: {expidite_version}")
+            click.echo(f"User code version: {user_code_version}")
+            # Display each field in the root_cfg.system_cfg BaseSettings object
+            # Convert the base settings to a dictionary
+            system_cfg_dict = root_cfg.system_cfg.model_dump()
+            for field in system_cfg_dict:
+                value = system_cfg_dict[field]
+                click.echo(f"{field}: {value}")
+
+        click.echo(f"\n{dash_line}")
+        click.echo("# EXPIDITE CONFIGURATION")
+        click.echo(f"{dash_line}")        
+        click.echo(f"{self.sc.display_configuration()}")
 
 
 
@@ -776,7 +785,7 @@ class InteractiveMenu():
             click.echo("6. Show recordings and data files")
             click.echo("7. Show Crontab Entries")
             try:
-                choice = click.prompt("\nEnter your choice", type=int)
+                choice = click.prompt("\nEnter your choice", type=int, default=0)
                 click.echo("\n")
             except ValueError:
                 click.echo("Invalid input. Please enter a number.")
@@ -815,7 +824,7 @@ class InteractiveMenu():
             click.echo("6. Reboot the Device")
             click.echo("7. Update storage key")
             try:
-                choice = click.prompt("\nEnter your choice", type=int)
+                choice = click.prompt("\nEnter your choice", type=int, default=0)
                 click.echo("\n")
             except ValueError:
                 click.echo("Invalid input. Please enter a number.")
@@ -850,7 +859,7 @@ class InteractiveMenu():
             click.echo("2. Run Network Test")
             click.echo("3. Run system test")
             try:
-                choice = click.prompt("\nEnter your choice", type=int)
+                choice = click.prompt("\nEnter your choice", type=int, default=0)
                 click.echo("\n")
             except ValueError:
                 click.echo("Invalid input. Please enter a number.")
