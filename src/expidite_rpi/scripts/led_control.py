@@ -98,7 +98,7 @@ def reset_status():
     set_low(GREEN_PIN)
     set_low(RED_PIN)
 
-def parse_status(text):
+def parse_status(text: str):
     """The text is always a colour (green|red) followed by a status (on|off|blink:N), with an optional
     blink rate.
     For example:
@@ -110,7 +110,7 @@ def parse_status(text):
     if not text:
         return ("red", "on", None)
     text = text.strip().lower()
-    parts = text.split(":", 1)
+    parts = text.split(":")
     status = "on"
     rate = DEFAULT_BLINK_RATE
 
