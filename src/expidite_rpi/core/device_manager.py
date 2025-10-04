@@ -14,7 +14,7 @@ from expidite_rpi.utils import utils
 
 logger = root_cfg.setup_logger("expidite")
 
-LED_STATUS_FILE: Path = Path(os.environ.get("LED_STATUS_FILE", "/.expidite/flags/led_status"))
+LED_STATUS_FILE: Path = Path.home() / ".expidite" / "flags" / "led_status"
 
 class DeviceManager:
     """Manages LED & Wifi status if configured to do so in my_device (DeviceCfg):

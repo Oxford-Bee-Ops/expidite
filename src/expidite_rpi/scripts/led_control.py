@@ -27,7 +27,7 @@ from pathlib import Path
 from threading import Event, Thread
 from typing import Optional
 
-STATUS_FILE: Path = Path(os.environ.get("LED_STATUS_FILE", "/.expidite/flags/led_status"))
+LED_STATUS_FILE: Path = Path.home() / ".expidite" / "flags" / "led_status"
 LOCK_FILE: Path = Path("/var/lock/led_control.lock")
 
 @dataclass
@@ -138,7 +138,7 @@ def parse_status(text):
 
 def read_status_file():
     try:
-        with open(STATUS_FILE, "r") as f:
+        with open(LED_STATUS_FILE, "r") as f:
             return f.read()
     except FileNotFoundError:
         return None

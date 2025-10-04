@@ -632,7 +632,8 @@ class InteractiveMenu():
             click.echo("\n ### FAIL ###\n")
 
         # Now flash the LED green and then red
-        LED_STATUS_FILE: Path = Path(os.environ.get("LED_STATUS_FILE", "/.expidite/flags/led_status"))
+        LED_STATUS_FILE: Path = Path.home() / ".expidite" / "flags" / "led_status"
+
         if not LED_STATUS_FILE.exists():
             LED_STATUS_FILE.parent.mkdir(parents=True, exist_ok=True)
             LED_STATUS_FILE.touch()
