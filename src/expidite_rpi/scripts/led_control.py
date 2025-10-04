@@ -11,10 +11,11 @@ Anything else will result in red:on.
 
 The status is set as follows:
     - red:on indicates initial power up or error state
-    - red:blink (fast) indicates rpi_installer start up running
-    - red:blink (slow) indicates rpi_installer completed
+    - red:blink (0.25 fast) indicates rpi_installer running
+    - red:blink (0.5 medium) indicates device_manager booting
     - green:on indicates expidite running normally
-    - green:blink indicates expidite has lost wifi connectivity
+    - green:blink indicates expidite has lost internet connectivity but wifi is up
+    - red:blink (2.0 slow) indicates Wifi failed
 """
 
 import os

@@ -30,10 +30,6 @@ class DeviceManager:
     S_AP_UP = "AP Up"
     S_AP_IN_USE = "AP In Use"
 
-    # LED GPIO pins
-    GPIO_RED = 26
-    GPIO_GREEN = 16
-
     def __init__(self) -> None:
         if root_cfg.system_cfg is None:
             logger.error(f"{root_cfg.RAISE_WARN()}DeviceManager: system_cfg is None; exiting")
@@ -103,13 +99,13 @@ class DeviceManager:
     # LED stat FSM table
     #
     # State:            |Booting	 |Wifi up	    |Internet up	|Wifi failed
-    # LED  :            |Red*        |Green*	    |Green	        |Red
+    # LED  :            |Red*        |Green*	    |Green	        |Red**
     # Input[WifiUp]	    |Wifi up	 |-	            |-              |Wifi up
     # Input[GoodPing]   |-	         |Internet up	|-	            |-
     # Input[PingFail] 	|-	         |-     	    |Wifi up	    |-
     # Input[WifiDown]	|-	         |Wifi failed	|Wifi failed
     # *=blinking
-    #
+    # **=slow blinking
     #############################################################################################################
 
     # This function gets called every second.
@@ -122,13 +118,13 @@ class DeviceManager:
                 self.set_led_status("red", "blink:0.5")
             elif self.currentState == self.S_WIFI_UP:
                 # Green should be blinking; red should be off
-                self.set_led_status("green", "blink:0.25")
+                self.set_led_status("green", "blink:1.0")
             elif self.currentState == self.S_INTERNET_UP:
                 # Green should be on; red should be off
                 self.set_led_status("green", "on")
             elif self.currentState == self.S_WIFI_FAILED:
                 # Green should be off; red should be on
-                self.set_led_status("red", "blink:0.95")
+                self.set_led_status("red", "2.0")
         except Exception as e:
             logger.error(f"{root_cfg.RAISE_WARN()}LED timer callback threw an exception: " + str(e), 
                          exc_info=True)

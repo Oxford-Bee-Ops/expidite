@@ -125,7 +125,7 @@ set_leds_on() {
 }
 
 set_leds_off() {
-    echo "red:blink:0.9" > "$HOME/.expidite/flags/led_status" || { echo "Failed to set LED status"; }
+    echo "red:blink:0.25" > "$HOME/.expidite/flags/led_status" || { echo "Failed to set LED status"; }
 }
 
 # Install SSH keys from the ./expidite directory to the ~/.ssh directory
