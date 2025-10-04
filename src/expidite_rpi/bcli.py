@@ -754,7 +754,7 @@ class InteractiveMenu():
             click.echo("4. Debugging Commands")
             click.echo("5. Testing Commands")
             try:
-                choice = click.prompt("\nEnter your choice", type=int)
+                choice = click.prompt("\nEnter your choice", type=int, default=0)
                 click.echo("\n")
             except ValueError:
                 click.echo("Invalid input. Please enter a number.")
