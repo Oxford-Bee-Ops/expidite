@@ -120,6 +120,7 @@ export_system_cfg() {
 # Function to set the LEDs on (if available)
 # We just need to write "red:blink:0.5" to /.expidite/flags/led_status
 set_leds_on() {
+    mkdir -p "$HOME/.expidite/flags" || { echo "Failed to create flags directory"; }
     echo "red:blink:0.25" > "$HOME/.expidite/flags/led_status" || { echo "Failed to set LED status"; }
 }
 
