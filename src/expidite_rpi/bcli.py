@@ -275,7 +275,7 @@ class InteractiveMenu():
         # Cross check with simple journalctl command
         click.echo("\n")
         click.echo(f"{dash_line}")
-        click.echo("# ERROR LOGS (journalctl cross-check)")
+        click.echo("# ERROR LOGS (journalctl grep check)")
         click.echo(f"{dash_line}")
         run_grep("journalctl --since '4 hours ago' | grep -i 'ERROR'")
 
