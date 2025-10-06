@@ -314,6 +314,7 @@ class InteractiveMenu():
                                       min_priority=6, 
                                       grep_str=[api.TELEM_TAG])
         self._display_sensor_logs(logs)
+        click.echo(f"\n{dash_line}\n")
 
 
     def display_score_logs(self) -> None:
@@ -350,15 +351,6 @@ class InteractiveMenu():
         click.echo("# Display running RpiCore processes")
         click.echo(f"{dash_line}\n")
         click.echo(process_list_str)
-
-        # Also display the count of live sensor and dptree threads.
-        since_time = api.utc_now() - timedelta(minutes=30)
-        logs = device_health.get_logs(since=since_time, min_priority=6, grep_str=["Sensor threads alive"])
-        if logs:
-            click.echo(logs[-1]["message"])
-        logs = device_health.get_logs(since=since_time, min_priority=6, grep_str=["DPtrees alive"])
-        if logs:
-            click.echo(logs[-1]["message"])
 
 
     def show_recordings(self) -> None:
@@ -598,8 +590,8 @@ class InteractiveMenu():
                 click.echo(f"\nCameras expected for indices: {sensors[api.SENSOR_TYPE.CAMERA.value]}")
                 camera_indexes = sensors[api.SENSOR_TYPE.CAMERA.value]
                 for index in camera_indexes:
-                    camera_test_result = run_cmd(f"libcamera-hello --cameras {index}")
-                    if "camera is not available" in camera_test_result:
+                    camera_test_result = run_cmd(f"rpicam-hello --camera {index}")
+                    if "ERROR" in camera_test_result:
                         click.echo(f"ERROR: Camera {index} not found.")
                         success = False
                     else:
