@@ -143,10 +143,10 @@ def read_status_file():
             with open(LED_STATUS_FILE, "r") as f:
                 return f.read()
         else:
-            return None
+            return "red:on"
     except Exception as e:
         print("Error reading status file:", e, file=sys.stderr)
-        return None
+        return "red:on"
 
 def acquire_lock_or_exit():
     if LOCK_FILE.exists():
