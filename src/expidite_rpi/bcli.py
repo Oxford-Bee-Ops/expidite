@@ -40,16 +40,6 @@ def run_cmd(cmd: str) -> str:
     except Exception as e:
         return f"Error: {e}"
 
-def run_grep(cmd: str) -> str:
-    """Run a grep command and return its output or an error message.
-    We need to allow a series of |d commands to be run, so we use bash -c"""
-    if not root_cfg.running_on_rpi:
-        return "This command only works on a Raspberry Pi"
-    try:
-        return utils.run_cmd(f"bash -c \"{cmd}\"", ignore_errors=True)
-    except Exception as e:
-        return f"Error: {e}"
-
 def reader(proc: subprocess.Popen, queue: queue.Queue) -> None:
     """
     Read 'stdout' from the subprocess and put it into the queue.
@@ -156,12 +146,8 @@ class InteractiveMenu():
         """View the current status of the device."""
         try:
             click.echo(self.sc.status(verbose=False))
-            click.echo(f"\n{dash_line}")
-            click.echo("# Expidite sensor output")
-            click.echo(f"{dash_line}")
-            run_grep("journalctl --since '30 minutes ago' | grep 'DPnode:SCORE_' "
-                    "| grep -oP '\\{[^}]*\\}' | grep -Ev 'HEART|SCORE|SCORP'")
-            click.echo(f"{dash_line}\n")
+            self.display_score_logs()
+            self.display_sensor_logs()
         except Exception as e:
             click.echo(f"Error in script start up: {e}")
 
@@ -277,7 +263,9 @@ class InteractiveMenu():
         click.echo(f"{dash_line}")
         click.echo("# ERROR LOGS (journalctl grep check)")
         click.echo(f"{dash_line}")
-        run_grep("journalctl --since '4 hours ago' | grep -i 'ERROR'")
+        utils.run_cmd("journalctl",
+                      ignore_errors=True,
+                      grep_strs=["error", "fail", "critical", "panic"])
 
     def display_rpi_core_logs(self) -> None:
         """Display regular rpi_core logs."""
@@ -289,7 +277,7 @@ class InteractiveMenu():
         click.echo("# Displaying expidite logs for the last 15 minutes")
         click.echo(f"{dash_line}")
         since_time = api.utc_now() - timedelta(minutes=15)
-        logs = device_health.get_logs(since=since_time, min_priority=6, grep_str="expidite")
+        logs = device_health.get_logs(since=since_time, min_priority=6, grep_str=["expidite"])
         self.display_logs(logs)
 
 
@@ -301,24 +289,26 @@ class InteractiveMenu():
         click.echo("# Sensor logs")
         click.echo("# Displaying sensor output logs from the last 30 minutes")
         click.echo(f"{dash_line}")
-        run_grep("journalctl --since '30 minutes ago' | grep -Ev 'HEART|SCORE|SCORP' "
-                "| grep -oP '(?<=TELEM#V1: ).*'")
+        since_time = api.utc_now() - timedelta(minutes=30)
+        logs = device_health.get_logs(since=since_time, min_priority=6, grep_str=[api.TELEM_TAG])
+        self.display_logs(logs)
+
 
     def display_score_logs(self) -> None:
         """View the SCORE logs."""
         if root_cfg.running_on_windows:
             click.echo("This command only works on Linux. Exiting...")
             return
-        try:
-            click.echo(self.sc.status(verbose=False))
-            click.echo(f"\n{dash_line}")
-            click.echo("# Expidite SCORE logs of sensor output")
-            click.echo(f"{dash_line}")
-            run_grep("journalctl --since '30 minutes ago' | grep 'DPnode:SCORE_' "
-                    "| grep -oP '\\{[^}]*\\}'")
-            click.echo(f"{dash_line}\n")
-        except Exception as e:
-            click.echo(f"Error in script: {e}")
+        click.echo(self.sc.status(verbose=False))
+        click.echo(f"\n{dash_line}")
+        click.echo("# Expidite SCORE logs of sensor output")
+        click.echo(f"{dash_line}")
+        since_time = api.utc_now() - timedelta(minutes=30)
+        logs = device_health.get_logs(since=since_time, min_priority=6, 
+                                      grep_str=[api.TELEM_TAG, "SCORE"])
+        self.display_logs(logs)
+        click.echo(f"{dash_line}\n")
+
 
     def display_running_processes(self) -> None:
         # Running processes
@@ -342,10 +332,10 @@ class InteractiveMenu():
 
         # Also display the count of live sensor and dptree threads.
         since_time = api.utc_now() - timedelta(minutes=30)
-        logs = device_health.get_logs(since=since_time, min_priority=6, grep_str="Sensor threads alive")
+        logs = device_health.get_logs(since=since_time, min_priority=6, grep_str=["Sensor threads alive"])
         if logs:
             click.echo(logs[-1]["message"])
-        logs = device_health.get_logs(since=since_time, min_priority=6, grep_str="DPtrees alive")
+        logs = device_health.get_logs(since=since_time, min_priority=6, grep_str=["DPtrees alive"])
         if logs:
             click.echo(logs[-1]["message"])
 
@@ -631,7 +621,7 @@ class InteractiveMenu():
             # Check for RAISE_WARNING tag in logs
             if root_cfg.running_on_rpi:
                 since_time = api.utc_now() - timedelta(hours=4)
-                logs = device_health.get_logs(since=since_time, min_priority=4, grep_str="RAISE_WARNING")
+                logs = device_health.get_logs(since=since_time, min_priority=4, grep_str=["RAISE_WARNING"])
                 if logs:
                     success = False
                     click.echo("\nRAISE_WARNING tag found in logs:")
