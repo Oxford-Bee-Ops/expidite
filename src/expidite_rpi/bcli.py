@@ -245,7 +245,23 @@ class InteractiveMenu():
         for log in logs:
             # Nicely format the log by printing the timestamp and message
             log["timestamp"] = api.utc_to_iso_str(log["time_logged"])
-            click.echo(f"{log['timestamp']} - {log['priority']} - {log['message']}")
+            click.echo(f"\n{log['timestamp']} - {log['priority']} - {log['message']}")
+
+    @staticmethod
+    def _display_sensor_logs(logs: list[dict]) -> None:
+        for log in logs:
+            # Nicely format sensor logs
+            # The message contains a dictionary after "Save log: " which is enclosed in {}
+            # We want to extract that dictionary and display it as key: value pairs
+            if "Save log: " in log["message"]:
+                log_dict_str = log["message"].split("Save log: ")[1]
+                try:
+                    log_dict = eval(log_dict_str)  # Convert string to dictionary
+                    log["message"] = ", ".join([f"{k}={v}" for k, v in log_dict.items()])
+                except Exception as e:
+                    logger.error(f"Error parsing log dictionary: {e}")
+            log["timestamp"] = api.utc_to_iso_str(log["time_logged"])
+            click.echo(f"\n{log['timestamp']} - {log['priority']} - {log['message']}")
 
     def display_errors(self) -> None:
         """Display error logs."""
@@ -297,7 +313,7 @@ class InteractiveMenu():
         logs = device_health.get_logs(since=since_time, 
                                       min_priority=6, 
                                       grep_str=[api.TELEM_TAG])
-        self.display_logs(logs)
+        self._display_sensor_logs(logs)
 
 
     def display_score_logs(self) -> None:
@@ -311,7 +327,7 @@ class InteractiveMenu():
         since_time = api.utc_now() - timedelta(minutes=30)
         logs = device_health.get_logs(since=since_time, min_priority=6, 
                                       grep_str=[api.TELEM_TAG, "SCORE"])
-        self.display_logs(logs)
+        self._display_sensor_logs(logs)
         click.echo(f"{dash_line}\n")
 
 
