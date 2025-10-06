@@ -277,7 +277,9 @@ class InteractiveMenu():
         click.echo("# Displaying expidite logs for the last 15 minutes")
         click.echo(f"{dash_line}")
         since_time = api.utc_now() - timedelta(minutes=15)
-        logs = device_health.get_logs(since=since_time, min_priority=6, grep_str=["expidite"])
+        logs = device_health.get_logs(since=since_time, 
+                                      min_priority=6, 
+                                      grep_str=["expidite"])
         self.display_logs(logs)
 
 
@@ -290,7 +292,9 @@ class InteractiveMenu():
         click.echo("# Displaying sensor output logs from the last 30 minutes")
         click.echo(f"{dash_line}")
         since_time = api.utc_now() - timedelta(minutes=30)
-        logs = device_health.get_logs(since=since_time, min_priority=6, grep_str=[api.TELEM_TAG])
+        logs = device_health.get_logs(since=since_time, 
+                                      min_priority=6, 
+                                      grep_str=[api.TELEM_TAG])
         self.display_logs(logs)
 
 
@@ -299,7 +303,6 @@ class InteractiveMenu():
         if root_cfg.running_on_windows:
             click.echo("This command only works on Linux. Exiting...")
             return
-        click.echo(self.sc.status(verbose=False))
         click.echo(f"\n{dash_line}")
         click.echo("# Expidite SCORE logs of sensor output")
         click.echo(f"{dash_line}")
