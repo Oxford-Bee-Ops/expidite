@@ -253,15 +253,19 @@ class InteractiveMenu():
             # Nicely format sensor logs
             # The message contains a dictionary after "Save log: " which is enclosed in {}
             # We want to extract that dictionary and display it as key: value pairs
+            data_type_id = "UNKNOWN"
             if "Save log: " in log["message"]:
                 log_dict_str = log["message"].split("Save log: ")[1]
                 try:
                     log_dict = eval(log_dict_str)  # Convert string to dictionary
+                    # Find the data_type_id value and move it to the front
+                    if "data_type_id" in log_dict:
+                        data_type_id = log_dict.pop("data_type_id")
                     log["message"] = ", ".join([f"{k}={v}" for k, v in log_dict.items()])
                 except Exception as e:
                     logger.error(f"Error parsing log dictionary: {e}")
             log["timestamp"] = api.utc_to_iso_str(log["time_logged"])
-            click.echo(f"\n{log['timestamp']} - {log['priority']} - {log['message']}")
+            click.echo(f"\n{data_type_id} >>> {log['timestamp']} >>> {log['message']}")
 
     def display_errors(self) -> None:
         """Display error logs."""
@@ -350,7 +354,7 @@ class InteractiveMenu():
         click.echo(f"{dash_line}")
         click.echo("# Display running RpiCore processes")
         click.echo(f"{dash_line}\n")
-        click.echo(process_list_str)
+        click.echo(f"{process_list_str}\n")
 
 
     def show_recordings(self) -> None:
