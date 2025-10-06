@@ -287,7 +287,7 @@ class InteractiveMenu():
         click.echo(f"{dash_line}")
         utils.run_cmd("journalctl",
                       ignore_errors=True,
-                      grep_strs=["error", "fail", "critical", "panic"])
+                      grep_strs=["error"])
 
     def display_rpi_core_logs(self) -> None:
         """Display regular rpi_core logs."""
