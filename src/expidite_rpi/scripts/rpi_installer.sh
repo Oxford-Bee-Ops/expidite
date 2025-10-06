@@ -108,13 +108,24 @@ export_system_cfg() {
                 echo "Warning: Skipping invalid key '$key' in system.cfg"
             fi
         fi
-
+    done < "$HOME/.expidite/system.cfg"
+    
     # If expidite_git_branch is not set, default to main
     if [ -z "$expidite_git_branch" ]; then
         expidite_git_branch="main"
     fi
 
-    done < "$HOME/.expidite/system.cfg"
+}
+
+# Function to set the LEDs on (if available)
+# We just need to write "red:blink:0.5" to /.expidite/flags/led_status
+set_leds_on() {
+    mkdir -p "$HOME/.expidite/flags" || { echo "Failed to create flags directory"; }
+    echo "red:blink:0.25" > "$HOME/.expidite/flags/led_status" || { echo "Failed to set LED status"; }
+}
+
+set_leds_off() {
+    echo "red:blink:0.25" > "$HOME/.expidite/flags/led_status" || { echo "Failed to set LED status"; }
 }
 
 # Install SSH keys from the ./expidite directory to the ~/.ssh directory
@@ -305,12 +316,14 @@ install_expidite() {
         echo "Error: rpi_installer.sh not found in $HOME/$venv_dir/scripts/"
         exit 1
     fi
-    # Check if the script is already executable
-    if [ ! -x "$HOME/$venv_dir/scripts/rpi_installer.sh" ]; then
-        chmod +x "$HOME/$venv_dir/scripts/rpi_installer.sh" || { echo "Failed to make rpi_installer.sh executable"; exit 1; }
-        echo "rpi_installer.sh made executable."
+    # Ensure the scripts are executable
+    if [ -d "$HOME/$venv_dir/scripts" ]; then
+        chmod +x $HOME/$venv_dir/scripts/*.sh || { echo "Failed to make $HOME/$venv_dir/scripts/*.sh executable"; exit 1; }
+        chmod +x $HOME/$venv_dir/scripts/*.py || { echo "Failed to make $HOME/$venv_dir/scripts/*.py executable"; exit 1; }
+        echo "Scripts made executable."
+    else
+        echo "Error: $HOME/$venv_dir/scripts/ directory not found"
     fi
-
 }
 
 # Utility function to fix Git repository URLs
@@ -451,7 +464,7 @@ install_user_code() {
 # This is configurable via system.cfg
 # Logs then get written to /run/log/journal which is a tmpfs and managed to a maximum size of 50M
 ###############################################
-function set_log_storage_volatile() {
+set_log_storage_volatile() {
     if [ "$enable_volatile_logs" != "Yes" ]; then
         echo "Skip making storage volatile as enable_volatile_logs is not set to 'Yes'."
         return
@@ -492,7 +505,7 @@ function set_log_storage_volatile() {
 # If we're running off an SD card, we use a ramdisk instead of the SD card for the /bee-ops directory.
 # If we're running off an SSD, we mount /bee-ops on the SSD.
 ###############################################
-function create_mount() {
+create_mount() {
     mountpoint="/expidite"
 
     # Create the mount point directory if it doesn't exist
@@ -541,7 +554,7 @@ function create_mount() {
 #
 # Runs: sudo raspi-config nonint do_net_names 0
 ####################################
-function set_predictable_network_interface_names() {
+set_predictable_network_interface_names() {
     if [ "$enable_predictable_network_interface_names" == "Yes" ]; then
         sudo raspi-config nonint do_net_names 0
         echo "Predictable network interface names set."
@@ -553,7 +566,7 @@ function set_predictable_network_interface_names() {
 #
 # Runs:	sudo raspi-config nonint do_i2c 0
 ####################################
-function enable_i2c() {
+enable_i2c() {
     if [ "$enable_i2c" == "Yes" ]; then
         sudo raspi-config nonint do_i2c 0
         echo "I2C interface enabled."
@@ -564,7 +577,7 @@ function enable_i2c() {
 # Set hostname to "expidite-<device_id>"
 # The device_id is the wlan0 mac address with the colons removed
 ##############################################
-function set_hostname() {
+set_hostname() {
     if [ ! -f /sys/class/net/wlan0/address ]; then
         echo "Error: wlan0 interface not found."
         return 1
@@ -599,7 +612,7 @@ function set_hostname() {
 ##############################################
 # Create an alias for the bcli command
 ##############################################
-function alias_bcli() {
+alias_bcli() {
     # Create an alias for the bcli command
     if ! grep -qs "alias bcli=" "$HOME/.bashrc"; then
         echo "alias bcli='source ~/$venv_dir/bin/activate && bcli'" >> ~/.bashrc
@@ -613,7 +626,7 @@ function alias_bcli() {
 ################################################
 # Autostart if requested in system.cfg
 ################################################
-function auto_start_if_requested() {
+auto_start_if_requested() {
     # We make this conditional on both auto_start and this not being a system_test install
     if [ "$auto_start" == "Yes" ] && [ "$install_type" != "system_test" ]; then
         echo "Auto-starting Expidite RpiCore..."
@@ -634,7 +647,7 @@ function auto_start_if_requested() {
 # Make this script persistent by adding it to crontab
 # to run on reboot
 ###############################################
-function make_persistent() {
+make_persistent() {
     if [ "$auto_start" == "Yes" ]; then        
         rpi_installer_cmd="/bin/bash $HOME/$venv_dir/scripts/rpi_installer.sh 2>&1 | /usr/bin/logger -t EXPIDITE"
         rpi_cmd_os_update="/bin/bash $HOME/$venv_dir/scripts/rpi_installer.sh os_update 2>&1 | /usr/bin/logger -t EXPIDITE"
@@ -661,10 +674,38 @@ function make_persistent() {
     fi
 }
 
+###############################################
+# Manage LEDs based on system.cfg settings
+# Check /etc/systemd/system/led-manager.service exists - and if not create it
+# Enable and reload service.
+###############################################
+install_leds_service() {
+    if [ "$manage_leds" != "No" ]; then
+        if [ -f "/etc/systemd/system/led-manager.service" ]; then
+            echo "led-manager.service already exists."
+        elif [ ! -f "$HOME/$venv_dir/scripts/led_control.py" ]; then
+            echo "Error: led_control.py script not found in $HOME/$venv_dir/scripts/"
+        elif [ ! -f "$HOME/$venv_dir/scripts/led-manager.service" ]; then
+            echo "Error: led-manager.service file not found in $HOME/$venv_dir/scripts/"
+        else
+            # Create the led-manager.service by copying the led-manager.service file from the scripts directory
+            sudo cp "$HOME/$venv_dir/scripts/led-manager.service" /etc/systemd/system/led-manager.service
+
+            # Enable and start the led-manager service
+            sudo systemctl daemon-reload
+            sudo systemctl enable led-manager.service
+            sudo systemctl restart led-manager.service || { echo "Failed to start led-manager.service"; exit 1; }
+            echo "led-manager.service enabled and started."
+        fi
+    else
+        echo "LED management is disabled."
+    fi
+}
+
 ################################################
 # Reboot if required
 ################################################
-function reboot_if_required() {
+reboot_if_required() {
     if [ -f "$HOME/.expidite/flags/reboot_required" ]; then
         echo "Reboot required. Rebooting now..."
         sudo reboot
@@ -685,6 +726,7 @@ sleep 10
 check_prerequisites
 cd "$HOME/.expidite" || { echo "Failed to change directory to $HOME/.expidite"; exit 1; }
 export_system_cfg
+set_leds_on
 install_ssh_keys
 create_and_activate_venv # Sets os_update=yes if creating a new venv
 if [ "$os_update" == "yes" ]; then
@@ -710,7 +752,9 @@ alias_bcli
 set_hostname
 auto_start_if_requested
 make_persistent
+install_leds_service
 reboot_if_required
+set_leds_off
 
 # Add a flag file in the .expidite directory to indicate that the installer has run
 # We use the timestamp on this flag to determine the last update time

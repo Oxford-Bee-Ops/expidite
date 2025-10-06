@@ -4,11 +4,9 @@
 # - auto-update the user software
 # - auto-update the OS to keep current with security fixes
 import os
-import time
+from pathlib import Path
 from time import sleep
 from typing import Optional
-
-from gpiozero import LED
 
 from expidite_rpi.core import api
 from expidite_rpi.core import configuration as root_cfg
@@ -16,6 +14,7 @@ from expidite_rpi.utils import utils
 
 logger = root_cfg.setup_logger("expidite")
 
+LED_STATUS_FILE: Path = Path.home() / ".expidite" / "flags" / "led_status"
 
 class DeviceManager:
     """Manages LED & Wifi status if configured to do so in my_device (DeviceCfg):
@@ -30,10 +29,6 @@ class DeviceManager:
     S_AP_DOWN = "AP Down"
     S_AP_UP = "AP Up"
     S_AP_IN_USE = "AP In Use"
-
-    # LED GPIO pins
-    GPIO_RED = 26
-    GPIO_GREEN = 16
 
     def __init__(self) -> None:
         if root_cfg.system_cfg is None:
@@ -76,16 +71,14 @@ class DeviceManager:
         self.currentState = self.S_BOOTING
         self.currentAPState = self.S_AP_DOWN
         self.lastStateChangeTime = api.utc_now()
-        self.led_flash_counter = 0
         self.red_led = False
         self.green_led = False
-        self.red_led_obj: LED = None
-        self.green_led_obj: LED = None
         # Start the LED management thread
-        if root_cfg.running_on_rpi and root_cfg.my_device.manage_leds:
-            self.set_led_objects()
-            self.led_timer = utils.RepeatTimer(interval=1, 
-                                                function=self.led_timer_callback)
+        if (root_cfg.running_on_rpi and 
+            root_cfg.system_cfg is not None and 
+            root_cfg.system_cfg.manage_leds == "Yes"):
+            self.led_timer = utils.RepeatTimer(interval=5, 
+                                               function=self.led_timer_callback)
             self.led_timer.start()
             logger.info("DeviceManager LED timer started")
 
@@ -106,79 +99,50 @@ class DeviceManager:
     # LED stat FSM table
     #
     # State:            |Booting	 |Wifi up	    |Internet up	|Wifi failed
-    # LED  :            |Red*        |Green*	    |Green	        |Red
+    # LED  :            |Red*        |Green*	    |Green	        |Red**
     # Input[WifiUp]	    |Wifi up	 |-	            |-              |Wifi up
     # Input[GoodPing]   |-	         |Internet up	|-	            |-
     # Input[PingFail] 	|-	         |-     	    |Wifi up	    |-
     # Input[WifiDown]	|-	         |Wifi failed	|Wifi failed
     # *=blinking
-    #
+    # **=slow blinking
     #############################################################################################################
-    # Set the LED objects
-    # This can fail, so we put it here to make it easy to call and handle the exceptions
-    def set_led_objects(self) -> bool:
-        try:
-            if self.red_led_obj is None:
-                self.red_led_obj = LED(DeviceManager.GPIO_RED)
-                self.red_led_obj.on()
-            if self.green_led_obj is None:
-                self.green_led_obj = LED(DeviceManager.GPIO_GREEN)
-                self.green_led_obj.off()
-            return True
-        except Exception as e:
-            logger.warning("Failed to set LED objects: " + str(e))
-            return False
 
     # This function gets called every second.
     # Set the LEDs to ON or OFF as appropriate given the current device state.
     def led_timer_callback(self) -> None:
-        # We run in a try block because we don't an "LED busy" issue to permanently kill the LED loop
         try:
             logger.debug("LED timer callback")
-            if self.red_led_obj is None or self.green_led_obj is None:
-                if not self.set_led_objects():
-                    # Failed to set the LED objects, so exit the callback
-                    return
             if self.currentState == self.S_BOOTING:
                 # Green should be off; red should be blinking
-                self.green_led = False
-                self.green_led_obj.off()
-                if self.red_led is True:
-                    self.red_led = False
-                    self.red_led_obj.off()
-                else:
-                    self.red_led = True
-                    self.red_led_obj.on()
+                self.set_led_status("red", "blink:0.5")
             elif self.currentState == self.S_WIFI_UP:
                 # Green should be blinking; red should be off
-                self.red_led = False
-                self.red_led_obj.off()
-                if self.green_led is True:
-                    self.green_led = False
-                    self.green_led_obj.off()
-                else:
-                    self.green_led = True
-                    self.green_led_obj.on()
+                self.set_led_status("green", "blink:1.0")
             elif self.currentState == self.S_INTERNET_UP:
                 # Green should be on; red should be off
-                self.green_led = True
-                self.green_led_obj.on()
-                self.red_led = False
-                self.red_led_obj.off()
-                # If the AP is up, then blink the red LED for 100ms
-                self.led_flash_counter += 1
-                if (self.currentAPState == self.S_AP_UP) and (self.led_flash_counter % 5 == 0):
-                    self.red_led_obj.on()
-                    time.sleep(0.05)
-                    self.red_led_obj.off()
+                self.set_led_status("green", "on")
             elif self.currentState == self.S_WIFI_FAILED:
                 # Green should be off; red should be on
-                self.green_led = False
-                self.green_led_obj.off()
-                self.red_led = True
-                self.red_led_obj.on()
+                self.set_led_status("red", "2.0")
         except Exception as e:
             logger.error(f"{root_cfg.RAISE_WARN()}LED timer callback threw an exception: " + str(e), 
+                         exc_info=True)
+
+    def set_led_status(self, colour: str, status: str) -> None:
+        """Update the LED status file which is read by the led_control script.
+
+        Parameters
+        ----------
+        - colour: "red" or "green"
+        - status: "on", "off", or "blink"
+        """
+        try:
+            LED_STATUS_FILE.parent.mkdir(parents=True, exist_ok=True)
+            with open(LED_STATUS_FILE, "w") as f:
+                f.write(f"{colour}:{status}\n")
+        except Exception as e:
+            logger.error(f"{root_cfg.RAISE_WARN()}set_led_status threw an exception: " + str(e), 
                          exc_info=True)
 
     #############################################################################################################

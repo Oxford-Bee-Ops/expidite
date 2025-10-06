@@ -165,11 +165,8 @@ class DPnode():
             self._dpnode_score_stats.setdefault(stream.type_id, DPnodeStat()).record(1)
 
         # We also spam the data to the logger for easy debugging and display in the bcli
-        if stream.type_id not in api.SYSTEM_DS_TYPES:
-            # We use the TELEM_TAG so that the BCLI can identify these as sensor logs for display.
-            logger.info(f"{api.TELEM_TAG}Save log: {log_data!s}")
-        else:
-            logger.debug(f"Save log: {log_data!s}")
+        # We use the TELEM_TAG so that the BCLI can identify these as sensor logs for display.
+        logger.info(f"{api.TELEM_TAG}Save log: {log_data!s}")
 
 
     def save_data(self, stream_index: int, sensor_data: pd.DataFrame) -> None:
