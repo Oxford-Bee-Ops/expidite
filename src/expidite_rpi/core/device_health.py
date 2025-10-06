@@ -17,7 +17,7 @@ if root_cfg.running_on_rpi:
     from systemd import journal  # type: ignore
     def get_logs(since: Optional[datetime] = None, 
                  min_priority: Optional[int] = None,
-                 grep_str: Optional[str] = None,
+                 grep_str: Optional[list[str]] = None,
                  max_logs: int = 1000) -> list[dict[str, Any]]:
         """
         Fetch logs from the system journal.
@@ -25,7 +25,7 @@ if root_cfg.running_on_rpi:
         Args:
             since (datetime): A timestamp to fetch logs since.
             min_priority (int): The priority level (e.g., 6 for informational, 4 for warnings).
-            grep_str (str): A string to filter logs by message content.
+            grep_str (list[str]): List of strings to filter log messages.
             max_logs (int): Maximum number of logs to fetch.
 
         Returns:
@@ -49,8 +49,10 @@ if root_cfg.running_on_rpi:
         for i, entry in enumerate(reader):
             priority = int(entry.get("PRIORITY", 0))
             if (((api.RAISE_WARN_TAG in entry.get("MESSAGE", "")) or
-                 (min_priority is None or priority <= min_priority)) and
-                (grep_str is None or grep_str in entry.get("MESSAGE", ""))):
+                 (min_priority is None or priority <= min_priority))):
+                if (grep_str is not None and 
+                    not all(s in entry.get("MESSAGE", "") for s in grep_str)):
+                        continue
                 if i >= max_logs:
                     break
                 time_logged: datetime = entry.get("__REALTIME_TIMESTAMP")
