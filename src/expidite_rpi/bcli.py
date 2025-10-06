@@ -40,16 +40,6 @@ def run_cmd(cmd: str) -> str:
     except Exception as e:
         return f"Error: {e}"
 
-def run_grep(cmd: str) -> str:
-    """Run a grep command and return its output or an error message.
-    We need to allow a series of |d commands to be run, so we use bash -c"""
-    if not root_cfg.running_on_rpi:
-        return "This command only works on a Raspberry Pi"
-    try:
-        return utils.run_cmd(f"bash -c \"{cmd}\"", ignore_errors=True)
-    except Exception as e:
-        return f"Error: {e}"
-
 def reader(proc: subprocess.Popen, queue: queue.Queue) -> None:
     """
     Read 'stdout' from the subprocess and put it into the queue.
