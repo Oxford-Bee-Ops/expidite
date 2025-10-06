@@ -130,6 +130,8 @@ def check_keys_env() -> bool:
         click.echo(f"{dash_line}")
         return False
 
+LED_STATUS_FILE = Path("/expidite") / "tmp" / "tmp_flags" / "led_status"
+
 class InteractiveMenu():
     """Interactive menu for navigating commands."""
     def __init__(self):
@@ -537,7 +539,6 @@ class InteractiveMenu():
     ####################################################################################################
     # Testing menu functions
     ####################################################################################################
-    LED_STATUS_FILE: Path = Path(os.environ.get("LED_STATUS_FILE", "/.expidite/flags/led_status"))
     def validate_device(self) -> None:
         """Validate the device by running a series of tests."""
         click.echo(f"{dash_line}")
@@ -644,8 +645,6 @@ class InteractiveMenu():
             click.echo("\n ### FAIL ###\n")
 
         # Now flash the LED green and then red
-        LED_STATUS_FILE: Path = Path.home() / ".expidite" / "flags" / "led_status"
-
         if not LED_STATUS_FILE.exists():
             LED_STATUS_FILE.parent.mkdir(parents=True, exist_ok=True)
             LED_STATUS_FILE.touch()

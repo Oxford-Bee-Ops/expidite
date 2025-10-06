@@ -14,7 +14,7 @@ from expidite_rpi.utils import utils
 
 logger = root_cfg.setup_logger("expidite")
 
-LED_STATUS_FILE: Path = Path.home() / ".expidite" / "flags" / "led_status"
+LED_STATUS_FILE = Path("/expidite") / "tmp" / "tmp_flags" / "led_status"
 
 class DeviceManager:
     """Manages LED & Wifi status if configured to do so in my_device (DeviceCfg):
@@ -138,9 +138,9 @@ class DeviceManager:
         - status: "on", "off", or "blink"
         """
         try:
-            LED_STATUS_FILE.parent.mkdir(parents=True, exist_ok=True)
-            with open(LED_STATUS_FILE, "w") as f:
-                f.write(f"{colour}:{status}\n")
+            if LED_STATUS_FILE.parent.exists():
+                with open(LED_STATUS_FILE, "w") as f:
+                    f.write(f"{colour}:{status}\n")
         except Exception as e:
             logger.error(f"{root_cfg.RAISE_WARN()}set_led_status threw an exception: " + str(e), 
                          exc_info=True)
