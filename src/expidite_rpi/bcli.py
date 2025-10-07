@@ -315,8 +315,9 @@ class InteractiveMenu():
                     log_dict.pop(k, "")
                 log["message"] = ", ".join([f"{k}={v}" for k, v in log_dict.items()])
                 click.echo(f"\n{data_type_id} >>> {timestamp} >>> {log['message']}")
-            if logs:
-                click.echo(f"\n{dash_line}\n")
+            if not logs: 
+                click.echo("No sensor output logs found.")
+            click.echo(f"\n{dash_line}\n")
         except Exception as e:
             logger.error(f"Error parsing log dictionary: {e}")
 
@@ -344,8 +345,9 @@ class InteractiveMenu():
                 sample_period = log_dict.get("sample_period", "UNKNOWN")
                 click.echo(f"\n{observed_type_id + ' ' + observed_sensor_index:<20} | "
                            f"{count:<4} | {sample_period:<20}")
-            if logs:
-                click.echo(f"\n{dash_line}\n")
+            if not logs: 
+                click.echo("No SCORE logs found.")
+            click.echo(f"\n{dash_line}\n")
         except Exception as e:
             logger.error(f"Error parsing log dictionary: {e}")
             
@@ -609,8 +611,8 @@ class InteractiveMenu():
                 click.echo(f"\nCameras expected for indices: {sensors[api.SENSOR_TYPE.CAMERA.value]}")
                 camera_indexes = sensors[api.SENSOR_TYPE.CAMERA.value]
                 for index in camera_indexes:
-                    camera_test_result = run_cmd(f"rpicam-hello --camera {index}")
-                    if "ERROR" in camera_test_result:
+                    camera_test_result = run_cmd(f"rpicam-hello --camera {index}").lower()
+                    if "no camera" in camera_test_result:
                         click.echo(f"ERROR: Camera {index} not found.")
                         success = False
                     else:
