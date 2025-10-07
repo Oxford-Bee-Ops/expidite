@@ -147,6 +147,7 @@ class InteractiveMenu():
     def view_status(self) -> None:
         """View the current status of the device."""
         try:
+            click.echo(f"{dash_line}\n")
             click.echo(self.sc.status(verbose=False))
             self.display_score_logs()
             self.display_sensor_logs()
@@ -247,26 +248,6 @@ class InteractiveMenu():
             log["timestamp"] = api.utc_to_iso_str(log["time_logged"])
             click.echo(f"\n{log['timestamp']} - {log['priority']} - {log['message']}")
 
-    @staticmethod
-    def _display_sensor_logs(logs: list[dict]) -> None:
-        for log in logs:
-            # Nicely format sensor logs
-            # The message contains a dictionary after "Save log: " which is enclosed in {}
-            # We want to extract that dictionary and display it as key: value pairs
-            data_type_id = "UNKNOWN"
-            if "Save log: " in log["message"]:
-                log_dict_str = log["message"].split("Save log: ")[1]
-                try:
-                    log_dict = eval(log_dict_str)  # Convert string to dictionary
-                    # Find the data_type_id value and move it to the front
-                    if "data_type_id" in log_dict:
-                        data_type_id = log_dict.pop("data_type_id")
-                    log["message"] = ", ".join([f"{k}={v}" for k, v in log_dict.items()])
-                except Exception as e:
-                    logger.error(f"Error parsing log dictionary: {e}")
-            log["timestamp"] = api.utc_to_iso_str(log["time_logged"])
-            click.echo(f"\n{data_type_id} >>> {log['timestamp']} >>> {log['message']}")
-
     def display_errors(self) -> None:
         """Display error logs."""
         if root_cfg.running_on_windows:
@@ -316,9 +297,29 @@ class InteractiveMenu():
         since_time = api.utc_now() - timedelta(minutes=30)
         logs = device_health.get_logs(since=since_time, 
                                       min_priority=6, 
-                                      grep_str=[api.TELEM_TAG])
-        self._display_sensor_logs(logs)
-        click.echo(f"\n{dash_line}\n")
+                                      grep_str=[api.TELEM_TAG, "Save log: "])
+        try:
+            for log in logs:
+                # Nicely format sensor logs
+                # The message contains a dictionary after "Save log: " which is enclosed in {}
+                # We want to extract that dictionary and display it as key: value pairs
+                log_dict_str = log["message"].split("Save log: ")[1]
+                log_dict: dict = eval(log_dict_str)  # Convert string to dictionary
+                data_type_id = log_dict.pop("data_type_id")
+                timestamp = api.utc_to_iso_str(log_dict.pop("timestamp", "UNKNOWN"))
+
+                # Don't display SCORE & SCORP logs as they're spammy
+                if data_type_id in [api.SCORE_DS_TYPE_ID, api.SCORP_DS_TYPE_ID]:
+                    continue
+                # Remove "noisy" keys that don't add value
+                for k in ["device_id", "version_id", "timestamp", "device_name"]:
+                    log_dict.pop(k, "")
+                log["message"] = ", ".join([f"{k}={v}" for k, v in log_dict.items()])
+                click.echo(f"\n{data_type_id} >>> {timestamp} >>> {log['message']}")
+            if logs:
+                click.echo(f"\n{dash_line}\n")
+        except Exception as e:
+            logger.error(f"Error parsing log dictionary: {e}")
 
 
     def display_score_logs(self) -> None:
@@ -331,9 +332,24 @@ class InteractiveMenu():
         click.echo(f"{dash_line}")
         since_time = api.utc_now() - timedelta(minutes=30)
         logs = device_health.get_logs(since=since_time, min_priority=6, 
-                                      grep_str=[api.TELEM_TAG, "SCORE"])
-        self._display_sensor_logs(logs)
-        click.echo(f"{dash_line}\n")
+                                      grep_str=[api.TELEM_TAG, "Save log: ", "SCORE"])
+        
+        try:
+            for log in logs:
+                # Nicely format SCORE logs
+                log_dict_str = log["message"].split("Save log: ")[1]
+                log_dict: dict = eval(log_dict_str)
+                observed_type_id = log_dict.get("observed_type_id", "UNKNOWN")
+                observed_sensor_index = log_dict.get("observed_sensor_index", "UNKNOWN")
+                count = log_dict.get("count", "UNKNOWN")
+                sample_period = log_dict.get("sample_period", "UNKNOWN")
+                click.echo(f"\n{observed_type_id + ' ' + observed_sensor_index:<20} | "
+                           f"{count:<4} | {sample_period:<20}")
+            if logs:
+                click.echo(f"\n{dash_line}\n")
+        except Exception as e:
+            logger.error(f"Error parsing log dictionary: {e}")
+            
 
 
     def display_running_processes(self) -> None:
