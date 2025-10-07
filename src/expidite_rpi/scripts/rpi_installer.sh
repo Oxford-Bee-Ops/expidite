@@ -271,6 +271,12 @@ install_expidite() {
 
     source "$HOME/$venv_dir/bin/activate" || { echo "Failed to activate virtual environment"; exit 1; }
 
+    # If git doesn't exist, then the previous OS update failed part way through; re-run it.
+    if ! command -v git >/dev/null 2>&1; then
+        echo "Git is not installed. Re-running OS package installation."
+        install_os_packages
+    fi
+
     ###############################################################################################################
     # We don't return exit code 1 if the install fails, because we want to continue with the rest of the script
     # and this can happen due to transient network issues causing github.com name resolution to fail.
