@@ -119,13 +119,14 @@ export_system_cfg() {
 
 # Function to set the LEDs on (if available)
 # We just need to write "red:blink:0.5" to /.expidite/flags/led_status
+TMP_FLAGS_DIR="/expidite/tmp/tmp_flags"
 set_leds_on() {
-    mkdir -p "$HOME/.expidite/flags" || { echo "Failed to create flags directory"; }
-    echo "red:blink:0.25" > "$HOME/.expidite/flags/led_status" || { echo "Failed to set LED status"; }
+    mkdir -p "$TMP_FLAGS_DIR" || { echo "Failed to create flags directory"; }
+    echo "red:blink:0.25" > "$TMP_FLAGS_DIR/LED_STATUS" || { echo "Failed to set LED status"; }
 }
 
 set_leds_off() {
-    echo "red:blink:0.25" > "$HOME/.expidite/flags/led_status" || { echo "Failed to set LED status"; }
+    echo "red:blink:0.25" > "$TMP_FLAGS_DIR/LED_STATUS" || { echo "Failed to set LED status"; }
 }
 
 # Install SSH keys from the ./expidite directory to the ~/.ssh directory
@@ -269,6 +270,12 @@ install_expidite() {
     fi
 
     source "$HOME/$venv_dir/bin/activate" || { echo "Failed to activate virtual environment"; exit 1; }
+
+    # If git doesn't exist, then the previous OS update failed part way through; re-run it.
+    if ! command -v git >/dev/null 2>&1; then
+        echo "Git is not installed. Re-running OS package installation."
+        install_os_packages
+    fi
 
     ###############################################################################################################
     # We don't return exit code 1 if the install fails, because we want to continue with the rest of the script

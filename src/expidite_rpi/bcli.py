@@ -130,6 +130,7 @@ def check_keys_env() -> bool:
         click.echo(f"{dash_line}")
         return False
 
+
 class InteractiveMenu():
     """Interactive menu for navigating commands."""
     def __init__(self):
@@ -145,6 +146,7 @@ class InteractiveMenu():
     def view_status(self) -> None:
         """View the current status of the device."""
         try:
+            click.echo(f"{dash_line}\n")
             click.echo(self.sc.status(verbose=False))
             self.display_score_logs()
             self.display_sensor_logs()
@@ -243,7 +245,7 @@ class InteractiveMenu():
         for log in logs:
             # Nicely format the log by printing the timestamp and message
             log["timestamp"] = api.utc_to_iso_str(log["time_logged"])
-            click.echo(f"{log['timestamp']} - {log['priority']} - {log['message']}")
+            click.echo(f"\n{log['timestamp']} - {log['priority']} - {log['message']}")
 
     def display_errors(self) -> None:
         """Display error logs."""
@@ -265,7 +267,7 @@ class InteractiveMenu():
         click.echo(f"{dash_line}")
         utils.run_cmd("journalctl",
                       ignore_errors=True,
-                      grep_strs=["error", "fail", "critical", "panic"])
+                      grep_strs=["error"])
 
     def display_rpi_core_logs(self) -> None:
         """Display regular rpi_core logs."""
@@ -289,13 +291,35 @@ class InteractiveMenu():
             return
         click.echo(f"{dash_line}")
         click.echo("# Sensor logs")
-        click.echo("# Displaying sensor output logs from the last 30 minutes")
+        click.echo("# Displaying sensor output logs (last 30 minutes)")
         click.echo(f"{dash_line}")
         since_time = api.utc_now() - timedelta(minutes=30)
         logs = device_health.get_logs(since=since_time, 
                                       min_priority=6, 
-                                      grep_str=[api.TELEM_TAG])
-        self.display_logs(logs)
+                                      grep_str=[api.TELEM_TAG, "Save log: "])
+        try:
+            for log in logs:
+                # Nicely format sensor logs
+                # The message contains a dictionary after "Save log: " which is enclosed in {}
+                # We want to extract that dictionary and display it as key: value pairs
+                log_dict_str = log["message"].split("Save log: ")[1]
+                log_dict: dict = eval(log_dict_str)  # Convert string to dictionary
+                data_type_id = log_dict.pop("data_type_id")
+                timestamp = api.utc_to_iso_str(log_dict.pop("timestamp", "UNKNOWN"))
+
+                # Don't display SCORE & SCORP logs as they're spammy
+                if data_type_id in [api.SCORE_DS_TYPE_ID, api.SCORP_DS_TYPE_ID]:
+                    continue
+                # Remove "noisy" keys that don't add value
+                for k in ["device_id", "version_id", "timestamp", "device_name"]:
+                    log_dict.pop(k, "")
+                log["message"] = ", ".join([f"{k}={v}" for k, v in log_dict.items()])
+                click.echo(f"\n{data_type_id} >>> {timestamp} >>> {log['message']}")
+            if not logs: 
+                click.echo("No sensor output logs found.")
+            click.echo(f"\n{dash_line}\n")
+        except Exception as e:
+            logger.error(f"Error parsing log dictionary: {e}")
 
 
     def display_score_logs(self) -> None:
@@ -304,13 +328,29 @@ class InteractiveMenu():
             click.echo("This command only works on Linux. Exiting...")
             return
         click.echo(f"\n{dash_line}")
-        click.echo("# Expidite SCORE logs of sensor output")
+        click.echo("# Expidite SCORE logs of sensor output (last 15 minutes)")
         click.echo(f"{dash_line}")
-        since_time = api.utc_now() - timedelta(minutes=30)
+        since_time = api.utc_now() - timedelta(minutes=15)
         logs = device_health.get_logs(since=since_time, min_priority=6, 
-                                      grep_str=[api.TELEM_TAG, "SCORE"])
-        self.display_logs(logs)
-        click.echo(f"{dash_line}\n")
+                                      grep_str=[api.TELEM_TAG, "Save log: ", "SCORE"])
+        
+        try:
+            for log in logs:
+                # Nicely format SCORE logs
+                log_dict_str = log["message"].split("Save log: ")[1]
+                log_dict: dict = eval(log_dict_str)
+                observed_type_id = log_dict.get("observed_type_id", "UNKNOWN")
+                observed_sensor_index = log_dict.get("observed_sensor_index", "UNKNOWN")
+                count = log_dict.get("count", "UNKNOWN")
+                sample_period = log_dict.get("sample_period", "UNKNOWN")
+                click.echo(f"\n{observed_type_id + ' ' + observed_sensor_index:<20} | "
+                           f"{count:<4} | {sample_period:<20}")
+            if not logs: 
+                click.echo("No SCORE logs found.")
+            click.echo(f"\n{dash_line}\n")
+        except Exception as e:
+            logger.error(f"Error parsing log dictionary: {e}")
+            
 
 
     def display_running_processes(self) -> None:
@@ -331,16 +371,7 @@ class InteractiveMenu():
         click.echo(f"{dash_line}")
         click.echo("# Display running RpiCore processes")
         click.echo(f"{dash_line}\n")
-        click.echo(process_list_str)
-
-        # Also display the count of live sensor and dptree threads.
-        since_time = api.utc_now() - timedelta(minutes=30)
-        logs = device_health.get_logs(since=since_time, min_priority=6, grep_str=["Sensor threads alive"])
-        if logs:
-            click.echo(logs[-1]["message"])
-        logs = device_health.get_logs(since=since_time, min_priority=6, grep_str=["DPtrees alive"])
-        if logs:
-            click.echo(logs[-1]["message"])
+        click.echo(f"{process_list_str}\n")
 
 
     def show_recordings(self) -> None:
@@ -537,7 +568,6 @@ class InteractiveMenu():
     ####################################################################################################
     # Testing menu functions
     ####################################################################################################
-    LED_STATUS_FILE: Path = Path(os.environ.get("LED_STATUS_FILE", "/.expidite/flags/led_status"))
     def validate_device(self) -> None:
         """Validate the device by running a series of tests."""
         click.echo(f"{dash_line}")
@@ -581,8 +611,8 @@ class InteractiveMenu():
                 click.echo(f"\nCameras expected for indices: {sensors[api.SENSOR_TYPE.CAMERA.value]}")
                 camera_indexes = sensors[api.SENSOR_TYPE.CAMERA.value]
                 for index in camera_indexes:
-                    camera_test_result = run_cmd(f"libcamera-hello --cameras {index}")
-                    if "camera is not available" in camera_test_result:
+                    camera_test_result = run_cmd(f"rpicam-hello --camera {index}").lower()
+                    if "no camera" in camera_test_result:
                         click.echo(f"ERROR: Camera {index} not found.")
                         success = False
                     else:
@@ -644,12 +674,7 @@ class InteractiveMenu():
             click.echo("\n ### FAIL ###\n")
 
         # Now flash the LED green and then red
-        LED_STATUS_FILE: Path = Path.home() / ".expidite" / "flags" / "led_status"
-
-        if not LED_STATUS_FILE.exists():
-            LED_STATUS_FILE.parent.mkdir(parents=True, exist_ok=True)
-            LED_STATUS_FILE.touch()
-        with open(LED_STATUS_FILE, "w") as f:
+        with open(root_cfg.LED_STATUS_FILE, "w") as f:
             f.write("red:blink:0.25")  # Flash red
             time.sleep(2)
             f.write("green:blink:0.25")  # Flash green  

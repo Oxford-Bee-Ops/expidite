@@ -208,6 +208,8 @@ RESTART_EXPIDITE_FLAG = FLAGS_DIR / "RESTART_EXPIDITE_FLAG"
 
 # Used by EdgeOrchestrator to check if RpiCore is running
 EXPIDITE_IS_RUNNING_FLAG = TMP_FLAGS_DIR / "EXPIDITE_IS_RUNNING_FLAG"
+LED_STATUS_FILE = TMP_FLAGS_DIR / "LED_STATUS"
+
 
 ############################################################################################################
 # Set up logging

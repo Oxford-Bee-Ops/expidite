@@ -45,17 +45,19 @@ if root_cfg.running_on_rpi:
             else:
                 raise ValueError("The 'since' argument must be a datetime object.")
 
-        # Use the build in ADD_MATCH function to do the grep filtering
-        if grep_str:
-            for s in grep_str:
-                reader.add_match("MESSAGE", s)
+        # Handle str not list[str]
+        if grep_str and isinstance(grep_str, str):
+            grep_str = [grep_str]
 
         # Iterate through the logs
         for entry in reader:
             priority = int(entry.get("PRIORITY", 9))
-            if (min_priority is None or 
-                priority <= min_priority or
-                api.RAISE_WARN_TAG in entry.get("MESSAGE", "")
+            message = entry.get("MESSAGE", "")
+            if ((min_priority is None or 
+                 priority <= min_priority or
+                 api.RAISE_WARN_TAG in message) and
+                (grep_str is None or
+                 all(s in message for s in grep_str))
             ):
                 time_logged: datetime = entry.get("__REALTIME_TIMESTAMP")
                 log_entry = {

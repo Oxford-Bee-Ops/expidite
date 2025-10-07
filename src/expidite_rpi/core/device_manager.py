@@ -4,7 +4,6 @@
 # - auto-update the user software
 # - auto-update the OS to keep current with security fixes
 import os
-from pathlib import Path
 from time import sleep
 from typing import Optional
 
@@ -14,7 +13,6 @@ from expidite_rpi.utils import utils
 
 logger = root_cfg.setup_logger("expidite")
 
-LED_STATUS_FILE: Path = Path.home() / ".expidite" / "flags" / "led_status"
 
 class DeviceManager:
     """Manages LED & Wifi status if configured to do so in my_device (DeviceCfg):
@@ -138,8 +136,7 @@ class DeviceManager:
         - status: "on", "off", or "blink"
         """
         try:
-            LED_STATUS_FILE.parent.mkdir(parents=True, exist_ok=True)
-            with open(LED_STATUS_FILE, "w") as f:
+            with open(root_cfg.LED_STATUS_FILE, "w") as f:
                 f.write(f"{colour}:{status}\n")
         except Exception as e:
             logger.error(f"{root_cfg.RAISE_WARN()}set_led_status threw an exception: " + str(e), 
