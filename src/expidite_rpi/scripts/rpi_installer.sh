@@ -119,13 +119,14 @@ export_system_cfg() {
 
 # Function to set the LEDs on (if available)
 # We just need to write "red:blink:0.5" to /.expidite/flags/led_status
+TMP_FLAGS_DIR="/expidite/tmp/tmp_flags"
 set_leds_on() {
-    mkdir -p "$HOME/.expidite/flags" || { echo "Failed to create flags directory"; }
-    echo "red:blink:0.25" > "$HOME/.expidite/flags/led_status" || { echo "Failed to set LED status"; }
+    mkdir -p "$TMP_FLAGS_DIR" || { echo "Failed to create flags directory"; }
+    echo "red:blink:0.25" > "$TMP_FLAGS_DIR/LED_STATUS" || { echo "Failed to set LED status"; }
 }
 
 set_leds_off() {
-    echo "red:blink:0.25" > "$HOME/.expidite/flags/led_status" || { echo "Failed to set LED status"; }
+    echo "red:blink:0.25" > "$TMP_FLAGS_DIR/LED_STATUS" || { echo "Failed to set LED status"; }
 }
 
 # Install SSH keys from the ./expidite directory to the ~/.ssh directory

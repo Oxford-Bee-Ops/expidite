@@ -28,7 +28,7 @@ from pathlib import Path
 from threading import Event, Thread
 from typing import Optional
 
-LED_STATUS_FILE = Path("/expidite") / "tmp" / "tmp_flags" / "led_status"
+LED_STATUS_FILE = Path("/expidite") / "tmp" / "tmp_flags" / "LED_STATUS"
 LOCK_FILE: Path = Path("/var/lock/led_control.lock")
 
 @dataclass

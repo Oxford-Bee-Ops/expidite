@@ -130,7 +130,6 @@ def check_keys_env() -> bool:
         click.echo(f"{dash_line}")
         return False
 
-LED_STATUS_FILE = Path("/expidite") / "tmp" / "tmp_flags" / "led_status"
 
 class InteractiveMenu():
     """Interactive menu for navigating commands."""
@@ -673,10 +672,7 @@ class InteractiveMenu():
             click.echo("\n ### FAIL ###\n")
 
         # Now flash the LED green and then red
-        if not LED_STATUS_FILE.exists():
-            LED_STATUS_FILE.parent.mkdir(parents=True, exist_ok=True)
-            LED_STATUS_FILE.touch()
-        with open(LED_STATUS_FILE, "w") as f:
+        with open(root_cfg.LED_STATUS_FILE, "w") as f:
             f.write("red:blink:0.25")  # Flash red
             time.sleep(2)
             f.write("green:blink:0.25")  # Flash green  
