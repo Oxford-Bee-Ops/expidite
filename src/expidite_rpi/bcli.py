@@ -291,7 +291,7 @@ class InteractiveMenu():
             return
         click.echo(f"{dash_line}")
         click.echo("# Sensor logs")
-        click.echo("# Displaying sensor output logs from the last 30 minutes")
+        click.echo("# Displaying sensor output logs (last 30 minutes)")
         click.echo(f"{dash_line}")
         since_time = api.utc_now() - timedelta(minutes=30)
         logs = device_health.get_logs(since=since_time, 
@@ -327,9 +327,9 @@ class InteractiveMenu():
             click.echo("This command only works on Linux. Exiting...")
             return
         click.echo(f"\n{dash_line}")
-        click.echo("# Expidite SCORE logs of sensor output")
+        click.echo("# Expidite SCORE logs of sensor output (last 15 minutes)")
         click.echo(f"{dash_line}")
-        since_time = api.utc_now() - timedelta(minutes=30)
+        since_time = api.utc_now() - timedelta(minutes=15)
         logs = device_health.get_logs(since=since_time, min_priority=6, 
                                       grep_str=[api.TELEM_TAG, "Save log: ", "SCORE"])
         
