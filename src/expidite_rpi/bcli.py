@@ -305,7 +305,7 @@ class InteractiveMenu():
                 log_dict_str = log["message"].split("Save log: ")[1]
                 log_dict: dict = eval(log_dict_str)  # Convert string to dictionary
                 data_type_id = log_dict.pop("data_type_id")
-                timestamp = api.utc_to_iso_str(log_dict.pop("timestamp", "UNKNOWN"))
+                timestamp = log_dict.pop("timestamp", "UNKNOWN")
 
                 # Don't display SCORE & SCORP logs as they're spammy
                 if data_type_id in [api.SCORE_DS_TYPE_ID, api.SCORP_DS_TYPE_ID]:
@@ -313,7 +313,7 @@ class InteractiveMenu():
                 # Remove "noisy" keys that don't add value
                 for k in ["device_id", "version_id", "timestamp", "device_name"]:
                     log_dict.pop(k, "")
-                log["message"] = ", ".join([f"{k}={v}" for k, v in log_dict.items()])
+                log["message"] = ", ".join([f"{k}={v!s}" for k, v in log_dict.items()])
                 click.echo(f"\n{data_type_id} >>> {timestamp} >>> {log['message']}")
             if not logs: 
                 click.echo("No sensor output logs found.")
@@ -344,7 +344,7 @@ class InteractiveMenu():
                 count = log_dict.get("count", "UNKNOWN")
                 sample_period = log_dict.get("sample_period", "UNKNOWN")
                 click.echo(f"\n{observed_type_id + ' ' + observed_sensor_index:<20} | "
-                           f"{count:<4} | {sample_period:<20}")
+                           f"{count!s:<4} | {sample_period:<20}")
             if not logs: 
                 click.echo("No SCORE logs found.")
             click.echo(f"\n{dash_line}\n")

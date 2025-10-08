@@ -22,7 +22,7 @@ logger = root_cfg.setup_logger("expidite")
 LTR390_STREAM_INDEX = 0
 LTR390_SENSOR_INDEX = 83 # LTR390 i2c address, 0x53 (83)
 LTR390_SENSOR_TYPE_ID = "LTR390"
-LTR390_FIELDS = ["ambient_light", "uv"]
+LTR390_FIELDS = ["ambient_light", "uv", "gain"]
 
 @dataclass
 class LTR390SensorCfg(SensorCfg):
@@ -63,13 +63,16 @@ class LTR390(Sensor):
 
         i2c = board.I2C()
         sensor = adafruit_ltr390.LTR390(i2c)
+        sensor.gain = 4 # This is the index for 18x gain
+        print(sensor.gain)
 
         while self.continue_recording():
             try:
                 self.log(
                     stream_index=LTR390_STREAM_INDEX,
                     sensor_data={"ambient_light": ("%.1f" % sensor.light),
-                                 "uv": ("%.1f" % sensor.uvs)},
+                                 "uv": ("%.1f" % sensor.uvs),
+                                 "gain": sensor.gain},
                 )
 
             except Exception as e:
