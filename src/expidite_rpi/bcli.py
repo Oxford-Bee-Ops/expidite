@@ -699,7 +699,7 @@ class InteractiveMenu():
                        f"Please check your installation.")
             return
         run_cmd_live_echo(f"sudo {scripts_dir}/network_test.sh q")
-        click.echo(f"{dash_line}")
+        click.echo(f"{dash_line}\n")
 
     def run_system_test(self) -> None:
         """Invokes my_start_script."""
