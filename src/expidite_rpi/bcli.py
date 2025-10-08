@@ -768,9 +768,9 @@ class InteractiveMenu():
             click.echo("0. Exit")
             click.echo("1. View Config")
             click.echo("2. View Status")
-            click.echo("3. Maintenance Commands")
-            click.echo("4. Debugging Commands")
-            click.echo("5. Testing Commands")
+            click.echo("3. Validate device")
+            click.echo("4. Maintenance Commands")
+            click.echo("5. Debug Commands")
             try:
                 choice = click.prompt("\nEnter your choice", type=int, default=0)
                 click.echo("\n")
@@ -783,11 +783,11 @@ class InteractiveMenu():
             elif choice == 2:
                 self.view_status()
             elif choice == 3:
-                self.maintenance_menu()
+                self.validate_device()
             elif choice == 4:
-                self.debug_menu()
+                self.maintenance_menu()
             elif choice == 5:
-                self.testing_menu()
+                self.debug_menu()
             elif choice == 0:
                 click.echo("Exiting...")
                 break
@@ -802,16 +802,17 @@ class InteractiveMenu():
     def debug_menu(self) -> None:
         """Menu for debugging commands."""
         while True:
-            click.echo(f"{header}Debugging Menu:")
+            click.echo(f"{header}Debug Menu:")
             click.echo("0. Back to Main Menu")
-            click.echo("1. Journalctl")
-            click.echo("2. Display errors")
-            click.echo("3. Display all expidite logs")
-            click.echo("4. Display sensor measurement logs")
-            click.echo("5. Display SCORE sensor activity logs")
-            click.echo("6. Display running processes")
-            click.echo("7. Show recordings and data files")
-            click.echo("8. Show Crontab Entries")
+            click.echo("1. Run Network Test")
+            click.echo("2. Display logs live (journalctl)")
+            click.echo("3. Display errors")
+            click.echo("4. Display all expidite logs")
+            click.echo("5. Display sensor measurement logs")
+            click.echo("6. Display SCORE sensor activity logs")
+            click.echo("7. Display running processes")
+            click.echo("8. Show recordings and data files")
+            click.echo("9. Show Crontab Entries")
             try:
                 choice = click.prompt("\nEnter your choice", type=int, default=0, )
                 click.echo("\n")
@@ -820,20 +821,22 @@ class InteractiveMenu():
                 continue
 
             if choice == 1:
-                self.journalctl()
+                self.run_network_test()
             elif choice == 2:
-                self.display_errors()
+                self.journalctl()
             elif choice == 3:
-                self.display_rpi_core_logs()
+                self.display_errors()
             elif choice == 4:
-                self.display_sensor_logs()
+                self.display_rpi_core_logs()
             elif choice == 5:
-                self.display_score_logs()
+                self.display_sensor_logs()
             elif choice == 6:
-                self.display_running_processes()
+                self.display_score_logs()
             elif choice == 7:
-                self.show_recordings()
+                self.display_running_processes()
             elif choice == 8:
+                self.show_recordings()
+            elif choice == 9:
                 self.show_crontab_entries()
             elif choice == 0:
                 break
@@ -874,33 +877,6 @@ class InteractiveMenu():
                 self.reboot_device()
             elif choice == 7: 
                 self.update_storage_key()
-            elif choice == 0:
-                break
-            else:
-                click.echo("Invalid choice. Please try again.")
-
-
-    def testing_menu(self) -> None:
-        """Menu for testing commands."""
-        while True:
-            click.echo(f"{header}Testing Menu:")
-            click.echo("0. Back to Main Menu")
-            click.echo("1. Validate device")
-            click.echo("2. Run Network Test")
-            click.echo("3. Run system test")
-            try:
-                choice = click.prompt("\nEnter your choice", type=int, default=0)
-                click.echo("\n")
-            except ValueError:
-                click.echo("Invalid input. Please enter a number.")
-                continue
-
-            if choice == 1:
-                self.validate_device()
-            elif choice == 2:
-                self.run_network_test()
-            elif choice == 3:
-                self.run_system_test()
             elif choice == 0:
                 break
             else:
