@@ -313,7 +313,7 @@ class InteractiveMenu():
                 # Remove "noisy" keys that don't add value
                 for k in ["device_id", "version_id", "timestamp", "device_name"]:
                     log_dict.pop(k, "")
-                log["message"] = ", ".join([f"{k}={str(v)}" for k, v in log_dict.items()])
+                log["message"] = ", ".join([f"{k}={v!s}" for k, v in log_dict.items()])
                 click.echo(f"\n{data_type_id} >>> {timestamp} >>> {log['message']}")
             if not logs: 
                 click.echo("No sensor output logs found.")
@@ -344,7 +344,7 @@ class InteractiveMenu():
                 count = log_dict.get("count", "UNKNOWN")
                 sample_period = log_dict.get("sample_period", "UNKNOWN")
                 click.echo(f"\n{observed_type_id + ' ' + observed_sensor_index:<20} | "
-                           f"{str(count):<4} | {sample_period:<20}")
+                           f"{count!s:<4} | {sample_period:<20}")
             if not logs: 
                 click.echo("No SCORE logs found.")
             click.echo(f"\n{dash_line}\n")
