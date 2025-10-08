@@ -63,6 +63,8 @@ class LTR390(Sensor):
 
         i2c = board.I2C()
         sensor = adafruit_ltr390.LTR390(i2c)
+        sensor.gain = 3 # This is the index for 9x gain
+        print(sensor.gain)
 
         while self.continue_recording():
             try:
