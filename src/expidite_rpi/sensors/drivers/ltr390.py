@@ -11,7 +11,7 @@ from adafruit_register.i2c_struct import ROUnaryStruct, Struct  # type: ignore
 
 try:
     import board  # type: ignore
-except ImportError:
+except (ImportError, NotImplementedError):
     # Running on non-CircuitPython environment (Windows/standard Python)
     board = None
     pass
