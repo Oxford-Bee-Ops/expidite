@@ -564,7 +564,24 @@ class InteractiveMenu():
         click.echo(f"Updating the storage key in {root_cfg.KEYS_FILE}")
         test_file.rename(root_cfg.KEYS_FILE)
 
-        
+    def nmap_ping_scan(self) -> None:
+        """Run an nmap ping scan of the local network."""
+        # Check if nmap is installed
+        if run_cmd("which nmap").strip() == "":
+            click.echo("nmap is not installed. Installing...")
+            run_cmd_live_echo("sudo apt-get update && sudo apt-get install -y nmap")
+            if run_cmd("which nmap").strip() == "":
+                click.echo("nmap installation failed. Exiting...")
+                return
+        click.echo("Running nmap ping scan of local network...")
+        # Get the local IP address and subnet mask
+        local_ip = run_cmd("hostname -I").strip().split()[0]
+        output = run_cmd_live_echo(f"nmap -sn {local_ip}/24")
+        click.echo("Nmap ping scan completed.")
+        click.echo("Nmap output:")
+        click.echo(output)
+        click.echo("\n")
+
     ####################################################################################################
     # Testing menu functions
     ####################################################################################################
@@ -762,7 +779,7 @@ class InteractiveMenu():
 
         # Display status
         click.echo(f"{dash_line}")
-        click.echo(f"# RpiCore CLI on {root_cfg.my_device_id} {root_cfg.my_device.name}")
+        click.echo(f"# Expidite CLI on {root_cfg.my_device_id} {root_cfg.my_device.name}")
         while True:
             click.echo(f"{header}Main Menu:")
             click.echo("0. Exit")
@@ -813,6 +830,7 @@ class InteractiveMenu():
             click.echo("7. Display running processes")
             click.echo("8. Show recordings and data files")
             click.echo("9. Show Crontab Entries")
+            click.echo("10. nmap ping scan of local network")
             try:
                 choice = click.prompt("\nEnter your choice", type=int, default=0, )
                 click.echo("\n")
@@ -838,6 +856,8 @@ class InteractiveMenu():
                 self.show_recordings()
             elif choice == 9:
                 self.show_crontab_entries()
+            elif choice == 10:
+                self.nmap_ping_scan()
             elif choice == 0:
                 break
             else:
