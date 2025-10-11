@@ -63,11 +63,34 @@ class LTR390(Sensor):
 
         i2c = board.I2C()
         sensor = adafruit_ltr390.LTR390(i2c)
-        sensor.gain = 4 # This is the index for 18x gain
+        current_gain = 4 # This is the index for 18x gain
+        sensor.gain = current_gain
         print(sensor.gain)
 
         while self.continue_recording():
             try:
+                light = sensor.light
+
+                # We manage gain to maximise the UV level without saturating the light level
+                # Light max value is 65535
+                # If light > 60000, decrease the gain to min 0
+                # If light < 10000, increase the gain to max 4
+                gain_changed = True
+                if light > 60000 and current_gain > 0:
+                    current_gain -= 1
+                    sensor.gain = current_gain
+                    logger.debug(f"LTR390 sensor {self.sensor_index} decreasing gain to {current_gain}")
+                elif light < 10000 and current_gain < 4:
+                    current_gain += 1
+                    sensor.gain = current_gain
+                    logger.debug(f"LTR390 sensor {self.sensor_index} increasing gain to {current_gain}")
+                else:
+                    gain_changed = False
+
+                if gain_changed:
+                    # Wait a bit for the new gain to take effect
+                    self.stop_requested.wait(1)
+
                 self.log(
                     stream_index=LTR390_STREAM_INDEX,
                     sensor_data={"ambient_light": ("%.1f" % sensor.light),
