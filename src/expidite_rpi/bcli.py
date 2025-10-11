@@ -576,7 +576,8 @@ class InteractiveMenu():
         click.echo("Running nmap ping scan of local network...")
         # Get the local IP address and subnet mask
         local_ip = run_cmd("hostname -I").strip().split()[0]
-        output = run_cmd_live_echo(f"nmap -sn {local_ip}/24")
+        # Run as root in order to get MAC addresses
+        output = run_cmd_live_echo(f"sudo nmap -sn {local_ip}/24")
         click.echo("Nmap ping scan completed.")
         click.echo("Nmap output:")
         click.echo(output)
