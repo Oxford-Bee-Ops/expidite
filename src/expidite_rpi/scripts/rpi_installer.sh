@@ -575,8 +575,20 @@ set_predictable_network_interface_names() {
 ####################################
 enable_i2c() {
     if [ "$enable_i2c" == "Yes" ]; then
-        sudo raspi-config nonint do_i2c 0
-        echo "I2C interface enabled."
+        # We want to avoid setting this every time the script runs, because we've seen issues
+        # with corruption of /boot/firmware/config.txt which may be cause by this change
+        # and a potential race condition.  Therefore check if it is already enabled first....
+        # Check if i2c-dev module is loaded
+        if lsmod | grep -q "^i2c_dev"; then
+            echo "I2C interface is already enabled (i2c-dev module loaded)."
+        # Or check if dtparam is set in /boot/config.txt
+        elif grep -E '^\s*dtparam=i2c_arm=on' /boot/config.txt >/dev/null; then
+            echo "I2C interface is already enabled (dtparam in /boot/config.txt)."
+        else
+            # We do need to enable it
+            sudo raspi-config nonint do_i2c 0
+            echo "I2C interface enabled."
+        fi
     fi
 }
 
