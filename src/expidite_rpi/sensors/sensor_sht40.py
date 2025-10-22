@@ -84,6 +84,8 @@ class SHT40(Sensor):
                     # We do it after measurement to avoid affecting the reading
                     # It takes a few seconds to heat up and cool down
                     if humidity.value > 90:
+                        logger.info(f"SHT40 sensor {self.sensor_index} high humidity "
+                                    f"{humidity.value:.1f}%, activating heater")
                         sensor.activate_medium_heater_power_long()
 
                 except Exception as e:
