@@ -1,6 +1,7 @@
 from dataclasses import dataclass
 
 import adafruit_bmp280
+
 from expidite_rpi.core import api
 from expidite_rpi.core import configuration as root_cfg
 from expidite_rpi.core.dp_config_objects import Stream

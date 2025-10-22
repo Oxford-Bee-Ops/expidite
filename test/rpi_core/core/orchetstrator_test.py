@@ -3,6 +3,7 @@ from threading import Thread
 from time import sleep
 
 import pytest
+
 from expidite_rpi.core import api, edge_orchestrator
 from expidite_rpi.core import configuration as root_cfg
 from expidite_rpi.core.edge_orchestrator import EdgeOrchestrator
