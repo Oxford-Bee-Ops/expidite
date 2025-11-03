@@ -1,6 +1,6 @@
 # ExPiDITE
 
-ExPiDITE makes it as easy to use Raspberry Pi SBCs for scientific data collection in long-running experiments. ExPiDITE is a pre-baked set of functionality and design choices that reduce the complexity & risk in managing devices, sensors, and data flows.
+ExPiDITE makes it easy to use Raspberry Pi (RPI) for scientific data collection in long-running experiments. ExPiDITE is a pre-baked set of functionality and design choices that reduce the complexity & risk in managing devices, sensors, and data flows.
 
 
 SENSOR INTEGRATION
@@ -17,7 +17,7 @@ DATA MANAGEMENT
 DEVICE MANAGEMENT
 - Simplifies management of a "fleet" of RPIs sensors running autonomously
 - Provides recipes & functionality for spinning up a secure, internet-accessible dashboard
-- Manages upgrade of the RPI OS, the RpiCore software and any custom software
+- Manages upgrade of the RPI OS, the Expidite software and any custom software
 - Manages security via a firewall
 - Manages Wifi and other network connections
 - Controls red/green health status LEDs on the device
@@ -46,31 +46,32 @@ And follow the instructions in Usage > User Flow below.
 You will need: 
 - a Raspberry Pi SBC and some sensors!
 - a GitHub account to store your *fleet* configuration and any custom code you choose to write
-- an Azure account for storage of your sensor output
+- an Azure blobstore account for storage of your sensor output
 - some basic experience with Python coding
 
 
 ### USER FLOW - INITIAL SETUP
-The following steps enable you to run the default example sensor on your RPi.  Do this first to prove that your cloud storage config is working and to learn the basics.  Then you can move on to defining your actual experimental setup!
+The following steps enable you to run the default example sensor on your RPI.  Do this first to prove that your cloud storage config is working and to learn the basics.  Then you can move on to defining your actual experimental setup!
 
-- Physically build your Raspberry Pi and attach your chosen sensors.
+- Physically build your RPI and attach your chosen sensors.
 - Get an SD card with the Raspberry Pi OS.  If you use Raspberry Pi Imager, enabling SSH access and including default Wifi config will make your life easier.
-- Install the SD card and power up your Pi.
+- Install the SD card and power up your RPI.
 - Copy the **keys.env** and **system.cfg** files from the expidite repo `/src/example` folder to your own computer / dev environment / git project.
 - Edit **keys.env**:
     - Set `cloud_storage_key` to the Shared Access Signature for your Azure Storage accounts (see explanatory notes in keys.env).
     - For security reasons, do **not** check your keys.env into Git.
-- Log in to your RPi:
+- Log in to your RPI:
     - create an **.expidite** folder in your user home directory 
         - `mkdir ~/.expidite`
     - copy your **keys.env** and **system.cfg** to the .expidite folder
     - copy the **rpi_installer.sh** files from `/src/expidite_rpi/scripts` to the .expidite folder
     - run the rpi_installer.sh script:
         - `cd ~/.expidite &&  dos2unix *.sh && chmod +x *.sh && ./rpi_installer.sh`
-        - this will take a few minutes as it creates a virtual environment, updates to the latest OS packages, installs Expidite's RpiCore and its dependencies, and sets up the RPi ready for use as a sensor.
+        - this will take a few minutes as it creates a virtual environment, updates to the latest OS packages, installs Expidite's RpiCore and its dependencies, and sets up the RPI ready for use as a sensor.
     - once RpiCore is installed, you can test it using either:
         - CLI at a shell prompt:
             - `bcli`
+            - Option `2. View Status`
         - In Python:
             - `python`
             - `from rpi_core import RpiCore`
@@ -89,13 +90,13 @@ To execute your particular experimental setup, you need to configure your device
     - To get the mac address run `cat /sys/class/net/wlan0/address`
     - See the example fleet_config.py for more details.
 - Edit the **system.cfg**:
-    - If you want RpiCore to regularly auto-update your devices the latest code from your git repo, you will need to set `my_git_repo_url`.
+    - If you want RpiCore to regularly auto-update your devices to the latest code from your git repo, you will need to set `my_git_repo_url`.
     - See the system.cfg file in `/src/expidite_rpi/example` for more details and more options.
 
 ### USER FLOW - PRODUCTION PROCESS FOR AN EXPERIMENT WITH MANY DEVICES
 #### Pre-requisites
-- You have a keys.env with your cloud storage key
-- You have a system.cfg with:
+- You have a **keys.env** with your cloud storage key
+- You have a **system.cfg** with:
     - `my_git_repo_url` set to your Git repo URL
     - `auto-start` set to `Yes`
 - You have a fleet_config.py file with:
@@ -107,28 +108,11 @@ To execute your particular experimental setup, you need to configure your device
 For each device, you will need to:
 - Install Raspberry Pi OS on the SD card (or buy it pre-installed)
 - Copy on **keys.env**, **system.cfg** and **rpi_installer.sh**
-- @@@ Install SSH keys so the device can access your private repo
+- Install SSH keys so the device can access your private repo - see GitHub.com for details
 - Run `./rpi_installer.sh` as per above
 
 With the correct config and auto-start set to yes, your device will immediately start recording - and will continue to do so across reboots / power cycle, etc.
 
-
-- 
-    - create and activate your virtual environment in $HOME/.venv:
-        - `python -m venv $HOME/.venv`
-        - `source $HOME/venv/bin/activate`
-    - install pre-requisites:
-        - `sudo apt-get install libsystemd-dev libffi-dev`
-        - libsystemd-dev is required by systemd-python to interact with journald
-        - libffi-dev is required by azure-storage-blob via cryptography 
-        - `sudo apt-get install -y python3-scipy python3-pandas python3-opencv`
-    - install expidite:
-        - `uv pip install git+https://github.com/Oxford-Bee-Ops/expidite`
-    - install your now-customized example code in **$HOME/code/<my_git_project_name>/**
-    - run RpiCore:
-        - `cd $HOME/code/<my_git_project_name>`
-        - `python run_rpi.py`
-- If your system.cfg has `auto_start="Yes"`, RpiCore will now be running!
 - You can check by running the command line interface (CLI):
     - run `bcli`
 
@@ -136,25 +120,25 @@ With the correct config and auto-start set to yes, your device will immediately 
 
 ### USER FLOW - EXTENDING & CUSTOMIZING
 - Supporting new sensors
-    - To support new sensors, create a new python file in the same form as my_sensor_example.py that extends **rpi.Sensor**.
-    - You will need to define a configuration object for your sensor that subclasses **rpi.SensorCfg**.
-    - You will need to update your fleet_config to use this new SensorCfg.
+    - To support new sensors, create a new python file in the same form as my_sensor_example.py that extends **expidite_rpi.Sensor**.
+    - You will need to define a configuration object for your sensor that subclasses **expidite_rpi.SensorCfg**.
+    - You will need to update your fleet_config to use this new **SensorCfg**.
 - Custom processing of recordings or data
-    - To implement custom data processing, create a new pythong file in the same form as my_processor_example.py that extends **rpi.DataProcessor**.
-    - You will need to define a configuration object for your DataProcessor that subclasses **rpi.DataProcessorCfg**.
-    - You will need to update your fleet_config to use this new DataProcessorCfg.
+    - To implement custom data processing, create a new python file in the same form as my_processor_example.py that extends **expidite_rpi.DataProcessor**.
+    - You will need to define a configuration object for your DataProcessor that subclasses **expidite_rpi.DataProcessorCfg**.
+    - You will need to update your fleet_config to use this new **DataProcessorCfg**.
 - Contributing updates to RpiCore
     - In the first instance, please email admin@bee-ops.com.
 
 
 ### USER FLOW - ETL
-- Setting up an ETL pipeline to process the data
+- TBD: Setting up an ETL pipeline to process the data
 
-## RPi device management functions
+## RPI device management functions
 FC=Fleet config; SC=system.cfg; KE=keys.env
 
-| Function  | Config control | Notes |
-| ------------- | ------------- | ------------- |
+| Function  | Config control | Default | Notes |
+| ------------- | ------------- | ------------- | ------------- |
 | Automatic code updates | FC:`auto_update_code` | Uses crontab + `uv pip install` + your Git project's pyproject.toml to refresh your code and its dependencies (including RpiCore) on a configurable frequency
 | Automatic OS updates | FC:`auto_update_os` |  Uses crontab + `sudo apt update && sudo apt upgrade -y` to update the OS on a configurable frequency.  This is a good best practice for staying up to date with security fixes.
 | Firewall | SC:`enable_firewall` | Installs and configures UFW (Uncomplicated Firewall)
