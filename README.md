@@ -135,25 +135,28 @@ With the correct config and auto-start set to yes, your device will immediately 
 - TBD: Setting up an ETL pipeline to process the data
 
 ## RPI device management functions
-FC=Fleet config; SC=system.cfg; KE=keys.env
+KE=keys.env; SC=system.cfg; FC=Fleet config
+
+
+### System setup
 
 | Function  | Config control | Default | Notes |
 | ------------- | ------------- | ------------- | ------------- |
-| Automatic code updates | FC:`auto_update_code` | Uses crontab + `uv pip install` + your Git project's pyproject.toml to refresh your code and its dependencies (including RpiCore) on a configurable frequency
-| Automatic OS updates | FC:`auto_update_os` |  Uses crontab + `sudo apt update && sudo apt upgrade -y` to update the OS on a configurable frequency.  This is a good best practice for staying up to date with security fixes.
-| Firewall | SC:`enable_firewall` | Installs and configures UFW (Uncomplicated Firewall)
-| Wifi AP awareness | FC:`wifi_clients` | Enable devices to auto-connect to the network by pre-configuring access point details.
-| Wifi connections | FC:`attempt_wifi_recovery` | If internet connectivity is lost, try to auto-recover by switching wifi APs and other actions. Requires wifi_clients to be set in the FC.
-| Status LEDs | FC:`manage_leds` | Controls a red & green LED used to reflect system status
-| SD card wear | SC:`enable_volatile_logs` | Make logging volatile so that it is written to memory rather than the SD card to reduce wear; logs will be lost over reboot as a result but import logs are streamed to cloud storage in real time anyway.
-
-## System setup
-
-| Function  | Config control | Notes |
-| ------------- | ------------- | ------------- |
 | Cloud storage access key | KE:`cloud_storage_key` | The Shared Access Signature that provides access to your Azure cloud storage
 | Auto-start RpiCore | SC:`auto_start` | Starts RpiCore automatically after reboot; unless manual mode invoked via CLI.
-| Install a virtual environment | SC:`venv_dir` | Uses uv to install a venv unless one already exists at this location
-| Git repo | SC:`my_git_repo_url` | URL of your Git repo containing your configuration and any custom code
-| Git branch | SC:`my_git_branch` | Name of the Git branch to use if not main
+| Git repo | SC:`my_git_repo_url` | "Not set" | URL of your Git repo containing your configuration and any custom code
+| Git branch | SC:`my_git_branch` | "main" | Name of the Git branch to use if not main
+| SSH keys | SC:`my_git_ssh_private_key_file` | "Not set" | The name of the SSH key file in the .expidite directory that gives access to the Git repo if it is private. This can field can be left commented out if the repo is public.
+| Fleet config | SC:`my_fleet_config` | | The fully-qualified object name of the fleet config inventory. For example "my_project.my_fleet_config.INVENTORY".
+| Start-up script | SC:`my_start_script` | | The fully-qualified module name to call to start the device. For example "my_project.my_start_script". This is called on reboot or when expidite is started via bcli.
+| SD card wear | SC:`enable_volatile_logs` | "Yes" | Make logging volatile so that it is written to memory rather than the SD card to reduce wear; logs will be lost over reboot as a result but important logs are streamed to cloud storage in real time. 
+| Install a virtual environment | SC:`venv_dir` | "venv" | Uses uv to install a venv unless one already exists at this location
+| Firewall | SC:`enable_firewall` | "Yes" | Installs and configures UFW (Uncomplicated Firewall)
+| Manage LEDs | SC:`manage_leds` | "Yes" | Manage the LED status indicator; set to "No" if you want to manage LEDs differently
+| Install type | SC:`install_type` | "rpi_sensor" | Should always be rpi_sensor unless you are a power user using the device for system test purposes.
+| Enable I2C | SC:`enable_i2c` | "Yes" | Enables the I2C interfaces for connecting I2C-based sensors
+| Interface naming | SC:`enable_predictable_network_interface_names` | "Yes" | Forces Raspberry Pi to use predictable interface names (eg wlan0)
 
+### Fleet configuration options
+See the examples (`src/expidite_rpi/example/my_fleet_config.py`) and object definition for `DeviceCfg` in `/src/expidite_rpi/core/device_config_objects.py`.
+ 
