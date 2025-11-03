@@ -149,7 +149,7 @@ class SystemCfg(BaseSettings):
     # The URL for the Git repo with the user's config and custom sensor code.
     my_git_repo_url: str = FAILED_TO_LOAD
     # The name of the branch in the Git repo to use.
-    my_git_branch: str = FAILED_TO_LOAD
+    my_git_branch: str = "main"
     # The name of the SSH key file in the .expidite directory that 
     # gives access to the Git repo if it is private.
     # This can field can be left at FAILED_TO_LOAD if the repo is public.
