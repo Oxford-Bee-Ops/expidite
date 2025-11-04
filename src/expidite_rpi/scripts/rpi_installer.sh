@@ -142,6 +142,7 @@ install_ssh_keys() {
     # Otherwise, create the ~/.ssh directory if it doesn't exist
     if [ ! -d "$HOME/.ssh" ]; then
         mkdir -p "$HOME/.ssh" || { echo "Failed to create ~/.ssh directory"; exit 1; }
+        chmod 700 "$HOME/.ssh" || { echo "Failed to set permissions for ~/.ssh directory"; exit 1; }
     fi
 
     # Only install keys if $my_git_ssh_private_key_file is set in the system.cfg file
@@ -397,6 +398,7 @@ install_user_code() {
         
         # Ensure known_hosts exists and add GitHub key if necessary
         mkdir -p "$HOME/.ssh"
+        chmod 700 "$HOME/.ssh"
         touch "$HOME/.ssh/known_hosts"
         chmod 600 "$HOME/.ssh/known_hosts"
         if ! ssh-keygen -F github.com > /dev/null; then
