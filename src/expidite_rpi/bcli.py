@@ -88,7 +88,7 @@ def run_cmd_live_echo(cmd: str) -> str:
 
 
 def check_if_setup_required() -> None:
-    """Check if setup is required by verifying keys."""
+    """Check if setup is required by verifying keys and device inventory."""
     attempts = 0
     max_attempts = 3
     while not check_keys_env():
@@ -98,6 +98,9 @@ def check_if_setup_required() -> None:
             sys.exit(1)
         click.echo("Press any key to retry setup...")
         click.getchar()
+    
+    # Check if device is found in inventory
+    check_device_in_inventory()
 
 
 def check_keys_env() -> bool:
@@ -129,6 +132,38 @@ def check_keys_env() -> bool:
         click.echo("# ")
         click.echo(f"{dash_line}")
         return False
+
+
+def check_device_in_inventory() -> None:
+    """Check if this device's ID is found in the fleet configuration inventory."""
+    try:
+        # Check if the current device is in the already-loaded inventory
+        if root_cfg.my_device_id not in root_cfg.INVENTORY:
+            click.echo(f"{dash_line}")
+            click.echo("# DEVICE NOT FOUND IN INVENTORY")
+            click.echo("# ")
+            click.echo(f"# This device ID ({root_cfg.my_device_id}) "
+                       f"is not configured in your fleet inventory.")
+            click.echo("# ")
+            click.echo("# This typically means one of:")
+            click.echo("# 1. The device's MAC address has not been added to your fleet configuration")
+            click.echo("# 2. The fleet configuration module is not accessible or has errors")
+            click.echo("# 3. The system.cfg file points to an incorrect fleet configuration")
+            click.echo("# ")
+            click.echo("# To fix this:")
+            click.echo("# 1. Get this device's MAC address: cat /sys/class/net/wlan0/address")
+            click.echo(f"#    (This device's MAC-based ID: {root_cfg.my_device_id})")
+            click.echo("# 2. Add the device configuration to your fleet config file")
+            click.echo("# 3. Update your git repository with the new configuration")
+            click.echo("# 4. Run 'Update Software' from the Maintenance menu")
+            click.echo("# ")
+            click.echo("# You can continue to use the CLI for maintenance and debugging,")
+            click.echo("# but RpiCore will not start properly until this device is configured.")
+            click.echo("# ")
+            click.echo(f"{dash_line}")
+    except Exception as e:
+        logger.debug(f"Error checking device inventory: {e}")
+        # Don't show this error to user as it may be normal during setup
 
 
 class InteractiveMenu():
@@ -775,7 +810,7 @@ class InteractiveMenu():
         """Interactive menu for navigating commands."""
         #click.clear()
 
-        # Check if we need to setup keys or git repo
+        # Check if we need to setup keys or git repo or inventory
         check_if_setup_required()
 
         # Display status

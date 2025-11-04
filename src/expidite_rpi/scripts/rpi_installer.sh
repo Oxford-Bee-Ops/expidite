@@ -286,8 +286,8 @@ install_expidite() {
         echo "Warning: Branch '$expidite_git_branch' does not exist in the repository."
     fi
 
-    # 1. Get remote HEAD commit hash
-    EXP_REMOTE_HASH=$(git ls-remote "git@github.com:oxford-bee-ops/expidite.git" "refs/heads/$expidite_git_branch" | awk '{print $1}')
+    # 1. Get remote HEAD commit hash (using HTTPS since expidite is a public repository)
+    EXP_REMOTE_HASH=$(git ls-remote "https://github.com/oxford-bee-ops/expidite.git" "refs/heads/$expidite_git_branch" | awk '{print $1}')
 
     # 2. Load last-installed hash (if any)
     if [[ -f "$EXP_HASH_FILE" ]]; then
@@ -333,19 +333,30 @@ install_expidite() {
     fi
 }
 
-# Utility function to fix Git repository URLs
+# Utility function to determine if we're using SSH or HTTPS and format URLs accordingly
 fix_my_git_repo() {
-    # Fix the Git repository URL if we're doing a direct git clone for system test installations
-    # Normal URL format: git@github.com/oxford-bee-ops/expidite.git
-    # SSH URL format:    git@github.com:oxford-bee-ops/expidite.git
-    #
-    # Replace the slash following github.com with a colon
-    # This is required for the git clone command to work with SSH
-    # The colon is required for SSH URLs, but not for HTTPS URLs
-    git_repo_url="$1"
-    if [[ $git_repo_url == *"github.com/"* ]]; then
-        # Replace the slash with a colon
-        git_repo_url="${git_repo_url/github.com\//github.com:}"
+    local git_repo_url="$1"
+    local use_ssh="$2"
+    
+    if [ "$use_ssh" == "true" ]; then
+        # Convert to SSH format for private repos
+        if [[ $git_repo_url == *"github.com/"* ]] && [[ $git_repo_url != *"git@"* ]]; then
+            # Replace github.com/ with github.com: for SSH
+            git_repo_url="${git_repo_url/github.com\//github.com:}"
+        fi
+        # Ensure git@ prefix for SSH
+        if [[ $git_repo_url != *"git@"* ]]; then
+            git_repo_url="git@$git_repo_url"
+        fi
+    else
+        # Convert to HTTPS format for public repos
+        if [[ $git_repo_url == *"git@github.com:"* ]]; then
+            # Convert SSH format to HTTPS
+            git_repo_url="${git_repo_url/git@github.com:/https://github.com/}"
+        elif [[ $git_repo_url != *"https://"* ]] && [[ $git_repo_url != *"http://"* ]]; then
+            # Add https:// prefix if missing
+            git_repo_url="https://$git_repo_url"
+        fi
     fi
     echo "$git_repo_url"
 }
@@ -359,38 +370,48 @@ install_user_code() {
         exit 1
     fi
 
-    # Fix the Git repository URL format for SSH
-    ssh_git_repo_url=$(fix_my_git_repo "$my_git_repo_url")
-    echo "SSH Git Repository URL: $ssh_git_repo_url"
+    # Fix the Git repository URL format based on access method
+    fixed_git_repo_url=$(fix_my_git_repo "$my_git_repo_url" "$use_ssh")
+    echo "Git Repository URL: $fixed_git_repo_url (using $([ "$use_ssh" == "true" ] && echo "SSH" || echo "HTTPS"))"
 
     ############################################
-    # Manage SSH prep
+    # Determine if using SSH (private repo) or HTTPS (public repo)
     ############################################
-    # Verify that the private key file exists
-    if [ ! -f "$HOME/.ssh/$my_git_ssh_private_key_file" ]; then
-        echo "Error: Private key file ~/.ssh/$my_git_ssh_private_key_file does not exist."
-        # This is not a fatal error (it may be intentional if a public repo), but we need to warn the user
+    use_ssh="false"
+    
+    # Check if SSH key file is specified and exists
+    if [ -n "$my_git_ssh_private_key_file" ] && [ -f "$HOME/.ssh/$my_git_ssh_private_key_file" ]; then
+        use_ssh="true"
+        echo "Private key file ~/.ssh/$my_git_ssh_private_key_file found. Using SSH for private repository."
+
+        # Ensure the private key has correct permissions
+        chmod 600 "$HOME/.ssh/$my_git_ssh_private_key_file"
+
+        # Set the GIT_SSH_COMMAND with timeout and retry options
+        export GIT_SSH_COMMAND="ssh -i $HOME/.ssh/$my_git_ssh_private_key_file -o IdentitiesOnly=yes -o ConnectTimeout=10 -o ConnectionAttempts=2"
+
+        # Persist the GIT_SSH_COMMAND in .bashrc if not already present
+        if ! grep -qs "export GIT_SSH_COMMAND=" "$HOME/.bashrc"; then
+            echo "export GIT_SSH_COMMAND='ssh -i \$HOME/.ssh/$my_git_ssh_private_key_file -o IdentitiesOnly=yes -o ConnectTimeout=10 -o ConnectionAttempts=2'" >> "$HOME/.bashrc"
+        fi
+        
+        # Ensure known_hosts exists and add GitHub key if necessary
+        mkdir -p "$HOME/.ssh"
+        touch "$HOME/.ssh/known_hosts"
+        chmod 600 "$HOME/.ssh/known_hosts"
+        if ! ssh-keygen -F github.com > /dev/null; then
+            echo "Adding GitHub key to known_hosts"
+            ssh-keyscan github.com >> "$HOME/.ssh/known_hosts"
+        fi
+    elif [ -n "$my_git_ssh_private_key_file" ]; then
+        echo "Warning: SSH key file $my_git_ssh_private_key_file specified but not found at ~/.ssh/$my_git_ssh_private_key_file"
+        echo "Falling back to HTTPS for public repository access."
+        use_ssh="false"
+    else
+        echo "No SSH key file specified. Using HTTPS for public repository access."
+        use_ssh="false"
     fi
 
-    # Ensure the private key has correct permissions
-    chmod 600 "$HOME/.ssh/$my_git_ssh_private_key_file"
-
-    # Set the GIT_SSH_COMMAND with timeout and retry options
-    export GIT_SSH_COMMAND="ssh -i $HOME/.ssh/$my_git_ssh_private_key_file -o IdentitiesOnly=yes -o ConnectTimeout=10 -o ConnectionAttempts=2"
-
-    # Persist the GIT_SSH_COMMAND in .bashrc if not already present
-    if ! grep -qs "export GIT_SSH_COMMAND=" "$HOME/.bashrc"; then
-        echo "export GIT_SSH_COMMAND='ssh -i \$HOME/.ssh/$my_git_ssh_private_key_file -o IdentitiesOnly=yes -o ConnectTimeout=10 -o ConnectionAttempts=2'" >> "$HOME/.bashrc"
-    fi
-
-    # Ensure known_hosts exists and add GitHub key if necessary
-    mkdir -p "$HOME/.ssh"
-    touch "$HOME/.ssh/known_hosts"
-    chmod 600 "$HOME/.ssh/known_hosts"
-    if ! ssh-keygen -F github.com > /dev/null; then
-        echo "Adding GitHub key to known_hosts"
-        ssh-keyscan github.com >> "$HOME/.ssh/known_hosts"
-    fi
 
     ##############################################
     # Do the Git clone
@@ -412,8 +433,12 @@ install_user_code() {
 
     source "$HOME/$venv_dir/bin/activate" || { echo "Failed to activate virtual environment"; exit 1; }
 
-    # 1. Get remote HEAD commit hash
-    REMOTE_HASH=$(git ls-remote "git@$ssh_git_repo_url" "refs/heads/$my_git_branch" | awk '{print $1}')
+    # 1. Get remote HEAD commit hash using the appropriate URL format
+    if [ "$use_ssh" == "true" ]; then
+        REMOTE_HASH=$(git ls-remote "$fixed_git_repo_url" "refs/heads/$my_git_branch" | awk '{print $1}')
+    else
+        REMOTE_HASH=$(git ls-remote "$fixed_git_repo_url" "refs/heads/$my_git_branch" | awk '{print $1}')
+    fi
 
     # 2. Load last-installed hash (if any)
     if [[ -f "$HASH_FILE" ]]; then
@@ -438,11 +463,16 @@ install_user_code() {
             fi
             mkdir -p "$project_dir"
             cd "$project_dir"
-            git clone --depth 1 --branch "$my_git_branch" "git@$ssh_git_repo_url" "$project_dir"
+            git clone --depth 1 --branch "$my_git_branch" "$fixed_git_repo_url" "$project_dir"
             pip install .[dev] || { echo "Failed to install system test code"; }
             cd "$HOME/.expidite" 
         else
-            pip install "git+ssh://git@$my_git_repo_url@$my_git_branch" || { echo "Failed to install $my_git_repo_url@$my_git_branch"; }    
+            # Use appropriate URL scheme based on access method
+            if [ "$use_ssh" == "true" ]; then
+                pip install "git+ssh://$fixed_git_repo_url@$my_git_branch" || { echo "Failed to install $fixed_git_repo_url@$my_git_branch"; }
+            else
+                pip install "git+$fixed_git_repo_url@$my_git_branch" || { echo "Failed to install $fixed_git_repo_url@$my_git_branch"; }
+            fi
         fi
 
         # Cache the new hash

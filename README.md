@@ -97,7 +97,9 @@ To execute your particular experimental setup, you need to configure your device
     - To get the mac address run `cat /sys/class/net/wlan0/address`
     - See the example fleet_config.py for more details.
 - Edit the **system.cfg**:
-    - If you want RpiCore to regularly auto-update your devices to the latest code from your git repo, you will need to set `my_git_repo_url`.
+    - Set `my_git_repo_url` to your Git repository URL
+    - **For PUBLIC repositories**: Comment out `my_git_ssh_private_key_file` and use HTTPS URL format
+    - **For PRIVATE repositories**: Set `my_git_ssh_private_key_file` to your SSH key filename and use SSH URL format
     - See the system.cfg file in `/src/expidite_rpi/example/` for more details and more options.
 
 ### USER FLOW - PRODUCTION PROCESS FOR AN EXPERIMENT WITH MANY DEVICES
@@ -115,7 +117,8 @@ To execute your particular experimental setup, you need to configure your device
 For each device, you will need to:
 - Install Raspberry Pi OS on the SD card (or buy it pre-installed)
 - Copy **keys.env**, **system.cfg** and **rpi_installer.sh** to the device
-- Install SSH keys so the device can access your private repo - see GitHub.com for details
+- If using a private repository: Install SSH keys so the device can access your private repo - see GitHub.com for details
+- If using a public repository: No SSH keys needed, but ensure `my_git_ssh_private_key_file` is commented out in **system.cfg**
 - Run `./rpi_installer.sh` as per above
 
 With the correct config and auto-start set to yes, your device will immediately start recording - and will continue to do so across reboots / power cycle, etc.
