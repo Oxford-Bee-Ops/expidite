@@ -371,10 +371,6 @@ install_user_code() {
         exit 1
     fi
 
-    # Fix the Git repository URL format based on access method
-    fixed_git_repo_url=$(fix_my_git_repo "$my_git_repo_url" "$use_ssh")
-    echo "Git Repository URL: $fixed_git_repo_url (using $([ "$use_ssh" == "true" ] && echo "SSH" || echo "HTTPS"))"
-
     ############################################
     # Determine if using SSH (private repo) or HTTPS (public repo)
     ############################################
@@ -414,6 +410,9 @@ install_user_code() {
         use_ssh="false"
     fi
 
+    # Fix the Git repository URL format based on access method (now that use_ssh is determined)
+    fixed_git_repo_url=$(fix_my_git_repo "$my_git_repo_url" "$use_ssh")
+    echo "Git Repository URL: $fixed_git_repo_url (using $([ "$use_ssh" == "true" ] && echo "SSH" || echo "HTTPS"))"
 
     ##############################################
     # Do the Git clone
