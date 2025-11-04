@@ -5,7 +5,6 @@ from typing import Optional
 
 import cv2
 import pandas as pd
-
 from expidite_rpi.core import api, file_naming
 from expidite_rpi.core import configuration as root_cfg
 from expidite_rpi.core.dp import DataProcessor

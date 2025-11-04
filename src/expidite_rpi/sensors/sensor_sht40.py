@@ -1,14 +1,13 @@
 from dataclasses import dataclass
 from time import sleep
 
-from sensirion_driver_adapters.i2c_adapter.i2c_channel import I2cChannel
-from sensirion_i2c_driver import CrcCalculator, I2cConnection, LinuxI2cTransceiver
-from sensirion_i2c_sht4x.device import Sht4xDevice
-
 from expidite_rpi.core import api
 from expidite_rpi.core import configuration as root_cfg
 from expidite_rpi.core.dp_config_objects import Stream
 from expidite_rpi.core.sensor import Sensor, SensorCfg
+from sensirion_driver_adapters.i2c_adapter.i2c_channel import I2cChannel
+from sensirion_i2c_driver import CrcCalculator, I2cConnection, LinuxI2cTransceiver
+from sensirion_i2c_sht4x.device import Sht4xDevice
 
 logger = root_cfg.setup_logger("expidite")
 

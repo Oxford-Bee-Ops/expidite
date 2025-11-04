@@ -1,7 +1,6 @@
 from time import sleep
 
 import pytest
-
 from expidite_rpi.core import configuration as root_cfg
 from expidite_rpi.core.device_config_objects import DeviceCfg
 from expidite_rpi.rpi_core import RpiCore

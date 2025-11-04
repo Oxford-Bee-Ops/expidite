@@ -2,7 +2,6 @@ import os
 
 import pandas as pd
 import pytest
-
 from expidite_rpi.core import configuration as root_cfg
 from expidite_rpi.utils.journal import Journal
 
