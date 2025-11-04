@@ -49,6 +49,13 @@ You will need:
 - an Azure blobstore account for storage of your sensor output
 - some basic experience with Python coding
 
+In terms of applications, it is helpful to install:
+- an IDE, such as **Microsoft Visual Studio Code**
+- **GitHub Desktop** to manage code easily
+- **Raspberry Pi Imager** to flash the Raspberry Pi OS onto SD cards
+- an SSH terminal app, such as **PuTTY**, to remotely log in to your RPI 
+- a secure file transfer app, such as **WinSCP**, to upload the initial config to the RPI
+- **Microsoft Azure Storage Explorer** to view your files in the Azure blobstore
 
 ### USER FLOW - INITIAL SETUP
 The following steps enable you to run the default example sensor on your RPI.  Do this first to prove that your cloud storage config is working and to learn the basics.  Then you can move on to defining your actual experimental setup!
