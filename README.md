@@ -56,7 +56,7 @@ The following steps enable you to run the default example sensor on your RPI.  D
 - Physically build your RPI and attach your chosen sensors.
 - Get an SD card with the Raspberry Pi OS.  If you use Raspberry Pi Imager, enabling SSH access and including default Wifi config will make your life easier.
 - Install the SD card and power up your RPI.
-- Copy the **keys.env** and **system.cfg** files from the expidite repo `/src/example` folder to your own computer / dev environment / git project.
+- Copy the **keys.env** and **system.cfg** files from the expidite repo `/src/expidite_rpi/example/` folder to your own computer / dev environment / git project.
 - Edit **keys.env**:
     - Set `cloud_storage_key` to the Shared Access Signature for your Azure Storage accounts (see explanatory notes in keys.env).
     - For security reasons, do **not** check your keys.env into Git.
@@ -64,9 +64,9 @@ The following steps enable you to run the default example sensor on your RPI.  D
     - create an **.expidite** folder in your user home directory 
         - `mkdir ~/.expidite`
     - copy your **keys.env** and **system.cfg** to the .expidite folder
-    - copy the **rpi_installer.sh** files from `/src/expidite_rpi/scripts` to the .expidite folder
+    - copy the **rpi_installer.sh** file from `/src/expidite_rpi/scripts/` to the .expidite folder
     - run the rpi_installer.sh script:
-        - `cd ~/.expidite &&  dos2unix *.sh && chmod +x *.sh && ./rpi_installer.sh`
+        - `cd ~/.expidite && dos2unix *.sh && chmod +x *.sh && ./rpi_installer.sh`
         - this will take a few minutes as it creates a virtual environment, updates to the latest OS packages, installs Expidite's RpiCore and its dependencies, and sets up the RPI ready for use as a sensor.
     - once RpiCore is installed, you can test it using either:
         - CLI at a shell prompt:
@@ -74,7 +74,7 @@ The following steps enable you to run the default example sensor on your RPI.  D
             - Option `2. View Status`
         - In Python:
             - `python`
-            - `from rpi_core import RpiCore`
+            - `from expidite_rpi.core import RpiCore`
             - `rc = RpiCore()`
             - `rc.start()`
 - You should see data appearing in each of the containers in your cloud storage account.
@@ -91,7 +91,7 @@ To execute your particular experimental setup, you need to configure your device
     - See the example fleet_config.py for more details.
 - Edit the **system.cfg**:
     - If you want RpiCore to regularly auto-update your devices to the latest code from your git repo, you will need to set `my_git_repo_url`.
-    - See the system.cfg file in `/src/expidite_rpi/example` for more details and more options.
+    - See the system.cfg file in `/src/expidite_rpi/example/` for more details and more options.
 
 ### USER FLOW - PRODUCTION PROCESS FOR AN EXPERIMENT WITH MANY DEVICES
 #### Pre-requisites
@@ -107,7 +107,7 @@ To execute your particular experimental setup, you need to configure your device
 #### Deployment
 For each device, you will need to:
 - Install Raspberry Pi OS on the SD card (or buy it pre-installed)
-- Copy on **keys.env**, **system.cfg** and **rpi_installer.sh**
+- Copy **keys.env**, **system.cfg** and **rpi_installer.sh** to the device
 - Install SSH keys so the device can access your private repo - see GitHub.com for details
 - Run `./rpi_installer.sh` as per above
 
@@ -146,7 +146,7 @@ KE=keys.env; SC=system.cfg; FC=Fleet config
 | Auto-start RpiCore | SC:`auto_start` | Starts RpiCore automatically after reboot; unless manual mode invoked via CLI.
 | Git repo | SC:`my_git_repo_url` | "Not set" | URL of your Git repo containing your configuration and any custom code
 | Git branch | SC:`my_git_branch` | "main" | Name of the Git branch to use if not main
-| SSH keys | SC:`my_git_ssh_private_key_file` | "Not set" | The name of the SSH key file in the .expidite directory that gives access to the Git repo if it is private. This can field can be left commented out if the repo is public.
+| SSH keys | SC:`my_git_ssh_private_key_file` | "Not set" | The name of the SSH key file in the .expidite directory that gives access to the Git repo if it is private. This field can be left commented out if the repo is public.
 | Fleet config | SC:`my_fleet_config` | | The fully-qualified object name of the fleet config inventory. For example "my_project.my_fleet_config.INVENTORY".
 | Start-up script | SC:`my_start_script` | | The fully-qualified module name to call to start the device. For example "my_project.my_start_script". This is called on reboot or when expidite is started via bcli.
 | SD card wear | SC:`enable_volatile_logs` | "Yes" | Make logging volatile so that it is written to memory rather than the SD card to reduce wear; logs will be lost over reboot as a result but important logs are streamed to cloud storage in real time. 
