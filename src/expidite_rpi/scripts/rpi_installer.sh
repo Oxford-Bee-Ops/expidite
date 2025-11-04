@@ -36,6 +36,13 @@ else
     os_update="no"
 fi
 
+# Define common file paths used throughout the script
+FLAGS_DIR="$HOME/.expidite/flags"
+REBOOT_REQUIRED_FLAG="$FLAGS_DIR/reboot_required"
+REBOOT_COUNT_FILE="$FLAGS_DIR/reboot_count"
+REBOOT_TIMESTAMP_FILE="$FLAGS_DIR/last_reboot_time"
+REBOOT_DISABLED_FLAG="$FLAGS_DIR/reboot_disabled"
+
 # Function to check pre-requisites
 check_prerequisites() {
     echo "Checking pre-requisites..."
@@ -72,10 +79,33 @@ check_prerequisites() {
     echo "All pre-requisites are met."
 
     # Ensure the flags directory exists
-    mkdir -p "$HOME/.expidite/flags"
-    # Delete the reboot_required flag if it exists
-    if [ -f "$HOME/.expidite/flags/reboot_required" ]; then
-        rm "$HOME/.expidite/flags/reboot_required"
+    mkdir -p "$FLAGS_DIR"
+    
+    # Check for repeated reboot failures to prevent cyclical reboots
+    current_time=$(date +%s)
+    
+    if [ -f "$REBOOT_COUNT_FILE" ]; then
+        reboot_count=$(<"$REBOOT_COUNT_FILE")
+        last_reboot_time=$(<"$REBOOT_TIMESTAMP_FILE" 2>/dev/null || echo "0")
+        time_since_reboot=$((current_time - last_reboot_time))
+        
+        # If we've rebooted more than 3 times in the last hour, stop rebooting
+        if [ "$reboot_count" -gt 3 ] && [ "$time_since_reboot" -lt 3600 ]; then
+            echo "WARNING: Too many reboots detected ($reboot_count in last hour). Disabling automatic reboots."
+            rm -f "$REBOOT_REQUIRED_FLAG"
+            echo "REBOOT_DISABLED" > "$REBOOT_DISABLED_FLAG"
+            return
+        elif [ "$time_since_reboot" -gt 3600 ]; then
+            # Reset counter after 1 hour
+            echo "0" > "$REBOOT_COUNT_FILE"
+        fi
+    else
+        echo "0" > "$REBOOT_COUNT_FILE"
+    fi
+    
+    # Delete the reboot_required flag if it exists (normal startup)
+    if [ -f "$REBOOT_REQUIRED_FLAG" ]; then
+        rm "$REBOOT_REQUIRED_FLAG"
     fi
 
 }
@@ -114,19 +144,24 @@ export_system_cfg() {
     if [ -z "$expidite_git_branch" ]; then
         expidite_git_branch="main"
     fi
-
 }
 
 # Function to set the LEDs on (if available)
 # We just need to write "red:blink:0.5" to /.expidite/flags/led_status
 TMP_FLAGS_DIR="/expidite/tmp/tmp_flags"
 set_leds_on() {
-    mkdir -p "$TMP_FLAGS_DIR" || { echo "Failed to create flags directory"; }
-    echo "red:blink:0.25" > "$TMP_FLAGS_DIR/LED_STATUS" || { echo "Failed to set LED status"; }
+    # Test whether manage_leds is enabled
+    if [ "$manage_leds" != "No" ]; then
+        mkdir -p "$TMP_FLAGS_DIR" || { echo "Failed to create flags directory"; }
+        echo "red:blink:0.25" > "$TMP_FLAGS_DIR/LED_STATUS" || { echo "Failed to set LED status"; }
+    fi
 }
 
 set_leds_off() {
-    echo "red:blink:0.25" > "$TMP_FLAGS_DIR/LED_STATUS" || { echo "Failed to set LED status"; }
+    # test whether manage_leds is enabled
+    if [ "$manage_leds" != "No" ]; then
+        echo "red:off" > "$TMP_FLAGS_DIR/LED_STATUS" || { echo "Failed to set LED status"; }
+    fi
 }
 
 # Install SSH keys from the ./expidite directory to the ~/.ssh directory
@@ -223,7 +258,7 @@ install_os_packages() {
     echo "OS packages installed successfully."
     # A reboot is always required after installing packages, otherwise the system is unstable 
     # (eg rpicam broken pipe)
-    touch "$HOME/.expidite/flags/reboot_required"
+    touch "$REBOOT_REQUIRED_FLAG"
 }
 
 # Function to install the Uncomplicated Firewall and set appropriate rules.
@@ -312,7 +347,7 @@ install_expidite() {
         if [ "$current_version" != "$updated_version" ]; then
             echo "Expidite version has changed from $current_version to $updated_version.  Reboot required."
             # Set a flag to indicate that a reboot is required
-            touch "$HOME/.expidite/flags/reboot_required"
+            touch "$REBOOT_REQUIRED_FLAG"
         fi
     else
         echo "No changes detected on branch $expidite_git_branch. Skipping install."
@@ -455,6 +490,8 @@ install_user_code() {
 
         # We don't return exit code 1 if the install fails, because we want to continue with the rest of the script
         # and this can happen due to transient network issues causing github.com name resolution to fail.
+        install_success="false"
+        
         if [ "$install_type" == "system_test" ]; then
             # On system test installations, we want the test code as well, so we run pip install .[dev]
             project_dir="$HOME/$venv_dir/src/$project_name"
@@ -464,23 +501,42 @@ install_user_code() {
             fi
             mkdir -p "$project_dir"
             cd "$project_dir"
-            git clone --depth 1 --branch "$my_git_branch" "$fixed_git_repo_url" "$project_dir"
-            pip install .[dev] || { echo "Failed to install system test code"; }
+            if git clone --depth 1 --branch "$my_git_branch" "$fixed_git_repo_url" "$project_dir"; then
+                if pip install .[dev]; then
+                    install_success="true"
+                else
+                    echo "Failed to install system test code"
+                fi
+            else
+                echo "Failed to clone repository for system test"
+            fi
             cd "$HOME/.expidite" 
         else
             # Use appropriate URL scheme based on access method
             if [ "$use_ssh" == "true" ]; then
                 # For SSH URLs, pip expects git+ prefix without ssh:// 
-                pip install "git+$fixed_git_repo_url@$my_git_branch" || { echo "Failed to install $fixed_git_repo_url@$my_git_branch"; }
+                if pip install "git+$fixed_git_repo_url@$my_git_branch"; then
+                    install_success="true"
+                else
+                    echo "Failed to install $fixed_git_repo_url@$my_git_branch"
+                fi
             else
                 # For HTTPS URLs, pip expects git+ prefix
-                pip install "git+$fixed_git_repo_url@$my_git_branch" || { echo "Failed to install $fixed_git_repo_url@$my_git_branch"; }
+                if pip install "git+$fixed_git_repo_url@$my_git_branch"; then
+                    install_success="true"
+                else
+                    echo "Failed to install $fixed_git_repo_url@$my_git_branch"
+                fi
             fi
         fi
 
-        # Cache the new hash
-        echo "$REMOTE_HASH" > "$HASH_FILE"
-        echo "Installation complete; hash updated."
+        # Only cache the new hash if installation was successful
+        if [ "$install_success" == "true" ]; then
+            echo "$REMOTE_HASH" > "$HASH_FILE"
+            echo "Installation complete; hash updated."
+        else
+            echo "Installation failed; hash NOT updated to prevent masking failures."
+        fi
     else
         echo "No changes on $my_git_branch ($REMOTE_HASH). Skipping install."
     fi
@@ -495,7 +551,7 @@ install_user_code() {
     if [ "$REMOTE_HASH" != "$LOCAL_HASH" ]; then
         echo "User's code hash has changed updated_version.  Reboot required."
         # Set a flag to indicate that a reboot is required
-        touch "$HOME/.expidite/flags/reboot_required"
+        touch "$REBOOT_REQUIRED_FLAG"
     fi
 }
 
@@ -758,11 +814,35 @@ install_leds_service() {
 # Reboot if required
 ################################################
 reboot_if_required() {
-    if [ -f "$HOME/.expidite/flags/reboot_required" ]; then
-        echo "Reboot required. Rebooting now..."
+    # Check if reboots are disabled due to too many failures
+    if [ -f "$REBOOT_DISABLED_FLAG" ]; then
+        echo "Automatic reboots are disabled due to repeated failures."
+        echo "Manual intervention required. Check logs and run 'rm $REBOOT_DISABLED_FLAG' to re-enable."
+        return
+    fi
+    
+    if [ -f "$REBOOT_REQUIRED_FLAG" ]; then
+        # Increment reboot counter
+        
+        if [ -f "$REBOOT_COUNT_FILE" ]; then
+            reboot_count=$(<"$REBOOT_COUNT_FILE")
+            reboot_count=$((reboot_count + 1))
+        else
+            reboot_count=1
+        fi
+        
+        echo "$reboot_count" > "$REBOOT_COUNT_FILE"
+        echo "$(date +%s)" > "$REBOOT_TIMESTAMP_FILE"
+        
+        echo "Reboot required. This will be reboot #$reboot_count. Rebooting now..."
         sudo reboot
     else
         echo "No reboot required."
+        # We can safely reset the reboot counter here
+        REBOOT_COUNT_FILE="$HOME/.expidite/flags/reboot_count"
+        if [ -f "$REBOOT_COUNT_FILE" ]; then
+            rm "$REBOOT_COUNT_FILE"
+        fi
     fi
 }
 
