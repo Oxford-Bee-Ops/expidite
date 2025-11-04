@@ -421,6 +421,10 @@ class DPnode():
         stream = self.get_stream(stream_index)
         data_id = stream.get_data_id(self.sensor_index)
 
+        # Be robust to users passing in str instead of Path
+        if isinstance(src_file, str):
+            src_file = Path(src_file)
+
         # Check that the file is present and not empty
         if not src_file.exists():
             raise FileNotFoundError(f"File {src_file} not found.")
