@@ -470,8 +470,10 @@ install_user_code() {
         else
             # Use appropriate URL scheme based on access method
             if [ "$use_ssh" == "true" ]; then
-                pip install "git+ssh://$fixed_git_repo_url@$my_git_branch" || { echo "Failed to install $fixed_git_repo_url@$my_git_branch"; }
+                # For SSH URLs, pip expects git+ prefix without ssh:// 
+                pip install "git+$fixed_git_repo_url@$my_git_branch" || { echo "Failed to install $fixed_git_repo_url@$my_git_branch"; }
             else
+                # For HTTPS URLs, pip expects git+ prefix
                 pip install "git+$fixed_git_repo_url@$my_git_branch" || { echo "Failed to install $fixed_git_repo_url@$my_git_branch"; }
             fi
         fi
