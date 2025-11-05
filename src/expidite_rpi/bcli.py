@@ -144,6 +144,7 @@ def check_device_in_inventory() -> None:
             click.echo("# ")
             click.echo(f"# This device ID ({root_cfg.my_device_id}) "
                        f"is not configured in your fleet inventory.")
+            click.echo(f"# Fleet inventory: {root_cfg.system_cfg.my_fleet_config}")
             click.echo("# ")
             click.echo("# This typically means one of:")
             click.echo("# 1. The device's MAC address has not been added to your fleet configuration")
