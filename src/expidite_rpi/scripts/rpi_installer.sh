@@ -531,25 +531,23 @@ install_user_code() {
         if [ "$install_success" == "true" ]; then
             echo "$REMOTE_HASH" > "$HASH_FILE"
             echo "Installation complete; hash updated."
+            
+            # Only set reboot flag if installation succeeded AND hash actually changed
+            echo "User's code hash has changed and installation succeeded. Reboot required."
+            touch "$HOME/.expidite/flags/reboot_required"
         else
             echo "Installation failed; hash NOT updated to prevent masking failures."
+            echo "No reboot will be triggered due to installation failure."
         fi
     else
         echo "No changes on $my_git_branch ($REMOTE_HASH). Skipping install."
     fi
     
     updated_version=$(pip show "$project_name" | grep Version)
-    echo "User's code installed successfully. Now version: $updated_version"
+    echo "User's code installation attempt completed. Current version: $updated_version"
 
     # We store the updated_version in the flags directory for later use in logging
     echo "$updated_version" > "$HOME/.expidite/user_code_version"
-
-    # If the code has changed, we need to set a flag so we reboot at the end of the script
-    if [ "$REMOTE_HASH" != "$LOCAL_HASH" ]; then
-        echo "User's code hash has changed updated_version.  Reboot required."
-        # Set a flag to indicate that a reboot is required
-        touch "$HOME/.expidite/flags/reboot_required"
-    fi
 }
 
 ###############################################
