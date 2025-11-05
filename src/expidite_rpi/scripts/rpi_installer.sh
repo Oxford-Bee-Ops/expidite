@@ -523,8 +523,10 @@ install_user_code() {
         else
             # Use appropriate URL scheme based on access method
             if [ "$use_ssh" == "true" ]; then
-                # For SSH URLs, pip expects git+ prefix with SSH format (no ssh:// prefix needed)
-                pip_url="git+$fixed_git_repo_url@$my_git_branch"
+                # For SSH URLs, pip expects git+ssh:// format
+                # Convert git@github.com:owner/repo.git to ssh://git@github.com/owner/repo.git
+                ssh_url="${fixed_git_repo_url/github.com:/github.com/}"
+                pip_url="git+ssh://$ssh_url@$my_git_branch"
                 if pip install "$pip_url"; then
                     install_success="true"
                 else
