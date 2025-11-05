@@ -370,20 +370,34 @@ fix_my_git_repo() {
     local use_ssh="$2"
     
     if [ "$use_ssh" == "true" ]; then
-        # Convert to SSH format for private repos
+        # Convert to SSH format for pip: git@github.com:owner/repo.git
         if [[ $git_repo_url == *"github.com/"* ]] && [[ $git_repo_url != *"git@"* ]]; then
-            # Replace github.com/ with github.com: for SSH
+            # Convert "github.com/owner/repo.git" to "git@github.com:owner/repo.git"
+            git_repo_url="${git_repo_url/github.com\//github.com:}"
+            git_repo_url="git@$git_repo_url"
+        elif [[ $git_repo_url == *"github.com:"* ]] && [[ $git_repo_url != *"git@"* ]]; then
+            # Convert "github.com:owner/repo.git" to "git@github.com:owner/repo.git"  
+            git_repo_url="git@$git_repo_url"
+        elif [[ $git_repo_url == *"https://github.com/"* ]]; then
+            # Convert "https://github.com/owner/repo.git" to "git@github.com:owner/repo.git"
+            git_repo_url="${git_repo_url/https:\/\/github.com\//git@github.com:}"
+        elif [[ $git_repo_url != *"git@"* ]]; then
+            # Fallback: assume it needs git@ prefix and colon format
+            git_repo_url="git@$git_repo_url"
+            # Convert any remaining forward slashes after github.com to colon
             git_repo_url="${git_repo_url/github.com\//github.com:}"
         fi
-        # Ensure git@ prefix for SSH
-        if [[ $git_repo_url != *"git@"* ]]; then
-            git_repo_url="git@$git_repo_url"
-        fi
     else
-        # Convert to HTTPS format for public repos
+        # Convert to HTTPS format for public repos: https://github.com/owner/repo.git
         if [[ $git_repo_url == *"git@github.com:"* ]]; then
-            # Convert SSH format to HTTPS
+            # Convert "git@github.com:owner/repo.git" to "https://github.com/owner/repo.git"
             git_repo_url="${git_repo_url/git@github.com:/https://github.com/}"
+        elif [[ $git_repo_url == *"git@github.com/"* ]]; then
+            # Convert "git@github.com/owner/repo.git" to "https://github.com/owner/repo.git"  
+            git_repo_url="${git_repo_url/git@github.com\//https://github.com/}"
+        elif [[ $git_repo_url == *"github.com:"* ]] && [[ $git_repo_url != *"git@"* ]]; then
+            # Convert "github.com:owner/repo.git" to "https://github.com/owner/repo.git"
+            git_repo_url="${git_repo_url/github.com:/https://github.com/}"
         elif [[ $git_repo_url != *"https://"* ]] && [[ $git_repo_url != *"http://"* ]]; then
             # Add https:// prefix if missing
             git_repo_url="https://$git_repo_url"
@@ -509,8 +523,8 @@ install_user_code() {
         else
             # Use appropriate URL scheme based on access method
             if [ "$use_ssh" == "true" ]; then
-                # For SSH URLs, pip expects git+ssh:// prefix
-                pip_url="git+ssh://$fixed_git_repo_url@$my_git_branch"
+                # For SSH URLs, pip expects git+ prefix with SSH format (no ssh:// prefix needed)
+                pip_url="git+$fixed_git_repo_url@$my_git_branch"
                 if pip install "$pip_url"; then
                     install_success="true"
                 else
