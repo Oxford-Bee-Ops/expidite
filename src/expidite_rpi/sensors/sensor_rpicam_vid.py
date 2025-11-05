@@ -18,8 +18,25 @@ logger = root_cfg.setup_logger("expidite")
 
 RPICAM_DATA_TYPE_ID = "RPICAM"
 RPICAM_STREAM_INDEX: int = 0
+RPICAM_STREAM: Stream = Stream(
+            description="Basic continuous video recording.",
+            type_id=RPICAM_DATA_TYPE_ID,
+            index=RPICAM_STREAM_INDEX,
+            format=api.FORMAT.MP4,
+            cloud_container="expidite-upload",
+            sample_probability="0.0",
+        )
 RPICAM_REVIEW_MODE_DATA_TYPE_ID = "RPICAMRM"
 RPICAM_REVIEW_MODE_STREAM_INDEX: int = 1
+RPICAM_REVIEW_MODE_STREAM: Stream = Stream(
+            description="Review mode image stream.",
+            type_id=RPICAM_REVIEW_MODE_DATA_TYPE_ID,
+            index=RPICAM_REVIEW_MODE_STREAM_INDEX,
+            format=api.FORMAT.JPG,
+            cloud_container="expidite-review-mode",
+            sample_probability="1.0",
+            storage_tier=api.StorageTier.HOT,
+        )
 
 @dataclass
 class RpicamSensorCfg(SensorCfg):
@@ -39,24 +56,7 @@ DEFAULT_RPICAM_SENSOR_CFG = RpicamSensorCfg(
     sensor_index=0,
     sensor_model="PiCameraModule3",
     description="Video sensor that uses rpicam-vid",
-    outputs=[
-        Stream(
-            description="Basic continuous video recording.",
-            type_id=RPICAM_DATA_TYPE_ID,
-            index=RPICAM_STREAM_INDEX,
-            format=api.FORMAT.MP4,
-            cloud_container="expidite-upload",
-            sample_probability="0.0",
-        ),
-        Stream(
-            description="Review mode image stream.",
-            type_id=RPICAM_REVIEW_MODE_DATA_TYPE_ID,
-            index=RPICAM_REVIEW_MODE_STREAM_INDEX,
-            format=api.FORMAT.MP4,
-            cloud_container="expidite-review-mode",
-            sample_probability="1.0",
-        )
-    ],
+    outputs=[RPICAM_STREAM, RPICAM_REVIEW_MODE_STREAM],
 )
 
 class RpicamSensor(Sensor):
@@ -96,7 +96,7 @@ class RpicamSensor(Sensor):
             self.save_recording(
                 RPICAM_REVIEW_MODE_STREAM_INDEX,
                 filename,
-                start_time=api.utc_now(),
+                start_time=api.utc_now()
             )
 
         except Exception as e:

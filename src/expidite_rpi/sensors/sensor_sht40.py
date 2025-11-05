@@ -11,24 +11,11 @@ from sensirion_i2c_sht4x.device import Sht4xDevice
 
 logger = root_cfg.setup_logger("expidite")
 
-SHT40_STREAM_INDEX = 0
 SHT40_SENSOR_INDEX = 68 # SHT40 i2c address, 0x44(68)
 SHT40_SENSOR_TYPE_ID = "SHT40"
 SHT40_FIELDS = ["temperature", "humidity"]
-
-@dataclass
-class SHT40SensorCfg(SensorCfg):
-    ############################################################
-    # SensorCfg fields
-    ############################################################
-    sensor_type: api.SENSOR_TYPE = api.SENSOR_TYPE.I2C
-    sensor_index: int = SHT40_SENSOR_INDEX
-    sensor_model: str = "SHT40"
-    description: str = "SHT40 Temperature and Humidity sensor"
-
-DEFAULT_SHT40_SENSOR_CFG = SHT40SensorCfg(
-    outputs=[
-        Stream(
+SHT40_STREAM_INDEX = 0
+SHT40_STREAM: Stream = Stream(
             description="Temperature and humidity data from SHT40",
             type_id=SHT40_SENSOR_TYPE_ID,
             index=SHT40_STREAM_INDEX,
@@ -36,7 +23,20 @@ DEFAULT_SHT40_SENSOR_CFG = SHT40SensorCfg(
             fields=SHT40_FIELDS,
             cloud_container="expidite-journals",
         )
-    ],
+
+@dataclass
+class SHT40SensorCfg(SensorCfg):
+    ############################################################
+    # Custom fields
+    ############################################################
+    pass
+
+DEFAULT_SHT40_SENSOR_CFG = SHT40SensorCfg(
+    sensor_type=api.SENSOR_TYPE.I2C,
+    sensor_index=SHT40_SENSOR_INDEX,
+    sensor_model="SHT40",
+    description="SHT40 Temperature and Humidity sensor",
+    outputs=[SHT40_STREAM]
 )
 
 

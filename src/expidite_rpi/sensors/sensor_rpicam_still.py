@@ -17,8 +17,25 @@ logger = root_cfg.setup_logger("expidite")
 
 RPICAM_STILL_DATA_TYPE_ID = "RPICAMSTILL"
 RPICAM_STILL_STREAM_INDEX: int = 0
+RPICAM_STILL_STREAM: Stream = Stream(
+            description="Basic still image recorder.",
+            type_id=RPICAM_STILL_DATA_TYPE_ID,
+            index=RPICAM_STILL_STREAM_INDEX,
+            format=api.FORMAT.JPG,
+            cloud_container="expidite-upload",
+            sample_probability="1.0",
+        )
 RPICAM_STILL_REVIEW_MODE_DATA_TYPE_ID = "RPICAMSTILLRM"
 RPICAM_STILL_REVIEW_MODE_STREAM_INDEX: int = 1
+RPICAM_STILL_REVIEW_MODE_STREAM: Stream = Stream(
+            description="Review mode image stream.",
+            type_id=RPICAM_STILL_REVIEW_MODE_DATA_TYPE_ID,
+            index=RPICAM_STILL_REVIEW_MODE_STREAM_INDEX,
+            format=api.FORMAT.JPG,  # Consistent JPG format
+            cloud_container="expidite-review-mode",
+            sample_probability="1.0",
+            storage_tier=api.StorageTier.HOT,
+        )
 
 @dataclass
 class RpicamStillSensorCfg(SensorCfg):
@@ -38,25 +55,7 @@ DEFAULT_RPICAM_STILL_SENSOR_CFG = RpicamStillSensorCfg(
     sensor_index=0,
     sensor_model="PiCameraModule3",
     description="Video sensor that uses rpicam-still",
-    outputs=[
-        Stream(
-            description="Basic still image recorder.",
-            type_id=RPICAM_STILL_DATA_TYPE_ID,
-            index=RPICAM_STILL_STREAM_INDEX,
-            format=api.FORMAT.JPG,
-            cloud_container="expidite-upload",
-            sample_probability="1.0",
-        ),
-        Stream(
-            description="Review mode image stream.",
-            type_id=RPICAM_STILL_REVIEW_MODE_DATA_TYPE_ID,
-            index=RPICAM_STILL_REVIEW_MODE_STREAM_INDEX,
-            format=api.FORMAT.JPG,  # Consistent JPG format
-            cloud_container="expidite-review-mode",
-            sample_probability="1.0",
-        )
-
-    ],
+    outputs=[RPICAM_STILL_STREAM, RPICAM_STILL_REVIEW_MODE_STREAM],
 )
 
 class RpicamStillSensor(Sensor):

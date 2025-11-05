@@ -19,16 +19,10 @@ cv2.setRNGSeed(42)
 
 logger = root_cfg.setup_logger("expidite")
 
-ARUCO_DATA_DS_TYPE_ID = "ARUCO"
-ARUCO_MARKED_UP_VIDEOS_DS_TYPE_ID = "ARUCOMARKED"
-ARUCO_DATA_STREAM_INDEX: int = 0
-ARUCO_MARKED_UP_VIDEOS_STREAM_INDEX: int = 1
-
 @dataclass
 class MarkersData:
     for_csv: list[dict] = field(default_factory=list)
     corner_sets: array = field(default_factory=lambda: array("f"))
-
 
 @dataclass
 class FrameMarkersData:
@@ -53,6 +47,26 @@ MARKER_INFO_REQD_COLUMNS: list[str] = [
     "bottomRightY",
 ]
 
+ARUCO_DATA_DS_TYPE_ID = "ARUCO"
+ARUCO_MARKED_UP_VIDEOS_DS_TYPE_ID = "ARUCOMARKED"
+ARUCO_DATA_STREAM_INDEX: int = 0
+ARUCO_DATA_STREAM: Stream = Stream(
+            description="Identified ARUCO markers in videos.",
+            type_id=ARUCO_DATA_DS_TYPE_ID,
+            index=ARUCO_DATA_STREAM_INDEX,
+            format=api.FORMAT.DF,
+            fields=MARKER_INFO_REQD_COLUMNS,
+        )
+ARUCO_MARKED_UP_VIDEOS_STREAM_INDEX: int = 1
+ARUCO_MARKED_UP_VIDEOS_STREAM: Stream = Stream(
+            description="Marked up video data from a WHO camera",
+            type_id=ARUCO_MARKED_UP_VIDEOS_DS_TYPE_ID,
+            index=ARUCO_MARKED_UP_VIDEOS_STREAM_INDEX,
+            format=api.FORMAT.MP4,
+            cloud_container="expidite-upload",
+            sample_probability="0.1",
+        )
+
 @dataclass
 class ArucoProcessorCfg(DataProcessorCfg):
     ########################################################################
@@ -63,23 +77,7 @@ class ArucoProcessorCfg(DataProcessorCfg):
 
 DEFAULT_AUROCO_PROCESSOR_CFG = ArucoProcessorCfg(
     description = "WHOCAM video processor",
-    outputs = [
-        Stream(
-            description="Identified ARUCO markers in videos.",
-            type_id=ARUCO_DATA_DS_TYPE_ID,
-            index=ARUCO_DATA_STREAM_INDEX,
-            format=api.FORMAT.DF,
-            fields=MARKER_INFO_REQD_COLUMNS,
-        ),
-        Stream(
-            description="Marked up video data from a WHO camera",
-            type_id=ARUCO_MARKED_UP_VIDEOS_DS_TYPE_ID,
-            index=ARUCO_MARKED_UP_VIDEOS_STREAM_INDEX,
-            format=api.FORMAT.MP4,
-            cloud_container="expidite-upload",
-            sample_probability="0.1",
-        )
-    ],
+    outputs = [ARUCO_DATA_STREAM, ARUCO_MARKED_UP_VIDEOS_STREAM],
     aruco_dict_name = "DICT_4X4_50",
     save_marked_up_video = True  # Save the marked up video
 )

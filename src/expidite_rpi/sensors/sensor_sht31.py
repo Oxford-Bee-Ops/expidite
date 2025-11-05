@@ -9,30 +9,11 @@ from expidite_rpi.core.sensor import Sensor, SensorCfg
 
 logger = root_cfg.setup_logger("expidite")
 
-SHT31_STREAM_INDEX = 0
 SHT31_SENSOR_INDEX = 68 # SHT31 i2c address, 0x44(68)
 SHT31_SENSOR_TYPE_ID = "SHT31"
 SHT31_FIELDS = ["temperature", "humidity"]
-
-@dataclass
-class SHT31SensorCfg(SensorCfg):
-    ############################################################
-    # SensorCfg fields
-    ############################################################
-    # The type of sensor.
-    sensor_type: api.SENSOR_TYPE = api.SENSOR_TYPE.I2C
-    sensor_index: int = SHT31_SENSOR_INDEX
-    sensor_model: str = "SHT31"
-    # A human-readable description of the sensor model.
-    description: str = "SHT31 Temperature and Humidity sensor"
-
-    ############################################################
-    # Custom fields
-    ############################################################
-
-DEFAULT_SHT31_SENSOR_CFG = SHT31SensorCfg(
-    outputs=[
-        Stream(
+SHT31_STREAM_INDEX = 0
+SHT31_STREAM: Stream = Stream(
             description="Temperature and humidity data from SHT31",
             type_id=SHT31_SENSOR_TYPE_ID,
             index=SHT31_STREAM_INDEX,
@@ -40,7 +21,20 @@ DEFAULT_SHT31_SENSOR_CFG = SHT31SensorCfg(
             fields=SHT31_FIELDS,
             cloud_container="expidite-journals",
         )
-    ],
+
+@dataclass
+class SHT31SensorCfg(SensorCfg):
+    ############################################################
+    # Custom fields
+    ############################################################
+    pass
+
+DEFAULT_SHT31_SENSOR_CFG = SHT31SensorCfg(
+    sensor_type=api.SENSOR_TYPE.I2C,
+    sensor_index=SHT31_SENSOR_INDEX,
+    sensor_model="SHT31",
+    description="SHT31 Temperature and Humidity sensor",
+    outputs=[SHT31_STREAM]
 )
 
 @dataclass

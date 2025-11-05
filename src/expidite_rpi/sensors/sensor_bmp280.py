@@ -16,24 +16,11 @@ except (ImportError, NotImplementedError):
 
 logger = root_cfg.setup_logger("expidite")
 
-BMP280_STREAM_INDEX = 0
 BMP280_SENSOR_INDEX = 118 # BMP280 i2c address, 0x76(118)
 BMP280_SENSOR_TYPE_ID = "BMP280"
 BMP280_FIELDS = ["pressure"]
-
-@dataclass
-class BMP280SensorCfg(SensorCfg):
-    ############################################################
-    # SensorCfg fields
-    ############################################################
-    sensor_type: api.SENSOR_TYPE = api.SENSOR_TYPE.I2C
-    sensor_index: int = BMP280_SENSOR_INDEX
-    sensor_model: str = "BMP280"
-    description: str = "BMP280 Atmospheric pressure sensor"
-
-DEFAULT_BMP280_SENSOR_CFG = BMP280SensorCfg(
-    outputs=[
-        Stream(
+BMP280_STREAM_INDEX = 0
+BMP280_STREAM: Stream = Stream(
             description="Atmospheric pressure data from BMP280",
             type_id=BMP280_SENSOR_TYPE_ID,
             index=BMP280_STREAM_INDEX,
@@ -41,7 +28,20 @@ DEFAULT_BMP280_SENSOR_CFG = BMP280SensorCfg(
             fields=BMP280_FIELDS,
             cloud_container="expidite-journals",
         )
-    ],
+
+@dataclass
+class BMP280SensorCfg(SensorCfg):
+    ############################################################
+    # custom fields
+    ############################################################
+    pass
+
+DEFAULT_BMP280_SENSOR_CFG = BMP280SensorCfg(
+    sensor_type=api.SENSOR_TYPE.I2C,
+    sensor_index=BMP280_SENSOR_INDEX,
+    sensor_model="BMP280",
+    description="BMP280 Atmospheric pressure sensor",
+    outputs=[BMP280_STREAM]
 )
 
 

@@ -13,11 +13,10 @@
 #             -> cloud_processors: list[DataProcessorCfg]
 #
 ###################################################################################################
+from dataclasses import replace
 from typing import Optional
 
-from expidite_rpi.core import api
 from expidite_rpi.core import configuration as root_cfg
-from expidite_rpi.core.dp_config_objects import Stream
 from expidite_rpi.core.dp_tree import DPtree
 from expidite_rpi.sensors import processor_video_aruco
 from expidite_rpi.sensors.processor_video_trapcam import (
@@ -30,7 +29,6 @@ from expidite_rpi.sensors.sensor_bmp280 import BMP280, DEFAULT_BMP280_SENSOR_CFG
 from expidite_rpi.sensors.sensor_ltr390 import DEFAULT_LTR390_SENSOR_CFG, LTR390
 from expidite_rpi.sensors.sensor_rpicam_vid import (
     DEFAULT_RPICAM_SENSOR_CFG,
-    RPICAM_DATA_TYPE_ID,
     RPICAM_STREAM_INDEX,
     RpicamSensor,
     RpicamSensorCfg,
@@ -104,22 +102,12 @@ def create_continuous_video_4fps_device() -> list[DPtree]:
     """Create a standard camera device.
     No recordings are saved to the cloud - it is assumed a DP will process the recordings locally."""
     sensor_index = 0
-    sensor_cfg = RpicamSensorCfg(
+    cfg: RpicamSensorCfg = replace(DEFAULT_RPICAM_SENSOR_CFG, 
         description="Low FPS continuous video recording device",
         sensor_index=sensor_index,
-        outputs=[
-            Stream(
-                description="Low FPS continuous video recording",
-                type_id=RPICAM_DATA_TYPE_ID,
-                index=RPICAM_STREAM_INDEX,
-                format=api.FORMAT.MP4,
-                cloud_container="expidite-upload",
-                sample_probability="0.0",
-            )
-        ],
         rpicam_cmd="rpicam-vid --framerate 4 --width 640 --height 480 -o FILENAME -t 180000 -v 0"
     )
-    my_sensor = RpicamSensor(sensor_cfg)
+    my_sensor = RpicamSensor(cfg)
     my_tree = DPtree(my_sensor)
     return [my_tree]
 
@@ -139,25 +127,11 @@ def create_trapcam_device(sensor_index: Optional[int] = 0) -> list[DPtree]:
         sensor_index = 0
         
     # Define the sensor
-    my_sensor = RpicamSensor(
-        RpicamSensorCfg(
-            sensor_type=api.SENSOR_TYPE.CAMERA,
-            sensor_index=sensor_index,
-            sensor_model="PiCameraModule3",
-            description="Video sensor that uses rpicam-vid",
-            outputs=[
-                Stream(
-                    description="Basic continuous video recording.",
-                    type_id=RPICAM_DATA_TYPE_ID,
-                    index=RPICAM_STREAM_INDEX,
-                    format=api.FORMAT.MP4,
-                    cloud_container="expidite-upload",
-                    sample_probability="0.0",
-                )
-            ],
-            rpicam_cmd = "rpicam-vid --framerate 15 --width 640 --height 480 -o FILENAME -t 180000",
-        )
+    # Use the default rpicam sensor config except for the rpicam command
+    cfg: RpicamSensorCfg = replace(DEFAULT_RPICAM_SENSOR_CFG, 
+        rpicam_cmd = "rpicam-vid --framerate 15 --width 640 --height 480 -o FILENAME -t 180000"
     )
+    my_sensor = RpicamSensor(cfg)
 
     # Define the DataProcessor
     my_dp = TrapcamDp(DEFAULT_TRAPCAM_DP_CFG, sensor_index=sensor_index)

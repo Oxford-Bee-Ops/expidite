@@ -19,30 +19,11 @@ except (ImportError, NotImplementedError):
 
 logger = root_cfg.setup_logger("expidite")
 
-LTR390_STREAM_INDEX = 0
 LTR390_SENSOR_INDEX = 83 # LTR390 i2c address, 0x53 (83)
 LTR390_SENSOR_TYPE_ID = "LTR390"
 LTR390_FIELDS = ["ambient_light", "uv", "gain"]
-
-@dataclass
-class LTR390SensorCfg(SensorCfg):
-    ############################################################
-    # SensorCfg fields
-    ############################################################
-    # The type of sensor.
-    sensor_type: api.SENSOR_TYPE = api.SENSOR_TYPE.I2C
-    sensor_index: int = LTR390_SENSOR_INDEX
-    sensor_model: str = "LTR390"
-    # A human-readable description of the sensor model.
-    description: str = "LTR390 UV & light sensor"
-
-    ############################################################
-    # Custom fields
-    ############################################################
-
-DEFAULT_LTR390_SENSOR_CFG = LTR390SensorCfg(
-    outputs=[
-        Stream(
+LTR390_STREAM_INDEX = 0
+LTR390_STREAM: Stream = Stream(
             description="Ambient light and UV data from LTR390",
             type_id=LTR390_SENSOR_TYPE_ID,
             index=LTR390_STREAM_INDEX,
@@ -50,7 +31,20 @@ DEFAULT_LTR390_SENSOR_CFG = LTR390SensorCfg(
             fields=LTR390_FIELDS,
             cloud_container="expidite-journals",
         )
-    ],
+
+@dataclass
+class LTR390SensorCfg(SensorCfg):
+    ############################################################
+    # Custom fields
+    ############################################################
+    pass
+
+DEFAULT_LTR390_SENSOR_CFG = LTR390SensorCfg(
+    sensor_type=api.SENSOR_TYPE.I2C,
+    sensor_index=LTR390_SENSOR_INDEX,
+    sensor_model="LTR390",
+    description="LTR390 UV & light sensor",
+    outputs=[LTR390_STREAM]
 )
 
 class LTR390(Sensor):

@@ -13,41 +13,35 @@ from expidite_rpi.sensors.drivers import adafruit_adxl34x
 
 logger = root_cfg.setup_logger("expidite")
 
-ADXL34X_STREAM_INDEX = 0
 ADXL34X_SENSOR_INDEX = 83 # ADXL34X i2c address, 0x53 (83)
 ADXL34X_SENSOR_TYPE_ID = "ADXL34X"
 ADXL34X_FIELDS = ["RMS_X", "RMS_Y", "RMS_Z", "RMS_MAGNITUDE",
                   "PEAK_X", "PEAK_Y", "PEAK_Z", "PEAK_MAGNITUDE",
                   "STD_DEV_X", "STD_DEV_Y", "STD_DEV_Z", "STD_DEV_MAGNITUDE",
                   "SAMPLES"]
-
-@dataclass
-class ADXL34XSensorCfg(SensorCfg):
-    ############################################################
-    # SensorCfg fields
-    ############################################################
-    # The type of sensor.
-    sensor_type: api.SENSOR_TYPE = api.SENSOR_TYPE.I2C
-    sensor_index: int = ADXL34X_SENSOR_INDEX
-    sensor_model: str = "ADXL34X"
-    # A human-readable description of the sensor model.
-    description: str = "ADXL34X accelerometer"
-
-    ############################################################
-    # Custom fields
-    ############################################################
-
-DEFAULT_ADXL34X_SENSOR_CFG = ADXL34XSensorCfg(
-    outputs=[
-        Stream(
+ADXL34X_STREAM_INDEX = 0
+ADXL34X_STREAM: Stream = Stream(
             description="Acceleration data from ADXL34X",
-            type_id=ADXL34X_SENSOR_TYPE_ID,
+            type_id=ADXL34X_SENSOR_TYPE_ID, 
             index=ADXL34X_STREAM_INDEX,
             format=api.FORMAT.LOG,
             fields=ADXL34X_FIELDS,
             cloud_container="expidite-journals",
         )
-    ],
+
+@dataclass
+class ADXL34XSensorCfg(SensorCfg):
+    ############################################################
+    # Custom fields
+    ############################################################
+    pass
+
+DEFAULT_ADXL34X_SENSOR_CFG = ADXL34XSensorCfg(
+    sensor_type=api.SENSOR_TYPE.I2C,
+    sensor_index=ADXL34X_SENSOR_INDEX,
+    sensor_model="ADXL34X",
+    description="ADXL34X accelerometer",
+    outputs=[ADXL34X_STREAM]
 )
 
 class ADXL34X(Sensor):

@@ -8,30 +8,11 @@ from expidite_rpi.sensors.drivers.aht20 import AHT20 as AHT20_driver
 
 logger = root_cfg.setup_logger("expidite")
 
-AHT20_STREAM_INDEX = 0
 AHT20_SENSOR_INDEX = 56 # AHT20 i2c address, 0x38 (56)
 AHT20_SENSOR_TYPE_ID = "AHT20"
 AHT20_FIELDS = ["temperature", "humidity"]
-
-@dataclass
-class AHT20SensorCfg(SensorCfg):
-    ############################################################
-    # SensorCfg fields
-    ############################################################
-    # The type of sensor.
-    sensor_type: api.SENSOR_TYPE = api.SENSOR_TYPE.I2C
-    sensor_index: int = AHT20_SENSOR_INDEX
-    sensor_model: str = "AHT20"
-    # A human-readable description of the sensor model.
-    description: str = "AHT20 Temperature and Humidity sensor"
-
-    ############################################################
-    # Custom fields
-    ############################################################
-
-DEFAULT_AHT20_SENSOR_CFG = AHT20SensorCfg(
-    outputs=[
-        Stream(
+AHT20_STREAM_INDEX = 0
+AHT20_STREAM: Stream = Stream(
             description="Temperature and humidity data from AHT20",
             type_id=AHT20_SENSOR_TYPE_ID,
             index=AHT20_STREAM_INDEX,
@@ -39,7 +20,19 @@ DEFAULT_AHT20_SENSOR_CFG = AHT20SensorCfg(
             fields=AHT20_FIELDS,
             cloud_container="expidite-journals",
         )
-    ],
+@dataclass
+class AHT20SensorCfg(SensorCfg):
+    ############################################################
+    # Custom fields
+    ############################################################
+    pass
+
+DEFAULT_AHT20_SENSOR_CFG = AHT20SensorCfg(
+    sensor_type=api.SENSOR_TYPE.I2C,
+    sensor_index=AHT20_SENSOR_INDEX,
+    sensor_model="AHT20",
+    description="AHT20 Temperature and Humidity sensor",
+    outputs=[AHT20_STREAM]
 )
 
 class AHT20(Sensor):

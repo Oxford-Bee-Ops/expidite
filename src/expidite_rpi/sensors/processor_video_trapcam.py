@@ -14,6 +14,14 @@ logger = root_cfg.setup_logger("expidite")
 
 TRAPCAM_TYPE_ID = "TRAPCAM"
 TRAPCAM_STREAM_INDEX: int = 0
+TRAPCAM_STREAM: Stream = Stream(
+            description="Video samples with movement detected.",
+            type_id=TRAPCAM_TYPE_ID,
+            index=TRAPCAM_STREAM_INDEX,
+            format=api.FORMAT.MP4,
+            cloud_container="expidite-upload",
+            sample_probability="1.0",
+        )
 
 @dataclass
 class TrapcamDpCfg(DataProcessorCfg):
@@ -25,16 +33,7 @@ class TrapcamDpCfg(DataProcessorCfg):
 
 DEFAULT_TRAPCAM_DP_CFG = TrapcamDpCfg(
     description="Video processor that detects movement in video files and saves segments with movement.",
-    outputs=[
-        Stream(
-            description="Video samples with movement detected.",
-            type_id=TRAPCAM_TYPE_ID,
-            index=TRAPCAM_STREAM_INDEX,
-            format=api.FORMAT.MP4,
-            cloud_container="expidite-upload",
-            sample_probability="1.0",
-        )
-    ],
+    outputs=[TRAPCAM_STREAM],
 )
 
 class TrapcamDp(DataProcessor):
