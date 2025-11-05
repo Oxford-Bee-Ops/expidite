@@ -6,7 +6,7 @@ from expidite_rpi.core import configuration as root_cfg
 from expidite_rpi.utils.journal import Journal
 
 logger = root_cfg.setup_logger("expidite")
-root_cfg.TEST_MODE = root_cfg.MODE.TEST
+root_cfg.ST_MODE = root_cfg.SOFTWARE_TEST_MODE.TESTING
 
 
 class Test_journal:

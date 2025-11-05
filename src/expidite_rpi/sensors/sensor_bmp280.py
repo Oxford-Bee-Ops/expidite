@@ -75,7 +75,11 @@ class BMP280(Sensor):
             except Exception as e:
                 logger.error(f"{root_cfg.RAISE_WARN()}Error in BMP280 sensor run: {e}", exc_info=True)
             finally:
+                if self.in_review_mode():
+                    wait_period = root_cfg.my_device.review_mode_frequency
+                else:
+                    wait_period = root_cfg.my_device.env_sensor_frequency
                 logger.debug(f"BMP280 sensor {self.sensor_index} sleeping for "
-                            f"{root_cfg.my_device.env_sensor_frequency} seconds")
-                self.stop_requested.wait(root_cfg.my_device.env_sensor_frequency)
+                            f"{wait_period} seconds")
+                self.stop_requested.wait(wait_period)
 

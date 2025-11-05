@@ -4,8 +4,8 @@
 # The user specifies the rpicam-still command line, except for the file name, which is set by RpiCore.
 #
 ####################################################################################################
-
 from dataclasses import dataclass
+from typing import cast
 
 from expidite_rpi.core import api, file_naming
 from expidite_rpi.core import configuration as root_cfg
@@ -15,8 +15,10 @@ from expidite_rpi.utils import utils
 
 logger = root_cfg.setup_logger("expidite")
 
-RPICAM_STILL_DATA_TYPE_ID = "RPICAM"
+RPICAM_STILL_DATA_TYPE_ID = "RPICAMSTILL"
 RPICAM_STILL_STREAM_INDEX: int = 0
+RPICAM_STILL_REVIEW_MODE_DATA_TYPE_ID = "RPICAMSTILLRM"
+RPICAM_STILL_REVIEW_MODE_STREAM_INDEX: int = 1
 
 @dataclass
 class RpicamStillSensorCfg(SensorCfg):
@@ -29,6 +31,7 @@ class RpicamStillSensorCfg(SensorCfg):
     # The FILENAME suffix should match the datastream input_format.
     rpicam_cmd: str = "rpicam-still -o FILENAME"
     recording_interval_seconds: int = 60*60  # Interval between still images
+    rpicam_review_mode_cmd: str = "rpicam-still --width 640 --height 480 -o FILENAME"
 
 DEFAULT_RPICAM_STILL_SENSOR_CFG = RpicamStillSensorCfg(
     sensor_type=api.SENSOR_TYPE.CAMERA,
@@ -43,10 +46,17 @@ DEFAULT_RPICAM_STILL_SENSOR_CFG = RpicamStillSensorCfg(
             format=api.FORMAT.JPG,
             cloud_container="expidite-upload",
             sample_probability="1.0",
+        ),
+        Stream(
+            description="Review mode image stream.",
+            type_id=RPICAM_STILL_REVIEW_MODE_DATA_TYPE_ID,
+            index=RPICAM_STILL_REVIEW_MODE_STREAM_INDEX,
+            format=api.FORMAT.JPG,  # Consistent JPG format
+            cloud_container="expidite-review-mode",
+            sample_probability="1.0",
         )
+
     ],
-    rpicam_cmd = "rpicam-still -o FILENAME",
-    recording_interval_seconds = 60*60,  # Interval between still images
 )
 
 class RpicamStillSensor(Sensor):
@@ -74,7 +84,7 @@ class RpicamStillSensor(Sensor):
 
     def run(self):
         """Main loop for the RpicamStillSensor - runs continuously unless paused."""
-        if not root_cfg.running_on_rpi and root_cfg.TEST_MODE != root_cfg.MODE.TEST:
+        if not root_cfg.running_on_rpi and root_cfg.ST_MODE != root_cfg.SOFTWARE_TEST_MODE.TESTING:
             logger.warning("Only supported on Raspberry Pi.")
             return
 
@@ -89,8 +99,18 @@ class RpicamStillSensor(Sensor):
                 # Get the filename for the video file
                 filename = file_naming.get_temporary_filename(self.recording_format)
 
+                if self.in_review_mode():
+                    config = cast(RpicamStillSensorCfg, self.config)
+                    cmd_to_use = config.rpicam_review_mode_cmd
+                    stream_index_to_use = RPICAM_STILL_REVIEW_MODE_STREAM_INDEX
+                    wait_period = root_cfg.my_device.review_mode_frequency
+                else:
+                    cmd_to_use = self.rpicam_cmd
+                    stream_index_to_use = RPICAM_STILL_STREAM_INDEX
+                    wait_period = self.recording_interval_seconds
+
                 # Replace the FILENAME placeholder in the command with the actual filename
-                cmd = self.rpicam_cmd.replace("FILENAME", str(filename))
+                cmd = cmd_to_use.replace("FILENAME", str(filename))
 
                 # If the "--camera SENSOR_INDEX" string is present, replace SENSOR_INDEX with
                 # the actual sensor index
@@ -104,7 +124,7 @@ class RpicamStillSensor(Sensor):
                 logger.info(f"Video recording completed with rc={rc}")
 
                 # Save the video file to the datastream
-                self.save_recording(RPICAM_STILL_STREAM_INDEX, 
+                self.save_recording(stream_index_to_use, 
                                     filename, 
                                     start_time=start_time, 
                                     end_time=api.utc_now())
@@ -123,6 +143,6 @@ class RpicamStillSensor(Sensor):
                     break
             finally:
                 logger.debug("RpicamStillSensor loop iteration complete")
-                self.stop_requested.wait(self.recording_interval_seconds)
+                self.stop_requested.wait(wait_period)
 
         logger.warning("Exiting RpicamStillSensor loop")

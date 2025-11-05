@@ -467,7 +467,7 @@ class DPnode():
         )
 
         # If we're in test mode, we may cap the number of recordings we save.
-        if root_cfg.TEST_MODE == root_cfg.MODE.TEST:
+        if root_cfg.ST_MODE == root_cfg.SOFTWARE_TEST_MODE.TESTING:
             if not RpiEmulator.get_instance().ok_to_save_recording(stream.type_id):
                 logger.info(f"Test mode recording cap hit; deleting {src_file.name}")
                 if src_file.exists():

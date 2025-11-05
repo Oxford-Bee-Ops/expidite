@@ -13,7 +13,7 @@ from expidite_rpi.utils.rpi_emulator import RpiEmulator
 
 logger = root_cfg.setup_logger("expidite", level=logging.DEBUG)
 
-root_cfg.TEST_MODE = root_cfg.MODE.TEST
+root_cfg.ST_MODE = root_cfg.SOFTWARE_TEST_MODE.TESTING
 
 INVENTORY: list[DeviceCfg] = [
     DeviceCfg(

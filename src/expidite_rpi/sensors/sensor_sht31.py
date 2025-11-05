@@ -83,7 +83,7 @@ class SHT31(Sensor):
 
         else:
             # Test mode on windows
-            assert root_cfg.TEST_MODE == root_cfg.MODE.TEST, "Test mode not set"
+            assert root_cfg.ST_MODE == root_cfg.SOFTWARE_TEST_MODE.TESTING, "Test mode not set"
             cTemp = 25.0
             humidity = 50.0
 
@@ -110,7 +110,11 @@ class SHT31(Sensor):
             except Exception as e:
                 logger.error(f"{root_cfg.RAISE_WARN()}Error in SHT31 sensor run: {e}", exc_info=True)
             finally:
+                if self.in_review_mode():
+                    wait_period = root_cfg.my_device.review_mode_frequency
+                else:
+                    wait_period = root_cfg.my_device.env_sensor_frequency
                 logger.debug(f"SHT31 sensor {self.sensor_index} sleeping for "
-                             f"{root_cfg.my_device.env_sensor_frequency} seconds")
-                self.stop_requested.wait(root_cfg.my_device.env_sensor_frequency)
+                            f"{wait_period} seconds")
+                self.stop_requested.wait(wait_period)
 

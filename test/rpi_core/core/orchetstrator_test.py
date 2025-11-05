@@ -12,7 +12,7 @@ from expidite_rpi.utils import rpi_emulator
 
 logger = root_cfg.setup_logger("expidite", level=logging.DEBUG)
 
-root_cfg.TEST_MODE = root_cfg.MODE.TEST
+root_cfg.ST_MODE = root_cfg.SOFTWARE_TEST_MODE.TESTING
 
 class Test_Orchestrator:
     @pytest.mark.unittest

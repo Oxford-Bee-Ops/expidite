@@ -6,6 +6,7 @@
 ####################################################################################################
 
 from dataclasses import dataclass
+from typing import cast
 
 from expidite_rpi.core import api, file_naming
 from expidite_rpi.core import configuration as root_cfg
@@ -17,6 +18,8 @@ logger = root_cfg.setup_logger("expidite")
 
 RPICAM_DATA_TYPE_ID = "RPICAM"
 RPICAM_STREAM_INDEX: int = 0
+RPICAM_REVIEW_MODE_DATA_TYPE_ID = "RPICAMRM"
+RPICAM_REVIEW_MODE_STREAM_INDEX: int = 1
 
 @dataclass
 class RpicamSensorCfg(SensorCfg):
@@ -29,6 +32,7 @@ class RpicamSensorCfg(SensorCfg):
     # Example: "rpicam-vid --framerate 15 --width 640 --height 640 -o FILENAME -t 5000"
     # The FILENAME suffix should match the datastream input_format.
     rpicam_cmd: str = "rpicam-vid --framerate 15 --width 640 --height 480 -o FILENAME -t 5000"
+    review_mode_cmd: str = "rpicam-still --width 640 --height 480 -o FILENAME"
 
 DEFAULT_RPICAM_SENSOR_CFG = RpicamSensorCfg(
     sensor_type=api.SENSOR_TYPE.CAMERA,
@@ -43,9 +47,16 @@ DEFAULT_RPICAM_SENSOR_CFG = RpicamSensorCfg(
             format=api.FORMAT.MP4,
             cloud_container="expidite-upload",
             sample_probability="0.0",
+        ),
+        Stream(
+            description="Review mode image stream.",
+            type_id=RPICAM_REVIEW_MODE_DATA_TYPE_ID,
+            index=RPICAM_REVIEW_MODE_STREAM_INDEX,
+            format=api.FORMAT.MP4,
+            cloud_container="expidite-review-mode",
+            sample_probability="1.0",
         )
     ],
-    rpicam_cmd = "rpicam-vid --framerate 15 --width 640 --height 480 -o FILENAME -t 5000",
 )
 
 class RpicamSensor(Sensor):
@@ -70,9 +81,35 @@ class RpicamSensor(Sensor):
         )
 
 
+    def review_mode_output(self) -> None:
+        """Output an image to show the user what the camera is viewing.
+        We write to the same filename every time to avoid filling up the disk and to make it
+        easier for the dashboard to display the current camera view."""
+
+        try:
+            filename = file_naming.get_temporary_filename(api.FORMAT.JPG)
+            config = cast(RpicamSensorCfg, self.config)
+            
+            # Run recording process
+            rc = utils.run_cmd(config.review_mode_cmd.replace("FILENAME", str(filename)))
+            if rc == 0:
+                logger.info("Review mode image captured")
+                self.save_recording(
+                   RPICAM_REVIEW_MODE_STREAM_INDEX,
+                    filename,
+                    start_time=api.utc_now(),
+                )
+            else:
+                logger.error(f"Review mode image capture failed with rc={rc}")
+
+        except Exception as e:
+            logger.error(f"{root_cfg.RAISE_WARN()}Error in RpicamSensor review_mode_output: {e}", 
+                         exc_info=True)
+
+
     def run(self):
         """Main loop for the RpicamSensor - runs continuously unless paused."""
-        if not root_cfg.running_on_rpi and root_cfg.TEST_MODE != root_cfg.MODE.TEST:
+        if not root_cfg.running_on_rpi and root_cfg.ST_MODE != root_cfg.SOFTWARE_TEST_MODE.TESTING:
             logger.warning("Video configuration is only supported on Raspberry Pi.")
             return
 
@@ -81,6 +118,11 @@ class RpicamSensor(Sensor):
         # Main loop to record video and take still images
         while self.continue_recording():
             try:
+                if self.in_review_mode():
+                    self.review_mode_output()
+                    self.stop_requested.wait(root_cfg.my_device.review_mode_frequency)
+                    continue
+
                 # Record video for the specified number of seconds
                 start_time = api.utc_now()
 

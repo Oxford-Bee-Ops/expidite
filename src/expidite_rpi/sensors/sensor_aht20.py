@@ -72,5 +72,10 @@ class AHT20(Sensor):
             finally:
                 logger.debug(f"AHT20 sensor {self.sensor_index} sleeping for "
                              f"{root_cfg.my_device.env_sensor_frequency} seconds")
-                self.stop_requested.wait(root_cfg.my_device.env_sensor_frequency)
+                
+                if self.in_review_mode():
+                    wait_period = root_cfg.my_device.review_mode_frequency
+                else:
+                    wait_period = root_cfg.my_device.env_sensor_frequency
+                self.stop_requested.wait(wait_period)
 

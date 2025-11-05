@@ -97,6 +97,10 @@ class DeviceCfg(Configuration):
     # Default environmental sensor logging frequency in seconds
     env_sensor_frequency: int = 60 * 10
 
+    # Review mode frequency in seconds
+    # This is the frequency at which review mode data is captured.
+    review_mode_frequency: int = 10
+
     # Max recording timer in seconds
     # This limits how quickly the system will cleanly shutdown as we wait for all recording 
     # threads to complete. It also limits the duration of any recordings

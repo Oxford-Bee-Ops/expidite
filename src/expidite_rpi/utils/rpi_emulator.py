@@ -62,7 +62,7 @@ class RpiEmulator():
         self.recordings_saved = {}
         self.recording_cap = -1
         self.recording_cap_dict = {}
-        root_cfg.TEST_MODE = root_cfg.MODE.TEST
+        root_cfg.ST_MODE = root_cfg.SOFTWARE_TEST_MODE.TESTING
         root_cfg.CLOUD_TYPE = root_cfg.CloudType.LOCAL_EMULATOR
         cc = CloudConnector.get_instance(root_cfg.CLOUD_TYPE)
         assert isinstance(cc, LocalCloudConnector)

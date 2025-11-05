@@ -54,7 +54,7 @@ class TestCloudConnector:
         logger.info("Testing AsyncCloudConnector")
         # Get instance uses the test mode to decide which subclass to return
         cc = CloudConnector.get_instance(root_cfg.CloudType.AZURE)
-        root_cfg.TEST_MODE = root_cfg.MODE.TEST  # Reset to test mode
+        root_cfg.ST_MODE = root_cfg.SOFTWARE_TEST_MODE.TESTING  # Reset to test mode
         assert cc is not None, "CloudConnector instance is None"
         assert isinstance(cc, AsyncCloudConnector)
 

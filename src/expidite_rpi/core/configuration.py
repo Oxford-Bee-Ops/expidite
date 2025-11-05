@@ -13,21 +13,6 @@ from expidite_rpi.core import api
 from expidite_rpi.core.device_config_objects import FAILED_TO_LOAD, DeviceCfg, Keys, SystemCfg
 from expidite_rpi.utils import utils_clean
 
-
-############################################################################################
-# Test mode flags
-#
-# RECORDING_CAP is used to limit the number of recordings saved from a sensor in test mode.
-# It's useful to be able to accept 1 recording, process it and validate the results.
-# A cap of -1 means no cap.
-############################################################################################
-class MODE(Enum):
-    """Test modes for the RpiCore"""
-    PRODUCTION = "production"
-    TEST = "test"
-TEST_MODE: MODE = MODE.PRODUCTION
-
-
 ############################################################################################
 # System timers
 #
@@ -200,16 +185,32 @@ def set_mode(mode: Mode) -> None:
     _mode = mode
 
 ############################################################
-# Flag files set in FLAGS_DIR
+# PERSISTENT FLAGS
+# Set in FLAGS_DIR in persistent storage
 ############################################################
 # Used by the CLI and RpiCore.py to start / stop RpiCore
 STOP_EXPIDITE_FLAG = FLAGS_DIR / "STOP_EXPIDITE_FLAG"
 RESTART_EXPIDITE_FLAG = FLAGS_DIR / "RESTART_EXPIDITE_FLAG"
 
+#############################################################################################
+# TRANSIENT FLAGS
+# Set in TMP_FLAGS_DIR and lost on reboot
+#############################################################################################
 # Used by EdgeOrchestrator to check if RpiCore is running
 EXPIDITE_IS_RUNNING_FLAG = TMP_FLAGS_DIR / "EXPIDITE_IS_RUNNING_FLAG"
+# Used to control the LED status indicator
 LED_STATUS_FILE = TMP_FLAGS_DIR / "LED_STATUS"
+# Used to indicate we're in review mode (ie enabling manual review of video or I2C sensor output)
+REVIEW_MODE_FLAG = TMP_FLAGS_DIR / "IN_REVIEW_MODE_FLAG"
 
+############################################################################################
+# Software testing flag
+############################################################################################
+class SOFTWARE_TEST_MODE(Enum):
+    """Test modes for the RpiCore"""
+    LIVE = "live"
+    TESTING = "testing"
+ST_MODE: SOFTWARE_TEST_MODE = SOFTWARE_TEST_MODE.LIVE
 
 ############################################################################################################
 # Set up logging
