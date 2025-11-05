@@ -36,13 +36,6 @@ else
     os_update="no"
 fi
 
-# Define common file paths used throughout the script
-FLAGS_DIR="$HOME/.expidite/flags"
-REBOOT_REQUIRED_FLAG="$FLAGS_DIR/reboot_required"
-REBOOT_COUNT_FILE="$FLAGS_DIR/reboot_count"
-REBOOT_TIMESTAMP_FILE="$FLAGS_DIR/last_reboot_time"
-REBOOT_DISABLED_FLAG="$FLAGS_DIR/reboot_disabled"
-
 # Function to check pre-requisites
 check_prerequisites() {
     echo "Checking pre-requisites..."
@@ -79,9 +72,11 @@ check_prerequisites() {
     echo "All pre-requisites are met."
 
     # Ensure the flags directory exists
-    mkdir -p "$FLAGS_DIR"
+    mkdir -p "$HOME/.expidite/flags"
     
     # Check for repeated reboot failures to prevent cyclical reboots
+    REBOOT_COUNT_FILE="$HOME/.expidite/flags/reboot_count"
+    REBOOT_TIMESTAMP_FILE="$HOME/.expidite/flags/last_reboot_time"
     current_time=$(date +%s)
     
     if [ -f "$REBOOT_COUNT_FILE" ]; then
@@ -92,8 +87,8 @@ check_prerequisites() {
         # If we've rebooted more than 3 times in the last hour, stop rebooting
         if [ "$reboot_count" -gt 3 ] && [ "$time_since_reboot" -lt 3600 ]; then
             echo "WARNING: Too many reboots detected ($reboot_count in last hour). Disabling automatic reboots."
-            rm -f "$REBOOT_REQUIRED_FLAG"
-            echo "REBOOT_DISABLED" > "$REBOOT_DISABLED_FLAG"
+            rm -f "$HOME/.expidite/flags/reboot_required"
+            echo "REBOOT_DISABLED" > "$HOME/.expidite/flags/reboot_disabled"
             return
         elif [ "$time_since_reboot" -gt 3600 ]; then
             # Reset counter after 1 hour
@@ -104,8 +99,8 @@ check_prerequisites() {
     fi
     
     # Delete the reboot_required flag if it exists (normal startup)
-    if [ -f "$REBOOT_REQUIRED_FLAG" ]; then
-        rm "$REBOOT_REQUIRED_FLAG"
+    if [ -f "$HOME/.expidite/flags/reboot_required" ]; then
+        rm "$HOME/.expidite/flags/reboot_required"
     fi
 
 }
@@ -258,7 +253,7 @@ install_os_packages() {
     echo "OS packages installed successfully."
     # A reboot is always required after installing packages, otherwise the system is unstable 
     # (eg rpicam broken pipe)
-    touch "$REBOOT_REQUIRED_FLAG"
+    touch "$HOME/.expidite/flags/reboot_required"
 }
 
 # Function to install the Uncomplicated Firewall and set appropriate rules.
@@ -347,7 +342,7 @@ install_expidite() {
         if [ "$current_version" != "$updated_version" ]; then
             echo "Expidite version has changed from $current_version to $updated_version.  Reboot required."
             # Set a flag to indicate that a reboot is required
-            touch "$REBOOT_REQUIRED_FLAG"
+            touch "$HOME/.expidite/flags/reboot_required"
         fi
     else
         echo "No changes detected on branch $expidite_git_branch. Skipping install."
@@ -551,7 +546,7 @@ install_user_code() {
     if [ "$REMOTE_HASH" != "$LOCAL_HASH" ]; then
         echo "User's code hash has changed updated_version.  Reboot required."
         # Set a flag to indicate that a reboot is required
-        touch "$REBOOT_REQUIRED_FLAG"
+        touch "$HOME/.expidite/flags/reboot_required"
     fi
 }
 
@@ -815,14 +810,16 @@ install_leds_service() {
 ################################################
 reboot_if_required() {
     # Check if reboots are disabled due to too many failures
-    if [ -f "$REBOOT_DISABLED_FLAG" ]; then
+    if [ -f "$HOME/.expidite/flags/reboot_disabled" ]; then
         echo "Automatic reboots are disabled due to repeated failures."
-        echo "Manual intervention required. Check logs and run 'rm $REBOOT_DISABLED_FLAG' to re-enable."
+        echo "Manual intervention required. Check logs and run 'rm $HOME/.expidite/flags/reboot_disabled' to re-enable."
         return
     fi
     
-    if [ -f "$REBOOT_REQUIRED_FLAG" ]; then
+    if [ -f "$HOME/.expidite/flags/reboot_required" ]; then
         # Increment reboot counter
+        REBOOT_COUNT_FILE="$HOME/.expidite/flags/reboot_count"
+        REBOOT_TIMESTAMP_FILE="$HOME/.expidite/flags/last_reboot_time"
         
         if [ -f "$REBOOT_COUNT_FILE" ]; then
             reboot_count=$(<"$REBOOT_COUNT_FILE")
