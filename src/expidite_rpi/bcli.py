@@ -583,8 +583,7 @@ class InteractiveMenu():
         if char == "y":
             click.echo("Monitoring sensor output...")
             # Start monitoring sensor output by calling the display_sensor_logs function
-            run_cmd_live_echo("watch -n 5 'journalctl -t EXPIDITE | "
-                              "grep \"Save log:\" | grep -v SCORE | tail -n 10'")
+            run_cmd_live_echo("journalctl -f | grep 'Save log:' | grep -v SCORE")
         else:
             click.echo("Exiting.")
             return
