@@ -91,16 +91,13 @@ class RpicamSensor(Sensor):
             config = cast(RpicamSensorCfg, self.config)
             
             # Run recording process
-            rc = utils.run_cmd(config.review_mode_cmd.replace("FILENAME", str(filename)))
-            if rc == 0:
-                logger.info("Review mode image captured")
-                self.save_recording(
-                   RPICAM_REVIEW_MODE_STREAM_INDEX,
-                    filename,
-                    start_time=api.utc_now(),
-                )
-            else:
-                logger.error(f"Review mode image capture failed with rc={rc}")
+            utils.run_cmd(config.review_mode_cmd.replace("FILENAME", str(filename)))
+            logger.info("Review mode image captured")
+            self.save_recording(
+                RPICAM_REVIEW_MODE_STREAM_INDEX,
+                filename,
+                start_time=api.utc_now(),
+            )
 
         except Exception as e:
             logger.error(f"{root_cfg.RAISE_WARN()}Error in RpicamSensor review_mode_output: {e}", 

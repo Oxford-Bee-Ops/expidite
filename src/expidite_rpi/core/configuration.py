@@ -191,6 +191,11 @@ def set_mode(mode: Mode) -> None:
 # Used by the CLI and RpiCore.py to start / stop RpiCore
 STOP_EXPIDITE_FLAG = FLAGS_DIR / "STOP_EXPIDITE_FLAG"
 RESTART_EXPIDITE_FLAG = FLAGS_DIR / "RESTART_EXPIDITE_FLAG"
+# Used to indicate we're in review mode (ie enabling manual review of video or I2C sensor output)
+# Logic in Sensor will clear the flag after 30 minutes, but making it persistent means it you
+# can trigger review mode faster by just rebooting the device rather than waiting for the 
+# ~10min env timer to expire.
+REVIEW_MODE_FLAG = FLAGS_DIR / "IN_REVIEW_MODE_FLAG"
 
 #############################################################################################
 # TRANSIENT FLAGS
@@ -200,8 +205,6 @@ RESTART_EXPIDITE_FLAG = FLAGS_DIR / "RESTART_EXPIDITE_FLAG"
 EXPIDITE_IS_RUNNING_FLAG = TMP_FLAGS_DIR / "EXPIDITE_IS_RUNNING_FLAG"
 # Used to control the LED status indicator
 LED_STATUS_FILE = TMP_FLAGS_DIR / "LED_STATUS"
-# Used to indicate we're in review mode (ie enabling manual review of video or I2C sensor output)
-REVIEW_MODE_FLAG = TMP_FLAGS_DIR / "IN_REVIEW_MODE_FLAG"
 
 ############################################################################################
 # Software testing flag

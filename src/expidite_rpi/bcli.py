@@ -567,17 +567,18 @@ class InteractiveMenu():
                 self.exit_review_mode()
                 click.echo("Review mode exited.")
                 return
-
-        click.echo("Do you want to enter review mode? (Y/N)")
-        char = click.getchar().lower()
-        if char == "y":
-            click.echo("Entering review mode")
-            self.enter_review_mode()
-            click.echo("Review mode may take up to 180s to become active.")
         else:
-            click.echo("Exiting without entering review mode.")
-            return
-        
+            click.echo("Do you want to enter review mode? (Y/N)")
+            char = click.getchar().lower()
+            if char == "y":
+                click.echo("Entering review mode")
+                self.enter_review_mode()
+                click.echo("Review mode may take up to ~10mins to become active.")
+                click.echo("As an alternative, you can restart the device to enter review mode immediately.")
+            else:
+                click.echo("Exiting without entering review mode.")
+                return
+            
         # Offer the user the option to watch the sensor logs in real time
         click.echo("Do you want to monitor the output from the sensors now they're in review mode? (Y/N)")
         char = click.getchar().lower()
