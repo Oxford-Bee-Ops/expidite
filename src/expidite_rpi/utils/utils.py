@@ -166,7 +166,7 @@ def run_cmd(cmd: str, ignore_errors: bool=False, grep_strs: Optional[list[str]]=
         
     """
     # In test mode, we stub out commands so that we can run more realistic test scenarios.
-    if root_cfg.TEST_MODE == root_cfg.MODE.TEST:
+    if root_cfg.ST_MODE == root_cfg.SOFTWARE_TEST_MODE.TESTING:
         harness = RpiEmulator.get_instance()
         return harness.run_cmd_test_stub(cmd, ignore_errors, grep_strs)
     
