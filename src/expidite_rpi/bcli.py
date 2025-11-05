@@ -523,6 +523,72 @@ class InteractiveMenu():
         run_cmd("loginctl enable-linger")
         click.echo("RPi Connect service enabled.")
 
+    def enter_review_mode(self) -> None:
+        """Enter review mode by setting the current timestamp in the review mode flag file."""
+        # Write the current timestamp to the review mode flag file
+        root_cfg.REVIEW_MODE_FLAG.write_text(str(int(time.time())))
+
+    def exit_review_mode(self) -> None:
+        """Exit review mode by deleting the review mode flag file."""
+        if root_cfg.REVIEW_MODE_FLAG.exists():
+            root_cfg.REVIEW_MODE_FLAG.unlink()
+
+    def review_mode(self) -> None:
+        """Manage entering and exiting review mode.
+        The intent of review mode is to help with manual review of sensor data.  
+        The actual implementation is up to the Sensor subclass.
+        But, for example, the video sensor saves images to the cloud every few seconds with the same
+        name so that the user positioning a camera can see what the camera is seeing in near-real time.
+        I2C sensors will typically increase their logging frequency to help with manual review.
+
+        Review mode automatically exits after a timeout period (e.g. 30 minutes) to avoid cases
+        where the device is unexpectedly left in review mode.
+
+        Review mode is set via the BCLI.  The BCLI also helps the user understand how to see the
+        output from the sensors in review mode."""
+        click.echo(f"{dash_line}")
+        click.echo("# REVIEW MODE")
+        click.echo("The intent of review mode is to help with manual review of sensor data.")
+        click.echo("For example, the video sensor saves images to the cloud every few seconds so that")
+        click.echo("the user positioning a camera can see what the camera is seeing in near-real time. ")
+        click.echo("I2C sensors will typically increase their logging frequency.")
+        click.echo("\nReview mode automatically exits after a timeout period (e.g. 30 minutes).")
+        click.echo("However you would ideally exit review mode manually using this CLI.\n")
+        click.echo(f"{dash_line}\n")
+
+        # Check the flag to see if we're already in review mode
+        if root_cfg.REVIEW_MODE_FLAG.exists():
+            click.echo("Device is currently in review mode.")
+            click.echo("Do you want to exit review mode? (Y/N)")
+            char = click.getchar().lower()
+            if char == "y":
+                click.echo("Exiting review mode...")
+                self.exit_review_mode()
+                click.echo("Review mode exited.")
+                return
+
+        click.echo("Do you want to enter review mode? (Y/N)")
+        char = click.getchar().lower()
+        if char == "y":
+            click.echo("Entering review mode")
+            self.enter_review_mode()
+            click.echo("Review mode may take up to 180s to become active.")
+        else:
+            click.echo("Exiting without entering review mode.")
+            return
+        
+        # Offer the user the option to watch the sensor logs in real time
+        click.echo("Do you want to monitor the output from the sensors now they're in review mode? (Y/N)")
+        char = click.getchar().lower()
+        if char == "y":
+            click.echo("Monitoring sensor output...")
+            # Start monitoring sensor output by calling the display_sensor_logs function
+            run_cmd_live_echo("watch -n 5 'journalctl -t EXPIDITE | "
+                              "grep \"Save log:\" | grep -v SCORE | tail -n 10'")
+        else:
+            click.echo("Exiting.")
+            return
+
 
     def show_crontab_entries(self) -> None:
         """Display the crontab entries for the user."""
@@ -907,11 +973,12 @@ class InteractiveMenu():
             click.echo("0. Back to Main Menu")  
             click.echo("1. Update Software")
             click.echo("2. Enable rpi-connect")
-            click.echo("3. Start RpiCore")
-            click.echo("4. Stop RpiCore (graceful stop)")
-            click.echo("5. Hard stop RpiCore (pkill)")
-            click.echo("6. Reboot the Device")
-            click.echo("7. Update storage key")
+            click.echo("3. Review mode")
+            click.echo("4. Start RpiCore")
+            click.echo("5. Stop RpiCore (graceful stop)")
+            click.echo("6. Hard stop RpiCore (pkill)")
+            click.echo("7. Reboot the Device")
+            click.echo("8. Update storage key")
             try:
                 choice = click.prompt("\nEnter your choice", type=int, default=0)
                 click.echo("\n")
@@ -924,14 +991,16 @@ class InteractiveMenu():
             elif choice == 2:
                 self.enable_rpi_connect()
             elif choice == 3:
-                self.start_rpi_core()
+                self.review_mode()
             elif choice == 4:
-                self.stop_rpi_core(pkill=False)
+                self.start_rpi_core()
             elif choice == 5:
+                self.stop_rpi_core(pkill=False)
+            elif choice == 6:
                 self.stop_rpi_core(pkill=True) 
-            elif choice == 6: 
-                self.reboot_device()
             elif choice == 7: 
+                self.reboot_device()
+            elif choice == 8: 
                 self.update_storage_key()
             elif choice == 0:
                 break
