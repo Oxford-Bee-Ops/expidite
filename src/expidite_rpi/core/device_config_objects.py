@@ -99,7 +99,7 @@ class DeviceCfg(Configuration):
 
     # Review mode frequency in seconds
     # This is the frequency at which review mode data is captured.
-    review_mode_frequency: int = 10
+    review_mode_frequency: int = 5
 
     # Max recording timer in seconds
     # This limits how quickly the system will cleanly shutdown as we wait for all recording 
