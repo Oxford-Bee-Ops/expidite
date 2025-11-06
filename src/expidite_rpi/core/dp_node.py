@@ -456,15 +456,20 @@ class DPnode():
                 raise ValueError(f"Start_time ({start_time}) must be before end_time ({end_time}).")
 
         # Generate the filename for the recording
-        new_fname: Path = file_naming.get_record_filename(
-            dst_dir, 
-            data_id,
-            suffix, 
-            start_time, 
-            end_time, 
-            offset_index, 
-            secondary_offset_index
-        )
+        if stream.file_naming is None or stream.file_naming == api.FILE_NAMING.DEFAULT:
+            new_fname: Path = file_naming.get_record_filename(
+                dst_dir, 
+                data_id,
+                suffix, 
+                start_time, 
+                end_time, 
+                offset_index, 
+                secondary_offset_index
+            )
+        elif stream.file_naming == api.FILE_NAMING.REVIEW_MODE:
+            new_fname = file_naming.get_review_mode_filename(data_id, suffix)
+        else:
+            raise ValueError(f"Unknown file_naming {stream.file_naming} for stream {data_id}")
 
         # If we're in test mode, we may cap the number of recordings we save.
         if root_cfg.ST_MODE == root_cfg.SOFTWARE_TEST_MODE.TESTING:

@@ -586,7 +586,9 @@ class InteractiveMenu():
         if char == "y":
             click.echo("Monitoring sensor output...")
             # Start monitoring sensor output by calling the display_sensor_logs function
-            run_cmd_live_echo("journalctl -f | grep 'Save log:' | grep -v SCORE")
+            # Strip everything before "Save log:" and exclude SCORE and SCORP logs
+            run_cmd_live_echo("journalctl -f | grep 'Save log:' | grep -v SCORE | grep -v SCORP "
+                              "| sed 's/.*Save log: //'")
         else:
             click.echo("Exiting.")
             return

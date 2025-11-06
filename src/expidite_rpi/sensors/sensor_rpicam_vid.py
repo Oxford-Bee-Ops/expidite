@@ -35,6 +35,7 @@ RPICAM_REVIEW_MODE_STREAM: Stream = Stream(
             format=api.FORMAT.JPG,
             cloud_container="expidite-review-mode",
             sample_probability="1.0",
+            file_naming=api.FILE_NAMING.REVIEW_MODE,
             storage_tier=api.StorageTier.HOT,
         )
 
@@ -79,6 +80,19 @@ class RpicamSensor(Sensor):
         assert "FILENAME " in self.rpicam_cmd, (
             f"FILENAME placeholder should be specified without any suffix rpicam_cmd: {self.rpicam_cmd}"
         )
+
+        # Validate that the required streams exist in the configuration
+        try:
+            self.get_stream(RPICAM_STREAM_INDEX)  # Main video stream
+        except ValueError as e:
+            raise ValueError(f"RpicamSensor requires a main video stream at index "
+                             f"{RPICAM_STREAM_INDEX}: {e}")
+        
+        try:
+            self.get_stream(RPICAM_REVIEW_MODE_STREAM_INDEX)  # Review mode stream
+        except ValueError as e:
+            raise ValueError(f"RpicamSensor requires a review mode stream at index "
+                             f"{RPICAM_REVIEW_MODE_STREAM_INDEX}: {e}")
 
 
     def review_mode_output(self) -> None:

@@ -322,3 +322,12 @@ def get_system_test_filename(st_type: str) -> Path:
     """Generate a filename for a system test file."""
     t = api.utc_now()
     return root_cfg.EDGE_UPLOAD_DIR / f"V3_{root_cfg.my_device_id}_{st_type}_{t.strftime('%Y%m%d')}.csv"
+
+
+def get_review_mode_filename(
+    data_id: str,
+    suffix: api.FORMAT) -> Path:
+    """Generate a filename for a review mode file.  
+    These are special in not containing timestamps because the intention is that they overwrite
+    each other."""
+    return root_cfg.EDGE_UPLOAD_DIR / f"V3_{data_id}.{suffix.value}"

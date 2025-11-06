@@ -32,6 +32,9 @@ class Stream:
     # The default implementation interprets this string as a float sampling probability (0.0-1.0)
     sample_probability: Optional[str|float] = None
 
+    # What format of file_naming to use for files produced by this stream.
+    file_naming: Optional[api.FILE_NAMING] = api.FILE_NAMING.DEFAULT
+
     # Storage tier for the data in the cloud storage system.
     # If you're using Azure for storage, see Azure documentation for details:
     # https://learn.microsoft.com/en-us/azure/storage/blobs/storage-blob-storage-tiers
