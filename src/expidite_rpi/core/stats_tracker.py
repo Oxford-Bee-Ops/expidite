@@ -67,7 +67,7 @@ class StatTracker(Sensor):
         self.dpworkers = dpworkers
 
     def run(self) -> None:
-        """Main loop for the DeviceHealth sensor.
+        """Main loop for the StatTracker.
         This method is called when the thread is started.
         It runs in a loop, logging health data and warnings at regular intervals.
         """
