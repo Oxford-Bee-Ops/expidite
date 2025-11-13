@@ -2,6 +2,7 @@
 from time import sleep
 
 import pytest
+
 from expidite_rpi.core import configuration as root_cfg
 from expidite_rpi.core.cloud_connector import AsyncCloudConnector, CloudConnector
 from expidite_rpi.utils.cloud_journal import CloudJournal
