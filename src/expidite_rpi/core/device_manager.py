@@ -80,8 +80,6 @@ class DeviceManager:
             self.led_timer.start()
             logger.info("DeviceManager LED timer started")
 
-        return
-    
     def stop(self) -> None:
         """Stop the DeviceManager threads."""
         if self.led_timer is not None:
