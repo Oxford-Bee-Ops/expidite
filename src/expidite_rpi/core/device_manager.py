@@ -316,16 +316,19 @@ class DeviceManager:
             utils.run_cmd("sudo nmcli dev disconnect " + self.client_wlan, ignore_errors=True)
             sleep(1)
             utils.run_cmd("sudo nmcli dev connect " + self.client_wlan, ignore_errors=True)
+            sleep(1)
 
         elif self.ping_failure_count_run % retry_frequency == 120:
             logger.info("Toggle wifi radio")
             utils.run_cmd("sudo nmcli radio wifi off", ignore_errors=True)
             sleep(1)
             utils.run_cmd("sudo nmcli radio wifi on", ignore_errors=True)
+            sleep(1)
 
         elif self.ping_failure_count_run % retry_frequency == 180:
             logger.info("Reloading NetworkManager")
             utils.run_cmd("sudo nmcli general reload", ignore_errors=True)
+            sleep(1)
 
         elif self.ping_failure_count_run % retry_frequency == 240:
             # Explicitly connect to bee-ops wifi network
@@ -338,6 +341,7 @@ class DeviceManager:
                         ignore_errors=True,
                     )
                     break
+            sleep(1)
 
     def action_on_ping_ok(self) -> None:
         # Track ping stats for logging purposes
