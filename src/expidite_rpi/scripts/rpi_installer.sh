@@ -657,6 +657,7 @@ create_mount() {
         # frequent disk writes.
         sudo systemctl disable dphys-swapfile
         sudo systemctl stop dphys-swapfile
+        # Remove the (now unnecessary) swapfile, if it exists.
         sudo rm /var/swap 2>/dev/null
     fi
 
