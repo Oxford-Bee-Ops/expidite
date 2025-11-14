@@ -304,7 +304,7 @@ class DeviceHealth(Sensor):
             total_memory = psutil.virtual_memory().total
             total_memory_gb = round(total_memory / (1024**3), 2)
 
-            # Memory usage - if greater than 60% then generate some diagnostics
+            # Memory usage - if greater than 75% then generate some diagnostics
             memory_usage = psutil.virtual_memory().percent
             if memory_usage > 75:
                 if root_cfg.running_on_rpi:
