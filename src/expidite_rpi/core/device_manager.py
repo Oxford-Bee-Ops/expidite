@@ -289,7 +289,7 @@ class DeviceManager:
             self.set_wifi_status(False)
             logger.info("Not connected to a wireless access point")
 
-    ######################################################################################################
+    ##########################################################################################################
     # Attempt to recover WiFi.
     #
     # Possible recovery actions:
@@ -298,12 +298,15 @@ class DeviceManager:
     # - Explicit wifi connect:        nmcli dev wifi connect <SSID> password <password>
     # - Reload NMCLI:                 nlcli general reload
     # - Restart the device:           sudo reboot
-    ######################################################################################################
+    #
+    # Try the first four recovery actions on a 20 minute cycle.
+    # These recovery actions are attempted at 2, 4, 6, 8 minutes respectively into each 20 minute cycle.
+    # If that doesn't recover it, then after the failure count gets to 4 hours reboot the device.
+    ##########################################################################################################
     def attempt_wifi_recovery(self) -> None:
         retry_frequency = 600  # Retry recovery action set every 2s*600=1200s=20mins
 
-        # If the failure count gets to 4 hours then reboot the device
-        # Ping cycle is 2s, so 60*60*2 = 4 hours
+        # Ping cycle is 2s, so 60*60*2 = 4 hours.
         if self.ping_failure_count_run == (60 * 60 * 2):
             logger.error(f"{root_cfg.RAISE_WARN()}Rebooting device due to no internet for >4 hours")
             utils.run_cmd("sudo reboot")
