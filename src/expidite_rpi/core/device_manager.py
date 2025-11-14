@@ -257,27 +257,27 @@ class DeviceManager:
 
     def action_on_ping_fail(self) -> None:
         # Track ping stats for logging purposes
-            self.ping_failure_count_all += 1
-            if self.last_ping_was_ok:
-                self.ping_success_count_run = 0
-                self.ping_failure_count_run = 0
-            self.ping_failure_count_run += 1
-            self.last_ping_was_ok = False
-            logger.info(
-                "Ping failure count run: %s, all (good/bad): %s/%s",
-                str(self.ping_failure_count_run),
-                str(self.ping_success_count_all),
-                str(self.ping_failure_count_all),
-            )
+        self.ping_failure_count_all += 1
+        if self.last_ping_was_ok:
+            self.ping_success_count_run = 0
+            self.ping_failure_count_run = 0
+        self.ping_failure_count_run += 1
+        self.last_ping_was_ok = False
+        logger.info(
+            "Ping failure count run: %s, all (good/bad): %s/%s",
+            str(self.ping_failure_count_run),
+            str(self.ping_success_count_all),
+            str(self.ping_failure_count_all),
+        )
 
-            # Set ping status so that the LEDs reflect this change
-            self.set_ping_status(False)
+        # Set ping status so that the LEDs reflect this change
+        self.set_ping_status(False)
 
-            # Only check Wifi status if ping fails
-            self.check_wifi_status()
+        # Only check Wifi status if ping fails
+        self.check_wifi_status()
 
-            if root_cfg.my_device.attempt_wifi_recovery:
-                self.attempt_wifi_recovery()
+        if root_cfg.my_device.attempt_wifi_recovery:
+            self.attempt_wifi_recovery()
 
     def check_wifi_status(self) -> None:
         # This returns eg "GNX103510:*:95" where * means connected
