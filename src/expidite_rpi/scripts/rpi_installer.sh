@@ -609,8 +609,8 @@ set_log_storage_volatile() {
 ###############################################
 # Create RAM disk
 #
-# If we're running off an SD card, we use a ramdisk instead of the SD card for the /bee-ops directory.
-# If we're running off an SSD, we mount /bee-ops on the SSD.
+# If we're running off an SD card, we use a ramdisk instead of the SD card for the /expidite directory.
+# If we're running off an SSD, we mount /expidite on the SSD.
 ###############################################
 create_mount() {
     mountpoint="/expidite"
@@ -628,7 +628,7 @@ create_mount() {
     else
         echo "Running on SD card. Mount the RAM disk."
         # All rpi_sensors have a minimum RAM of 4GB, so /dev/shm/ defaults to 2GB
-        # We reduce this to 500M for rpi_sensor installations and assign 1.5GB to /bee-ops
+        # We reduce this to 500M for rpi_sensor installations and assign 1.5GB to /expidite
         mount_size="1200M"
         if grep -Eqs "$mountpoint.*$mount_size" /etc/fstab; then
             echo "The mount point already exists in fstab with the correct size."
