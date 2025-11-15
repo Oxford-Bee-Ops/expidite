@@ -144,7 +144,7 @@ export_system_cfg() {
 # Function to set the LEDs on (if available)
 # We just need to write "red:blink:0.5" to /.expidite/flags/led_status
 TMP_FLAGS_DIR="/expidite/tmp/tmp_flags"
-set_leds_on() {
+set_leds_start() {
     # Test whether manage_leds is enabled
     if [ "$manage_leds" != "No" ]; then
         mkdir -p "$TMP_FLAGS_DIR" || { echo "Failed to create flags directory"; }
@@ -152,10 +152,10 @@ set_leds_on() {
     fi
 }
 
-set_leds_off() {
+set_leds_end() {
     # test whether manage_leds is enabled
     if [ "$manage_leds" != "No" ]; then
-        echo "red:off" > "$TMP_FLAGS_DIR/LED_STATUS" || { echo "Failed to set LED status"; }
+        echo "red:on" > "$TMP_FLAGS_DIR/LED_STATUS" || { echo "Failed to set LED status"; }
     fi
 }
 
@@ -871,7 +871,7 @@ sleep 10
 check_prerequisites
 cd "$HOME/.expidite" || { echo "Failed to change directory to $HOME/.expidite"; exit 1; }
 export_system_cfg
-set_leds_on
+set_leds_start
 install_ssh_keys
 create_and_activate_venv # Sets os_update=yes if creating a new venv
 if [ "$os_update" == "yes" ]; then
@@ -899,7 +899,7 @@ auto_start_if_requested
 make_persistent
 install_leds_service
 reboot_if_required
-set_leds_off
+set_leds_end
 
 # Add a flag file in the .expidite directory to indicate that the installer has run
 # We use the timestamp on this flag to determine the last update time

@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "expidite"
-version = "0.1.123"
+version = "0.1.124"
 description = "Python module to support using Raspberry Pi for scientific data collection"
 readme = "README.md"
 requires-python = ">=3.11"
@@ -52,9 +52,6 @@ bcli = "expidite_rpi.bcli:main"
 
 [tool.setuptools.packages.find]
 where = ["src"]
-
-[tool.setuptools.package-data]
-"expidite" = ["src/rpi/scripts/*"]
 
 [tool.setuptools.data-files]
 "scripts" = ["src/expidite_rpi/scripts/*"]
