@@ -652,6 +652,13 @@ create_mount() {
             sudo mount -a
             echo "The expidite mount point has been added to fstab."
         fi
+
+        # Disable swap. We want to protect the SD card by minimising disk writes, and swap memory can require
+        # frequent disk writes.
+        sudo systemctl disable dphys-swapfile
+        sudo systemctl stop dphys-swapfile
+        # Remove the (now unnecessary) swapfile, if it exists.
+        sudo rm /var/swap 2>/dev/null
     fi
 
 }
