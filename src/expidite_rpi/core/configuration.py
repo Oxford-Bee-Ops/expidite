@@ -219,10 +219,10 @@ ST_MODE: SOFTWARE_TEST_MODE = SOFTWARE_TEST_MODE.LIVE
 # Set up logging
 #
 # The logging level is a combination of:
-#  - the value set in bee-ops.cfg
+#  - the value set in config
 #  - the value requested by the calling module (default is INFO)
 #
-# There is update code at the end of this file that sets the level once we've loaded bee-ops.cfg
+# There is update code at the end of this file that sets the level once we've loaded config.
 ############################################################################################################
 TEST_LOG = LOG_DIR.joinpath("test.log")
 _DEFAULT_LOG: Optional[Path] = None

@@ -29,7 +29,7 @@ class Test_Orchestrator:
     def test_Orchestrator(self) -> None:
         logger.info("Run test_Orchestrator test")
         # We reset cfg.my_device_id to override the computers mac_address
-        # This is a test device defined in BeeOps.cfg to have a DummySensor.
+        # This is a test device defined to have a DummySensor.
         root_cfg.update_my_device_id("d01111111111")
 
         with rpi_emulator.RpiEmulator.get_instance() as th:
@@ -74,7 +74,7 @@ class Test_Orchestrator:
 
     def test_orchestrator_main(self) -> None:
         # We reset cfg.my_device_id to override the computers mac_address
-        # This is a test device defined in BeeOps.cfg to have a DummySensor.
+        # This is a test device defined to have a DummySensor.
         logger.info("Run test_orchestrator_main test")
         root_cfg.update_my_device_id("d01111111111")
         

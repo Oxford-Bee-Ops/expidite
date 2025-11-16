@@ -144,7 +144,7 @@ export_system_cfg() {
 # Function to set the LEDs on (if available)
 # We just need to write "red:blink:0.5" to /.expidite/flags/led_status
 TMP_FLAGS_DIR="/expidite/tmp/tmp_flags"
-set_leds_on() {
+set_leds_start() {
     # Test whether manage_leds is enabled
     if [ "$manage_leds" != "No" ]; then
         mkdir -p "$TMP_FLAGS_DIR" || { echo "Failed to create flags directory"; }
@@ -152,10 +152,10 @@ set_leds_on() {
     fi
 }
 
-set_leds_off() {
+set_leds_end() {
     # test whether manage_leds is enabled
     if [ "$manage_leds" != "No" ]; then
-        echo "red:off" > "$TMP_FLAGS_DIR/LED_STATUS" || { echo "Failed to set LED status"; }
+        echo "red:on" > "$TMP_FLAGS_DIR/LED_STATUS" || { echo "Failed to set LED status"; }
     fi
 }
 
@@ -609,8 +609,8 @@ set_log_storage_volatile() {
 ###############################################
 # Create RAM disk
 #
-# If we're running off an SD card, we use a ramdisk instead of the SD card for the /bee-ops directory.
-# If we're running off an SSD, we mount /bee-ops on the SSD.
+# If we're running off an SD card, we use a ramdisk instead of the SD card for the /expidite directory.
+# If we're running off an SSD, we mount /expidite on the SSD.
 ###############################################
 create_mount() {
     mountpoint="/expidite"
@@ -628,7 +628,7 @@ create_mount() {
     else
         echo "Running on SD card. Mount the RAM disk."
         # All rpi_sensors have a minimum RAM of 4GB, so /dev/shm/ defaults to 2GB
-        # We reduce this to 500M for rpi_sensor installations and assign 1.5GB to /bee-ops
+        # We reduce this to 500M for rpi_sensor installations and assign 1.5GB to /expidite
         mount_size="1200M"
         if grep -Eqs "$mountpoint.*$mount_size" /etc/fstab; then
             echo "The mount point already exists in fstab with the correct size."
@@ -652,6 +652,13 @@ create_mount() {
             sudo mount -a
             echo "The expidite mount point has been added to fstab."
         fi
+
+        # Disable swap. We want to protect the SD card by minimising disk writes, and swap memory can require
+        # frequent disk writes.
+        sudo systemctl disable dphys-swapfile
+        sudo systemctl stop dphys-swapfile
+        # Remove the (now unnecessary) swapfile, if it exists.
+        sudo rm /var/swap 2>/dev/null
     fi
 
 }
@@ -871,7 +878,7 @@ sleep 10
 check_prerequisites
 cd "$HOME/.expidite" || { echo "Failed to change directory to $HOME/.expidite"; exit 1; }
 export_system_cfg
-set_leds_on
+set_leds_start
 install_ssh_keys
 create_and_activate_venv # Sets os_update=yes if creating a new venv
 if [ "$os_update" == "yes" ]; then
@@ -899,7 +906,7 @@ auto_start_if_requested
 make_persistent
 install_leds_service
 reboot_if_required
-set_leds_off
+set_leds_end
 
 # Add a flag file in the .expidite directory to indicate that the installer has run
 # We use the timestamp on this flag to determine the last update time

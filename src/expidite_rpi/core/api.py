@@ -1,7 +1,7 @@
 ####################################################################################################
-# Bee Ops API
+# Expidite API
 #
-# File define constants used on interfaces between components in the Bee Ops system.
+# File define constants used on interfaces between components in the Expidite system.
 ####################################################################################################
 from datetime import datetime
 from enum import Enum, StrEnum

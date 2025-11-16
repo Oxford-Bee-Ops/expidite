@@ -331,7 +331,6 @@ class DeviceManager:
             sleep(1)
 
         elif self.ping_failure_count_run % retry_frequency == 240:
-            # Explicitly connect to bee-ops wifi network
             logger.info("Explicitly connecting to wifi network")
             for client in self.wifi_clients:
                 if client.ssid is not None and client.pw is not None:
