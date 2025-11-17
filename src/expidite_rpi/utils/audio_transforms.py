@@ -13,7 +13,7 @@ from expidite_rpi.core import configuration as root_cfg
 
 logger = root_cfg.setup_logger("expidite")
 
-# Fix the seed for reproducability
+# Fix the seed for reproducibility
 np.random.seed(42)
 
 MODE_TRAINING = "Training"

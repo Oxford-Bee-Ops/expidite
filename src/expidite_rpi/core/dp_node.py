@@ -215,7 +215,7 @@ class DPnode():
         start_time: datetime
             The time that the recording started.
         end_time:datetime
-            Tthe time that the recording ended.
+            The time that the recording ended.
         """
 
         # If on EDGE, files are either saved to the root_cfg.EDGE_PROCESSING_DIR if there are DPs registered,
@@ -496,7 +496,7 @@ class DPnode():
 
         if save_sample:
             # Generate a *copy* of the raw sample file so we can move the original to the Processing 
-            # directory, without causeing a race condition with the DP.
+            # directory, without causing a race condition with the DP.
             # The filename is the same as the recording, but saved to the upload directory
             sample_fname = file_naming.increment_filename(root_cfg.EDGE_UPLOAD_DIR / new_fname.name)
             if save_for_dp:

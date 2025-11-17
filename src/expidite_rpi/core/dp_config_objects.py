@@ -15,7 +15,7 @@ class Stream:
     # In combination with the index, this will be unique to a given sensor.
     # In combination with the device_id & sensor_index this must be globally unique.
     type_id: str
-    # Idenfier for the output stream.
+    # Identifier for the output stream.
     index: int
     # The type of data being produced by this output stream.
     format: api.FORMAT
@@ -73,7 +73,7 @@ class SensorCfg(DPtreeNodeCfg):
         These represent physical interface types on the Raspberry Pi (eg I2C, USB, Camera).
 
     sensor_index: int
-        The index of the sensor - represents the phsyical interface index or comms port.
+        The index of the sensor - represents the physical interface index or comms port.
         For example, the physical USB port index or the I2C signaling channel.
         Must be unique in combination with the sensor_type.
 

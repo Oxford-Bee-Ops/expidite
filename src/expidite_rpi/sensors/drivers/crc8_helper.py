@@ -29,7 +29,7 @@ TEST_DATA = [
 def mod2_division_8bits(a, b, number_of_bytes, init_value):
     "calculate mod2 division in 8 bits. a mod b. init_value is for crc8 init value."
     head_of_a = 0x80
-    # Processiong a
+    # Processing a
     a = a << 8
     # Preprocessing head_of_a
     for i in range(0, number_of_bytes):
@@ -68,7 +68,7 @@ def AHT20_crc8_calculate(all_data_int):
 
 def AHT20_crc8_check(all_data_int):
     """
-    The input data shoule be:
+    The input data should be:
     Status Humidity0 Humidity1 Humidity2|Temperature0 Temperature1 Temperature2 CRCCode.
     In python's int64.
     """

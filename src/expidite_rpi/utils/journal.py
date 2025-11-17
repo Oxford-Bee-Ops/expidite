@@ -56,7 +56,7 @@ class Journal:
             self._data = pd.DataFrame()
         return self._data
 
-    # Function to read data from a differnt CSV file and combine it with the existing Journal data
+    # Function to read data from a different CSV file and combine it with the existing Journal data
     def load_from_additional_file(self, fname: str) -> None:
         # Check the file exists and has data before loading it
         if Path(fname).exists() and Path(fname).stat().st_size > 0:

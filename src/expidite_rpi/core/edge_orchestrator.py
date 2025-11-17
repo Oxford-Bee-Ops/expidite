@@ -261,7 +261,7 @@ class EdgeOrchestrator:
         orchestrator_thread = threading.Thread(target=main, name="EdgeOrchestrator")
         orchestrator_thread.start()
         # Block for long enough for the main thread to be scheduled
-        # So we avoid race conditions with subsequence calls to stop_all()
+        # So we avoid race conditions with subsequent calls to stop_all()
         sleep(1)
 
 

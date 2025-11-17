@@ -1,5 +1,5 @@
 ###################################################################################################
-# Thie file contains recipes for fully specified device types.
+# This file contains recipes for fully specified device types.
 #
 # RpiCore config model
 #
@@ -96,7 +96,7 @@ def create_ltr390_device() -> list[DPtree]:
 
 
 ###################################################################################################
-# Low FPS continuous video reording device
+# Low FPS continuous video recording device
 ###################################################################################################
 def create_continuous_video_4fps_device() -> list[DPtree]:
     """Create a standard camera device.

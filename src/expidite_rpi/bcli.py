@@ -193,7 +193,7 @@ class InteractiveMenu():
 
     def view_rpi_core_config(self) -> None:
         """View the rpi core configuration."""
-        # Check we have bloc storage access
+        # Check we have blob storage access
         if not check_keys_env():
             return
 
