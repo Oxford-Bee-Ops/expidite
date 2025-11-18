@@ -262,7 +262,6 @@ def setup_logger(name: str,
         # By default, we always want to log to a file
         # Check whether there are any FileHander handlers already
         file_handler_count = 0
-        console_handler = None
         for handler in logger.handlers:
             if isinstance(handler, logging.FileHandler):
                 file_handler_count += 1
