@@ -38,7 +38,7 @@ class DeviceManager:
         self.ping_success_count_run = 0
         self.led_timer: Optional[utils.RepeatTimer] = None
         self.wifi_timer: Optional[utils.RepeatTimer] = None
-        
+
 
     def start(self) -> None:
         """Start the DeviceManager threads."""
@@ -58,7 +58,7 @@ class DeviceManager:
 
         # Start wifi management thread
         if root_cfg.running_on_rpi and root_cfg.my_device.attempt_wifi_recovery:
-            self.wifi_timer = utils.RepeatTimer(interval=2.0, 
+            self.wifi_timer = utils.RepeatTimer(interval=2.0,
                                                 function=self.wifi_timer_callback)
             self.wifi_timer.start()
             logger.info("DeviceManager Wifi timer started")
@@ -72,10 +72,10 @@ class DeviceManager:
         self.red_led = False
         self.green_led = False
         # Start the LED management thread
-        if (root_cfg.running_on_rpi and 
-            root_cfg.system_cfg is not None and 
+        if (root_cfg.running_on_rpi and
+            root_cfg.system_cfg is not None and
             root_cfg.system_cfg.manage_leds == "Yes"):
-            self.led_timer = utils.RepeatTimer(interval=5, 
+            self.led_timer = utils.RepeatTimer(interval=5,
                                                function=self.led_timer_callback)
             self.led_timer.start()
             logger.info("DeviceManager LED timer started")
@@ -122,7 +122,7 @@ class DeviceManager:
                 # Green should be off; red should be on
                 self.set_led_status("red", "2.0")
         except Exception as e:
-            logger.error(f"{root_cfg.RAISE_WARN()}LED timer callback threw an exception: " + str(e), 
+            logger.error(f"{root_cfg.RAISE_WARN()}LED timer callback threw an exception: " + str(e),
                          exc_info=True)
 
     def set_led_status(self, colour: str, status: str) -> None:
@@ -137,7 +137,7 @@ class DeviceManager:
             with open(root_cfg.LED_STATUS_FILE, "w") as f:
                 f.write(f"{colour}:{status}\n")
         except Exception as e:
-            logger.error(f"{root_cfg.RAISE_WARN()}set_led_status threw an exception: " + str(e), 
+            logger.error(f"{root_cfg.RAISE_WARN()}set_led_status threw an exception: " + str(e),
                          exc_info=True)
 
     #############################################################################################################
@@ -151,7 +151,7 @@ class DeviceManager:
         if self.wifi_clients is None:
             logger.info("No wifi clients in the device configuration")
             return
-        
+
         # Use nmcli to configure the client wifi connection if it doesn't already exist
         existing_connections = (
             utils.run_cmd("sudo nmcli -t -f NAME connection show").split("\n")
@@ -159,11 +159,11 @@ class DeviceManager:
 
         # Inject the wifi clients
         for client in self.wifi_clients:
-            if (client.ssid is None or 
-                client.priority is None or 
-                client.pw is None or 
-                client.ssid == "" or 
-                client.priority == "" or 
+            if (client.ssid is None or
+                client.priority is None or
+                client.pw is None or
+                client.ssid == "" or
+                client.priority == "" or
                 client.pw == ""):
                 logger.warning(f"Skipping invalid wifi client: {client}")
                 continue
@@ -180,7 +180,7 @@ class DeviceManager:
                 )
             else:
                 logger.info(f"Client wifi connection {client.ssid} already exists")
-                    
+
 
     def set_wifi_status(self, wifi_up: bool) -> None:
         if wifi_up:
@@ -252,7 +252,7 @@ class DeviceManager:
             self.log_counter += 1
 
         except Exception as e:
-            logger.error(f"{root_cfg.RAISE_WARN()}Wifi timer callback threw an exception: " + str(e), 
+            logger.error(f"{root_cfg.RAISE_WARN()}Wifi timer callback threw an exception: " + str(e),
                         exc_info=True)
 
     def action_on_ping_fail(self) -> None:

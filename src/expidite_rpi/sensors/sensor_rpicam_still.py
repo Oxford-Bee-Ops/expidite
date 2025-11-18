@@ -45,7 +45,7 @@ class RpicamStillSensorCfg(SensorCfg):
     ############################################################
     # Defines the rpicam-still command to use to record video.
     # This should be as specified in the rpicam-still documentation.
-    # The filename should be substituted with FILENAME. 
+    # The filename should be substituted with FILENAME.
     # The FILENAME suffix should match the datastream input_format.
     rpicam_cmd: str = "rpicam-still -o FILENAME"
     recording_interval_seconds: int = 60*60  # Interval between still images
@@ -87,7 +87,7 @@ class RpicamStillSensor(Sensor):
         except ValueError as e:
             raise ValueError(f"RpicamStillSensor requires a main image stream at index "
                              f"{RPICAM_STILL_STREAM_INDEX}: {e}")
-        
+
         try:
             self.get_stream(RPICAM_STILL_REVIEW_MODE_STREAM_INDEX)  # Review mode stream
         except ValueError as e:
@@ -137,11 +137,11 @@ class RpicamStillSensor(Sensor):
                 logger.info(f"Video recording completed with rc={rc}")
 
                 # Save the video file to the datastream
-                self.save_recording(stream_index_to_use, 
-                                    filename, 
-                                    start_time=start_time, 
+                self.save_recording(stream_index_to_use,
+                                    filename,
+                                    start_time=start_time,
                                     end_time=api.utc_now())
-                
+
                 exception_count = 0  # Reset exception count on success
 
             except Exception as e:

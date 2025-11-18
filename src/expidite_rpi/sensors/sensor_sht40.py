@@ -46,7 +46,7 @@ class SHT40(Sensor):
     def __init__(self, config: SHT40SensorCfg):
         super().__init__(config)
         self.config = config
-        
+
     # Separate thread to log data
     def run(self):
 

@@ -68,7 +68,8 @@ line-ending = "auto"
 [tool.ruff.lint]
 select = [
     "F",   # pyflakes
-    "E",   # pycodestyle
+    "E",   # pycodestyle error
+    "W",   # pycodestyle warning
     "I",   # isort
     "RUF", # ruff-specific rules
 ]

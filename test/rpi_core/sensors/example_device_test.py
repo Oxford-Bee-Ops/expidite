@@ -49,17 +49,17 @@ class Test_example_device:
             sc.stop()
 
             # The example sensor produces:
-            # - a stream of jpg files (EXAMPLE_FILE_DS_TYPE_ID) 
+            # - a stream of jpg files (EXAMPLE_FILE_DS_TYPE_ID)
             # - a stream of logs (EXAMPLE_LOG_DS_TYPE_ID).
             # We save 100% of jpg file samples from the example sensor to expidite-upload
             # but the originals all get deleted after processing by the example processor.
             # The example processor takes the jpg files and saves:
             # - a df stream with "pixel_count" (EXAMPLE_DF_DS_TYPE_ID).
-            th.assert_records("expidite-fair", 
+            th.assert_records("expidite-fair",
                             {"V3_*": 1})
-            th.assert_records("expidite-journals", 
+            th.assert_records("expidite-journals",
                             {"V3_DUMML*": 1, "V3_DUMMD*": 1})
-            th.assert_records("expidite-upload", 
+            th.assert_records("expidite-upload",
                             {"V3_DUMMF*": 3})
             df = th.get_journal_as_df("expidite-journals", "V3_DUMMD*")
             assert df is not None, "Expected df to be not None"
@@ -69,7 +69,7 @@ class Test_example_device:
             assert (df["data_type_id"] == EXAMPLE_DF_TYPE_ID).all()
             assert (df["device_id"] == root_cfg.DUMMY_MAC).all()
             assert (df["sensor_index"] == 1).all()
-            assert (df["stream_index"] == 0).all() 
+            assert (df["stream_index"] == 0).all()
             assert (df["pixel_count"] == 25).all(), "Expected pixel_count to be 25"
             assert (df["timestamp"].str.contains("T")).all(), "Expected timestamp to contain T"
 
@@ -82,11 +82,11 @@ class Test_example_device:
             grouped_df = score_df.groupby("observed_type_id").agg({"count": "sum"}).reset_index()
             assert len(grouped_df) > 0, "No records found in the score datastream"
             # Select the row with the observed_type_id of EXAMPLE_DF_DS_TYPE_ID and get the count
-            d_count = (grouped_df.loc[grouped_df["observed_type_id"] == 
+            d_count = (grouped_df.loc[grouped_df["observed_type_id"] ==
                                       EXAMPLE_DF_TYPE_ID, "count"].values[0])
-            f_count = (grouped_df.loc[grouped_df["observed_type_id"] == 
+            f_count = (grouped_df.loc[grouped_df["observed_type_id"] ==
                                       EXAMPLE_FILE_TYPE_ID, "count"].values[0])
-            l_count = (grouped_df.loc[grouped_df["observed_type_id"] == 
+            l_count = (grouped_df.loc[grouped_df["observed_type_id"] ==
                                       EXAMPLE_LOG_TYPE_ID, "count"].values[0])
             assert d_count == 3, "Expected 1 df record"
             assert f_count == 3, "Expected 1 file record"

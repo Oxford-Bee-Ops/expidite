@@ -28,7 +28,7 @@ class CloudUtilities:
         cc = CloudConnector.get_instance(root_cfg.CloudType.AZURE)
         tmp_dir = file_naming.get_temporary_dir()
         files = cc.list_cloud_files(container_name, prefix=f"V3_{type_id}", suffix=".csv")
-        cc.download_container(src_container=container_name, 
+        cc.download_container(src_container=container_name,
                               dst_dir=tmp_dir,
                               files=files)
         df_list = []

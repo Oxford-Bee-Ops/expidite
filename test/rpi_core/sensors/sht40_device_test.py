@@ -35,12 +35,12 @@ class Test_SHT40_device:
             if root_cfg.running_on_windows:
                 logger.warning("Skipping SHT40 test on Windows - requires I2C")
                 return
-            
+
             sc.start()
             sleep(2)
             sc.stop()
             sleep(2)
-            th.assert_records("expidite-fair", 
+            th.assert_records("expidite-fair",
                             {"V3_*": 1})
-            th.assert_records("expidite-journals", 
+            th.assert_records("expidite-journals",
                             {"V3_SHT40*": 1})

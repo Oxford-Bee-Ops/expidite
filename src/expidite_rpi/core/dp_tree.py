@@ -11,7 +11,7 @@ class Edge(NamedTuple):
     source: DPnode
     sink: DPnode
     stream: Stream
-    
+
 ###############################################################################################
 # DPtree represents the flow of data from the sensor to the cloud.
 # - the root node is the sensor
@@ -133,7 +133,7 @@ class DPtree:
             KeyError: If the node with the specified data_id does not exist in the tree.
         """
         return self._nodes[data_id]
-    
+
     def get_edges(self) -> List[Edge]:
         """
         Retrieves all edges in the tree.

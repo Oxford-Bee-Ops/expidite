@@ -17,17 +17,17 @@ def log_test_lifecycle(request):
     """
     test_name = request.node.name
     module_name = request.node.module.__name__ if request.node.module else "unknown"
-    
+
     # Log test start
     start_time = time.time()
     test_logger.info(f"[PYTEST START] {module_name}::{test_name}")
-    
+
     yield  # This is where the test runs
-    
+
     # Log test end
     duration = time.time() - start_time
     test_result = "PASSED" if not request.node.rep_call.failed else "FAILED"
-    
+
     if test_result == "PASSED":
         test_logger.info(f"[PYTEST END] {module_name}::{test_name} - "
                          f"{test_result} (Duration: {duration:.3f}s)")

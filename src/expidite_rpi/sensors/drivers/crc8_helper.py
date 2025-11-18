@@ -1,5 +1,5 @@
 # Usage: AHT20 crc8 checker.
-# A total of 6 * 8 bits data need to check. G(x) = x8 + x5 + x4 + 1 -> 0x131(0x31), Initial value = 0xFF. 
+# A total of 6 * 8 bits data need to check. G(x) = x8 + x5 + x4 + 1 -> 0x131(0x31), Initial value = 0xFF.
 # No XOROUT.
 # Author: XU Zifeng.
 # Email: zifeng.xu@foxmail.com
