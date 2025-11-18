@@ -172,7 +172,7 @@ class EdgeOrchestrator:
 
         if not isinstance(dp_trees, list):
             logger.error(f"{root_cfg.RAISE_WARN()}create_method must return a list; "
-                         f"created {dp_trees.__type__}")
+                         f"created {type(dp_trees)}")
             raise ValueError("create_method must return a list of DPtree objects")
         
         return dp_trees
