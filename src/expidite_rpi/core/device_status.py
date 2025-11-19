@@ -4,6 +4,8 @@ import datetime
 import platform
 import sys
 
+from expidite_rpi.core import configuration as root_cfg
+
 logger = root_cfg.setup_logger("expidite")
 
 # NICKB Replace with the correct location.
@@ -25,10 +27,6 @@ DIAGNOSTIC_COMMANDS = [
     ("DNS Resolution Config", "cat /etc/resolv.conf"),
     # Connectivity Checks
     ("Ping Google DNS (8.8.8.8)", "ping -c 4 8.8.8.8"),
-    (
-        "Ping Local Router/Gateway (e.g., 192.168.1.1)",
-        "ping -c 4 192.168.1.1 || echo 'Local gateway ping failed or IP 192.168.1.1 is incorrect.'",
-    ),
     # Resource Usage
     ("Disk Usage (df)", "df -h"),
     ("Memory Usage (free)", "free -h"),
@@ -39,40 +37,45 @@ DIAGNOSTIC_COMMANDS = [
     # ("Recent Journal Logs (Network/Systemd)", "journalctl -u systemd-networkd -u dhcpcd -n 50 --no-pager"),
 ]
 
+##############################################################################################################
+# The sole purpose of this class is to write a diagnostics bundle to disk, containing as much information as
+# possible to help understand how/why the device got into a bad state, such as lost connectivity or out of
+# memory. Any code which deliberately reboots the device should first generate a diagnostics bundle.
+#
+# The diagnostics bundle is expected to be retrieved either:
+# - manually by copying off the SD card, if the device never recovers and has to be physically retrieved, or
+# - if connectivity recovers, it will be uploaded to cloud storage.
+##############################################################################################################
 class DeviceStatus:
     @staticmethod
-    def collect_diagnostics():
+    def collect_diagnostics(reason: str):
         """Collects and saves all diagnostic outputs to a time-stamped file."""
 
-        # 1. Basic OS check
+        # NICKB use expidite version
         if platform.system() != "Linux":
-            print(
+            logger.info(
                 f"Error: This script is designed for Linux (Raspberry Pi). Current OS is {platform.system()}."
             )
             sys.exit(1)
 
-        # 2. Ensure log directory exists
+        # Ensure log directory exists
         os.makedirs(LOG_DIR, exist_ok=True)
 
-        # 3. Define log filename
         timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
         log_filename = os.path.join(LOG_DIR, f"diag_{timestamp}.txt")
 
-        print(f"Starting diagnostic collection. Log file: {log_filename}")
+        logger.info(f"Starting diagnostic collection. Log file: {log_filename}")
 
-        # 4. Write diagnostics to file
         with open(log_filename, "w") as f:
-            f.write(f"--- Expidite connectivity diagnostics ---\n")
+            f.write("--- Expidite connectivity diagnostics ---------------------------------------------\n")
             f.write(f"Report Generated: {datetime.datetime.now().isoformat()}\n")
+            f.write(f"Reason: {reason}\n")
             f.write(f"Log Location: {log_filename}\n")
-            f.write(f"-----------------------------------------\n\n")
+            f.write("-----------------------------------------------------------------------------------\n\n")
 
             for title, command in DIAGNOSTIC_COMMANDS:
                 f.write(f"### {title} (Command: {command}) ###\n")
-                print(f"-> Running: {title}...")
-
                 stdout, stderr, returncode = DeviceStatus.execute_command(command)
-
                 f.write(f"Exit Code: {returncode}\n")
 
                 if stdout:
@@ -85,10 +88,7 @@ class DeviceStatus:
 
                 f.write("\n" + "=" * 80 + "\n\n")
 
-        print(f"\nDiagnostic collection complete. Data saved to: {log_filename}")
-        print(
-            f"Check the file for details on network configuration, memory/disk usage, and recent system messages."
-        )
+        logger.info(f"\nDiagnostic collection complete. Data saved to: {log_filename}")
 
     # NICKB: use an existing util function?
     @staticmethod
