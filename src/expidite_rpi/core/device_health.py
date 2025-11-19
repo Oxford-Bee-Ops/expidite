@@ -314,6 +314,7 @@ class DeviceHealth(Sensor):
                     # generally considered good practice to recover before performance degrades.
                     if memory_usage > 90:
                         logger.error(root_cfg.RAISE_WARN() + "Memory usage >90%, rebooting")
+                        # NICKB Record diags to DISK. On RPi we always have a device_manager instance.
                         utils.run_cmd("sudo reboot", ignore_errors=True)
 
             # Get the expidite version and user code version from the files

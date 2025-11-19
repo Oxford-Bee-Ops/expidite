@@ -9,6 +9,7 @@ from typing import Optional
 
 from expidite_rpi.core import api
 from expidite_rpi.core import configuration as root_cfg
+from expidite_rpi.core.device_status import DeviceStatus
 from expidite_rpi.utils import utils
 
 logger = root_cfg.setup_logger("expidite")
@@ -246,6 +247,10 @@ class DeviceManager:
             else:
                 self.action_on_ping_ok()
 
+                # NICKB REMOVE - temporary for testing only.
+                if self.ping_success_count_run % 60 == 0:
+                    DeviceStatus.collect_diagnostics()
+
             # Log useful info and status periodically
             if self.log_counter % self.wifi_log_frequency == 0:
                 self.log_wifi_info()
@@ -309,6 +314,9 @@ class DeviceManager:
         # Ping cycle is 2s, so 60*60*2 = 4 hours.
         if self.ping_failure_count_run == (60 * 60 * 2):
             logger.error(f"{root_cfg.RAISE_WARN()}Rebooting device due to no internet for >4 hours")
+            # NICKB Record diags to DISK. Also record them from all of the recovery actions here as we don't have
+            # connectivity on any branch.
+            DeviceStatus.collect_diagnostics()
             utils.run_cmd("sudo reboot")
 
         elif self.ping_failure_count_run % retry_frequency == 60:
