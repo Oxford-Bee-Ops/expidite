@@ -76,7 +76,7 @@ class Test_example_device:
             df_log = th.get_journal_as_df("expidite-journals", "V3_DUMML*")
             assert df_log is not None, "Expected df_log to be not None"
             assert df_log["temperature"].max() == len(df_log), \
-                f"value_ticker {df_log["temperature"].max()} = len(df_log) {len(df_log)}"
+                f"value_ticker {df_log['temperature'].max()} = len(df_log) {len(df_log)}"
 
             score_df = th.get_journal_as_df("expidite-system-records", "V3_SCORE*")
             grouped_df = score_df.groupby("observed_type_id").agg({"count": "sum"}).reset_index()
