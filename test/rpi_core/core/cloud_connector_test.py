@@ -86,7 +86,7 @@ class TestCloudConnector:
             f.write("This is a test file.")
         dst_container = "expidite-upload"
         cc.upload_to_container(dst_container, [src_file], delete_src=False)
-        
+
         # Upload is asynchronous, so we need to wait for it to complete
         sleep(1)
 
@@ -134,7 +134,7 @@ class TestCloudConnector:
 
         # Download the appended file to verify its contents
         downloaded_file = file_naming.get_temporary_filename(api.FORMAT.CSV)
-        cc.download_from_container(dst_container, append_file.name, downloaded_file)    
+        cc.download_from_container(dst_container, append_file.name, downloaded_file)
         assert downloaded_file.exists(), "Downloaded appended file does not exist"
 
         # Read the downloaded file and check its contents

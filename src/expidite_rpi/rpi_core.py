@@ -34,8 +34,8 @@ class RpiCore:
         return root_cfg.load_configuration()
 
 
-    def test_configuration(self, 
-                           fleet_config: list[DeviceCfg], 
+    def test_configuration(self,
+                           fleet_config: list[DeviceCfg],
                            device_id: Optional[str] = None) -> tuple[bool, list[str]]:
         """ Validates that the configuration in fleet_config is valid.
 
@@ -52,7 +52,7 @@ class RpiCore:
 
         if not fleet_config:
             return (False, ["No configuration provided."])
-        
+
         try:
             for device in fleet_config:
                 if device_id is not None and device.device_id != device_id:
@@ -69,7 +69,7 @@ class RpiCore:
         except Exception as e:
             errors.append(str(e))
 
-        return (is_valid, errors)                
+        return (is_valid, errors)
 
 
     def configure(self, fleet_config: list[DeviceCfg]) -> None:
@@ -88,7 +88,7 @@ class RpiCore:
         """
         if not fleet_config:
             raise Exception("No configuration files provided.")
-        
+
         success, error = root_cfg.check_keys()
         if not success:
             raise Exception(error)
@@ -193,7 +193,7 @@ class RpiCore:
         # Test for the presence of the SC_CONFIG_FILE file
         return root_cfg.SYSTEM_CFG_FILE.exists()
 
-    @staticmethod    
+    @staticmethod
     def update_my_device_id(new_device_id: str) -> None:
         """Function used in testing to change the device_id"""
         root_cfg.update_my_device_id(new_device_id)

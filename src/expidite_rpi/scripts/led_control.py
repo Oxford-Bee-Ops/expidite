@@ -121,7 +121,7 @@ def parse_status(text: str):
     colour = parts[0]
     if colour not in PINS:
         colour = "red"
-    
+
     status = parts[1]
     if status not in MODES:
         status = "on"
@@ -154,7 +154,7 @@ def acquire_lock_or_exit():
         sys.exit(1)
     else:
         LOCK_FILE.parent.mkdir(parents=True, exist_ok=True)
-        LOCK_FILE.touch(exist_ok=False)      
+        LOCK_FILE.touch(exist_ok=False)
 
 def handle_signal(signum, frame):
     stop_event.set()

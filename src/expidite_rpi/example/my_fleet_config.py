@@ -83,5 +83,3 @@ INVENTORY: list[DeviceCfg] = [
         },
     ),
 ]
-
-        

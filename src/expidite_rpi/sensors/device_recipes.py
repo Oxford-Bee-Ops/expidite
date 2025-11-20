@@ -47,7 +47,7 @@ def create_sht31_device() -> list[DPtree]:
     my_sensor = SHT31(cfg)
     my_tree = DPtree(my_sensor)
     return [my_tree]
-    
+
 ######################################################################################################
 # Create SHT40 temp and humidity sensor device
 ######################################################################################################
@@ -102,7 +102,7 @@ def create_continuous_video_4fps_device() -> list[DPtree]:
     """Create a standard camera device.
     No recordings are saved to the cloud - it is assumed a DP will process the recordings locally."""
     sensor_index = 0
-    cfg: RpicamSensorCfg = replace(DEFAULT_RPICAM_SENSOR_CFG, 
+    cfg: RpicamSensorCfg = replace(DEFAULT_RPICAM_SENSOR_CFG,
         description="Low FPS continuous video recording device",
         sensor_index=sensor_index,
         rpicam_cmd="rpicam-vid --framerate 4 --width 640 --height 480 -o FILENAME -t 180000 -v 0"
@@ -117,7 +117,7 @@ def create_continuous_video_4fps_device() -> list[DPtree]:
 #
 # We start with a low FPS continuous video recording device, and add a trap camera processor to it.
 # This creates a derived TRAP_CAM_DS datastream with the sub-sampled videos.
-# The original continuous video recording is deleted after being passed to the trap cam DP; 
+# The original continuous video recording is deleted after being passed to the trap cam DP;
 # we could opt to save raw samples if we wanted to.
 ###################################################################################################
 def create_trapcam_device(sensor_index: Optional[int] = 0) -> list[DPtree]:
@@ -125,10 +125,10 @@ def create_trapcam_device(sensor_index: Optional[int] = 0) -> list[DPtree]:
 
     if sensor_index is None:
         sensor_index = 0
-        
+
     # Define the sensor
     # Use the default rpicam sensor config except for the rpicam command
-    cfg: RpicamSensorCfg = replace(DEFAULT_RPICAM_SENSOR_CFG, 
+    cfg: RpicamSensorCfg = replace(DEFAULT_RPICAM_SENSOR_CFG,
         rpicam_cmd = "rpicam-vid --framerate 15 --width 640 --height 480 -o FILENAME -t 180000"
     )
     my_sensor = RpicamSensor(cfg)

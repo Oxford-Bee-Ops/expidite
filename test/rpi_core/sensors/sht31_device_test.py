@@ -35,7 +35,7 @@ class Test_sht31_device:
             sleep(2)
             sc.stop()
             sleep(2)
-            th.assert_records("expidite-fair", 
+            th.assert_records("expidite-fair",
                             {"V3_*": 1})
-            th.assert_records("expidite-journals", 
+            th.assert_records("expidite-journals",
                             {"V3_SHT31*": 1})

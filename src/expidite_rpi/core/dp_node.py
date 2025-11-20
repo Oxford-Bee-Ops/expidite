@@ -53,7 +53,7 @@ class DPnode():
         # Record the duration of each DataProcessor cycle (by type_id).
         self._dpnode_scorp_stats: dict[str, DPnodeStat] = {}
         # Lock to ensure thread safety when accessing the stats dictionary.
-        self._stats_lock = threading.Lock()  
+        self._stats_lock = threading.Lock()
 
         # Create the Journals that we will use to store this DPtree's output.
         self.journal_pool: Optional[JournalPool] = None
@@ -178,7 +178,7 @@ class DPnode():
         if sensor_data.empty:
             logger.debug(f"Dataframe empty for {self.get_data_id(stream_index)}")
             return
-        
+
         stream = self.get_stream(stream_index)
         sensor_data = self._validate_output(sensor_data, stream)
         self._get_cpool().add_rows_from_df(stream, sensor_data)
@@ -278,7 +278,7 @@ class DPnode():
         """
         suffix = self.get_stream(stream_index).format
 
-        # We save the recording to the EDGE|ETL_PROCESSING_DIR if there are more DPs to run, 
+        # We save the recording to the EDGE|ETL_PROCESSING_DIR if there are more DPs to run,
         # otherwise we save it to the EDGE|ETL_UPLOAD_DIR
         if root_cfg.get_mode() == root_cfg.Mode.EDGE:
             if self.is_leaf(stream_index):
@@ -306,7 +306,7 @@ class DPnode():
 
         return new_fname
 
-    
+
     def log_sample_data(self, sample_period_start_time: datetime) -> None:
         """Provide the count & duration of data samples recorded (environmental, media, etc)
         since the last time log_sample_data was called.
@@ -357,7 +357,7 @@ class DPnode():
             )
         logger.debug("Logged sample data for SCORE & SCORP")
 
-    
+
     def save_sample(self, sample_probability: str | float | None) -> bool:
         """Return True if this node should save sample data to the datastore.
         This method can be subclassed to provide more complex sampling logic.
@@ -373,9 +373,9 @@ class DPnode():
         except ValueError:
             raise ValueError(f"Invalid sample probability: {sample_probability}; "
                              f"expected a value between 0.0 and 1.0")
-        
+
         return random() < prob
-    
+
 
     #########################################################################################################
     #
@@ -433,14 +433,14 @@ class DPnode():
         # This should match the suffix provided.
         if not src_file.suffix.endswith(suffix.value):
             raise ValueError(f"File format {src_file.suffix} does not match expected suffix {suffix}.")
-        
+
         # Check that the start_time and end_time are valid
         if not isinstance(start_time, datetime):
             raise ValueError("Start_time must be a valid datetime object.")
         if end_time is not None:
             if not isinstance(end_time, datetime):
                 raise ValueError("End_time must be a valid datetime object.")
-            
+
         # Check that the start_time and end_time are both timezone aware
         if start_time.tzinfo is None:
             logger.warning(f"{root_cfg.RAISE_WARN}start_time must be timezone aware. "
@@ -458,12 +458,12 @@ class DPnode():
         # Generate the filename for the recording
         if stream.file_naming is None or stream.file_naming == api.FILE_NAMING.DEFAULT:
             new_fname: Path = file_naming.get_record_filename(
-                dst_dir, 
+                dst_dir,
                 data_id,
-                suffix, 
-                start_time, 
-                end_time, 
-                offset_index, 
+                suffix,
+                start_time,
+                end_time,
+                offset_index,
                 secondary_offset_index
             )
         elif stream.file_naming == api.FILE_NAMING.REVIEW_MODE:
@@ -486,7 +486,7 @@ class DPnode():
             save_sample = True
         else: # override_sampling == api.OVERRIDE.DISCARD:
             save_sample = False
-            
+
         # There is now a fork based on:
         # - a) do we need to pass this file to a DP
         # - b) do we need to save this file to the cloud
@@ -495,7 +495,7 @@ class DPnode():
         save_for_dp = (dst_dir == root_cfg.EDGE_PROCESSING_DIR)
 
         if save_sample:
-            # Generate a *copy* of the raw sample file so we can move the original to the Processing 
+            # Generate a *copy* of the raw sample file so we can move the original to the Processing
             # directory, without causing a race condition with the DP.
             # The filename is the same as the recording, but saved to the upload directory
             sample_fname = file_naming.increment_filename(root_cfg.EDGE_UPLOAD_DIR / new_fname.name)
@@ -509,7 +509,7 @@ class DPnode():
             assert stream.cloud_container is not None
             cloud_container = stream.cloud_container
             self._get_cc().upload_to_container(cloud_container,
-                                                [sample_fname], 
+                                                [sample_fname],
                                                 delete_src=True,
                                                 storage_tier=stream.storage_tier)
 
@@ -566,7 +566,7 @@ class DPnode():
                 elif field == api.RECORD_ID.STREAM_INDEX.value:
                     output_data[field] = stream.index
                 else:
-                    assert False, f"Unknown RECORD_ID field {field}"    
+                    assert False, f"Unknown RECORD_ID field {field}"
         # Check the values in the RECORD_ID are not nan or empty
         for field in api.REQD_RECORD_ID_FIELDS:
             if not output_data[field].notna().all():
@@ -613,7 +613,7 @@ class DPnode():
         if self.cc is None:
             self.cc = CloudConnector.get_instance(root_cfg.CLOUD_TYPE)
         return self.cc
-    
+
     def _get_cpool(self) -> JournalPool:
         """Return the JournalPool object for this node.
         We don't do this during init to avoid unnecessary work for things like config validation that

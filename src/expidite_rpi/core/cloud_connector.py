@@ -23,7 +23,7 @@ logger = root_cfg.setup_logger("expidite")
 ##########################################################################################################
 # Default implementation of the CloudConnector class and interface definition.
 #
-# This class is used to connect to the cloud storage provider (Azure Blob Storage) but does so 
+# This class is used to connect to the cloud storage provider (Azure Blob Storage) but does so
 # # synchronously.
 ##########################################################################################################
 class CloudConnector:
@@ -54,7 +54,7 @@ class CloudConnector:
                 CloudConnector._instance.shutdown()
                 CloudConnector._instance = AsyncCloudConnector()
             return CloudConnector._instance
-        
+
         elif type == CloudType.LOCAL_EMULATOR:
             if CloudConnector._instance is None:
                 CloudConnector._instance = LocalCloudConnector()
@@ -64,7 +64,7 @@ class CloudConnector:
                 CloudConnector._instance.shutdown()
                 CloudConnector._instance = LocalCloudConnector()
             return CloudConnector._instance
-        
+
         elif type == CloudType.SYNC_AZURE:
             if CloudConnector._instance is None:
                 CloudConnector._instance = SyncCloudConnector()
@@ -89,9 +89,9 @@ class CloudConnector:
         keys = root_cfg.Keys(_env_file=keys_file, _env_file_encoding="utf-8") # type: ignore
         if keys.cloud_storage_key == root_cfg.FAILED_TO_LOAD:
             raise ValueError(f"Failed to load cloud storage key from {keys_file}")
-        
+
         self._connection_string = keys.cloud_storage_key
-    
+
 
     def upload_to_container(
         self,
@@ -232,7 +232,7 @@ class CloudConnector:
         for blob_name in blob_names:
             src_blob = from_container.get_blob_client(blob_name)
             dst_blob = to_container.get_blob_client(blob_name)
-            dst_blob.start_copy_from_url(src_blob.url, 
+            dst_blob.start_copy_from_url(src_blob.url,
                                          standard_blob_tier=storage_tier)
             if delete_src:
                 src_blob.delete_blob()
@@ -242,9 +242,9 @@ class CloudConnector:
                 f" and {'deleted' if delete_src else 'did not delete'} the source"
             )
 
-    def append_to_cloud(self, 
-                        dst_container: str, 
-                        src_file: Path, 
+    def append_to_cloud(self,
+                        dst_container: str,
+                        src_file: Path,
                         delete_src: bool,
                         col_order: Optional[list[str]] = None
     ) -> bool:
@@ -295,8 +295,8 @@ class CloudConnector:
         except Exception as e:
             logger.error(f"{root_cfg.RAISE_WARN()}Failed to append data to {src_file}: {e!s}")
             return False
-        
-    def _append_data_to_blob(self, 
+
+    def _append_data_to_blob(self,
                             dst_container: str,
                             dst_file: str,
                             lines_to_append: list[str],
@@ -354,7 +354,7 @@ class CloudConnector:
         except Exception as e:
             logger.error(f"{root_cfg.RAISE_WARN()}Failed to append data to {dst_file}: {e!s}")
             return False
-        
+
     def container_exists(self, container: str) -> bool:
         """Check if the specified container exists"""
         containerClient = self._validate_container(container)
@@ -457,7 +457,7 @@ class CloudConnector:
         else:
             container_client = container
 
-        # Only do an external check if we haven't already validated this container        
+        # Only do an external check if we haven't already validated this container
         if container_client.container_name not in self._validated_containers:
             if not container_client.exists():
                 logger.info(f"Creating container {container}")
@@ -472,7 +472,7 @@ class CloudConnector:
     def _headers_match(self, blob_client: BlobClient, local_line: str) -> bool:
         """Check if the headers in the local file match the headers in the remote file.
         Will return false if either is empty or if the headers do not match."""
-        start_of_contents = blob_client.download_blob(encoding="utf-8").read(chars=1000) 
+        start_of_contents = blob_client.download_blob(encoding="utf-8").read(chars=1000)
 
         if not start_of_contents:
             return False  # No contents in the remote file
@@ -480,7 +480,7 @@ class CloudConnector:
         if not local_line.strip():
             logger.warning(f"{root_cfg.RAISE_WARN()}Local file {blob_client.blob_name} has no headers")
             return False  # No headers in the local file
-        
+
         # Get the first line from start_of_contents
         cloud_lines = start_of_contents.splitlines()
         if len(cloud_lines) >= 1:
@@ -536,7 +536,7 @@ class LocalCloudConnector(CloudConnector):
 
         self.local_cloud = root_cfg.ROOT_WORKING_DIR / root_cfg.system_cfg.local_cloud / \
             root_cfg.my_device_id / api.utc_to_fname_str()
-        
+
     def get_local_cloud(self) -> Path:
         """Creates a local cloud directory.  Usually called by RpiEmulator.__enter__() as
         when the RpiEmulator is used as a context manager.
@@ -666,9 +666,9 @@ class LocalCloudConnector(CloudConnector):
                 f" and {'deleted' if delete_src else 'did not delete'} the source"
             )
 
-    def append_to_cloud(self, 
-                        dst_container: str, 
-                        src_file: Path, 
+    def append_to_cloud(self,
+                        dst_container: str,
+                        src_file: Path,
                         delete_src: bool,
                         col_order: Optional[list[str]] = None
     ) -> bool:
@@ -840,7 +840,7 @@ class AsyncCloudConnector(CloudConnector):
     def shutdown(self):
         """ Shutdown the worker pool.
         Will wait until scheduled uploads are complete before returning."""
-        
+
         # Try to schedule any remaining uploads (waits up to 1sec for the queue to be processed)
         logger.debug("AsyncCloudConnector.shutdown() called")
         self.do_work(block=False)
@@ -892,10 +892,10 @@ class AsyncCloudConnector(CloudConnector):
         if src_files:
             self._upload_queue.put(AsyncUpload(dst_container, src_files, delete_src, storage_tier))
 
-    def append_to_cloud(self, 
-                        dst_container: str, 
-                        src_file: Path, 
-                        delete_src: bool, 
+    def append_to_cloud(self,
+                        dst_container: str,
+                        src_file: Path,
+                        delete_src: bool,
                         col_order: Optional[list[str]] = None
     ) -> bool:
         """
@@ -904,25 +904,25 @@ class AsyncCloudConnector(CloudConnector):
         logger.debug(f"AsyncCC.append_to_cloud() with delete_src={delete_src} for {src_file}")
         if isinstance(src_file, str):
             src_file = Path(src_file)
-        
+
         if not src_file.exists():
             logger.error(f"{root_cfg.RAISE_WARN()}Upload failed because file {src_file} does not exist")
             return False
-        
+
         # Read the local file data ready to append
         data: list[str] = []
         with src_file.open("r") as file:
             data = file.readlines()
             if len(data) == 1:
                 return False  # No data beyond headers
-            
+
         if delete_src:
             # Although this is asynchronous, we need to appear to delete the src_files synchronously
             src_file.unlink()
 
-        self._upload_queue.put(AsyncAppend(dst_container, 
-                                           src_file.name, 
-                                           delete_src, 
+        self._upload_queue.put(AsyncAppend(dst_container,
+                                           src_file.name,
+                                           delete_src,
                                            data = data,
                                            col_order=col_order))
 
@@ -942,9 +942,9 @@ class AsyncCloudConnector(CloudConnector):
         try:
             logger.debug(f"_async_upload with delete_src={action.delete_src}, "
                          f"iteration {action.iteration} for {action.src_files}")
-            super().upload_to_container(action.dst_container, 
-                                        action.src_files, 
-                                        action.delete_src, 
+            super().upload_to_container(action.dst_container,
+                                        action.src_files,
+                                        action.delete_src,
                                         action.storage_tier)
             if action.delete_src:
                 # We created a temporary directory for the files in upload_to_cloud - delete it now
@@ -963,7 +963,7 @@ class AsyncCloudConnector(CloudConnector):
                     logger.error(f"{root_cfg.RAISE_WARN()}Upload of file {file} aborted; does not exist")
                 else:
                     verified_files.append(file)
-                    
+
             action.src_files = verified_files
 
             if action.src_files:
@@ -1032,5 +1032,5 @@ class AsyncCloudConnector(CloudConnector):
                 break
             except Exception as e:
                 logger.error(f"{root_cfg.RAISE_WARN()}Error during do_work execution on {queue_item}: {e!s}")
-        
+
         logger.info("do_work completed")

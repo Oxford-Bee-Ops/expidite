@@ -29,7 +29,7 @@ def main():
         if inventory is None:
             logger.error("Failed to load inventory. Exiting...")
             return
-        
+
         sc.configure(inventory)
 
         # Start the RpiCore and begin data collection

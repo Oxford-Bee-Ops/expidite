@@ -357,7 +357,7 @@ class LTR390Driver:  # pylint:disable=too-many-instance-attributes
         # self.low_threshold = 100
         # self.high_threshold = 1000
         # ltr.configInterrupt(true, LTR390_MODE_UVS);
-        
+
     def _reset(self) -> None:
         # The LTR390 software reset is ill behaved and can leave I2C bus in bad state.
         # Instead, just manually set register reset values per datasheet.

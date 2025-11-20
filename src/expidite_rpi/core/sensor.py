@@ -24,7 +24,7 @@ class Sensor(Thread, DPnode, ABC):
     review_mode: bool = False
     last_checked_review_mode: datetime = datetime.min
     review_mode_check_interval: timedelta = timedelta(seconds=5)
-    
+
     def __init__(self, config: SensorCfg) -> None:
         """Initialise the Sensor superclass.
 
@@ -109,7 +109,7 @@ class Sensor(Thread, DPnode, ABC):
         from expidite_rpi.core.edge_orchestrator import EdgeOrchestrator
 
         EdgeOrchestrator.get_instance().sensor_failed(self)
- 
+
     # All Sensor sub-classes must implement this method
     # Implementations should respect the stop_requested flag and terminate within a reasonable time (~3min)
     @abstractmethod
@@ -117,5 +117,5 @@ class Sensor(Thread, DPnode, ABC):
         """The run method is where the sensor does its work of sensing and logging data.
         The subclass *must* use "while not self.stop_requested.is_set()" and 
         "self.stop_requested.wait(sleep_time)" to enable prompt and clean shutdown."""
-        
+
         assert False, "Sub-classes must override this method"

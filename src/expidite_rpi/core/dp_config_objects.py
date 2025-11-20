@@ -27,7 +27,7 @@ class Stream:
     cloud_container: Optional[str] = None
 
     # Some sources support saving of recordings to the archive.
-    # This string is interpreted by the Sensor or DataProcessor to determine the frequency of 
+    # This string is interpreted by the Sensor or DataProcessor to determine the frequency of
     # raw data sampling. The format of this string is specific to the Sensor or DataProcessor.
     # The default implementation interprets this string as a float sampling probability (0.0-1.0)
     sample_probability: Optional[str|float] = None
@@ -56,7 +56,7 @@ class DPtreeNodeCfg:
     SensorCfg & DataProcessorCfg inherit from this class.
     """
     outputs: list[Stream]
-    
+
     # Human-meaningful description of the node.
     description: str
 
@@ -89,4 +89,3 @@ class SensorCfg(DPtreeNodeCfg):
 class DataProcessorCfg(DPtreeNodeCfg):
     """Defines the configuration for a concrete DataProcessor class implementation.
     Can be subclassed to add additional configuration parameters specific to the DataProcessor class."""
-    

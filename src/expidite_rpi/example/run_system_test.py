@@ -16,7 +16,7 @@ def main():
     """Run expidite-rpi in System Test mode invoking the tests defined in DeviceCfg.tests_to_run."""
 
     # We expect:
-    # - keys.env to have the system test storage account 
+    # - keys.env to have the system test storage account
     # - my_device to have tests_to_run defined
     assert root_cfg.system_cfg, \
         "system.cfg not found. Please run expidite-rpi in system test mode."
@@ -24,7 +24,7 @@ def main():
         "system.cfg not set to SYSTEM_TEST installation type"
     assert root_cfg.my_device.tests_to_run, \
         "DeviceCfg.tests_to_run not set to a list of tests to run"
-    
+
     for test in root_cfg.my_device.tests_to_run:
         logger.info(f"Running system test: {test}")
         try:

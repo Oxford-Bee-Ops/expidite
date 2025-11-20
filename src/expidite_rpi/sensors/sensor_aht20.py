@@ -40,7 +40,7 @@ class AHT20(Sensor):
     def __init__(self, config: AHT20SensorCfg):
         super().__init__(config)
         self.config = config
-        
+
     # Separate thread to log data
     def run(self):
 
@@ -59,13 +59,13 @@ class AHT20(Sensor):
                     sensor_data={"temperature": ("%.1f" % temperature),
                                  "humidity": ("%.1f" % humidity)},
                 )
- 
+
             except Exception as e:
                 logger.error(f"{root_cfg.RAISE_WARN()}Error in AHT20 sensor run: {e}", exc_info=True)
             finally:
                 logger.debug(f"AHT20 sensor {self.sensor_index} sleeping for "
                              f"{root_cfg.my_device.env_sensor_frequency} seconds")
-                
+
                 if self.in_review_mode():
                     wait_period = root_cfg.my_device.review_mode_frequency
                 else:

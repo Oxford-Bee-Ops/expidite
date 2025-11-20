@@ -98,7 +98,7 @@ def check_if_setup_required() -> None:
             sys.exit(1)
         click.echo("Press any key to retry setup...")
         click.getchar()
-    
+
     # Check if device is found in inventory
     check_device_in_inventory()
 
@@ -113,7 +113,7 @@ def check_keys_env() -> bool:
     success, error = root_cfg.check_keys()
     if success:
         return True
-    else:    
+    else:
         # Help the user setup keys
         click.echo(f"{dash_line}")
         click.echo(f"# {error}")
@@ -230,7 +230,7 @@ class InteractiveMenu():
 
         click.echo(f"\n{dash_line}")
         click.echo("# EXPIDITE CONFIGURATION")
-        click.echo(f"{dash_line}")        
+        click.echo(f"{dash_line}")
         click.echo(f"{self.sc.display_configuration()}")
 
 
@@ -261,8 +261,8 @@ class InteractiveMenu():
                     stderr=subprocess.PIPE,
                 )
             else:
-                process = subprocess.Popen(["journalctl", "-f"], 
-                                           stdout=subprocess.PIPE, 
+                process = subprocess.Popen(["journalctl", "-f"],
+                                           stdout=subprocess.PIPE,
                                            stderr=subprocess.PIPE)
             while True:
                 if process.stdout is not None:
@@ -316,8 +316,8 @@ class InteractiveMenu():
         click.echo("# Displaying expidite logs for the last 15 minutes")
         click.echo(f"{dash_line}")
         since_time = api.utc_now() - timedelta(minutes=15)
-        logs = device_health.get_logs(since=since_time, 
-                                      min_priority=6, 
+        logs = device_health.get_logs(since=since_time,
+                                      min_priority=6,
                                       grep_str=["expidite"])
         self.display_logs(logs)
 
@@ -331,8 +331,8 @@ class InteractiveMenu():
         click.echo("# Displaying sensor output logs (last 30 minutes)")
         click.echo(f"{dash_line}")
         since_time = api.utc_now() - timedelta(minutes=30)
-        logs = device_health.get_logs(since=since_time, 
-                                      min_priority=6, 
+        logs = device_health.get_logs(since=since_time,
+                                      min_priority=6,
                                       grep_str=[api.TELEM_TAG, "Save log: "])
         try:
             for log in logs:
@@ -352,7 +352,7 @@ class InteractiveMenu():
                     log_dict.pop(k, "")
                 log["message"] = ", ".join([f"{k}={v!s}" for k, v in log_dict.items()])
                 click.echo(f"\n{data_type_id} >>> {timestamp} >>> {log['message']}")
-            if not logs: 
+            if not logs:
                 click.echo("No sensor output logs found.")
             click.echo(f"\n{dash_line}\n")
         except Exception as e:
@@ -368,9 +368,9 @@ class InteractiveMenu():
         click.echo("# Expidite SCORE logs of sensor output (last 15 minutes)")
         click.echo(f"{dash_line}")
         since_time = api.utc_now() - timedelta(minutes=15)
-        logs = device_health.get_logs(since=since_time, min_priority=6, 
+        logs = device_health.get_logs(since=since_time, min_priority=6,
                                       grep_str=[api.TELEM_TAG, "Save log: ", "SCORE"])
-        
+
         try:
             for log in logs:
                 # Nicely format SCORE logs
@@ -382,27 +382,27 @@ class InteractiveMenu():
                 sample_period = log_dict.get("sample_period", "UNKNOWN")
                 click.echo(f"\n{observed_type_id + ' ' + observed_sensor_index:<20} | "
                            f"{count!s:<4} | {sample_period:<20}")
-            if not logs: 
+            if not logs:
                 click.echo("No SCORE logs found.")
             click.echo(f"\n{dash_line}\n")
         except Exception as e:
             logger.error(f"Error parsing log dictionary: {e}")
-            
+
 
 
     def display_running_processes(self) -> None:
         # Running processes
         # Drop any starting / or . characters
-        # And convert the process list to a simple comma-seperated string with no {} or ' or " 
+        # And convert the process list to a simple comma-seperated string with no {} or ' or "
         # characters
-        if root_cfg.system_cfg is None:          
+        if root_cfg.system_cfg is None:
             click.echo("System.cfg is not set. Please check your installation.")
             return
         process_set = (
             utils.check_running_processes(search_string=f"{root_cfg.system_cfg.my_start_script}")
         )
         process_list_str = (
-            str(process_set).replace("{", 
+            str(process_set).replace("{",
                                      "").replace("}", "").replace("'", "").replace('"', "").strip()
         )
         click.echo(f"{dash_line}")
@@ -448,7 +448,7 @@ class InteractiveMenu():
 
         # If my_start_script is a resolvable module in this environment, then we use that to start the service
         # using that user-provided script.
-        if (root_cfg.system_cfg is None or 
+        if (root_cfg.system_cfg is None or
             root_cfg.system_cfg.my_start_script is None or
             root_cfg.system_cfg.my_start_script == root_cfg.FAILED_TO_LOAD):
             click.echo("System.cfg has no my_start_script configuration")
@@ -473,7 +473,7 @@ class InteractiveMenu():
                     click.echo("Exiting...")
                     return
             except ImportError as e:
-                logger.error(f"{root_cfg.RAISE_WARN()}Module {my_start_script} not resolvable ({e})", 
+                logger.error(f"{root_cfg.RAISE_WARN()}Module {my_start_script} not resolvable ({e})",
                              exc_info=True)
                 click.echo(f"Module {my_start_script} not resolvable ({e})")
                 click.echo("Exiting...")
@@ -579,7 +579,7 @@ class InteractiveMenu():
             else:
                 click.echo("Exiting without entering review mode.")
                 return
-            
+
         # Offer the user the option to watch the sensor logs in real time
         click.echo("Do you want to monitor the output from the sensors now they're in review mode? (Y/N)")
         char = click.getchar().lower()
@@ -662,7 +662,7 @@ class InteractiveMenu():
             click.echo(f"Storage key test failed: {e}")
             test_file.unlink()
             return
-       
+
         click.echo(f"Saving old file as {root_cfg.KEYS_FILE.with_suffix('.bak')}")
         root_cfg.KEYS_FILE.rename(root_cfg.KEYS_FILE.with_suffix(".bak"))
 
@@ -702,7 +702,7 @@ class InteractiveMenu():
         if root_cfg.system_cfg is None:
             click.echo("ERROR: System.cfg is not set. Please check your installation.")
             return
-        
+
         # Check that rpi-connect is running
         try:
             if root_cfg.running_on_rpi:
@@ -800,7 +800,7 @@ class InteractiveMenu():
         with open(root_cfg.LED_STATUS_FILE, "w") as f:
             f.write("red:blink:0.25")  # Flash red
             time.sleep(2)
-            f.write("green:blink:0.25")  # Flash green  
+            f.write("green:blink:0.25")  # Flash green
             time.sleep(2)
 
         click.echo(f"{dash_line}")
@@ -848,7 +848,7 @@ class InteractiveMenu():
                     click.echo("Exiting...")
                     return
             except ImportError as e:
-                logger.error(f"{root_cfg.RAISE_WARN()}Module {my_start_script} not resolvable ({e})", 
+                logger.error(f"{root_cfg.RAISE_WARN()}Module {my_start_script} not resolvable ({e})",
                              exc_info=True)
                 click.echo(f"Module {my_start_script} not resolvable ({e})")
                 click.echo("Exiting...")
@@ -872,7 +872,7 @@ class InteractiveMenu():
                     click.echo(f"Running command: {cmd}")
                     run_cmd_live_echo(cmd)
 
-                    
+
     ####################################################################################################
     # Interactive menu functions
     ####################################################################################################
@@ -974,7 +974,7 @@ class InteractiveMenu():
         """Menu for maintenance commands."""
         while True:
             click.echo(f"{header}Maintenance Menu:")
-            click.echo("0. Back to Main Menu")  
+            click.echo("0. Back to Main Menu")
             click.echo("1. Update Software")
             click.echo("2. Enable rpi-connect")
             click.echo("3. Review mode")
@@ -1001,16 +1001,16 @@ class InteractiveMenu():
             elif choice == 5:
                 self.stop_rpi_core(pkill=False)
             elif choice == 6:
-                self.stop_rpi_core(pkill=True) 
-            elif choice == 7: 
+                self.stop_rpi_core(pkill=True)
+            elif choice == 7:
                 self.reboot_device()
-            elif choice == 8: 
+            elif choice == 8:
                 self.update_storage_key()
             elif choice == 0:
                 break
             else:
                 click.echo("Invalid choice. Please try again.")
-    
+
 
 #################################################################################
 # Main function to run the CLI

@@ -28,16 +28,16 @@ EXAMPLE_SENSOR_CFG = SensorCfg(
     # The list of data output streams from the sensor.
     outputs=[
         Stream("Example image file stream",
-                EXAMPLE_FILE_TYPE_ID, 
-                EXAMPLE_FILE_STREAM_INDEX, 
-                api.FORMAT.JPG, 
+                EXAMPLE_FILE_TYPE_ID,
+                EXAMPLE_FILE_STREAM_INDEX,
+                api.FORMAT.JPG,
                 ["temperature"],
                 cloud_container="expidite-upload",
                 sample_probability="1.0"),
         Stream("Example log file stream",
-                EXAMPLE_LOG_TYPE_ID, 
-                EXAMPLE_LOG_STREAM_INDEX, 
-                api.FORMAT.LOG, 
+                EXAMPLE_LOG_TYPE_ID,
+                EXAMPLE_LOG_STREAM_INDEX,
+                api.FORMAT.LOG,
                 ["temperature"]),
     ],
 )
@@ -61,7 +61,7 @@ class ExampleSensor(Sensor):
             self.value_ticker += 1
             self.log(stream_index=EXAMPLE_LOG_STREAM_INDEX,
                      sensor_data={"temperature": self.value_ticker},)
-            
+
             # We intentionally kill the thread after 25 iterations to allow the DP processing to complete.
             if self.value_ticker > 25:
                 break
@@ -70,8 +70,8 @@ class ExampleSensor(Sensor):
             # Generate a random image file
             with open(fname, "w") as f:
                 f.write("This is a dummy image file")
-            self.save_recording(stream_index=EXAMPLE_FILE_STREAM_INDEX, 
-                                temporary_file=fname, 
+            self.save_recording(stream_index=EXAMPLE_FILE_STREAM_INDEX,
+                                temporary_file=fname,
                                 start_time=api.utc_now())
 
             # Sensors should not sleep for more than ~180s so that the stop_requested flag can be checked

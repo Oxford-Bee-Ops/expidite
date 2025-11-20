@@ -51,7 +51,7 @@ class SHT31(Sensor):
     def __init__(self, config: SHT31SensorCfg):
         super().__init__(config)
         self.config = config
-        
+
     def read_data(self):
         cTemp: float
         humidity: float
@@ -66,8 +66,8 @@ class SHT31(Sensor):
 
                 # Read data back from 0x00(00), 6 bytes
                 # Temp MSB, Temp LSB, Temp CRC, Humidity MSB, Humidity LSB, Humidity CRC
-                data = bus.read_i2c_block_data(SHT31_CFG.address, 
-                                               SHT31_CFG.read_register, 
+                data = bus.read_i2c_block_data(SHT31_CFG.address,
+                                               SHT31_CFG.read_register,
                                                SHT31_CFG.read_length)
 
                 # Convert the data

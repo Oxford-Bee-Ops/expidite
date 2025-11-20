@@ -28,9 +28,9 @@ class DataProcessor(DPnode, ABC):
     DataProcessors can define 'derived' Datastreams to enable forking of the data pipeline by
     implementing the define_derived_datastreams.
     """
-    def __init__(self, 
+    def __init__(self,
                  config: DataProcessorCfg,
-                 sensor_index: int, 
+                 sensor_index: int,
     ) -> None:
         DPnode.__init__(self, config, sensor_index)
         self.config = config
@@ -38,7 +38,7 @@ class DataProcessor(DPnode, ABC):
 
     @abstractmethod
     def process_data(
-        self, 
+        self,
         input_data: pd.DataFrame | list[Path],
     ) -> None:
         """Subclasses of this method provide custom processing of sensor data.

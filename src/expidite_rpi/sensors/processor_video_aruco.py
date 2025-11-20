@@ -90,7 +90,7 @@ class VideoArucoProcessor(DataProcessor):
         super().__init__(config, sensor_index=sensor_index)
         self.config: ArucoProcessorCfg = config
 
-    def process_data(self, 
+    def process_data(self,
                      input_data: pd.DataFrame | list[Path]) -> None:
         """Process a list of video files and identify ARUCO markers."""
 
@@ -107,7 +107,7 @@ class VideoArucoProcessor(DataProcessor):
                 # Step 1: identify & output potential ARUCO markers
                 # This also saves a marked up version of the video to a derived datastream
                 #############################################################################################
-                result = self.process_video_file(f, 
+                result = self.process_video_file(f,
                                                  save_marked_up_video,
                                                  aruco_dict_name=aruco_dict_name)
                 if result is not None:
@@ -124,8 +124,8 @@ class VideoArucoProcessor(DataProcessor):
             sensor_data=pd.concat(results) if len(results) > 0 else pd.DataFrame(),
         )
 
-    def process_video_file(self, 
-                           source_file: Path, 
+    def process_video_file(self,
+                           source_file: Path,
                            save_marked_up_video: bool = True,
                            aruco_dict_name: str = "DICT_4X4_50") -> pd.DataFrame:
         """Process a single file - find potential aruco markers in each frame & save results"""

@@ -22,9 +22,9 @@ SCORE_FIELDS = [
 ]
 # SCORP - special DatastreamType for recording performance of the data pipeline
 SCORP_FIELDS = [
-    "data_processor_id", 
+    "data_processor_id",
     "observed_type_id",
-    "observed_sensor_index", 
+    "observed_sensor_index",
     "count",
     "duration"
 ]
@@ -35,17 +35,17 @@ SC_TRACKING_CFG = SensorCfg(
     sensor_model="SelfTracker",
     description="RpiCore self-telemetry",
     outputs=[
-        Stream("System datastream of DataProcessor performance data", 
-               api.SCORP_DS_TYPE_ID, 
-               api.SCORP_STREAM_INDEX, 
-               format=api.FORMAT.LOG, 
-               fields=SCORP_FIELDS, 
+        Stream("System datastream of DataProcessor performance data",
+               api.SCORP_DS_TYPE_ID,
+               api.SCORP_STREAM_INDEX,
+               format=api.FORMAT.LOG,
+               fields=SCORP_FIELDS,
                cloud_container=root_cfg.my_device.cc_for_system_records),
-        Stream("System datastream of count data of records saved to streams", 
-               api.SCORE_DS_TYPE_ID, 
-               api.SCORE_STREAM_INDEX, 
-               format=api.FORMAT.LOG, 
-               fields=SCORE_FIELDS, 
+        Stream("System datastream of count data of records saved to streams",
+               api.SCORE_DS_TYPE_ID,
+               api.SCORE_STREAM_INDEX,
+               format=api.FORMAT.LOG,
+               fields=SCORE_FIELDS,
                cloud_container=root_cfg.my_device.cc_for_system_records),
     ],
 )

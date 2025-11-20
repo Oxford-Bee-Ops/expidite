@@ -37,7 +37,7 @@ class Test_trap_cam_device:
                 RpiTestRecording(
                     cmd_prefix="rpicam-vid",
                     recordings=[
-                        root_cfg.TEST_DIR / "rpi_core" / "sensors" / "resources" / 
+                        root_cfg.TEST_DIR / "rpi_core" / "sensors" / "resources" /
                         "V3_TRAPCAM_Bees_in_a_tube.mp4"
                     ],
                 )
@@ -59,13 +59,13 @@ class Test_trap_cam_device:
             sleep(3)
 
             # We should have identified bees in the video and save the info to the EXITCAM datastream
-            th.assert_records("expidite-fair", 
+            th.assert_records("expidite-fair",
                             {"V3_*": 1})
-            th.assert_records("expidite-journals", 
+            th.assert_records("expidite-journals",
                             {"*": 0})
-            th.assert_records("expidite-upload", 
+            th.assert_records("expidite-upload",
                             {"V3_TRAPCAM*": 1})
-            th.assert_records("expidite-system-records", 
+            th.assert_records("expidite-system-records",
                             {"V3_SCORE": 1, "V3_SCORP": 1, "V3_HEART": 1, "V3_WARNING": 0})
             score_df = th.get_journal_as_df("expidite-system-records", "V3_SCORE*")
             # Groupby observed_type_id

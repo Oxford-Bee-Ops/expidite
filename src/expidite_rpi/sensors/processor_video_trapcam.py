@@ -45,7 +45,7 @@ class TrapcamDp(DataProcessor):
         self.background_subtractor = cv2.createBackgroundSubtractorMOG2()
 
     def process_data(
-        self, 
+        self,
         input_data: pd.DataFrame | list[Path],
     ) -> None:
         """Process a list of video files and resave video segments with movement."""
@@ -65,9 +65,9 @@ class TrapcamDp(DataProcessor):
                     exc_info=True,
                 )
 
-    def process_video(self, 
-                      video_path: Path, 
-                      min_blob_size: int, 
+    def process_video(self,
+                      video_path: Path,
+                      min_blob_size: int,
                       max_blob_size: int) -> None:
         """ Process a video file to detect movement and save segments with movement. 
         We record for a minimum of 2 seconds after movement is detected."""
@@ -153,7 +153,7 @@ class TrapcamDp(DataProcessor):
                     sample_last_movement_frame = current_frame
                     output_stream.write(frame)
             else:
-                # No movement detected... 
+                # No movement detected...
                 if output_stream:
                     # ...but we are currently saving video
                     if (current_frame - sample_last_movement_frame) < frames_to_record:
@@ -180,12 +180,12 @@ class TrapcamDp(DataProcessor):
                             )
                             samples_saved += 1
                             sum_sample_duration += sample_duration
-                        else: 
+                        else:
                             # Discard the video segment
                             logger.info(f"Discarding {(sample_last_movement_frame - sample_first_frame)}"
                                         f" frames of movement as noise")
                             temp_filename.unlink(missing_ok=True)
-                            
+
         logger.info(f"Saved {samples_saved} samples ({sum_sample_duration}s) from video: {video_path}")
         cap.release()
 

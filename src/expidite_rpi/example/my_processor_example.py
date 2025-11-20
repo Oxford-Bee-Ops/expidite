@@ -14,9 +14,9 @@ EXAMPLE_DF_STREAM_INDEX = 0
 EXAMPLE_FILE_PROCESSOR_CFG = DataProcessorCfg(
     description="Example file processor for testing",
     outputs=[Stream(description="Example dataframe stream",
-                    type_id=EXAMPLE_DF_TYPE_ID, 
-                    index=EXAMPLE_DF_STREAM_INDEX, 
-                    format=api.FORMAT.DF, 
+                    type_id=EXAMPLE_DF_TYPE_ID,
+                    index=EXAMPLE_DF_STREAM_INDEX,
+                    format=api.FORMAT.DF,
                     fields=["pixel_count"]),
             ],
 )
@@ -33,7 +33,7 @@ EXAMPLE_FILE_PROCESSOR_CFG = DataProcessorCfg(
 #############################################################################################################
 class ExampleProcessor(DataProcessor):
     def process_data(
-        self, 
+        self,
         input_data: pd.DataFrame | list[Path]
     ) -> None:
         """This implementation of the process_data method is used in testing:
@@ -45,7 +45,7 @@ class ExampleProcessor(DataProcessor):
 
         logger.debug(f"ExampleProcessor process_data:{input_data} for {__name__}")
 
-        output_data: list[dict] = []    
+        output_data: list[dict] = []
         if len(input_data) > 0:
             for f in input_data:
                 # Generate output to the primary datastream
@@ -54,4 +54,3 @@ class ExampleProcessor(DataProcessor):
         # Generate data for the derived datastream
         self.save_data(stream_index=EXAMPLE_DF_STREAM_INDEX,
                         sensor_data=pd.DataFrame(output_data))
-                

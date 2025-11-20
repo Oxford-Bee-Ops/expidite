@@ -65,9 +65,9 @@ class Test_datastream:
     @pytest.mark.parametrize(
         "fname, expected",
         [
-            ("V3_EXITTRACKER_2ccf6791818a_20250522.csv", 
+            ("V3_EXITTRACKER_2ccf6791818a_20250522.csv",
              datetime(2025, 5, 22, tzinfo=ZoneInfo("UTC"))),
-            ("V3_TRAPCAM_d83adde765e4_01_00_20250523T172338065_20250523T172340565.mp4", 
+            ("V3_TRAPCAM_d83adde765e4_01_00_20250523T172338065_20250523T172340565.mp4",
              datetime(2025, 5, 23, 17, 23, 38, tzinfo=ZoneInfo("UTC"))),
         ],
     )

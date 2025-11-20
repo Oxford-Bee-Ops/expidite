@@ -103,5 +103,5 @@ class LTR390(Sensor):
                 logger.debug(f"LTR390 sensor {self.sensor_index} sleeping for "
                             f"{wait_period} seconds")
                 self.stop_requested.wait(wait_period)
-                
+
 
