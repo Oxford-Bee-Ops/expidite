@@ -26,11 +26,11 @@ from expidite_rpi.core.device_config_objects import DeviceCfg
 logger = root_cfg.setup_logger("expidite")
 
 @dataclass
-class RpiTestRecording():
+class RpiTestRecording:
     cmd_prefix: str
     recordings: list[Path]
 
-class RpiEmulator():
+class RpiEmulator:
     """The test harness enables thorough testing of the sensor code without RPi hardware."""
     _instance = None
     _is_available = Event()
