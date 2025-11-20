@@ -1,7 +1,6 @@
-import datetime
-import os
 import subprocess
 
+from expidite_rpi.core import api, file_naming
 from expidite_rpi.core import configuration as root_cfg
 
 logger = root_cfg.setup_logger("expidite")
@@ -49,17 +48,17 @@ class DeviceStatus:
         if not root_cfg.running_on_rpi:
             return
 
-        timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
-        log_filename = os.path.join(root_cfg.DIAGS_DIR, f"diag_{timestamp}.txt")
+        # NICKB DELETE log_filename = os.path.join(root_cfg.DIAGS_DIR, f"diag_{timestamp}.txt")
+        log_filename = file_naming.get_diags_filename()
 
         logger.info(f"Starting diagnostic collection. Log file: {log_filename}")
 
         with open(log_filename, "w") as f:
-            f.write("--- Expidite connectivity diagnostics ---------------------------------------------\n")
-            f.write(f"Report Generated: {datetime.datetime.now().isoformat()}\n")
+            f.write("=" * 120 + "\n")
+            f.write(f"Report Generated: {api.utc_now()}\n")
             f.write(f"Reason: {reason}\n")
             f.write(f"Log Location: {log_filename}\n")
-            f.write("-----------------------------------------------------------------------------------\n\n")
+            f.write("=" * 120 + "\n\n")
 
             for title, command in DIAGNOSTIC_COMMANDS:
                 f.write(f"### {title} (Command: {command}) ###\n")
@@ -74,7 +73,7 @@ class DeviceStatus:
                     f.write("--- STDERR (Potential Errors) ---\n")
                     f.write(stderr + "\n")
 
-                f.write("\n" + "=" * 80 + "\n\n")
+                f.write("\n" + "=" * 120 + "\n\n")
 
         logger.info(f"\nDiagnostic collection complete. Data saved to: {log_filename}")
 

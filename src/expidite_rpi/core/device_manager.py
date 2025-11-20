@@ -248,7 +248,7 @@ class DeviceManager:
                 self.action_on_ping_ok()
 
                 # NICKB REMOVE - temporary for testing only.
-                if self.ping_success_count_run % 60 == 0:
+                if self.ping_success_count_run % 30 == 0:
                     DeviceStatus.collect_diagnostics("Nick testing")
 
             # Log useful info and status periodically
