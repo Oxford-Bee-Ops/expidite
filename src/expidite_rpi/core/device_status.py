@@ -29,7 +29,7 @@ DIAGNOSTIC_COMMANDS = [
     ("Recent logs", "journalctl -n 500 --no-pager"),
     # Expidite status
     ("Expidite files", f"ls -lhR {root_cfg.ROOT_WORKING_DIR}"),
-    ("Expidite cfg files", f"ls -lhR {root_cfg.CFG_DIR}"),
+    ("Expidite config files", f"ls -lhR {root_cfg.CFG_DIR}"),
     ("EXPIDITE_IS_RUNNING_FLAG", f"cat {root_cfg.EXPIDITE_IS_RUNNING_FLAG}"),
     ("LED_STATUS_FILE", f"cat {root_cfg.LED_STATUS_FILE}"),
 ]
@@ -80,16 +80,15 @@ class DeviceStatus:
                 f.write("\n" + "=" * 150 + "\n")
 
             expidite_version, user_code_version = root_cfg.get_version_info()
-            f.write(f"Expidite version: {expidite_version}\n")
+            f.write(f"\nExpidite version: {expidite_version}\n")
             f.write(f"User code version: {user_code_version}\n")
-            f.write("Expidite system configuration:\n")
+            f.write("\nExpidite system configuration:\n")
             for key, value in root_cfg.system_cfg.model_dump().items():
                 f.write(f"    {key}: {value}\n")
 
             f.write(f"\nExpidite device configuration:\n{root_cfg.my_device.display()}")
             if root_cfg.keys:
                 f.write(f"\nStorage account: {root_cfg.keys.get_storage_account()}\n")
-            f.write("\n")
             # NICKB TODO Make common
             f.write("\n" + "=" * 150 + "\n")
             # NICKB TODO health = DeviceHealth().get_health() (see RpiCore for how to display it.
