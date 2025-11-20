@@ -8,23 +8,23 @@ logger = root_cfg.setup_logger("expidite")
 
 DIAGNOSTIC_COMMANDS = [
     # System and time.
-    ("System Date & Time", "date"),
-    ("System Uptime & Load", "uptime"),
-    ("Kernel Information", "uname -a"),
+    ("System date and time", "date"),
+    ("System uptime", "uptime"),
+    ("Kernel information", "uname -a"),
     # Network status.
-    ("All Network Interfaces", "ip a"),
-    ("Routing Table", "ip r"),
-    ("ARP Cache", "arp -a"),
-    ("Active Connections", "ss -tulnpa"),
-    ("Wi-Fi Status (if on older systems)", "iwconfig"),
-    ("DNS Resolution Config", "cat /etc/resolv.conf"),
+    ("All network interfaces", "ip a"),
+    ("Routing table", "ip r"),
+    ("ARP cache", "arp -a"),
+    ("Active connections", "ss -tulnpa"),
+    ("Wi-Fi status (if on older systems)", "iwconfig"),
+    ("DNS resolution config", "cat /etc/resolv.conf"),
     # Connectivity checks.
     ("Ping Google DNS (8.8.8.8)", "ping -c 4 8.8.8.8"),
     # Resource usage.
-    ("Disk Usage", "df -h"),
-    ("Memory Usage", "free -h"),
-    ("Top Processes Snapshot", "top -bn1 | head -n 20"),  # Only show the first 20 lines
-    ("Last 50 Kernel Messages", "dmesg | tail -n 50"),
+    ("Disk usage", "df -h"),
+    ("Memory usage", "free -h"),
+    ("Top processes snapshot", "top -bn1 | head -n 20"),  # Only show the first 20 lines
+    ("Last 50 kernel messages", "dmesg | tail -n 50"),
     # Logs.
     ("Recent logs", "journalctl -n 500 --no-pager"),
     # Expidite status
@@ -64,7 +64,7 @@ class DeviceStatus:
             for title, command in DIAGNOSTIC_COMMANDS:
                 f.write(f"\n### {title} ({command}) ###\n")
                 stdout, stderr, returncode = DeviceStatus.run_cmd(command)
-                f.write(f"Exit Code: {returncode}\n")
+                f.write(f"Exit code: {returncode}\n")
 
                 if stdout:
                     f.write("--- STDOUT ---\n")
@@ -77,7 +77,15 @@ class DeviceStatus:
                 f.write("\n")
                 f.write("=" * 150 + "\n")
 
-            f.write(f"\nExpidite Configuration:\n{root_cfg.my_device.display()}")
+            expidite_version, user_code_version = root_cfg.get_version_info()
+            f.write(f"Expidite version: {expidite_version}")
+            f.write(f"User code version: {user_code_version}")
+            for key, value in root_cfg.system_cfg.model_dump().items():
+                f.write(f"{key}: {value}")
+
+            f.write(f"\nExpidite device configuration:\n{root_cfg.my_device.display()}")
+            if root_cfg.keys:
+                f.write(f"\nStorage account: {root_cfg.keys.get_storage_account()}\n")
             f.write("\n")
             # NICKB TODO Make common
             f.write("=" * 150 + "\n")
