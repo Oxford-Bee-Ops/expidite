@@ -1,8 +1,6 @@
 # Class to optionally manage:
 # - Wifi
 # - LED indicator status
-# - auto-update the user software
-# - auto-update the OS to keep current with security fixes
 import os
 from time import sleep
 from typing import Optional
