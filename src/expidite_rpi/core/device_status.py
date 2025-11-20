@@ -62,7 +62,7 @@ class DeviceStatus:
 
             for title, command in DIAGNOSTIC_COMMANDS:
                 f.write(f"### {title} ({command}) ###\n")
-                stdout, stderr, returncode = DeviceStatus.execute_command(command)
+                stdout, stderr, returncode = DeviceStatus.run_cmd(command)
                 f.write(f"Exit Code: {returncode}\n")
 
                 if stdout:
@@ -77,19 +77,16 @@ class DeviceStatus:
 
         logger.info(f"Completed diagnostic collection to {log_filename}")
 
-    # NICKB: use an existing util function?
     @staticmethod
-    def execute_command(command):
+    def run_cmd(command) -> tuple[str, str, int]:
         """Executes a shell command and returns its output and any errors."""
         try:
-            # Using shell=True for complex commands/pipes, but generally discouraged.
-            # For simplicity in this diagnostic script, we use it for pipes/redirects.
             result = subprocess.run(
                 command,
                 shell=True,
                 capture_output=True,
                 text=True,
-                timeout=15,  # Timeout in seconds for any single command
+                timeout=15, # Timeout in seconds, in case any command hangs.
             )
             return result.stdout.strip(), result.stderr.strip(), result.returncode
         except subprocess.TimeoutExpired:
