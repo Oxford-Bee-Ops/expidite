@@ -537,7 +537,7 @@ class InteractiveMenu():
 
     def review_mode(self) -> None:
         """Manage entering and exiting review mode.
-        The intent of review mode is to help with manual review of sensor data.  
+        The intent of review mode is to help with manual review of sensor data.
         The actual implementation is up to the Sensor subclass.
         But, for example, the video sensor saves images to the cloud every few seconds with the same
         name so that the user positioning a camera can see what the camera is seeing in near-real time.

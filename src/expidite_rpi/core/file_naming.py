@@ -174,7 +174,7 @@ def get_record_filename(
         V3_{datastream_type_id}_{device_id}_{sensor_id}_{start_time}_{end_time}.{suffix}
         V3_{datastream_type_id}_{device_id}_{sensor_id}_{start_time}_{end_time}_{frame_number}.{suffix}
         V3_{datastream_type_id}_{device_id}_{sensor_id}_{start_time}_{end_time}_{frame_number}_
-            {arbitrary_index}.{suffix} 
+            {arbitrary_index}.{suffix}
 
     Fieldsrare separated by "_" and the following are fixed width.
         - datastream_type_id: 5 characters
@@ -327,7 +327,7 @@ def get_system_test_filename(st_type: str) -> Path:
 def get_review_mode_filename(
     data_id: str,
     suffix: api.FORMAT) -> Path:
-    """Generate a filename for a review mode file.  
+    """Generate a filename for a review mode file.
     These are special in not containing timestamps because the intention is that they overwrite
     each other."""
     return root_cfg.EDGE_UPLOAD_DIR / f"V3_{data_id}.{suffix.value}"

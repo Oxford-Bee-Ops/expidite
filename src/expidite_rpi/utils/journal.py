@@ -29,7 +29,7 @@ class Journal:
             cached (bool, optional):
                 If True, the file is written to disk only when the save() method is called. Defaults to True.
                 If False, the file is written to disk after each add_row(s) call.
-            reqd_columns (list, optional): 
+            reqd_columns (list, optional):
                 A list of column names to save to the CSV file in the order specified.
                 If None, the columns will be ordered randomly in the csv. Defaults to None.
         """

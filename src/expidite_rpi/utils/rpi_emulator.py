@@ -115,7 +115,7 @@ class RpiEmulator():
 
 
     def set_recording_cap(self, cap: int, type_id: Optional[str] = None) -> None:
-        """Set the maximum number of recordings to be saved.  
+        """Set the maximum number of recordings to be saved.
         If a type_id is provided, set the cap for that type only."""
         if type_id is not None:
             self.recording_cap_dict[type_id] = cap
@@ -318,7 +318,7 @@ class RpiEmulator():
     def run_cmd_test_stub(self, cmd: str,
                           ignore_errors: bool=False,
                           grep_strs: Optional[list[str]]=None) -> str:
-        """For testing purposes, we emulate certain basic Linux sensor commands so that we can run more 
+        """For testing purposes, we emulate certain basic Linux sensor commands so that we can run more
         realistic test scenarios on Windows.
 
         We currently emulate:

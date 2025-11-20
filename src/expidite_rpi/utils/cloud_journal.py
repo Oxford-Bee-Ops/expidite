@@ -15,9 +15,9 @@ logger = root_cfg.setup_logger("expidite")
 
 class _CloudJournalManager:
     _instance = None
-    """CloudJournalManager is a worker thread that manages synchronisation of CloudJournal 
+    """CloudJournalManager is a worker thread that manages synchronisation of CloudJournal
     objects to the cloud.
-    
+
     It should only be instantiated or called by a CloudJournal object.
     We use a single worker thread and queues to ensure thread-safety of local processing."""
 
@@ -119,7 +119,7 @@ class _CloudJournalManager:
 
 
 class CloudJournal:
-    """CloudJournal provides thread-safe storage and retrieval of log / CSV-type data mastered in a 
+    """CloudJournal provides thread-safe storage and retrieval of log / CSV-type data mastered in a
     cloud datastore.
 
     Threads can safely append data using add() methods.

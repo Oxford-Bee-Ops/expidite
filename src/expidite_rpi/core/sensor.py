@@ -61,7 +61,7 @@ class Sensor(Thread, DPnode, ABC):
 
         This method is called by the Sensor subclass to check if it should continue recording.
         If Expidite is shutting down, this will return false.
-        If Expidite is failing to process data quickly enough and is therefore at risk of 
+        If Expidite is failing to process data quickly enough and is therefore at risk of
         running out of memory, this function will hold up the thread until the data backlog is
         processed.
         """
@@ -77,12 +77,12 @@ class Sensor(Thread, DPnode, ABC):
     def in_review_mode(self) -> bool:
         """Returns true if the system is in review mode.
 
-        The intent of review mode is to help with manual review of sensor data.  
+        The intent of review mode is to help with manual review of sensor data.
         The actual implementation is up to the Sensor subclass.
         But, for example, the video sensor saves images to the cloud every few seconds with the same
         name so that the user positioning a camera can see what the camera is seeing in near-real time.
         I2C sensors will typically increase their logging frequency to help with manual review.
-        
+
         Review mode is set via the BCLI.  The BCLI also helps the user understand how to see the
         output from the sensors in review mode.
 
@@ -115,7 +115,7 @@ class Sensor(Thread, DPnode, ABC):
     @abstractmethod
     def run(self) -> None:
         """The run method is where the sensor does its work of sensing and logging data.
-        The subclass *must* use "while not self.stop_requested.is_set()" and 
+        The subclass *must* use "while not self.stop_requested.is_set()" and
         "self.stop_requested.wait(sleep_time)" to enable prompt and clean shutdown."""
 
         assert False, "Sub-classes must override this method"

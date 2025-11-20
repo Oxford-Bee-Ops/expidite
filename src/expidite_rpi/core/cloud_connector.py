@@ -268,8 +268,8 @@ class CloudConnector:
         Each file in the cloud will only ever be written to by one device (ie this one), so we only need
         to check the headers once at start up.
         If this is the first time we're writing to this remote file, but the file already exists,
-        we check that the headers in the local file match the headers in the remote file.  If they do not 
-        match, we download the remote file, merge the data to create a coherent set of headers and push 
+        we check that the headers in the local file match the headers in the remote file.  If they do not
+        match, we download the remote file, merge the data to create a coherent set of headers and push
         the aggregated data back to the remote file.
         """
 
@@ -392,7 +392,7 @@ class CloudConnector:
         - suffix: suffix to match to files in the datastore container
         - more_recent_than: Optional; if specified, only files more recent than this date will be returned
 
-        The current backend implementation is the Azure Blobstore which only supports prefix search 
+        The current backend implementation is the Azure Blobstore which only supports prefix search
         and tag search.
         """
         logger.debug(f"list_cloud_files() called with prefix={prefix}, suffix={suffix}, "
@@ -766,7 +766,7 @@ class LocalCloudConnector(CloudConnector):
         - suffix: suffix to match to files in the datastore container
         - more_recent_than: Optional; if specified, only files more recent than this date will be returned
 
-        The current backend implementation is the Azure Blobstore which only supports prefix search 
+        The current backend implementation is the Azure Blobstore which only supports prefix search
         and tag search.
         """
         containerClient = self.local_cloud / container

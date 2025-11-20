@@ -12,9 +12,9 @@ from pydantic_settings import BaseSettings
 
 
 def create_root_working_dir(path: Path) -> None:
-    """ Create the root working directory if it doesn't exist. 
+    """ Create the root working directory if it doesn't exist.
     This requires root privileges on Linux.
-   
+
     Args:
         path (Path): The path to the directory to create.
 

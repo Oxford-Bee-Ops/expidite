@@ -69,7 +69,7 @@ class TrapcamDp(DataProcessor):
                       video_path: Path,
                       min_blob_size: int,
                       max_blob_size: int) -> None:
-        """ Process a video file to detect movement and save segments with movement. 
+        """ Process a video file to detect movement and save segments with movement.
         We record for a minimum of 2 seconds after movement is detected."""
 
         cap = cv2.VideoCapture(str(video_path))

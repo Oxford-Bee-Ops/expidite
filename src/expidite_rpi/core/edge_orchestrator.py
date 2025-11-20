@@ -380,7 +380,7 @@ class EdgeOrchestrator:
 
     def save_FAIR_record(self) -> None:
         """Save a FAIR record describing this Device, its Sensor and associated data processing.
-        We save one FAIR record to the expidite-fair (where we store all snapshots) and one to 
+        We save one FAIR record to the expidite-fair (where we store all snapshots) and one to
         expidite-fair-latest (which is just the latest snapshot; overriding the old one)."""
         logger.debug(f"Save FAIR record for {self}")
 

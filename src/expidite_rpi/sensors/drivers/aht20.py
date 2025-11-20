@@ -106,9 +106,9 @@ class AHT20:
 
     def get_measure_CRC8(self):
         """
-        This function will calculate crc8 code with G(x) = x8 + x5 + x4 + 1 -> 0x131(0x31), 
+        This function will calculate crc8 code with G(x) = x8 + x5 + x4 + 1 -> 0x131(0x31),
         Initial value = 0xFF. No XOROUT.
-        return: all_data (1 bytes status + 2.5 byes humidity + 2.5 bytes temperature + 1 bytes crc8 code), 
+        return: all_data (1 bytes status + 2.5 byes humidity + 2.5 bytes temperature + 1 bytes crc8 code),
         isCRC8_pass
         """
         all_data = self.get_measure()
