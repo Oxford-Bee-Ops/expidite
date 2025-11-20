@@ -58,8 +58,8 @@ class DeviceStatus:
         with gzip.open(log_filename, "wt") as f:
             f.write("=" * 150 + "\n")
             f.write(f"Report generated: {api.utc_now()}\n")
-            f.write(f"Reason:           {reason}\n")
-            f.write("=" * 150 + "\n")
+            f.write(f"Reason:           {reason}")
+            f.write("\n" + "=" * 150 + "\n")
 
             for title, command in DIAGNOSTIC_COMMANDS:
                 f.write(f"\n### {title} ({command}) ###\n")
@@ -74,21 +74,21 @@ class DeviceStatus:
                     f.write("--- STDERR ---\n")
                     f.write(stderr + "\n")
 
-                f.write("\n")
-                f.write("=" * 150 + "\n")
+                f.write("\n" + "=" * 150 + "\n")
 
             expidite_version, user_code_version = root_cfg.get_version_info()
-            f.write(f"Expidite version: {expidite_version}")
-            f.write(f"User code version: {user_code_version}")
+            f.write(f"Expidite version: {expidite_version}\n")
+            f.write(f"User code version: {user_code_version}\n")
+            f.write(f"Expidite system configuration:\n")
             for key, value in root_cfg.system_cfg.model_dump().items():
-                f.write(f"{key}: {value}")
+                f.write(f"    {key}: {value}\n")
 
             f.write(f"\nExpidite device configuration:\n{root_cfg.my_device.display()}")
             if root_cfg.keys:
                 f.write(f"\nStorage account: {root_cfg.keys.get_storage_account()}\n")
             f.write("\n")
             # NICKB TODO Make common
-            f.write("=" * 150 + "\n")
+            f.write("\n" + "=" * 150 + "\n")
             # NICKB TODO health = DeviceHealth().get_health() (see RpiCore for how to display it.
 
         logger.info(f"Completed diagnostic collection to {log_filename}")
