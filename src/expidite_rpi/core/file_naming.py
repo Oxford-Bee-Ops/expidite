@@ -325,7 +325,7 @@ def get_system_test_filename(st_type: str) -> Path:
 
 def get_diags_filename() -> Path:
     """Generate a filename for a diags bundle file in the diags directory."""
-    return root_cfg.DIAGS_DIR / f"V3_DIAGS_{root_cfg.my_device_id}_{api.utc_to_fname_str()}.log"
+    return root_cfg.DIAGS_DIR / f"V3_DIAGS_{root_cfg.my_device_id}_{api.utc_to_fname_str()}.log.gz"
 
 def get_review_mode_filename(
     data_id: str,

@@ -1,3 +1,4 @@
+import gzip
 import subprocess
 
 from expidite_rpi.core import api, file_naming
@@ -26,6 +27,11 @@ DIAGNOSTIC_COMMANDS = [
     ("Last 50 Kernel Messages", "dmesg | tail -n 50"),
     # Logs.
     ("Recent logs", "journalctl -n 500 --no-pager"),
+    # Expidite status
+    ("Expidite files", f"ls -lhR {root_cfg.ROOT_WORKING_DIR}"),
+    ("Expidite cfg files", f"ls -lhR {root_cfg.CFG_DIR}"),
+    ("EXPIDITE_IS_RUNNING_FLAG", f"cat {root_cfg.EXPIDITE_IS_RUNNING_FLAG}"),
+    ("LED_STATUS_FILE", f"cat {root_cfg.LED_STATUS_FILE}"),
 ]
 
 ##############################################################################################################
@@ -49,14 +55,14 @@ class DeviceStatus:
 
         logger.info(f"Starting diagnostic collection to {log_filename}")
 
-        with open(log_filename, "w") as f:
-            f.write("=" * 120 + "\n")
+        with gzip.open(log_filename, "wt") as f:
+            f.write("=" * 150 + "\n")
             f.write(f"Report generated: {api.utc_now()}\n")
             f.write(f"Reason:           {reason}\n")
-            f.write("=" * 120 + "\n\n")
+            f.write("=" * 150 + "\n")
 
             for title, command in DIAGNOSTIC_COMMANDS:
-                f.write(f"### {title} ({command}) ###\n")
+                f.write(f"\n### {title} ({command}) ###\n")
                 stdout, stderr, returncode = DeviceStatus.run_cmd(command)
                 f.write(f"Exit Code: {returncode}\n")
 
@@ -68,7 +74,14 @@ class DeviceStatus:
                     f.write("--- STDERR ---\n")
                     f.write(stderr + "\n")
 
-                f.write("\n" + "=" * 120 + "\n\n")
+                f.write("\n")
+                f.write("=" * 150 + "\n")
+
+            f.write(f"\nExpidite Configuration:\n{root_cfg.my_device.display()}")
+            f.write("\n")
+            # NICKB TODO Make common
+            f.write("=" * 150 + "\n")
+            # NICKB TODO health = DeviceHealth().get_health() (see RpiCore for how to display it.
 
         logger.info(f"Completed diagnostic collection to {log_filename}")
 
