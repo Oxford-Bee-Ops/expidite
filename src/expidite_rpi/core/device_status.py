@@ -53,7 +53,6 @@ class DeviceStatus:
             f.write("=" * 120 + "\n")
             f.write(f"Report generated: {api.utc_now()}\n")
             f.write(f"Reason:           {reason}\n")
-            f.write(f"Log Location:     {log_filename}\n")
             f.write("=" * 120 + "\n\n")
 
             for title, command in DIAGNOSTIC_COMMANDS:
