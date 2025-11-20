@@ -15,9 +15,9 @@ from expidite_rpi.core import configuration as root_cfg
 class Journal:
     _temp_fname = "_temp_fname"
 
-    def __init__(self, 
-                 fname: Optional[Path | str] = None, 
-                 cached: bool=True, 
+    def __init__(self,
+                 fname: Optional[Path | str] = None,
+                 cached: bool=True,
                  reqd_columns: Optional[list[str]]=None) -> None:
         """Constructor for the Journal class.
 

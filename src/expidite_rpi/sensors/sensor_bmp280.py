@@ -51,7 +51,7 @@ class BMP280(Sensor):
     def __init__(self, config: BMP280SensorCfg):
         super().__init__(config)
         self.config = config
-        
+
     # Separate thread to log data
     def run(self):
 

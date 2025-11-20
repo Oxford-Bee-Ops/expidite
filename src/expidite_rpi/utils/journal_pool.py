@@ -42,8 +42,8 @@ class JournalPool(ABC):
         return JournalPool._instance
 
     @abstractmethod
-    def add_rows(self, stream: Stream, 
-                 data: list[dict], 
+    def add_rows(self, stream: Stream,
+                 data: list[dict],
                  timestamp: Optional[datetime] = None) -> None:
         """Add data rows as a list of dictionaries
 
@@ -52,9 +52,9 @@ class JournalPool(ABC):
         assert False, "Abstract method needs to be implemented"
 
     @abstractmethod
-    def add_rows_from_df(self, 
-                         stream: Stream, 
-                         data: pd.DataFrame, 
+    def add_rows_from_df(self,
+                         stream: Stream,
+                         data: pd.DataFrame,
                          timestamp: Optional[datetime] = None
     ) -> None:
         """Add data in the form of a Pandas DataFrame to the Journal, which will auto-sync to the cloud
@@ -85,9 +85,9 @@ class CloudJournalPool(JournalPool):
         self._cj_pool: dict[str, CloudJournal] = {}
         self.jlock = RLock()
 
-    def add_rows(self, 
-                 stream: Stream, 
-                 data: list[dict], 
+    def add_rows(self,
+                 stream: Stream,
+                 data: list[dict],
                  timestamp: Optional[datetime] = None) -> None:
         """Add data to the appropriate CloudJournal, which will auto-sync to the cloud
 
@@ -169,9 +169,9 @@ class LocalJournalPool(JournalPool):
         self._jpool: dict[str, Journal] = {}
         self.jlock = RLock()
 
-    def add_rows(self, 
-                 stream: Stream, 
-                 data: list[dict], 
+    def add_rows(self,
+                 stream: Stream,
+                 data: list[dict],
                  timestamp: Optional[datetime] = None) -> None:
         """Add data to the appropriate Journal, which will auto-upload to the cloud"""
 
@@ -179,9 +179,9 @@ class LocalJournalPool(JournalPool):
             j = self._get_journal(stream)
             j.add_rows(data)
 
-    def add_rows_from_df(self, 
-                         stream: Stream, 
-                         data: pd.DataFrame, 
+    def add_rows_from_df(self,
+                         stream: Stream,
+                         data: pd.DataFrame,
                          timestamp: Optional[datetime] = None
     ) -> None:
         """Add data to the appropriate Journal, which will auto-sync to the cloud"""
@@ -232,7 +232,7 @@ class LocalJournalPool(JournalPool):
 
         fname = file_naming.get_journal_filename(stream.type_id)
         if fname.name not in self._jpool:
-            reqd_cols: list[str] = api.ALL_RECORD_ID_FIELDS 
+            reqd_cols: list[str] = api.ALL_RECORD_ID_FIELDS
             if stream.fields:
                 reqd_cols.extend(stream.fields)
             j = Journal(fname, cached=True, reqd_columns=reqd_cols)

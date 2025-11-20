@@ -23,7 +23,7 @@ if sys.platform == "win32":
     mock_smbus2 = types.ModuleType("smbus2")
     mock_smbus2.SMBus = MockSMBus  # type: ignore
     sys.modules['smbus2'] = mock_smbus2
-    
+
 from smbus2 import SMBus
 
 

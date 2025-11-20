@@ -15,7 +15,7 @@ from expidite_rpi.utils import utils
 
 if root_cfg.running_on_rpi:
     from systemd import journal  # type: ignore
-    def get_logs(since: Optional[datetime] = None, 
+    def get_logs(since: Optional[datetime] = None,
                  min_priority: Optional[int] = None,
                  grep_str: Optional[list[str]] = None,
                  max_logs: int = 1000) -> list[dict[str, Any]]:
@@ -53,7 +53,7 @@ if root_cfg.running_on_rpi:
         for entry in reader:
             priority = int(entry.get("PRIORITY", 9))
             message = entry.get("MESSAGE", "")
-            if ((min_priority is None or 
+            if ((min_priority is None or
                  priority <= min_priority or
                  api.RAISE_WARN_TAG in message) and
                 (grep_str is None or
@@ -120,16 +120,16 @@ DEVICE_HEALTH_CFG = SensorCfg(
     sensor_model="DeviceHealth",
     description="Internal device health",
     outputs=[
-        Stream("Health heartbeat stream", 
-               api.HEART_DS_TYPE_ID, 
-               HEART_STREAM_INDEX, 
-               format=api.FORMAT.LOG, 
+        Stream("Health heartbeat stream",
+               api.HEART_DS_TYPE_ID,
+               HEART_STREAM_INDEX,
+               format=api.FORMAT.LOG,
                fields=HEART_FIELDS,
                cloud_container=root_cfg.my_device.cc_for_system_records),
-        Stream("Warning log stream", 
-               api.WARNING_DS_TYPE_ID, 
-               WARNING_STREAM_INDEX, 
-               format=api.FORMAT.LOG, 
+        Stream("Warning log stream",
+               api.WARNING_DS_TYPE_ID,
+               WARNING_STREAM_INDEX,
+               format=api.FORMAT.LOG,
                fields=WARNING_FIELDS,
                cloud_container=root_cfg.my_device.cc_for_system_records),
     ],
@@ -156,7 +156,7 @@ class DeviceHealth(Sensor):
         self.last_ping_failure_count_all = 0
         self.log_counter = 0
         self.device_manager = device_manager
-        
+
     def run(self) -> None:
         """Main loop for the DeviceHealth sensor.
         This method is called when the thread is started.
@@ -200,7 +200,7 @@ class DeviceHealth(Sensor):
                     self.log(WARNING_STREAM_INDEX, log)
                 elif log["priority"] <= 3:
                     self.log(WARNING_STREAM_INDEX, log)
-            
+
 
     ############################################################################################################
     # Diagnostics utility functions
@@ -252,9 +252,9 @@ class DeviceHealth(Sensor):
 
                 # Running processes
                 # Drop any starting / or . characters
-                # And convert the process list to a simple comma-seperated string with no {} or ' or " 
-                # characters          
-                if root_cfg.system_cfg:      
+                # And convert the process list to a simple comma-seperated string with no {} or ' or "
+                # characters
+                if root_cfg.system_cfg:
                     process_set = (
                         utils.check_running_processes(
                             search_string=f"{root_cfg.system_cfg.my_start_script}").union(
@@ -291,14 +291,14 @@ class DeviceHealth(Sensor):
                 ping_failure_count_run: int = 0
             else:
                 ping_failure_count_run = self.device_manager.ping_failure_count_run
-                fail_count = max(self.device_manager.ping_failure_count_all - 
+                fail_count = max(self.device_manager.ping_failure_count_all -
                                  self.last_ping_failure_count_all, 0)
-                success_count = max(self.device_manager.ping_success_count_all - 
+                success_count = max(self.device_manager.ping_success_count_all -
                                     self.last_ping_success_count_all, 0)
                 packet_loss = fail_count / (fail_count + success_count + 1)
                 # Reset our local counts
                 self.last_ping_failure_count_all = self.device_manager.ping_failure_count_all
-                self.last_ping_success_count_all = self.device_manager.ping_success_count_all                
+                self.last_ping_success_count_all = self.device_manager.ping_success_count_all
 
             # Total memory
             total_memory = psutil.virtual_memory().total
@@ -363,7 +363,7 @@ class DeviceHealth(Sensor):
             # The memory_info is in a pmem object, so we need to extract the rss value
             rss = proc.info["memory_info"].rss
             processes.append((rss, proc.info))
-            
+
         # Sort the list of processes by memory usage (rss) in descending order
         all_processes = sorted(processes, key=lambda x: x[0], reverse=True)
         top_processes = all_processes[:num_processes]
@@ -389,7 +389,7 @@ class DeviceHealth(Sensor):
         """
         if root_cfg.running_on_rpi:
             try:
-                output = utils.run_cmd(cmd="nmcli -g SSID,IN-USE,SIGNAL device wifi | grep '*'", 
+                output = utils.run_cmd(cmd="nmcli -g SSID,IN-USE,SIGNAL device wifi | grep '*'",
                                        ignore_errors=True)
                 # The return output contains a string like "SSID:*:95".  We need to strip out the ":*"
                 # and return just the SSID and the signal strength
@@ -410,7 +410,7 @@ class DeviceHealth(Sensor):
                 return ("Not connected", "-1")
         elif root_cfg.running_on_windows:
             try:
-                output = subprocess.check_output(["netsh", "wlan", "show", "interfaces"], 
+                output = subprocess.check_output(["netsh", "wlan", "show", "interfaces"],
                                                  universal_newlines=True)
                 for line in output.split("\n"):
                     if "SSID" in line and "BSSID" not in line:

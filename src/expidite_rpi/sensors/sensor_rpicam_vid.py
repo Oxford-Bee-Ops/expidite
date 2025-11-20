@@ -46,7 +46,7 @@ class RpicamSensorCfg(SensorCfg):
     ############################################################
     # Defines the rpicam-vid command to use to record video.
     # This should be as specified in the rpicam-vid documentation.
-    # The filename should be substituted with FILENAME. 
+    # The filename should be substituted with FILENAME.
     # Example: "rpicam-vid --framerate 15 --width 640 --height 640 -o FILENAME -t 5000"
     # The FILENAME suffix should match the datastream input_format.
     rpicam_cmd: str = "rpicam-vid --framerate 15 --width 640 --height 480 -o FILENAME -t 5000"
@@ -87,7 +87,7 @@ class RpicamSensor(Sensor):
         except ValueError as e:
             raise ValueError(f"RpicamSensor requires a main video stream at index "
                              f"{RPICAM_STREAM_INDEX}: {e}")
-        
+
         try:
             self.get_stream(RPICAM_REVIEW_MODE_STREAM_INDEX)  # Review mode stream
         except ValueError as e:
@@ -103,7 +103,7 @@ class RpicamSensor(Sensor):
         try:
             filename = file_naming.get_temporary_filename(api.FORMAT.JPG)
             config = cast(RpicamSensorCfg, self.config)
-            
+
             # Run recording process
             utils.run_cmd(config.review_mode_cmd.replace("FILENAME", str(filename)))
             logger.info("Review mode image captured")
@@ -114,7 +114,7 @@ class RpicamSensor(Sensor):
             )
 
         except Exception as e:
-            logger.error(f"{root_cfg.RAISE_WARN()}Error in RpicamSensor review_mode_output: {e}", 
+            logger.error(f"{root_cfg.RAISE_WARN()}Error in RpicamSensor review_mode_output: {e}",
                          exc_info=True)
 
 
@@ -155,11 +155,11 @@ class RpicamSensor(Sensor):
                 logger.info(f"Video recording completed with rc={rc}")
 
                 # Save the video file to the datastream
-                self.save_recording(RPICAM_STREAM_INDEX, 
-                                    filename, 
-                                    start_time=start_time, 
+                self.save_recording(RPICAM_STREAM_INDEX,
+                                    filename,
+                                    start_time=start_time,
                                     end_time=api.utc_now())
-                
+
                 exception_count = 0  # Reset exception count on success
 
             except Exception as e:

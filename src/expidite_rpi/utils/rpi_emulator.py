@@ -132,7 +132,7 @@ class RpiEmulator():
         if cap == -1:
             raise ValueError("The recording cap is not set for that type_id. You'll be waiting forever!")
         return self.recordings_saved.get(type_id, 0) >= cap
- 
+
 
     @staticmethod
     def recordings_still_to_process() -> bool:
@@ -152,20 +152,20 @@ class RpiEmulator():
         """
         # Get the current device ID
         current_device_id = root_cfg.my_device.device_id
-        
+
         # The device id is always the 3rd part of the filename
         parts = fname.name.split("_")
         if len(parts) < 3:
             raise ValueError(f"Filename {fname} does not have enough parts to contain a device ID.")
-        
+
         # Replace the device ID with the current device ID
         parts[2] = current_device_id
         new_fname = fname.parent / "_".join(parts)
-        
+
         return new_fname
 
-    def assert_records(self, 
-                       container: str, 
+    def assert_records(self,
+                       container: str,
                        expected_files: dict[str, int],
                        expected_rows: Optional[dict[str, int]] = None) -> None:
         """Assert that the expected number of files exist.
@@ -221,18 +221,18 @@ class RpiEmulator():
                             f"but found {len(lines)} rows."
                         )
 
-    def get_journal_as_df(self, 
-                          container: str, 
+    def get_journal_as_df(self,
+                          container: str,
                           file_prefix: str) -> pd.DataFrame:
         """Get the journal specified by the container & file_prefix and return as a pandas DataFrame
         for further custom validation."""
-        
+
         assert self.local_cloud is not None, (
             "Local cloud not set. Use RpiEmulator as a context manager to set it."
             "with RpiEmulator.get_instance() as scem: "
             "   ..."
         )
-        
+
         if not file_prefix.endswith("*"):
             file_prefix += "*"
         files = list((self.local_cloud / container).glob(file_prefix))
@@ -247,7 +247,7 @@ class RpiEmulator():
 
         # Read the file into a pandas DataFrame
         df = pd.read_csv(file, skip_blank_lines=True)
-        
+
         return df
 
 
@@ -261,7 +261,7 @@ class RpiEmulator():
         test_input["test_time"] = api.utc_to_iso_str()
         fname = file_naming.get_system_test_filename(test_name)
         pd.DataFrame([test_input]).to_csv(fname)
-        
+
         cc = CloudConnector.get_instance(root_cfg.CloudType.AZURE)
         cc.append_to_cloud(
             dst_container=root_cfg.my_device.cc_for_system_test,
@@ -284,7 +284,7 @@ class RpiEmulator():
         -------
         Path | None
             The path to the recording file if a match is found, None otherwise.
-        """        
+        """
         for recording in self.recordings:
             if cmd.startswith(recording.cmd_prefix):
                 return recording.recordings
@@ -295,10 +295,10 @@ class RpiEmulator():
         We have to check both the global recording cap and the per-type recording cap."""
         previous_recordings = self.recordings_saved.get(type_id, 0)
         type_cap = self.recording_cap_dict.get(type_id, self.recording_cap)
-        
+
         if (type_cap == -1) or (previous_recordings < type_cap):
             pass_check = True
-        else:            
+        else:
             pass_check = False
 
         if pass_check:
@@ -315,8 +315,8 @@ class RpiEmulator():
     #################################################################################################
     # Sensor command emulation
     #################################################################################################
-    def run_cmd_test_stub(self, cmd: str, 
-                          ignore_errors: bool=False, 
+    def run_cmd_test_stub(self, cmd: str,
+                          ignore_errors: bool=False,
                           grep_strs: Optional[list[str]]=None) -> str:
         """For testing purposes, we emulate certain basic Linux sensor commands so that we can run more 
         realistic test scenarios on Windows.
@@ -343,7 +343,7 @@ class RpiEmulator():
         """
         if cmd.startswith("rpicam-vid"):
             return self.emulate_rpicam_vid(cmd, ignore_errors, grep_strs)
-            
+
         elif cmd.startswith("arecord"):
             # Emulate the arecord command
             # This is a simple emulation that just returns a success code and a message.
@@ -351,15 +351,15 @@ class RpiEmulator():
             return self.emulate_arecord(cmd, ignore_errors, grep_strs)
         return "Command not run on windows: " + cmd
 
-    def emulate_rpicam_vid(self, cmd: str, 
-                           ignore_errors: bool=False, 
+    def emulate_rpicam_vid(self, cmd: str,
+                           ignore_errors: bool=False,
                            grep_strs: Optional[list[str]]=None) -> str:
         # Emulate the rpicam-vid command
         # We expect commands like:
         #  "rpicam-vid --framerate 4 --width 640 --height 480 -o FILENAME -t 180000 -v 0"
         #
-        # We try to find a matching recording to provide. 
-        # 
+        # We try to find a matching recording to provide.
+        #
         # If we fail, we create a video file with:
         # - filename taken from the -o parameter
         # - duration taken from the -t parameter (in milliseconds)
@@ -369,7 +369,7 @@ class RpiEmulator():
         args = shlex.split(cmd, posix=False)
         if args.index("-o") == -1 or args.index("-t") == -1:
             raise ValueError("Missing required arguments in command: " + cmd)
-        
+
         filename = args[args.index("-o") + 1]
         suffix = filename.split(".")[-1]
         duration = int(args[args.index("-t") + 1]) / 1000  # Convert to seconds
@@ -433,16 +433,16 @@ class RpiEmulator():
         time.sleep(duration)
         return f"rpicam-vid command emulated successfully, created {filename}"
 
-    def emulate_arecord(self, cmd: str, 
-                        ignore_errors: bool=False, 
+    def emulate_arecord(self, cmd: str,
+                        ignore_errors: bool=False,
                         grep_strs: Optional[list[str]]=None) -> str:
         # Emulate the arecord command
         # We expect commands like:
         #   f"arecord -D hw:{dev_index!s} -r {samp_rate!s} -c {chans!s}"
         #   f" -f S16_LE -t wav -d {length_to_record!s} {wav_output_filename!s}"
         #
-        # We try to find a matching recording to provide. 
-        args = shlex.split(cmd, posix=False)        
+        # We try to find a matching recording to provide.
+        args = shlex.split(cmd, posix=False)
         filename = args[-1]
         duration = int(args[args.index("-d") + 1])
 

@@ -49,7 +49,7 @@ class Test_Orchestrator:
             # Check that we have data in the journals
             # SCORE & SCORP & DUMML & DUMMF should contain data.
             # DUMMD should be empty
-            # The files will have been pushed to the cloud, so we need to get 
+            # The files will have been pushed to the cloud, so we need to get
             # the modified data on each journal.
             th.assert_records("expidite-journals",
                             {"V3_DUMML*": 1, "V3_DUMMD*": 1})
@@ -77,7 +77,7 @@ class Test_Orchestrator:
         # This is a test device defined to have a DummySensor.
         logger.info("Run test_orchestrator_main test")
         root_cfg.update_my_device_id("d01111111111")
-        
+
         with rpi_emulator.RpiEmulator.get_instance():
 
             orchestrator = EdgeOrchestrator.get_instance()
@@ -98,7 +98,7 @@ class Test_Orchestrator:
             logger.info("sensor_test: # Sensor fails; factory_thread should restart everything after 1s")
             sensor = orchestrator._get_sensor(api.SENSOR_TYPE.I2C, 1)
             assert sensor is not None
-            
+
             sensor.sensor_failed()
             assert root_cfg.RESTART_EXPIDITE_FLAG.exists()
             start_clock = api.utc_now()

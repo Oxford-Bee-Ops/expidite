@@ -59,7 +59,7 @@ def failing_to_keep_up()-> bool:
     else:
         last_space_check = now
 
-    if (root_cfg.running_on_rpi and 
+    if (root_cfg.running_on_rpi and
         (psutil.disk_usage(str(root_cfg.ROOT_WORKING_DIR)).percent > high_memory_usage_threshold)):
         logger.warning(f"{root_cfg.RAISE_WARN()} Failing to keep up due to low disk space")
         last_check_outcome = True
@@ -169,7 +169,7 @@ def run_cmd(cmd: str, ignore_errors: bool=False, grep_strs: Optional[list[str]]=
     if root_cfg.ST_MODE == root_cfg.SOFTWARE_TEST_MODE.TESTING:
         harness = RpiEmulator.get_instance()
         return harness.run_cmd_test_stub(cmd, ignore_errors, grep_strs)
-    
+
     if root_cfg.running_on_windows:
         assert ignore_errors, "run_cmd is not fully supported on Windows"
 
@@ -189,7 +189,7 @@ def run_cmd(cmd: str, ignore_errors: bool=False, grep_strs: Optional[list[str]]=
         if grep_strs is not None:
             for grep_str in grep_strs:
                 output = "\n".join([x for x in output.split("\n") if grep_str in x])
-            
+
         return output
 
     except FileNotFoundError as e:
@@ -261,7 +261,7 @@ def get_current_user() -> str:
         try:
             return os.getlogin()
         except Exception as e:
-            return f"Error retrieving user: {e}"    
+            return f"Error retrieving user: {e}"
     else:
         try:
             import pwd

@@ -35,7 +35,7 @@ class OrchestratorStatus(Enum):
 
     def __str__(self) -> str:
         return self.name.lower()
-    
+
     @staticmethod
     def running(status: "OrchestratorStatus") -> bool:
         """Check if the orchestrator is starting"""
@@ -90,7 +90,7 @@ class EdgeOrchestrator:
             self._sensorThreads: list[Sensor] = []
             self._dpworkers: list[DPworker] = []
             self.dp_trees: list[DPtree] = []
-            
+
             # We create a series of special Datastreams for recording:
             # HEART - device health
             # WARNING - captures error & warning logs
@@ -107,7 +107,7 @@ class EdgeOrchestrator:
             self._sensorThreads.append(self.selftracker)
             self._dpworkers.append(tracker_dpe)
             self.selftracker.set_dpworkers(self._dpworkers)
-            # We set the _selftracker as a class variable so that all DPtreeNoes instances can 
+            # We set the _selftracker as a class variable so that all DPtreeNoes instances can
             # log their performance data
             DPnode._selftracker = self.selftracker
 
@@ -174,7 +174,7 @@ class EdgeOrchestrator:
             logger.error(f"{root_cfg.RAISE_WARN()}create_method must return a list; "
                          f"created {type(dp_trees)}")
             raise ValueError("create_method must return a list of DPtree objects")
-        
+
         return dp_trees
 
     #########################################################################################################
@@ -187,7 +187,7 @@ class EdgeOrchestrator:
         logger.error(f"{root_cfg.RAISE_WARN()}Sensor failed; restarting all; {sensor}")
         logger.info(self.status())
 
-        # We must *not* call stop_all() here, as that will cause a deadlock because we're currently in the 
+        # We must *not* call stop_all() here, as that will cause a deadlock because we're currently in the
         # sensor thread that stop_all will wait on.
         # Instead, we set the RESTART flag, and the main() method will check for them.
         root_cfg.RESTART_EXPIDITE_FLAG.touch()
@@ -216,9 +216,9 @@ class EdgeOrchestrator:
                 logger.warning(f"EdgeOrchestrator is already running; {self}; {self._status}")
                 logger.info(self.status())
                 return
-            
+
             self._status = OrchestratorStatus.STARTING
-            
+
             # Check the "stop" file has been cleared
             root_cfg.STOP_EXPIDITE_FLAG.unlink(missing_ok=True)
             root_cfg.RESTART_EXPIDITE_FLAG.unlink(missing_ok=True)
@@ -284,7 +284,7 @@ class EdgeOrchestrator:
 
             self._status = OrchestratorStatus.STOPPING
 
-            # Set the STOP_EXPIDITE_FLAG file; this is polled by the main() method in 
+            # Set the STOP_EXPIDITE_FLAG file; this is polled by the main() method in
             # the EdgeOrchestrator which will continue to restart the RpiCore until the flag is removed.
             # This is also important when we are not the running instance of the orchestrator,
             # as the running instance will check the file and stop itself.
@@ -331,7 +331,7 @@ class EdgeOrchestrator:
             else:
                 logger.info(f"Datastream thread {dpe} already stopped")
 
-        # Trigger a flush_all on the CloudJournals so we save collected information 
+        # Trigger a flush_all on the CloudJournals so we save collected information
         # before we kill everything
         jp = JournalPool.get(root_cfg.Mode.EDGE)
         jp.flush_journals()
@@ -363,16 +363,16 @@ class EdgeOrchestrator:
 
         if not root_cfg.EXPIDITE_IS_RUNNING_FLAG.exists():
             return False
-        
-        if (root_cfg.STOP_EXPIDITE_FLAG.exists() and 
+
+        if (root_cfg.STOP_EXPIDITE_FLAG.exists() and
             (root_cfg.STOP_EXPIDITE_FLAG.stat().st_mtime >
              root_cfg.EXPIDITE_IS_RUNNING_FLAG.stat().st_mtime)):
                 return False
-        
+
         time_threshold = api.utc_now() - timedelta(seconds=2 * root_cfg.WATCHDOG_FREQUENCY)
         if root_cfg.EXPIDITE_IS_RUNNING_FLAG.stat().st_mtime < time_threshold.timestamp():
             return False
-        
+
         # If we get here, the file exists, was touched within the last 2x _FREQUENCY seconds,
         # and the timestamp is > than the timestamp on the STOP_EXPIDITE_FLAG file.
         return True
@@ -420,7 +420,7 @@ class EdgeOrchestrator:
 
         # Dump the sensor config
         sensors: dict[str, dict] = {}
-        for dp_tree in self.dp_trees:        
+        for dp_tree in self.dp_trees:
             # We don't save FAIR records for system datastreams
             if dp_tree.sensor.config.sensor_type == api.SENSOR_TYPE.SYS:
                 continue
@@ -431,10 +431,10 @@ class EdgeOrchestrator:
 
         # We always include the list of mac addresses for all devices in this experiment (fleet_config).
         # This enables the dashboard to check that all devices are present and working.
-        # We filter to those  devices in the inventory that use the same datastore rather than including 
+        # We filter to those  devices in the inventory that use the same datastore rather than including
         # all devices in the fleet.
         fleet_macs = list(root_cfg.INVENTORY.keys())
-        fleet_macs = [mac for mac in fleet_macs 
+        fleet_macs = [mac for mac in fleet_macs
                       if root_cfg.INVENTORY[mac].datastore == root_cfg.my_device.datastore]
         fleet_names = [root_cfg.INVENTORY[mac].name for mac in fleet_macs]
         fleet_dict = {mac: name for mac, name in zip(fleet_macs, fleet_names)}
@@ -447,11 +447,11 @@ class EdgeOrchestrator:
         Path(fair_fname).parent.mkdir(parents=True, exist_ok=True)
         with open(fair_fname, "w") as f:
             yaml.dump(wrap, f, Dumper=CustomDumper)
-        cc.upload_to_container(root_cfg.my_device.cc_for_fair, 
-                                [fair_fname], 
+        cc.upload_to_container(root_cfg.my_device.cc_for_fair,
+                                [fair_fname],
                                 delete_src=True,
                                 storage_tier=api.StorageTier.COOL)
-        
+
         # Also save to the "latest" container.  This is used by the dashboard so that it can get the latest
         # data without having to sort through an ever-growing list of files.
         fair_latest_fname = root_cfg.EDGE_UPLOAD_DIR / f"V3_{root_cfg.my_device_id}.yaml"
@@ -473,7 +473,7 @@ def main() -> None:
         logger.info(root_cfg.my_device.display())
 
         orchestrator = EdgeOrchestrator.get_instance()
-        if (orchestrator.watchdog_file_alive() or 
+        if (orchestrator.watchdog_file_alive() or
             OrchestratorStatus.running(orchestrator._status)):
             logger.warning("RpiCore is already running; exiting")
             return
@@ -492,7 +492,7 @@ def main() -> None:
                 orchestrator.stop_all()
                 orchestrator.load_config()
                 orchestrator.start_all()
-            else:   
+            else:
                 logger.debug(f"Orchestrator running ({orchestrator._status})")
                 root_cfg.EXPIDITE_IS_RUNNING_FLAG.touch()
 

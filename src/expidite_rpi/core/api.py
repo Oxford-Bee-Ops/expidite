@@ -38,10 +38,10 @@ REQD_RECORD_ID_FIELDS = [
     RECORD_ID.TIMESTAMP.value,
 ]
 
-ALL_RECORD_ID_FIELDS = [*REQD_RECORD_ID_FIELDS, 
-                        RECORD_ID.END_TIME.value, 
-                        RECORD_ID.OFFSET.value, 
-                        RECORD_ID.SECONDARY_OFFSET.value, 
+ALL_RECORD_ID_FIELDS = [*REQD_RECORD_ID_FIELDS,
+                        RECORD_ID.END_TIME.value,
+                        RECORD_ID.OFFSET.value,
+                        RECORD_ID.SECONDARY_OFFSET.value,
                         RECORD_ID.SUFFIX.value,
                         RECORD_ID.INCREMENT.value,
                         RECORD_ID.NAME.value,
@@ -112,15 +112,15 @@ DATA_FORMATS = [FORMAT.DF, FORMAT.CSV, FORMAT.LOG]
 # File naming convention to use on a Stream
 #
 # File naming conventions are defined in the core.file_naming module.
-# A stream can choose to use a specific file naming convention by setting 
+# A stream can choose to use a specific file naming convention by setting
 # this field.
 ############################################################
 class FILE_NAMING(Enum):
     """Enum for file naming conventions"""
     # Default file naming convention
-    DEFAULT = "default"  
+    DEFAULT = "default"
     # Review mode file naming drops the datetime fields so that each file overwrites the previous one
-    REVIEW_MODE = "review_mode"  
+    REVIEW_MODE = "review_mode"
 
 ############################################################
 # Tags used in logs sent from sensors to the ETL

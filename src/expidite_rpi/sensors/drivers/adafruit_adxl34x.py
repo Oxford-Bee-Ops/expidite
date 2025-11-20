@@ -147,7 +147,7 @@ class Range:
     RANGE_4_G: int = const(0b01)  # +/- 4g
     RANGE_2_G: int = const(0b00)  # +/- 2g (default value)
 
-    
+
 class ADXL345:
     """Driver for the ADXL345 3 axis accelerometer
 

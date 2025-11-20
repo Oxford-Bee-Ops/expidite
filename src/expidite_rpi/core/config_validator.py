@@ -40,7 +40,7 @@ class Rule1_outputs_not_empty(ValidationRule):
             return False, (
                 f"Outputs list is empty in {dpnode}: "
                 "all DPtree nodes must have at least one output.")
-        
+
         for stream in outputs:
             if not isinstance(stream, Stream):
                 return False, (
@@ -90,7 +90,7 @@ class Rule4_cloud_container_specified(ValidationRule):
         if outputs:
             for stream in outputs:
                 if stream.format not in api.DATA_FORMATS:
-                    if (stream.cloud_container is None or 
+                    if (stream.cloud_container is None or
                         len(stream.cloud_container) < 2 or
                         stream.cloud_container == root_cfg.FAILED_TO_LOAD):
                         return False, (
@@ -158,7 +158,7 @@ def validate_trees(dptrees: list[DPtree]) -> tuple[bool, list[str]]:
         return False, ["No tree provided for validation."]
 
     if isinstance(dptrees, DPtree):
-        dptrees = [dptrees]    
+        dptrees = [dptrees]
 
     #######################################################################################################
     # Run cross-tree validation rules
@@ -199,6 +199,6 @@ def validate_trees(dptrees: list[DPtree]) -> tuple[bool, list[str]]:
                     errors.append(
                         f"Error validating rule {rule.__class__.__name__}: {e!s}"
                     )
-        
+
     return is_valid, errors
 

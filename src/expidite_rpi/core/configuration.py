@@ -21,16 +21,16 @@ from expidite_rpi.utils import utils_clean
 # Frequency in seconds on which the DP worker thread is run
 DP_FREQUENCY: float = 60
 # Frequency in seconds on which the Journal sync thread is run
-JOURNAL_SYNC_FREQUENCY: float = 60 * 3  
+JOURNAL_SYNC_FREQUENCY: float = 60 * 3
 # Seconds between polls of is_stop_requested / touch is_running flag in EdgeOrchestrator
-WATCHDOG_FREQUENCY: float = 1  
+WATCHDOG_FREQUENCY: float = 1
 # See also DeviceCfg class for:
 # Frequency of health monitor heart beat logs
 #   - heart_beat_frequency: int = 60 * 10
 # Default environmental sensor logging frequency in seconds
 #   - env_sensor_frequency: int = 60 * 10
 # Max recording timer in seconds
-# This limits how quickly the system will cleanly shutdown as we wait for all recording 
+# This limits how quickly the system will cleanly shutdown as we wait for all recording
 # threads to complete. It also limits the duration of any recordings
 #   - max_recording_timer
 
@@ -112,7 +112,7 @@ elif running_on_rpi:
     CODE_DIR = Path(__file__).parent.parent.parent
     SC_CODE_DIR = CODE_DIR / "expidite"
     CFG_DIR = HOME_DIR / ".expidite"  # In the base user directory on the RPi
-    ROOT_WORKING_DIR = Path("/expidite")  
+    ROOT_WORKING_DIR = Path("/expidite")
     utils_clean.create_root_working_dir(ROOT_WORKING_DIR)
 
 elif running_on_linux:
@@ -193,7 +193,7 @@ STOP_EXPIDITE_FLAG = FLAGS_DIR / "STOP_EXPIDITE_FLAG"
 RESTART_EXPIDITE_FLAG = FLAGS_DIR / "RESTART_EXPIDITE_FLAG"
 # Used to indicate we're in review mode (ie enabling manual review of video or I2C sensor output)
 # Logic in Sensor will clear the flag after 30 minutes, but making it persistent means it you
-# can trigger review mode faster by just rebooting the device rather than waiting for the 
+# can trigger review mode faster by just rebooting the device rather than waiting for the
 # ~10min env timer to expire.
 REVIEW_MODE_FLAG = FLAGS_DIR / "IN_REVIEW_MODE_FLAG"
 
@@ -237,8 +237,8 @@ def set_log_level(level: int) -> None:
     module_logger.debug("Debug logging enabled for expidite")
 
 
-def setup_logger(name: str, 
-                 level: Optional[int] = None, 
+def setup_logger(name: str,
+                 level: Optional[int] = None,
                  filename: Optional[str | Path] = None) -> logging.Logger:
     global _DEFAULT_LOG
     if level is not None:
@@ -389,7 +389,7 @@ class CloudType(Enum):
 CLOUD_TYPE: CloudType = CloudType.AZURE
 if system_cfg and system_cfg.use_local_cloud.lower() == "yes":
     CLOUD_TYPE = CloudType.LOCAL_EMULATOR
-    
+
 
 #############################################################################################
 # Store the provided inventory
@@ -407,7 +407,7 @@ my_device: DeviceCfg = DUMMY_DEVICE
 def load_configuration() -> Optional[list[DeviceCfg] | None]:
     """Load the inventory using the my_fleet_config value defined in SystemCfg class."""
     inventory: list[DeviceCfg] = []
-    if (system_cfg and 
+    if (system_cfg and
         system_cfg.my_fleet_config and
         system_cfg.my_fleet_config != FAILED_TO_LOAD):
 

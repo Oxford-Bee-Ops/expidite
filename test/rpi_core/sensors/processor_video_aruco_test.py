@@ -19,7 +19,7 @@ class Test_video_aruco_processor:
         logger.info("Run test_aruco_processor_basic test")
         pass
         #file = (
-        #    root_cfg.CODE_DIR / "rpi_core" 
+        #    root_cfg.CODE_DIR / "rpi_core"
         #    / "test"
         #    / "sensors"
         #    / "resources"
