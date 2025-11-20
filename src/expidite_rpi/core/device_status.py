@@ -92,7 +92,7 @@ class DeviceStatus:
                 write_bar()
 
             expidite_version, user_code_version = root_cfg.get_version_info()
-            f.write(f"\n\nExpidite version: {expidite_version}\n")
+            f.write(f"\nExpidite version: {expidite_version}\n")
             f.write(f"User code version: {user_code_version}\n")
             f.write("\nExpidite system configuration:\n")
             for key, value in root_cfg.system_cfg.model_dump().items():
@@ -101,6 +101,8 @@ class DeviceStatus:
             f.write(f"\nExpidite device configuration:\n{root_cfg.my_device.display()}")
             if root_cfg.keys:
                 f.write(f"\nStorage account: {root_cfg.keys.get_storage_account()}\n")
+
+            f.write("\n")
             write_bar()
             # NICKB TODO health = DeviceHealth().get_health() (see RpiCore for how to display it.
 
