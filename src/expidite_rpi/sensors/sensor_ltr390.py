@@ -16,7 +16,6 @@ try:
 except (ImportError, NotImplementedError):
     # Running on non-CircuitPython environment (Windows/standard Python)
     board = None
-    pass
 
 logger = root_cfg.setup_logger("expidite")
 

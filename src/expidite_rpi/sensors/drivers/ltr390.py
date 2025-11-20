@@ -14,7 +14,6 @@ try:
 except (ImportError, NotImplementedError):
     # Running on non-CircuitPython environment (Windows/standard Python)
     board = None
-    pass
 
 """
 The MIT License (MIT)

@@ -17,7 +17,6 @@ class Test_video_aruco_processor:
     @pytest.mark.unittest
     def test_aruco_processor_basic(self):
         logger.info("Run test_aruco_processor_basic test")
-        pass
         #file = (
         #    root_cfg.CODE_DIR / "rpi_core"
         #    / "test"
