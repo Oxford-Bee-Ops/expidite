@@ -20,8 +20,8 @@ DIAGNOSTIC_COMMANDS = [
     # Connectivity checks.
     ("Ping Google DNS (8.8.8.8)", "ping -c 4 8.8.8.8"),
     # Resource usage.
-    ("Disk Usage (df)", "df -h"),
-    ("Memory Usage (free)", "free -h"),
+    ("Disk Usage", "df -h"),
+    ("Memory Usage", "free -h"),
     ("Top Processes Snapshot", "top -bn1 | head -n 20"),  # Only show the first 20 lines
     ("Last 50 Kernel Messages", "dmesg | tail -n 50"),
     # Logs.
