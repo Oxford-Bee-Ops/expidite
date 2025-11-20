@@ -51,12 +51,8 @@ class DeviceStatus:
     def collect_diagnostics(reason: str):
         """Collects and saves all diagnostic outputs to a time-stamped file."""
 
-        # NICKB use expidite version
-        if platform.system() != "Linux":
-            logger.info(
-                f"Error: This script is designed for Linux (Raspberry Pi). Current OS is {platform.system()}."
-            )
-            sys.exit(1)
+        if not root_cfg.running_on_rpi:
+            return
 
         # Ensure log directory exists
         os.makedirs(LOG_DIR, exist_ok=True)
