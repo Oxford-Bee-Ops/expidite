@@ -87,7 +87,7 @@ The following steps enable you to run the default example sensor on your RPI.  D
 - You should see data appearing in each of the containers in your cloud storage account.
 
 
-### USER FLOW - CONFIGURING FOR YOUR DEVICES
+### USER FLOW - CONFIGURING YOUR DEVICES
 To execute your particular experimental setup, you need to configure your devices in a "fleet config" python file.  You will want to maintain this configuration in Git.
 
 - Create your own Git repo if you haven't already got one
