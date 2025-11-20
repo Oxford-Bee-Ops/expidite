@@ -24,7 +24,7 @@ logger = root_cfg.setup_logger("expidite")
 # Default implementation of the CloudConnector class and interface definition.
 #
 # This class is used to connect to the cloud storage provider (Azure Blob Storage) but does so
-# # synchronously.
+# synchronously.
 ##########################################################################################################
 class CloudConnector:
 

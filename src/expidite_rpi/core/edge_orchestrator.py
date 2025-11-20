@@ -183,7 +183,7 @@ class EdgeOrchestrator:
     #
     #########################################################################################################
     def sensor_failed(self, sensor: Sensor) -> None:
-        """Called by Sensor to indicate that it has failed; orchestrator will then restarting everything."""
+        """Called by Sensor to indicate that it has failed; orchestrator will then restart everything."""
         logger.error(f"{root_cfg.RAISE_WARN()}Sensor failed; restarting all; {sensor}")
         logger.info(self.status())
 
