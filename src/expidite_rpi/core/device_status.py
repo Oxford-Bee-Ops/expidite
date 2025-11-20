@@ -12,6 +12,10 @@ DIAGNOSTIC_COMMANDS = [
     ("System uptime", "uptime"),
     ("Kernel information", "uname -a"),
     # Network status.
+    ("Network Manager status", "nmcli general status"),
+    ("Network interface status", "nmcli device status"),
+    ("Configured connections", "nmcli connection show"),
+    ("Wi-Fi hardware state", "nmcli radio"),
     ("All network interfaces", "ip a"),
     ("Routing table", "ip r"),
     ("ARP cache", "arp -a"),
@@ -20,6 +24,10 @@ DIAGNOSTIC_COMMANDS = [
     ("DNS resolution config", "cat /etc/resolv.conf"),
     # Connectivity checks.
     ("Ping Google DNS (8.8.8.8)", "ping -c 4 8.8.8.8"),
+    # Power and hardware Status
+    ("CPU Temperature", "vcgencmd measure_temp"),
+    ("Voltage/throttling status", "vcgencmd get_throttled"),
+    ("Current CPU/GPU clock speeds", "vcgencmd measure_clock arm; vcgencmd measure_clock core"),
     # Resource usage.
     ("Disk usage", "df -h"),
     ("Memory usage", "free -h"),
@@ -58,11 +66,14 @@ class DeviceStatus:
 
         logger.info(f"Starting diagnostic collection to {log_filename}")
 
-        with gzip.open(log_filename, "wt") as f:
+        def write_bar():
             f.write("=" * 150 + "\n")
+
+        with gzip.open(log_filename, "wt") as f:
+            write_bar()
             f.write(f"Report generated: {api.utc_now()}\n")
-            f.write(f"Reason:           {reason}")
-            f.write("\n" + "=" * 150 + "\n")
+            f.write(f"Reason:           {reason}\n")
+            write_bar()
 
             for title, command in DIAGNOSTIC_COMMANDS:
                 f.write(f"\n### {title} ({command}) ###\n")
@@ -77,10 +88,11 @@ class DeviceStatus:
                     f.write("--- STDERR ---\n")
                     f.write(stderr + "\n")
 
-                f.write("\n" + "=" * 150 + "\n")
+                f.write("\n")
+                write_bar()
 
             expidite_version, user_code_version = root_cfg.get_version_info()
-            f.write(f"\nExpidite version: {expidite_version}\n")
+            f.write(f"\n\nExpidite version: {expidite_version}\n")
             f.write(f"User code version: {user_code_version}\n")
             f.write("\nExpidite system configuration:\n")
             for key, value in root_cfg.system_cfg.model_dump().items():
@@ -89,8 +101,7 @@ class DeviceStatus:
             f.write(f"\nExpidite device configuration:\n{root_cfg.my_device.display()}")
             if root_cfg.keys:
                 f.write(f"\nStorage account: {root_cfg.keys.get_storage_account()}\n")
-            # NICKB TODO Make common
-            f.write("\n" + "=" * 150 + "\n")
+            write_bar()
             # NICKB TODO health = DeviceHealth().get_health() (see RpiCore for how to display it.
 
         logger.info(f"Completed diagnostic collection to {log_filename}")
