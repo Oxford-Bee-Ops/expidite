@@ -163,7 +163,7 @@ def run_cmd(cmd: str, ignore_errors: bool=False, grep_strs: Optional[list[str]]=
     ------
     Exception
         If the command fails and ignore_errors is False, raise an exception with the error message.
-        
+
     """
     # In test mode, we stub out commands so that we can run more realistic test scenarios.
     if root_cfg.ST_MODE == root_cfg.SOFTWARE_TEST_MODE.TESTING:

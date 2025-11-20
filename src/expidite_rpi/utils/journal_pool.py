@@ -20,14 +20,14 @@ logger = root_cfg.setup_logger("expidite")
 class JournalPool(ABC):
     """The JournalPool is responsible for thread-safe saving of data to journal files and onward to archive.
 
-    The JournalPool is a singleton shared by all DPtreeNode instances and should be retrieved using 
+    The JournalPool is a singleton shared by all DPtreeNode instances and should be retrieved using
     JournalPool.get().
 
     The internal implementation of the JournalPool is different for EDGE and ETL modes.
     On the EDGE, there is a "Journal" in the JournalPool per DPtreeNode type_id.
-    On the ETL, we use "CloudJournal" objects to manage the data, with 1 Journal per DPtreeNode type_id 
+    On the ETL, we use "CloudJournal" objects to manage the data, with 1 Journal per DPtreeNode type_id
     per day.
-    In both cases, data is stored based on its bapi.RECORD_ID.DS_TYPE_ID and bapi.RECORD_ID.TIMESTAMP in the 
+    In both cases, data is stored based on its bapi.RECORD_ID.DS_TYPE_ID and bapi.RECORD_ID.TIMESTAMP in the
     appropriate CJ.
     """
 
@@ -191,7 +191,7 @@ class LocalJournalPool(JournalPool):
             j.add_rows_from_df(data)
 
     def flush_journals(self) -> None:
-        """Called by the EdgeOrchestrator.upload_to_container function to flush all journals to disk and 
+        """Called by the EdgeOrchestrator.upload_to_container function to flush all journals to disk and
         onwards to archive"""
 
         logger.debug("Flushing all journals to disk")

@@ -204,7 +204,7 @@ class DPnode():
         Note: save_recording() will *rename* (ie move) the supplied temporary_file.
         This method will manage storage and subsequent processing of the temporary_file
         in line with the definition of this DatastreamType.
-        The file name of the saved recording will be as per the naming convention defined in 
+        The file name of the saved recording will be as per the naming convention defined in
         Datastream.parse_filename().
         Do not use to save dataframes - see Datastream.save_data().
 
@@ -257,7 +257,7 @@ class DPnode():
         Note: save_sub_recording() will *rename* (ie delete) the supplied temporary_file
         This method will manage storage and subsequent processing of the temporary_file
         in line with the definition of this DatastreamType.
-        The file name of the saved recording will be as per the naming convention defined in 
+        The file name of the saved recording will be as per the naming convention defined in
         Datastream.parse_filename().
         Do not use to save dataframes - see Datastream.save_data().
 

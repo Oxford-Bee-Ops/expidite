@@ -52,7 +52,7 @@ SC_TRACKING_CFG = SensorCfg(
 
 class StatTracker(Sensor):
     """A special Sensor class that is used to track the performance of the RpiCore system.
-    
+
     It is not a physical sensor, but is used to track the performance of the system.
     """
     def __init__(self) -> None:
@@ -61,7 +61,7 @@ class StatTracker(Sensor):
 
     def set_dpworkers(self, dpworkers: list[DPworker]) -> None:
         """Set the DPworker for the SelfTracking sensor.
-        
+
         This method is called by the EdgeOrchestrator when the SelfTracking is started.
         """
         self.dpworkers = dpworkers
