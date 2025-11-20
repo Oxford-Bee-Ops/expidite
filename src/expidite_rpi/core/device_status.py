@@ -34,7 +34,7 @@ DIAGNOSTIC_COMMANDS = [
     ("Top processes snapshot", "top -bn1 | head -n 20"),  # Only show the first 20 lines
     ("Last 50 kernel messages", "dmesg | tail -n 50"),
     # Logs.
-    ("Recent logs", "journalctl -n 500 --no-pager"),
+    ("Recent logs", "journalctl -n 1000 --no-pager"),
     # Expidite status
     ("Expidite files", f"ls -lhR {root_cfg.ROOT_WORKING_DIR}"),
     ("Expidite config files", f"ls -lhR {root_cfg.CFG_DIR}"),
