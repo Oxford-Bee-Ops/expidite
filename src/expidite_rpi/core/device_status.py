@@ -5,30 +5,27 @@ from expidite_rpi.core import configuration as root_cfg
 
 logger = root_cfg.setup_logger("expidite")
 
-# List of diagnostic commands to execute. Each command's output will be logged.
-# Commands are tailored for standard Linux environments like Raspberry Pi OS.
 DIAGNOSTIC_COMMANDS = [
-    # System & Time
+    # System and time.
     ("System Date & Time", "date"),
     ("System Uptime & Load", "uptime"),
     ("Kernel Information", "uname -a"),
-    # Network Status
+    # Network status.
     ("All Network Interfaces", "ip a"),
     ("Routing Table", "ip r"),
     ("ARP Cache", "arp -a"),
     ("Active Connections", "ss -tulnpa"),
     ("Wi-Fi Status (if on older systems)", "iwconfig"),
     ("DNS Resolution Config", "cat /etc/resolv.conf"),
-    # Connectivity Checks
+    # Connectivity checks.
     ("Ping Google DNS (8.8.8.8)", "ping -c 4 8.8.8.8"),
-    # Resource Usage
+    # Resource usage.
     ("Disk Usage (df)", "df -h"),
     ("Memory Usage (free)", "free -h"),
     ("Top Processes Snapshot", "top -bn1 | head -n 20"),  # Only show the first 20 lines
     ("Last 50 Kernel Messages", "dmesg | tail -n 50"),
-    # Log Snippets (Requires sudo or specific user permissions)
-    # Uncomment the following if you run the script with permissions (e.g., via root cron job)
-    # ("Recent Journal Logs (Network/Systemd)", "journalctl -u systemd-networkd -u dhcpcd -n 50 --no-pager"),
+    # Logs.
+    ("Recent logs", "journalctl -n 500 --no-pager"),
 ]
 
 ##############################################################################################################
@@ -43,12 +40,11 @@ DIAGNOSTIC_COMMANDS = [
 class DeviceStatus:
     @staticmethod
     def collect_diagnostics(reason: str):
-        """Collects and saves diagnostic outputs to a time-stamped file."""
+        """Collects and saves a diagnostics bundle to a time-stamped file."""
 
         if not root_cfg.running_on_rpi:
             return
 
-        # NICKB DELETE log_filename = os.path.join(root_cfg.DIAGS_DIR, f"diag_{timestamp}.txt")
         log_filename = file_naming.get_diags_filename()
 
         logger.info(f"Starting diagnostic collection to {log_filename}")
@@ -70,7 +66,7 @@ class DeviceStatus:
                     f.write(stdout + "\n")
 
                 if stderr:
-                    f.write("--- STDERR (Potential Errors) ---\n")
+                    f.write("--- STDERR ---\n")
                     f.write(stderr + "\n")
 
                 f.write("\n" + "=" * 120 + "\n\n")
