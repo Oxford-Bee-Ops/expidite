@@ -13,10 +13,10 @@ DIAGNOSTIC_COMMANDS = [
     ("System Uptime & Load", "uptime"),
     ("Kernel Information", "uname -a"),
     # Network Status
-    ("All Network Interfaces (ip a)", "ip a"),
-    ("Routing Table (ip r)", "ip r"),
+    ("All Network Interfaces", "ip a"),
+    ("Routing Table", "ip r"),
     ("ARP Cache", "arp -a"),
-    ("Active Connections (ss)", "ss -tulnpa"),
+    ("Active Connections", "ss -tulnpa"),
     ("Wi-Fi Status (if on older systems)", "iwconfig"),
     ("DNS Resolution Config", "cat /etc/resolv.conf"),
     # Connectivity Checks
@@ -51,17 +51,17 @@ class DeviceStatus:
         # NICKB DELETE log_filename = os.path.join(root_cfg.DIAGS_DIR, f"diag_{timestamp}.txt")
         log_filename = file_naming.get_diags_filename()
 
-        logger.info(f"Starting diagnostic collection. Log file: {log_filename}")
+        logger.info(f"Starting diagnostic collection to {log_filename}")
 
         with open(log_filename, "w") as f:
             f.write("=" * 120 + "\n")
-            f.write(f"Report Generated: {api.utc_now()}\n")
-            f.write(f"Reason: {reason}\n")
-            f.write(f"Log Location: {log_filename}\n")
+            f.write(f"Report generated: {api.utc_now()}\n")
+            f.write(f"Reason:           {reason}\n")
+            f.write(f"Log Location:     {log_filename}\n")
             f.write("=" * 120 + "\n\n")
 
             for title, command in DIAGNOSTIC_COMMANDS:
-                f.write(f"### {title} (Command: {command}) ###\n")
+                f.write(f"### {title} ({command}) ###\n")
                 stdout, stderr, returncode = DeviceStatus.execute_command(command)
                 f.write(f"Exit Code: {returncode}\n")
 
@@ -75,7 +75,7 @@ class DeviceStatus:
 
                 f.write("\n" + "=" * 120 + "\n\n")
 
-        logger.info(f"\nDiagnostic collection complete. Data saved to: {log_filename}")
+        logger.info(f"Completed diagnostic collection to {log_filename}")
 
     # NICKB: use an existing util function?
     @staticmethod
