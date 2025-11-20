@@ -73,6 +73,7 @@ select = [
     "W",   # pycodestyle warning
     "I",   # isort
     "RUF", # ruff-specific rules
+    "PIE", # flake8-pie
 ]
 fixable = ["ALL"]
 

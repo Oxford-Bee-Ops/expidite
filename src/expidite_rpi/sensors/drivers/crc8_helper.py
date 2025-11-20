@@ -32,7 +32,7 @@ def mod2_division_8bits(a, b, number_of_bytes, init_value):
     # Processing a
     a = a << 8
     # Preprocessing head_of_a
-    for i in range(0, number_of_bytes):
+    for i in range(number_of_bytes):
         head_of_a = head_of_a << 8
         b = b << 8
         init_value = init_value << 8
@@ -58,7 +58,7 @@ def AHT20_crc8_calculate(all_data_int):
     data_from_AHT20 = 0x00
     # Preprocessing the first data (status)
     # print(bin(data_from_AHT20))
-    for i_data in range(0, len(all_data_int)):
+    for i_data in range(len(all_data_int)):
         data_from_AHT20 = (data_from_AHT20 << 8) | all_data_int[i_data]
     # print(bin(data_from_AHT20))
     mod_value = mod2_division_8bits(data_from_AHT20, CRC_DEVIDE_NUMBER, len(all_data_int), init_value)
