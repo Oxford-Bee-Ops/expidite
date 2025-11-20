@@ -28,7 +28,7 @@ class DPnodeStat:
         self.count += 1
         self.sum += value
 
-class DPnode():
+class DPnode:
     """Base class for nodes in the DPtree. Sensor and DataProcessor inherit from this class.
     """
     # Special Datastream for recording sample count / duration from the data pipeline.

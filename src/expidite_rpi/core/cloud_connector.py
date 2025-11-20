@@ -808,7 +808,7 @@ class LocalCloudConnector(CloudConnector):
 # Download / exists / list methods are *not* asynchronous and use the default CloudConnector.
 #####################################################################################################
 @dataclass
-class AsyncUpload():
+class AsyncUpload:
     """Class to hold the action to be performed on the cloud"""
     dst_container: str
     src_files: list[Path]
@@ -817,7 +817,7 @@ class AsyncUpload():
     iteration: int = 0
 
 @dataclass
-class AsyncAppend():
+class AsyncAppend:
     """Class to hold the action to be performed on the cloud"""
     dst_container: str
     src_fname: str

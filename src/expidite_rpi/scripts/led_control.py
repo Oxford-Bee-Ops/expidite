@@ -32,7 +32,7 @@ LED_STATUS_FILE = Path("/expidite") / "tmp" / "tmp_flags" / "LED_STATUS"
 LOCK_FILE: Path = Path("/var/lock/led_control.lock")
 
 @dataclass
-class Pin():
+class Pin:
     gpio_pin: str
     blink_stop: Event = field(default_factory=Event)
     blink_thread: Optional[Thread] = None

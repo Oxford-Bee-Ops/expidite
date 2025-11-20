@@ -168,7 +168,7 @@ def check_device_in_inventory() -> None:
         # Don't show this error to user as it may be normal during setup
 
 
-class InteractiveMenu():
+class InteractiveMenu:
     """Interactive menu for navigating commands."""
     def __init__(self):
         self.sc = RpiCore()
