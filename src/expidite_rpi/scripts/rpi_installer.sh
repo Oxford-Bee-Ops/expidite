@@ -653,6 +653,11 @@ create_mount() {
             echo "The expidite mount point has been added to fstab."
         fi
 
+        # The diags mountpoint is always on disk, so that it survives reboot.
+        diags_mountpoint="/expidite-diags"
+        sudo mkdir -p $diags_mountpoint
+        sudo chown -R $USER:$USER $diags_mountpoint
+
         # Disable swap. We want to protect the SD card by minimising disk writes, and swap memory can require
         # frequent disk writes.
         sudo swapoff -a
