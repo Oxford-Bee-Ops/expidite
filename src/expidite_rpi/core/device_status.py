@@ -42,6 +42,9 @@ DIAGNOSTIC_COMMANDS = [
 # The diagnostics bundle is expected to be retrieved either:
 # - manually by copying off the SD card, if the device never recovers and has to be physically retrieved, or
 # - if connectivity recovers, it will be uploaded to cloud storage.
+#
+# There is a small amount of duplication here with DeviceHealth, RpiCore and bcli. This is hard to avoid while
+# keeping this class self contained.
 ##############################################################################################################
 class DeviceStatus:
     @staticmethod
@@ -79,7 +82,7 @@ class DeviceStatus:
             expidite_version, user_code_version = root_cfg.get_version_info()
             f.write(f"Expidite version: {expidite_version}\n")
             f.write(f"User code version: {user_code_version}\n")
-            f.write(f"Expidite system configuration:\n")
+            f.write("Expidite system configuration:\n")
             for key, value in root_cfg.system_cfg.model_dump().items():
                 f.write(f"    {key}: {value}\n")
 
