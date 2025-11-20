@@ -1,0 +1,1213 @@
+======================================================================================================================================================
+Report generated: 2025-11-20 15:16:33.756636+00:00
+Reason:           Nick testing
+======================================================================================================================================================
+
+### System date and time (date) ###
+Exit code: 0
+--- STDOUT ---
+Thu 20 Nov 15:16:33 GMT 2025
+
+======================================================================================================================================================
+
+### System uptime (uptime) ###
+Exit code: 0
+--- STDOUT ---
+15:16:33 up  2:45,  1 user,  load average: 0.06, 0.08, 0.08
+
+======================================================================================================================================================
+
+### Kernel information (uname -a) ###
+Exit code: 0
+--- STDOUT ---
+Linux expidite-2ccf6789c489 6.12.47+rpt-rpi-2712 #1 SMP PREEMPT Debian 1:6.12.47-1+rpt1 (2025-09-16) aarch64 GNU/Linux
+
+======================================================================================================================================================
+
+### Network Manager status (nmcli general status) ###
+Exit code: 0
+--- STDOUT ---
+STATE      CONNECTIVITY  WIFI-HW  WIFI     WWAN-HW  WWAN     METERED      
+connected  full          enabled  enabled  missing  enabled  no (guessed)
+
+======================================================================================================================================================
+
+### Network interface status (nmcli device status) ###
+Exit code: 0
+--- STDOUT ---
+DEVICE         TYPE      STATE                   CONNECTION 
+wlan0          wifi      connected               VM0045991  
+lo             loopback  connected (externally)  lo         
+p2p-dev-wlan0  wifi-p2p  disconnected            --         
+eth0           ethernet  unavailable             --
+
+======================================================================================================================================================
+
+### Configured connections (nmcli connection show) ###
+Exit code: 0
+--- STDOUT ---
+NAME                UUID                                  TYPE      DEVICE 
+VM0045991           37871293-d266-46c1-a3ba-da3ffc712243  wifi      wlan0  
+lo                  21b90468-380c-4130-9d32-88ea18fabb77  loopback  lo     
+bee-ops             8dbe0a38-4adf-4da4-b450-03274d881b10  wifi      --     
+bee-ops-eero        cd2f7bf1-6fff-4e3a-bff5-b997c6d79857  wifi      --     
+preconfigured       ef7552b6-6073-4d98-bf8e-aa62246c890b  wifi      --     
+Wired connection 1  c78a7079-02b1-32c4-9138-448c20cc8e45  ethernet  --
+
+======================================================================================================================================================
+
+### Wi-Fi hardware state (nmcli radio) ###
+Exit code: 0
+--- STDOUT ---
+WIFI-HW  WIFI     WWAN-HW  WWAN    
+enabled  enabled  missing  enabled
+
+======================================================================================================================================================
+
+### All network interfaces (ip a) ###
+Exit code: 0
+--- STDOUT ---
+1: lo: <LOOPBACK,UP,LOWER_UP> mtu 65536 qdisc noqueue state UNKNOWN group default qlen 1000
+    link/loopback 00:00:00:00:00:00 brd 00:00:00:00:00:00
+    inet 127.0.0.1/8 scope host lo
+       valid_lft forever preferred_lft forever
+    inet6 ::1/128 scope host noprefixroute 
+       valid_lft forever preferred_lft forever
+2: eth0: <NO-CARRIER,BROADCAST,MULTICAST,UP> mtu 1500 qdisc fq_codel state DOWN group default qlen 1000
+    link/ether 2c:cf:67:89:c4:88 brd ff:ff:ff:ff:ff:ff
+3: wlan0: <BROADCAST,MULTICAST,UP,LOWER_UP> mtu 1500 qdisc fq_codel state UP group default qlen 1000
+    link/ether 2c:cf:67:89:c4:89 brd ff:ff:ff:ff:ff:ff
+    inet 192.168.0.28/24 brd 192.168.0.255 scope global dynamic noprefixroute wlan0
+       valid_lft 76498sec preferred_lft 76498sec
+    inet6 fe80::2563:13ff:d296:9d92/64 scope link noprefixroute 
+       valid_lft forever preferred_lft forever
+
+======================================================================================================================================================
+
+### Routing table (ip r) ###
+Exit code: 0
+--- STDOUT ---
+default via 192.168.0.1 dev wlan0 proto dhcp src 192.168.0.28 metric 600 
+192.168.0.0/24 dev wlan0 proto kernel scope link src 192.168.0.28 metric 600
+
+======================================================================================================================================================
+
+### ARP cache (arp -a) ###
+Exit code: 0
+--- STDOUT ---
+? (192.168.0.1) at 2c:fb:0f:75:8e:1b [ether] on wlan0
+? (192.168.0.15) at dc:41:a9:a3:23:3e [ether] on wlan0
+
+======================================================================================================================================================
+
+### Active connections (ss -tulnpa) ###
+Exit code: 0
+--- STDOUT ---
+Netid State  Recv-Q Send-Q                Local Address:Port       Peer Address:Port                  Process                                                   
+udp   UNCONN 0      0                           0.0.0.0:43108           0.0.0.0:*                      users:(("rpi-connectd",pid=1019,fd=10))                  
+udp   UNCONN 0      0                           0.0.0.0:59779           0.0.0.0:*                      users:(("rpi-connectd",pid=1019,fd=16))                  
+udp   UNCONN 0      0                           0.0.0.0:60189           0.0.0.0:*                      users:(("rpi-connectd",pid=1019,fd=15))                  
+udp   UNCONN 0      0                           0.0.0.0:48195           0.0.0.0:*                      users:(("rpi-connectd",pid=1019,fd=18))                  
+udp   UNCONN 0      0                           0.0.0.0:52875           0.0.0.0:*                      users:(("rpi-connectd",pid=1019,fd=13))                  
+udp   ESTAB  0      0                      192.168.0.28:68          192.168.0.4:67                                                                              
+udp   UNCONN 0      0                           0.0.0.0:33147           0.0.0.0:*                      users:(("rpi-connectd",pid=1019,fd=14))                  
+udp   UNCONN 0      0                           0.0.0.0:41477           0.0.0.0:*                                                                               
+udp   UNCONN 0      0                      192.168.0.28:37629           0.0.0.0:*                      users:(("rpi-connectd",pid=1019,fd=17))                  
+udp   UNCONN 0      0                           0.0.0.0:5353            0.0.0.0:*                      users:(("rpi-connectd",pid=1019,fd=5))                   
+udp   UNCONN 0      0                           0.0.0.0:5353            0.0.0.0:*                                                                               
+udp   UNCONN 0      0       [fe80::2563:13ff:d296:9d92]:46931                 *:*                      users:(("rpi-connectd",pid=1019,fd=19))                  
+udp   UNCONN 0      0                                 *:36471                 *:*                                                                               
+udp   UNCONN 0      0                                 *:49225                 *:*                      users:(("rpi-connectd",pid=1019,fd=11))                  
+udp   UNCONN 0      0                                 *:5353                  *:*                      users:(("rpi-connectd",pid=1019,fd=9))                   
+udp   UNCONN 0      0                                 *:5353                  *:*                                                                               
+tcp   LISTEN 0      128                         0.0.0.0:22              0.0.0.0:*                                                                               
+tcp   ESTAB  0      0                      192.168.0.28:59994       20.209.30.1:443                    users:(("python",pid=43637,fd=8))                        
+tcp   ESTAB  0      0                      192.168.0.28:43342   176.126.241.153:443                    users:(("rpi-connectd",pid=1019,fd=8))                   
+tcp   ESTAB  0      0                      192.168.0.28:42460   176.126.241.228:3478                   users:(("rpi-connectd",pid=1019,fd=12))                  
+tcp   ESTAB  0      0                      192.168.0.28:36838   176.126.241.228:443                    users:(("rpi-connectd",pid=1019,fd=20))                  
+tcp   ESTAB  0      0                      192.168.0.28:60006       20.209.30.1:443                    users:(("python",pid=43637,fd=7))                        
+tcp   LISTEN 0      128                            [::]:22                 [::]:*
+
+======================================================================================================================================================
+
+### Wi-Fi status (if on older systems) (iwconfig) ###
+Exit code: 0
+--- STDOUT ---
+wlan0     IEEE 802.11  ESSID:"VM0045991"  
+          Mode:Managed  Frequency:5.54 GHz  Access Point: 2C:FB:0F:75:8E:1D   
+          Bit Rate=260 Mb/s   Tx-Power=31 dBm   
+          Retry short limit:7   RTS thr:off   Fragment thr:off
+          Power Management:on
+          Link Quality=40/70  Signal level=-70 dBm  
+          Rx invalid nwid:0  Rx invalid crypt:0  Rx invalid frag:0
+          Tx excessive retries:2  Invalid misc:0   Missed beacon:0
+--- STDERR ---
+lo        no wireless extensions.
+
+eth0      no wireless extensions.
+
+======================================================================================================================================================
+
+### DNS resolution config (cat /etc/resolv.conf) ###
+Exit code: 0
+--- STDOUT ---
+# Generated by NetworkManager
+nameserver 8.8.8.8
+nameserver 8.8.4.4
+nameserver 192.168.0.4
+
+======================================================================================================================================================
+
+### Ping Google DNS (8.8.8.8) (ping -c 4 8.8.8.8) ###
+Exit code: 0
+--- STDOUT ---
+PING 8.8.8.8 (8.8.8.8) 56(84) bytes of data.
+64 bytes from 8.8.8.8: icmp_seq=1 ttl=116 time=10.9 ms
+64 bytes from 8.8.8.8: icmp_seq=2 ttl=116 time=16.5 ms
+64 bytes from 8.8.8.8: icmp_seq=3 ttl=116 time=17.5 ms
+64 bytes from 8.8.8.8: icmp_seq=4 ttl=116 time=16.6 ms
+
+--- 8.8.8.8 ping statistics ---
+4 packets transmitted, 4 received, 0% packet loss, time 3005ms
+rtt min/avg/max/mdev = 10.861/15.381/17.507/2.637 ms
+
+======================================================================================================================================================
+
+### CPU Temperature (vcgencmd measure_temp) ###
+Exit code: 0
+--- STDOUT ---
+temp=46.6'C
+
+======================================================================================================================================================
+
+### Voltage/throttling status (vcgencmd get_throttled) ###
+Exit code: 0
+--- STDOUT ---
+throttled=0x0
+
+======================================================================================================================================================
+
+### Current CPU/GPU clock speeds (vcgencmd measure_clock arm; vcgencmd measure_clock core) ###
+Exit code: 0
+--- STDOUT ---
+frequency(0)=2400020480
+frequency(0)=910014016
+
+======================================================================================================================================================
+
+### Disk usage (df -h) ###
+Exit code: 0
+--- STDOUT ---
+Filesystem      Size  Used Avail Use% Mounted on
+udev            3.9G     0  3.9G   0% /dev
+tmpfs           1.6G   25M  1.6G   2% /run
+/dev/mmcblk0p2   29G  7.7G   20G  28% /
+tmpfs           4.0G   32K  4.0G   1% /dev/shm
+tmpfs           5.0M   48K  5.0M   1% /run/lock
+tmpfs           4.0G  192K  4.0G   1% /tmp
+tmpfs           1.0M     0  1.0M   0% /run/credentials/systemd-journald.service
+tmpfs           1.2G   16K  1.2G   1% /expidite
+/dev/mmcblk0p1  510M   66M  445M  13% /boot/firmware
+tmpfs           806M   48K  806M   1% /run/user/1000
+tmpfs           1.0M     0  1.0M   0% /run/credentials/getty@tty1.service
+tmpfs           1.0M     0  1.0M   0% /run/credentials/serial-getty@ttyAMA10.service
+
+======================================================================================================================================================
+
+### Memory usage (free -h) ###
+Exit code: 0
+--- STDOUT ---
+total        used        free      shared  buff/cache   available
+Mem:           7.9Gi       718Mi       6.5Gi        25Mi       759Mi       7.2Gi
+Swap:             0B          0B          0B
+
+======================================================================================================================================================
+
+### Top processes snapshot (top -bn1 | head -n 20) ###
+Exit code: 0
+--- STDOUT ---
+top - 15:16:37 up  2:45,  1 user,  load average: 0.06, 0.08, 0.08
+Tasks: 179 total,   1 running, 178 sleeping,   0 stopped,   0 zombie
+%Cpu(s):  0.0 us,  2.4 sy,  0.0 ni, 97.6 id,  0.0 wa,  0.0 hi,  0.0 si,  0.0 st 
+MiB Mem :   8059.0 total,   6691.2 free,    719.3 used,    759.5 buff/cache     
+MiB Swap:      0.0 total,      0.0 free,      0.0 used.   7339.7 avail Mem 
+
+    PID USER      PR  NI    VIRT    RES    SHR S  %CPU  %MEM     TIME+ COMMAND
+      1 root      20   0   25520  14944  10128 S   0.0   0.2   0:04.15 systemd
+      2 root      20   0       0      0      0 S   0.0   0.0   0:00.00 kthreadd
+      3 root      20   0       0      0      0 S   0.0   0.0   0:00.00 pool_wo+
+      4 root       0 -20       0      0      0 I   0.0   0.0   0:00.00 kworker+
+      5 root       0 -20       0      0      0 I   0.0   0.0   0:00.00 kworker+
+      6 root       0 -20       0      0      0 I   0.0   0.0   0:00.00 kworker+
+      7 root       0 -20       0      0      0 I   0.0   0.0   0:00.00 kworker+
+      8 root       0 -20       0      0      0 I   0.0   0.0   0:00.00 kworker+
+     12 root      20   0       0      0      0 I   0.0   0.0   0:00.00 kworker+
+     13 root       0 -20       0      0      0 I   0.0   0.0   0:00.00 kworker+
+     14 root      20   0       0      0      0 I   0.0   0.0   0:00.00 rcu_tas+
+     15 root      20   0       0      0      0 I   0.0   0.0   0:00.00 rcu_tas+
+     16 root      20   0       0      0      0 I   0.0   0.0   0:00.00 rcu_tas+
+
+======================================================================================================================================================
+
+### Last 50 kernel messages (dmesg | tail -n 50) ###
+Exit code: 0
+--- STDOUT ---
+[ 9864.006478] rp1-cfe 1f00110000.csi: Using a link rate of 900 Mbps
+[ 9865.086033] rp1-cfe 1f00110000.csi: Using a link rate of 900 Mbps
+[ 9866.165561] rp1-cfe 1f00110000.csi: Using a link rate of 900 Mbps
+[ 9867.245009] rp1-cfe 1f00110000.csi: Using a link rate of 900 Mbps
+[ 9868.324531] rp1-cfe 1f00110000.csi: Using a link rate of 900 Mbps
+[ 9869.404079] rp1-cfe 1f00110000.csi: Using a link rate of 900 Mbps
+[ 9870.483626] rp1-cfe 1f00110000.csi: Using a link rate of 900 Mbps
+[ 9871.562938] rp1-cfe 1f00110000.csi: Using a link rate of 900 Mbps
+[ 9872.642448] rp1-cfe 1f00110000.csi: Using a link rate of 900 Mbps
+[ 9873.721906] rp1-cfe 1f00110000.csi: Using a link rate of 900 Mbps
+[ 9874.801307] rp1-cfe 1f00110000.csi: Using a link rate of 900 Mbps
+[ 9875.880726] rp1-cfe 1f00110000.csi: Using a link rate of 900 Mbps
+[ 9876.960159] rp1-cfe 1f00110000.csi: Using a link rate of 900 Mbps
+[ 9878.039612] rp1-cfe 1f00110000.csi: Using a link rate of 900 Mbps
+[ 9879.119024] rp1-cfe 1f00110000.csi: Using a link rate of 900 Mbps
+[ 9880.198465] rp1-cfe 1f00110000.csi: Using a link rate of 900 Mbps
+[ 9881.277928] rp1-cfe 1f00110000.csi: Using a link rate of 900 Mbps
+[ 9882.358475] rp1-cfe 1f00110000.csi: Using a link rate of 900 Mbps
+[ 9883.437946] rp1-cfe 1f00110000.csi: Using a link rate of 900 Mbps
+[ 9884.517395] rp1-cfe 1f00110000.csi: Using a link rate of 900 Mbps
+[ 9885.596778] rp1-cfe 1f00110000.csi: Using a link rate of 900 Mbps
+[ 9886.676337] rp1-cfe 1f00110000.csi: Using a link rate of 900 Mbps
+[ 9887.755755] rp1-cfe 1f00110000.csi: Using a link rate of 900 Mbps
+[ 9888.835173] rp1-cfe 1f00110000.csi: Using a link rate of 900 Mbps
+[ 9889.914626] rp1-cfe 1f00110000.csi: Using a link rate of 900 Mbps
+[ 9890.994047] rp1-cfe 1f00110000.csi: Using a link rate of 900 Mbps
+[ 9892.073281] rp1-cfe 1f00110000.csi: Using a link rate of 900 Mbps
+[ 9893.152709] rp1-cfe 1f00110000.csi: Using a link rate of 900 Mbps
+[ 9894.232133] rp1-cfe 1f00110000.csi: Using a link rate of 900 Mbps
+[ 9895.311560] rp1-cfe 1f00110000.csi: Using a link rate of 900 Mbps
+[ 9896.390233] rp1-cfe 1f00110000.csi: Using a link rate of 900 Mbps
+[ 9897.469652] rp1-cfe 1f00110000.csi: Using a link rate of 900 Mbps
+[ 9898.549130] rp1-cfe 1f00110000.csi: Using a link rate of 900 Mbps
+[ 9899.628535] rp1-cfe 1f00110000.csi: Using a link rate of 900 Mbps
+[ 9900.707404] rp1-cfe 1f00110000.csi: Using a link rate of 900 Mbps
+[ 9901.786847] rp1-cfe 1f00110000.csi: Using a link rate of 900 Mbps
+[ 9902.866280] rp1-cfe 1f00110000.csi: Using a link rate of 900 Mbps
+[ 9903.945712] rp1-cfe 1f00110000.csi: Using a link rate of 900 Mbps
+[ 9905.025089] rp1-cfe 1f00110000.csi: Using a link rate of 900 Mbps
+[ 9906.104566] rp1-cfe 1f00110000.csi: Using a link rate of 900 Mbps
+[ 9907.183652] rp1-cfe 1f00110000.csi: Using a link rate of 900 Mbps
+[ 9908.263061] rp1-cfe 1f00110000.csi: Using a link rate of 900 Mbps
+[ 9909.342495] rp1-cfe 1f00110000.csi: Using a link rate of 900 Mbps
+[ 9910.421989] rp1-cfe 1f00110000.csi: Using a link rate of 900 Mbps
+[ 9911.501405] rp1-cfe 1f00110000.csi: Using a link rate of 900 Mbps
+[ 9912.580847] rp1-cfe 1f00110000.csi: Using a link rate of 900 Mbps
+[ 9913.660430] rp1-cfe 1f00110000.csi: Using a link rate of 900 Mbps
+[ 9914.739537] rp1-cfe 1f00110000.csi: Using a link rate of 900 Mbps
+[ 9915.818151] rp1-cfe 1f00110000.csi: Using a link rate of 900 Mbps
+[ 9916.896871] rp1-cfe 1f00110000.csi: Using a link rate of 900 Mbps
+
+======================================================================================================================================================
+
+### Recent logs (journalctl -n 500 --no-pager) ###
+Exit code: 0
+--- STDOUT ---
+Nov 20 15:14:16 expidite-2ccf6789c489 /home/bee-ops/venv/lib/python3.13/site-packages/bee_ops/run_my_sensor.py[42637]: expidite DEBUG  [140733605933408] Orchestrator running (running)
+Nov 20 15:14:16 expidite-2ccf6789c489 kernel: rp1-cfe 1f00110000.csi: Using a link rate of 900 Mbps
+Nov 20 15:14:17 expidite-2ccf6789c489 /home/bee-ops/venv/lib/python3.13/site-packages/bee_ops/run_my_sensor.py[42637]: expidite DEBUG  [140733605933408] Orchestrator running (running)
+Nov 20 15:14:17 expidite-2ccf6789c489 /home/bee-ops/venv/lib/python3.13/site-packages/bee_ops/run_my_sensor.py[42637]: expidite DEBUG  [140733520474464] Wifi timer callback
+Nov 20 15:14:17 expidite-2ccf6789c489 /home/bee-ops/venv/lib/python3.13/site-packages/bee_ops/run_my_sensor.py[42637]: expidite ERROR  [140733520474464] RAISE_WARNING#V1_2ccf6789c489: Wifi timer callback threw an exception: 'DeviceManager' object has no attribute 'ping_success_count_run'
+                                                                                                                       Traceback (most recent call last):
+                                                                                                                         File "/home/bee-ops/venv/lib/python3.13/site-packages/expidite_rpi/core/device_manager.py", line 248, in wifi_timer_callback
+                                                                                                                           if self.ping_success_count_run % 30 == 0:
+                                                                                                                              ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+                                                                                                                       AttributeError: 'DeviceManager' object has no attribute 'ping_success_count_run'
+Nov 20 15:14:17 expidite-2ccf6789c489 kernel: rp1-cfe 1f00110000.csi: Using a link rate of 900 Mbps
+Nov 20 15:14:18 expidite-2ccf6789c489 /home/bee-ops/venv/lib/python3.13/site-packages/bee_ops/run_my_sensor.py[42637]: expidite DEBUG  [140733512020320] LED timer callback
+Nov 20 15:14:18 expidite-2ccf6789c489 /home/bee-ops/venv/lib/python3.13/site-packages/bee_ops/run_my_sensor.py[42637]: expidite DEBUG  [140733605933408] Orchestrator running (running)
+Nov 20 15:14:18 expidite-2ccf6789c489 kernel: rp1-cfe 1f00110000.csi: Using a link rate of 900 Mbps
+Nov 20 15:14:19 expidite-2ccf6789c489 /home/bee-ops/venv/lib/python3.13/site-packages/bee_ops/run_my_sensor.py[42637]: expidite DEBUG  [140733605933408] Orchestrator running (running)
+Nov 20 15:14:19 expidite-2ccf6789c489 /home/bee-ops/venv/lib/python3.13/site-packages/bee_ops/run_my_sensor.py[42637]: expidite DEBUG  [140733520474464] Wifi timer callback
+Nov 20 15:14:19 expidite-2ccf6789c489 /home/bee-ops/venv/lib/python3.13/site-packages/bee_ops/run_my_sensor.py[42637]: expidite ERROR  [140733520474464] RAISE_WARNING#V1_2ccf6789c489: Wifi timer callback threw an exception: 'DeviceManager' object has no attribute 'ping_success_count_run'
+                                                                                                                       Traceback (most recent call last):
+                                                                                                                         File "/home/bee-ops/venv/lib/python3.13/site-packages/expidite_rpi/core/device_manager.py", line 248, in wifi_timer_callback
+                                                                                                                           if self.ping_success_count_run % 30 == 0:
+                                                                                                                              ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+                                                                                                                       AttributeError: 'DeviceManager' object has no attribute 'ping_success_count_run'
+Nov 20 15:14:19 expidite-2ccf6789c489 kernel: rp1-cfe 1f00110000.csi: Using a link rate of 900 Mbps
+Nov 20 15:14:20 expidite-2ccf6789c489 /home/bee-ops/venv/lib/python3.13/site-packages/bee_ops/run_my_sensor.py[42637]: expidite DEBUG  [140733605933408] Orchestrator running (running)
+Nov 20 15:14:20 expidite-2ccf6789c489 kernel: rp1-cfe 1f00110000.csi: Using a link rate of 900 Mbps
+Nov 20 15:14:21 expidite-2ccf6789c489 /home/bee-ops/venv/lib/python3.13/site-packages/bee_ops/run_my_sensor.py[42637]: expidite DEBUG  [140733605933408] Orchestrator running (running)
+Nov 20 15:14:21 expidite-2ccf6789c489 /home/bee-ops/venv/lib/python3.13/site-packages/bee_ops/run_my_sensor.py[42637]: expidite DEBUG  [140733520474464] Wifi timer callback
+Nov 20 15:14:21 expidite-2ccf6789c489 /home/bee-ops/venv/lib/python3.13/site-packages/bee_ops/run_my_sensor.py[42637]: expidite ERROR  [140733520474464] RAISE_WARNING#V1_2ccf6789c489: Wifi timer callback threw an exception: 'DeviceManager' object has no attribute 'ping_success_count_run'
+                                                                                                                       Traceback (most recent call last):
+                                                                                                                         File "/home/bee-ops/venv/lib/python3.13/site-packages/expidite_rpi/core/device_manager.py", line 248, in wifi_timer_callback
+                                                                                                                           if self.ping_success_count_run % 30 == 0:
+                                                                                                                              ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+                                                                                                                       AttributeError: 'DeviceManager' object has no attribute 'ping_success_count_run'
+Nov 20 15:14:22 expidite-2ccf6789c489 kernel: rp1-cfe 1f00110000.csi: Using a link rate of 900 Mbps
+Nov 20 15:14:22 expidite-2ccf6789c489 /home/bee-ops/venv/lib/python3.13/site-packages/bee_ops/run_my_sensor.py[42637]: expidite DEBUG  [140733605933408] Orchestrator running (running)
+Nov 20 15:14:23 expidite-2ccf6789c489 kernel: rp1-cfe 1f00110000.csi: Using a link rate of 900 Mbps
+Nov 20 15:14:23 expidite-2ccf6789c489 /home/bee-ops/venv/lib/python3.13/site-packages/bee_ops/run_my_sensor.py[42637]: expidite DEBUG  [140733512020320] LED timer callback
+Nov 20 15:14:23 expidite-2ccf6789c489 /home/bee-ops/venv/lib/python3.13/site-packages/bee_ops/run_my_sensor.py[42637]: expidite DEBUG  [140733605933408] Orchestrator running (running)
+Nov 20 15:14:23 expidite-2ccf6789c489 /home/bee-ops/venv/lib/python3.13/site-packages/bee_ops/run_my_sensor.py[42637]: expidite DEBUG  [140733520474464] Wifi timer callback
+Nov 20 15:14:23 expidite-2ccf6789c489 /home/bee-ops/venv/lib/python3.13/site-packages/bee_ops/run_my_sensor.py[42637]: expidite ERROR  [140733520474464] RAISE_WARNING#V1_2ccf6789c489: Wifi timer callback threw an exception: 'DeviceManager' object has no attribute 'ping_success_count_run'
+                                                                                                                       Traceback (most recent call last):
+                                                                                                                         File "/home/bee-ops/venv/lib/python3.13/site-packages/expidite_rpi/core/device_manager.py", line 248, in wifi_timer_callback
+                                                                                                                           if self.ping_success_count_run % 30 == 0:
+                                                                                                                              ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+                                                                                                                       AttributeError: 'DeviceManager' object has no attribute 'ping_success_count_run'
+Nov 20 15:14:24 expidite-2ccf6789c489 kernel: rp1-cfe 1f00110000.csi: Using a link rate of 900 Mbps
+Nov 20 15:14:24 expidite-2ccf6789c489 /home/bee-ops/venv/lib/python3.13/site-packages/bee_ops/run_my_sensor.py[42637]: expidite DEBUG  [140733605933408] Orchestrator running (running)
+Nov 20 15:14:25 expidite-2ccf6789c489 /home/bee-ops/venv/lib/python3.13/site-packages/bee_ops/run_my_sensor.py[42637]: expidite DEBUG  [140733605933408] Orchestrator running (running)
+Nov 20 15:14:25 expidite-2ccf6789c489 kernel: rp1-cfe 1f00110000.csi: Using a link rate of 900 Mbps
+Nov 20 15:14:25 expidite-2ccf6789c489 /home/bee-ops/venv/lib/python3.13/site-packages/bee_ops/run_my_sensor.py[42637]: expidite DEBUG  [140733520474464] Wifi timer callback
+Nov 20 15:14:25 expidite-2ccf6789c489 /home/bee-ops/venv/lib/python3.13/site-packages/bee_ops/run_my_sensor.py[42637]: expidite ERROR  [140733520474464] RAISE_WARNING#V1_2ccf6789c489: Wifi timer callback threw an exception: 'DeviceManager' object has no attribute 'ping_success_count_run'
+                                                                                                                       Traceback (most recent call last):
+                                                                                                                         File "/home/bee-ops/venv/lib/python3.13/site-packages/expidite_rpi/core/device_manager.py", line 248, in wifi_timer_callback
+                                                                                                                           if self.ping_success_count_run % 30 == 0:
+                                                                                                                              ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+                                                                                                                       AttributeError: 'DeviceManager' object has no attribute 'ping_success_count_run'
+Nov 20 15:14:26 expidite-2ccf6789c489 /home/bee-ops/venv/lib/python3.13/site-packages/bee_ops/run_my_sensor.py[42637]: expidite DEBUG  [140733605933408] Orchestrator running (running)
+Nov 20 15:14:26 expidite-2ccf6789c489 kernel: rp1-cfe 1f00110000.csi: Using a link rate of 900 Mbps
+Nov 20 15:14:27 expidite-2ccf6789c489 /home/bee-ops/venv/lib/python3.13/site-packages/bee_ops/run_my_sensor.py[42637]: expidite DEBUG  [140733605933408] Orchestrator running (running)
+Nov 20 15:14:27 expidite-2ccf6789c489 kernel: rp1-cfe 1f00110000.csi: Using a link rate of 900 Mbps
+Nov 20 15:14:27 expidite-2ccf6789c489 /home/bee-ops/venv/lib/python3.13/site-packages/bee_ops/run_my_sensor.py[42637]: expidite DEBUG  [140733520474464] Wifi timer callback
+Nov 20 15:14:27 expidite-2ccf6789c489 /home/bee-ops/venv/lib/python3.13/site-packages/bee_ops/run_my_sensor.py[42637]: expidite ERROR  [140733520474464] RAISE_WARNING#V1_2ccf6789c489: Wifi timer callback threw an exception: 'DeviceManager' object has no attribute 'ping_success_count_run'
+                                                                                                                       Traceback (most recent call last):
+                                                                                                                         File "/home/bee-ops/venv/lib/python3.13/site-packages/expidite_rpi/core/device_manager.py", line 248, in wifi_timer_callback
+                                                                                                                           if self.ping_success_count_run % 30 == 0:
+                                                                                                                              ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+                                                                                                                       AttributeError: 'DeviceManager' object has no attribute 'ping_success_count_run'
+Nov 20 15:14:28 expidite-2ccf6789c489 /home/bee-ops/venv/lib/python3.13/site-packages/bee_ops/run_my_sensor.py[42637]: expidite DEBUG  [140733512020320] LED timer callback
+Nov 20 15:14:28 expidite-2ccf6789c489 /home/bee-ops/venv/lib/python3.13/site-packages/bee_ops/run_my_sensor.py[42637]: expidite DEBUG  [140733605933408] Orchestrator running (running)
+Nov 20 15:14:28 expidite-2ccf6789c489 kernel: rp1-cfe 1f00110000.csi: Using a link rate of 900 Mbps
+Nov 20 15:14:29 expidite-2ccf6789c489 /home/bee-ops/venv/lib/python3.13/site-packages/bee_ops/run_my_sensor.py[42637]: expidite DEBUG  [140733605933408] Orchestrator running (running)
+Nov 20 15:14:29 expidite-2ccf6789c489 kernel: rp1-cfe 1f00110000.csi: Using a link rate of 900 Mbps
+Nov 20 15:14:29 expidite-2ccf6789c489 /home/bee-ops/venv/lib/python3.13/site-packages/bee_ops/run_my_sensor.py[42637]: expidite DEBUG  [140733520474464] Wifi timer callback
+Nov 20 15:14:29 expidite-2ccf6789c489 /home/bee-ops/venv/lib/python3.13/site-packages/bee_ops/run_my_sensor.py[42637]: expidite ERROR  [140733520474464] RAISE_WARNING#V1_2ccf6789c489: Wifi timer callback threw an exception: 'DeviceManager' object has no attribute 'ping_success_count_run'
+                                                                                                                       Traceback (most recent call last):
+                                                                                                                         File "/home/bee-ops/venv/lib/python3.13/site-packages/expidite_rpi/core/device_manager.py", line 248, in wifi_timer_callback
+                                                                                                                           if self.ping_success_count_run % 30 == 0:
+                                                                                                                              ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+                                                                                                                       AttributeError: 'DeviceManager' object has no attribute 'ping_success_count_run'
+Nov 20 15:14:30 expidite-2ccf6789c489 /home/bee-ops/venv/lib/python3.13/site-packages/bee_ops/run_my_sensor.py[42637]: expidite DEBUG  [140733605933408] Orchestrator running (running)
+Nov 20 15:14:30 expidite-2ccf6789c489 kernel: rp1-cfe 1f00110000.csi: Using a link rate of 900 Mbps
+Nov 20 15:14:31 expidite-2ccf6789c489 /home/bee-ops/venv/lib/python3.13/site-packages/bee_ops/run_my_sensor.py[42637]: expidite DEBUG  [140733605933408] Orchestrator running (running)
+Nov 20 15:14:31 expidite-2ccf6789c489 kernel: rp1-cfe 1f00110000.csi: Using a link rate of 900 Mbps
+Nov 20 15:14:31 expidite-2ccf6789c489 /home/bee-ops/venv/lib/python3.13/site-packages/bee_ops/run_my_sensor.py[42637]: expidite DEBUG  [140733520474464] Wifi timer callback
+Nov 20 15:14:31 expidite-2ccf6789c489 /home/bee-ops/venv/lib/python3.13/site-packages/bee_ops/run_my_sensor.py[42637]: expidite ERROR  [140733520474464] RAISE_WARNING#V1_2ccf6789c489: Wifi timer callback threw an exception: 'DeviceManager' object has no attribute 'ping_success_count_run'
+                                                                                                                       Traceback (most recent call last):
+                                                                                                                         File "/home/bee-ops/venv/lib/python3.13/site-packages/expidite_rpi/core/device_manager.py", line 248, in wifi_timer_callback
+                                                                                                                           if self.ping_success_count_run % 30 == 0:
+                                                                                                                              ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+                                                                                                                       AttributeError: 'DeviceManager' object has no attribute 'ping_success_count_run'
+Nov 20 15:14:32 expidite-2ccf6789c489 /home/bee-ops/venv/lib/python3.13/site-packages/bee_ops/run_my_sensor.py[42637]: expidite DEBUG  [140733605933408] Orchestrator running (running)
+Nov 20 15:14:32 expidite-2ccf6789c489 kernel: rp1-cfe 1f00110000.csi: Using a link rate of 900 Mbps
+Nov 20 15:14:33 expidite-2ccf6789c489 /home/bee-ops/venv/lib/python3.13/site-packages/bee_ops/run_my_sensor.py[42637]: expidite DEBUG  [140733512020320] LED timer callback
+Nov 20 15:14:33 expidite-2ccf6789c489 /home/bee-ops/venv/lib/python3.13/site-packages/bee_ops/run_my_sensor.py[42637]: expidite DEBUG  [140733605933408] Orchestrator running (running)
+Nov 20 15:14:33 expidite-2ccf6789c489 /home/bee-ops/venv/lib/python3.13/site-packages/bee_ops/run_my_sensor.py[42637]: expidite DEBUG  [140733520474464] Wifi timer callback
+Nov 20 15:14:33 expidite-2ccf6789c489 /home/bee-ops/venv/lib/python3.13/site-packages/bee_ops/run_my_sensor.py[42637]: expidite ERROR  [140733520474464] RAISE_WARNING#V1_2ccf6789c489: Wifi timer callback threw an exception: 'DeviceManager' object has no attribute 'ping_success_count_run'
+                                                                                                                       Traceback (most recent call last):
+                                                                                                                         File "/home/bee-ops/venv/lib/python3.13/site-packages/expidite_rpi/core/device_manager.py", line 248, in wifi_timer_callback
+                                                                                                                           if self.ping_success_count_run % 30 == 0:
+                                                                                                                              ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+                                                                                                                       AttributeError: 'DeviceManager' object has no attribute 'ping_success_count_run'
+Nov 20 15:14:33 expidite-2ccf6789c489 kernel: rp1-cfe 1f00110000.csi: Using a link rate of 900 Mbps
+Nov 20 15:14:34 expidite-2ccf6789c489 /home/bee-ops/venv/lib/python3.13/site-packages/bee_ops/run_my_sensor.py[42637]: expidite DEBUG  [140733605933408] Orchestrator running (running)
+Nov 20 15:14:35 expidite-2ccf6789c489 kernel: rp1-cfe 1f00110000.csi: Using a link rate of 900 Mbps
+Nov 20 15:14:35 expidite-2ccf6789c489 /home/bee-ops/venv/lib/python3.13/site-packages/bee_ops/run_my_sensor.py[42637]: expidite DEBUG  [140733605933408] Orchestrator running (running)
+Nov 20 15:14:35 expidite-2ccf6789c489 /home/bee-ops/venv/lib/python3.13/site-packages/bee_ops/run_my_sensor.py[42637]: expidite DEBUG  [140733520474464] Wifi timer callback
+Nov 20 15:14:35 expidite-2ccf6789c489 /home/bee-ops/venv/lib/python3.13/site-packages/bee_ops/run_my_sensor.py[42637]: expidite ERROR  [140733520474464] RAISE_WARNING#V1_2ccf6789c489: Wifi timer callback threw an exception: 'DeviceManager' object has no attribute 'ping_success_count_run'
+                                                                                                                       Traceback (most recent call last):
+                                                                                                                         File "/home/bee-ops/venv/lib/python3.13/site-packages/expidite_rpi/core/device_manager.py", line 248, in wifi_timer_callback
+                                                                                                                           if self.ping_success_count_run % 30 == 0:
+                                                                                                                              ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+                                                                                                                       AttributeError: 'DeviceManager' object has no attribute 'ping_success_count_run'
+Nov 20 15:14:36 expidite-2ccf6789c489 kernel: rp1-cfe 1f00110000.csi: Using a link rate of 900 Mbps
+Nov 20 15:14:36 expidite-2ccf6789c489 /home/bee-ops/venv/lib/python3.13/site-packages/bee_ops/run_my_sensor.py[42637]: expidite DEBUG  [140733605933408] Orchestrator running (running)
+Nov 20 15:14:37 expidite-2ccf6789c489 kernel: rp1-cfe 1f00110000.csi: Using a link rate of 900 Mbps
+Nov 20 15:14:37 expidite-2ccf6789c489 /home/bee-ops/venv/lib/python3.13/site-packages/bee_ops/run_my_sensor.py[42637]: expidite DEBUG  [140733605933408] Orchestrator running (running)
+Nov 20 15:14:37 expidite-2ccf6789c489 /home/bee-ops/venv/lib/python3.13/site-packages/bee_ops/run_my_sensor.py[42637]: expidite DEBUG  [140733520474464] Wifi timer callback
+Nov 20 15:14:37 expidite-2ccf6789c489 /home/bee-ops/venv/lib/python3.13/site-packages/bee_ops/run_my_sensor.py[42637]: expidite ERROR  [140733520474464] RAISE_WARNING#V1_2ccf6789c489: Wifi timer callback threw an exception: 'DeviceManager' object has no attribute 'ping_success_count_run'
+                                                                                                                       Traceback (most recent call last):
+                                                                                                                         File "/home/bee-ops/venv/lib/python3.13/site-packages/expidite_rpi/core/device_manager.py", line 248, in wifi_timer_callback
+                                                                                                                           if self.ping_success_count_run % 30 == 0:
+                                                                                                                              ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+                                                                                                                       AttributeError: 'DeviceManager' object has no attribute 'ping_success_count_run'
+Nov 20 15:14:38 expidite-2ccf6789c489 /home/bee-ops/venv/lib/python3.13/site-packages/bee_ops/run_my_sensor.py[42637]: expidite DEBUG  [140733512020320] LED timer callback
+Nov 20 15:14:38 expidite-2ccf6789c489 /home/bee-ops/venv/lib/python3.13/site-packages/bee_ops/run_my_sensor.py[42637]: expidite DEBUG  [140733605933408] Orchestrator running (running)
+Nov 20 15:14:38 expidite-2ccf6789c489 kernel: rp1-cfe 1f00110000.csi: Using a link rate of 900 Mbps
+Nov 20 15:14:39 expidite-2ccf6789c489 /home/bee-ops/venv/lib/python3.13/site-packages/bee_ops/run_my_sensor.py[42637]: expidite DEBUG  [140733605933408] Orchestrator running (running)
+Nov 20 15:14:39 expidite-2ccf6789c489 kernel: rp1-cfe 1f00110000.csi: Using a link rate of 900 Mbps
+Nov 20 15:14:39 expidite-2ccf6789c489 /home/bee-ops/venv/lib/python3.13/site-packages/bee_ops/run_my_sensor.py[42637]: expidite DEBUG  [140733520474464] Wifi timer callback
+Nov 20 15:14:39 expidite-2ccf6789c489 /home/bee-ops/venv/lib/python3.13/site-packages/bee_ops/run_my_sensor.py[42637]: expidite ERROR  [140733520474464] RAISE_WARNING#V1_2ccf6789c489: Wifi timer callback threw an exception: 'DeviceManager' object has no attribute 'ping_success_count_run'
+                                                                                                                       Traceback (most recent call last):
+                                                                                                                         File "/home/bee-ops/venv/lib/python3.13/site-packages/expidite_rpi/core/device_manager.py", line 248, in wifi_timer_callback
+                                                                                                                           if self.ping_success_count_run % 30 == 0:
+                                                                                                                              ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+                                                                                                                       AttributeError: 'DeviceManager' object has no attribute 'ping_success_count_run'
+Nov 20 15:14:40 expidite-2ccf6789c489 /home/bee-ops/venv/lib/python3.13/site-packages/bee_ops/run_my_sensor.py[42637]: expidite DEBUG  [140733605933408] Orchestrator running (running)
+Nov 20 15:14:40 expidite-2ccf6789c489 kernel: rp1-cfe 1f00110000.csi: Using a link rate of 900 Mbps
+Nov 20 15:14:41 expidite-2ccf6789c489 /home/bee-ops/venv/lib/python3.13/site-packages/bee_ops/run_my_sensor.py[42637]: expidite DEBUG  [140733605933408] Orchestrator running (running)
+Nov 20 15:14:41 expidite-2ccf6789c489 kernel: rp1-cfe 1f00110000.csi: Using a link rate of 900 Mbps
+Nov 20 15:14:41 expidite-2ccf6789c489 /home/bee-ops/venv/lib/python3.13/site-packages/bee_ops/run_my_sensor.py[42637]: expidite DEBUG  [140733520474464] Wifi timer callback
+Nov 20 15:14:41 expidite-2ccf6789c489 /home/bee-ops/venv/lib/python3.13/site-packages/bee_ops/run_my_sensor.py[42637]: expidite ERROR  [140733520474464] RAISE_WARNING#V1_2ccf6789c489: Wifi timer callback threw an exception: 'DeviceManager' object has no attribute 'ping_success_count_run'
+                                                                                                                       Traceback (most recent call last):
+                                                                                                                         File "/home/bee-ops/venv/lib/python3.13/site-packages/expidite_rpi/core/device_manager.py", line 248, in wifi_timer_callback
+                                                                                                                           if self.ping_success_count_run % 30 == 0:
+                                                                                                                              ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+                                                                                                                       AttributeError: 'DeviceManager' object has no attribute 'ping_success_count_run'
+Nov 20 15:14:42 expidite-2ccf6789c489 /home/bee-ops/venv/lib/python3.13/site-packages/bee_ops/run_my_sensor.py[42637]: expidite DEBUG  [140733605933408] Orchestrator running (running)
+Nov 20 15:14:42 expidite-2ccf6789c489 kernel: rp1-cfe 1f00110000.csi: Using a link rate of 900 Mbps
+Nov 20 15:14:43 expidite-2ccf6789c489 /home/bee-ops/venv/lib/python3.13/site-packages/bee_ops/run_my_sensor.py[42637]: expidite DEBUG  [140733512020320] LED timer callback
+Nov 20 15:14:43 expidite-2ccf6789c489 /home/bee-ops/venv/lib/python3.13/site-packages/bee_ops/run_my_sensor.py[42637]: expidite DEBUG  [140733059166560] _get_ds_files returning 0 files for RPICAM_2ccf6789c489_00_00
+Nov 20 15:14:43 expidite-2ccf6789c489 /home/bee-ops/venv/lib/python3.13/site-packages/bee_ops/run_my_sensor.py[42637]: expidite DEBUG  [140733059166560] Recorded SCORP stat for HIVECAMXY duration 0.000311
+Nov 20 15:14:43 expidite-2ccf6789c489 /home/bee-ops/venv/lib/python3.13/site-packages/bee_ops/run_my_sensor.py[42637]: expidite DEBUG  [140733059166560] DataProcessor (<bee_ops.sensors.processor_video_hivecam_hybrid.HivecamDp object at 0x7fff18aa3610>) sleeping for 59.999546 seconds
+Nov 20 15:14:43 expidite-2ccf6789c489 /home/bee-ops/venv/lib/python3.13/site-packages/bee_ops/run_my_sensor.py[42637]: expidite DEBUG  [140733605933408] Orchestrator running (running)
+Nov 20 15:14:43 expidite-2ccf6789c489 /home/bee-ops/venv/lib/python3.13/site-packages/bee_ops/run_my_sensor.py[42637]: expidite INFO   [140733033804128] Recording video with command: rpicam-vid --rot 180 -b 3000000 --camera 0 --framerate 30 --lens-position 5 --exposure sport --width 640 --height 480 -o /expidite/tmp/tmp_20251120T151443319_0.2174.mp4 -t 180000
+Nov 20 15:14:43 expidite-2ccf6789c489 /home/bee-ops/venv/lib/python3.13/site-packages/bee_ops/run_my_sensor.py[42637]: expidite ERROR  [140733033804128] RAISE_WARNING#V1_2ccf6789c489: Error in RpicamSensor: RAISE_WARNING#V1_2ccf6789c489: Error running command: rpicam-vid --rot 180 -b 3000000 --camera 0 --framerate 30 --lens-position 5 --exposure sport --width 640 --height 480 -o /expidite/tmp/tmp_20251120T151443319_0.2174.mp4 -t 180000, Error: b"[2:43:23.008995597] [42913] \x1b[1;32m INFO \x1b[1;37mCamera \x1b[1;34mcamera_manager.cpp:330 \x1b[0mlibcamera v0.5.2+99-bfd68f78\n[2:43:23.022275744] [42916] \x1b[1;32m INFO \x1b[1;37mRPI \x1b[1;34mpisp.cpp:720 \x1b[0mlibpisp version 1.3.0\n[2:43:23.023094038] [42916] \x1b[1;31mERROR \x1b[1;37mV4L2 \x1b[1;34mv4l2_device.cpp:390 \x1b[0;32m'imx708': \x1b[0mUnable to set controls: Device or resource busy\n[2:43:23.026376732] [42916] \x1b[1;32m INFO \x1b[1;37mIPAProxy \x1b[1;34mipa_proxy.cpp:180 \x1b[0mUsing tuning file /usr/share/libcamera/ipa/rpi/pisp/imx708.json\n[2:43:23.037407571] [42916] \x1b[1;32m INFO \x1b[1;37mCamera \x1b[1;34mcamera_manager.cpp:220 \x1b[0mAdding camera '/base/axi/pcie@1000120000/rp1/i2c@88000/imx708@1a' for pipeline handler rpi/pisp\n[2:43:23.037429848] [42916] \x1b[1;32m INFO \x1b[1;37mRPI \x1b[1;34mpisp.cpp:1179 \x1b[0mRegistered camera /base/axi/pcie@1000120000/rp1/i2c@88000/imx708@1a to CFE device /dev/media1 and ISP device /dev/media0 using PiSP variant BCM2712_C0\nMade X/EGL preview window\nMade DRM preview window\nPreview window unavailable\n[2:43:23.055026076] [42913] \x1b[1;32m INFO \x1b[1;37mCamera \x1b[1;34mcamera.cpp:1020 \x1b[0mPipeline handler in use by another process\nERROR: *** failed to acquire camera /base/axi/pcie@1000120000/rp1/i2c@88000/imx708@1a ***\n"
+                                                                                                                       Traceback (most recent call last):
+                                                                                                                         File "/home/bee-ops/venv/lib/python3.13/site-packages/expidite_rpi/sensors/sensor_rpicam_vid.py", line 154, in run
+                                                                                                                           rc = utils.run_cmd(cmd)
+                                                                                                                         File "/home/bee-ops/venv/lib/python3.13/site-packages/expidite_rpi/utils/utils.py", line 185, in run_cmd
+                                                                                                                           raise Exception(f"{root_cfg.RAISE_WARN()}Error running command: {cmd}, Error: {err!s}")
+                                                                                                                       Exception: RAISE_WARNING#V1_2ccf6789c489: Error running command: rpicam-vid --rot 180 -b 3000000 --camera 0 --framerate 30 --lens-position 5 --exposure sport --width 640 --height 480 -o /expidite/tmp/tmp_20251120T151443319_0.2174.mp4 -t 180000, Error: b"[2:43:23.008995597] [42913] \x1b[1;32m INFO \x1b[1;37mCamera \x1b[1;34mcamera_manager.cpp:330 \x1b[0mlibcamera v0.5.2+99-bfd68f78\n[2:43:23.022275744] [42916] \x1b[1;32m INFO \x1b[1;37mRPI \x1b[1;34mpisp.cpp:720 \x1b[0mlibpisp version 1.3.0\n[2:43:23.023094038] [42916] \x1b[1;31mERROR \x1b[1;37mV4L2 \x1b[1;34mv4l2_device.cpp:390 \x1b[0;32m'imx708': \x1b[0mUnable to set controls: Device or resource busy\n[2:43:23.026376732] [42916] \x1b[1;32m INFO \x1b[1;37mIPAProxy \x1b[1;34mipa_proxy.cpp:180 \x1b[0mUsing tuning file /usr/share/libcamera/ipa/rpi/pisp/imx708.json\n[2:43:23.037407571] [42916] \x1b[1;32m INFO \x1b[1;37mCamera \x1b[1;34mcamera_manager.cpp:220 \x1b[0mAdding camera '/base/axi/pcie@1000120000/rp1/i2c@88000/imx708@1a' for pipeline handler rpi/pisp\n[2:43:23.037429848] [42916] \x1b[1;32m INFO \x1b[1;37mRPI \x1b[1;34mpisp.cpp:1179 \x1b[0mRegistered camera /base/axi/pcie@1000120000/rp1/i2c@88000/imx708@1a to CFE device /dev/media1 and ISP device /dev/media0 using PiSP variant BCM2712_C0\nMade X/EGL preview window\nMade DRM preview window\nPreview window unavailable\n[2:43:23.055026076] [42913] \x1b[1;32m INFO \x1b[1;37mCamera \x1b[1;34mcamera.cpp:1020 \x1b[0mPipeline handler in use by another process\nERROR: *** failed to acquire camera /base/axi/pcie@1000120000/rp1/i2c@88000/imx708@1a ***\n"
+Nov 20 15:14:43 expidite-2ccf6789c489 kernel: rp1-cfe 1f00110000.csi: Using a link rate of 900 Mbps
+Nov 20 15:14:43 expidite-2ccf6789c489 /home/bee-ops/venv/lib/python3.13/site-packages/bee_ops/run_my_sensor.py[42637]: expidite DEBUG  [140733520474464] Wifi timer callback
+Nov 20 15:14:43 expidite-2ccf6789c489 /home/bee-ops/venv/lib/python3.13/site-packages/bee_ops/run_my_sensor.py[42637]: expidite INFO   [140733520474464] Ping successful count run: 30, all (good/bad): 30/0
+Nov 20 15:14:43 expidite-2ccf6789c489 /home/bee-ops/venv/lib/python3.13/site-packages/bee_ops/run_my_sensor.py[42637]: expidite ERROR  [140733520474464] RAISE_WARNING#V1_2ccf6789c489: Wifi timer callback threw an exception: 'DeviceManager' object has no attribute 'ping_success_count_run'
+                                                                                                                       Traceback (most recent call last):
+                                                                                                                         File "/home/bee-ops/venv/lib/python3.13/site-packages/expidite_rpi/core/device_manager.py", line 248, in wifi_timer_callback
+                                                                                                                           if self.ping_success_count_run % 30 == 0:
+                                                                                                                              ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+                                                                                                                       AttributeError: 'DeviceManager' object has no attribute 'ping_success_count_run'
+Nov 20 15:14:44 expidite-2ccf6789c489 /home/bee-ops/venv/lib/python3.13/site-packages/bee_ops/run_my_sensor.py[42637]: expidite DEBUG  [140733605933408] Orchestrator running (running)
+Nov 20 15:14:44 expidite-2ccf6789c489 sshd-session[42923]: Accepted publickey for bee-ops from 192.168.0.15 port 63380 ssh2: RSA SHA256:Lt/ccxyIWRYG14YSn807ObmHhigSMCc0AMt3mtJewyc
+Nov 20 15:14:44 expidite-2ccf6789c489 sshd-session[42923]: pam_unix(sshd:session): session opened for user bee-ops(uid=1000) by bee-ops(uid=0)
+Nov 20 15:14:44 expidite-2ccf6789c489 systemd-logind[774]: New session 18 of user bee-ops.
+Nov 20 15:14:44 expidite-2ccf6789c489 systemd[1]: Started session-18.scope - Session 18 of User bee-ops.
+Nov 20 15:14:44 expidite-2ccf6789c489 kernel: rp1-cfe 1f00110000.csi: Using a link rate of 900 Mbps
+Nov 20 15:14:44 expidite-2ccf6789c489 sshd-session[42930]: Received disconnect from 192.168.0.15 port 63380:11: disconnected by user
+Nov 20 15:14:44 expidite-2ccf6789c489 sshd-session[42930]: Disconnected from user bee-ops 192.168.0.15 port 63380
+Nov 20 15:14:44 expidite-2ccf6789c489 sshd-session[42923]: pam_unix(sshd:session): session closed for user bee-ops
+Nov 20 15:14:44 expidite-2ccf6789c489 systemd[1]: session-18.scope: Deactivated successfully.
+Nov 20 15:14:44 expidite-2ccf6789c489 systemd-logind[774]: Session 18 logged out. Waiting for processes to exit.
+Nov 20 15:14:44 expidite-2ccf6789c489 systemd-logind[774]: Removed session 18.
+Nov 20 15:14:45 expidite-2ccf6789c489 /home/bee-ops/venv/lib/python3.13/site-packages/bee_ops/run_my_sensor.py[42637]: expidite DEBUG  [140733605933408] Orchestrator running (running)
+Nov 20 15:14:45 expidite-2ccf6789c489 kernel: rp1-cfe 1f00110000.csi: Using a link rate of 900 Mbps
+Nov 20 15:14:45 expidite-2ccf6789c489 /home/bee-ops/venv/lib/python3.13/site-packages/bee_ops/run_my_sensor.py[42637]: expidite DEBUG  [140733520474464] Wifi timer callback
+Nov 20 15:14:45 expidite-2ccf6789c489 /home/bee-ops/venv/lib/python3.13/site-packages/bee_ops/run_my_sensor.py[42637]: expidite ERROR  [140733520474464] RAISE_WARNING#V1_2ccf6789c489: Wifi timer callback threw an exception: 'DeviceManager' object has no attribute 'ping_success_count_run'
+                                                                                                                       Traceback (most recent call last):
+                                                                                                                         File "/home/bee-ops/venv/lib/python3.13/site-packages/expidite_rpi/core/device_manager.py", line 248, in wifi_timer_callback
+                                                                                                                           if self.ping_success_count_run % 30 == 0:
+                                                                                                                              ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+                                                                                                                       AttributeError: 'DeviceManager' object has no attribute 'ping_success_count_run'
+Nov 20 15:14:46 expidite-2ccf6789c489 /home/bee-ops/venv/lib/python3.13/site-packages/bee_ops/run_my_sensor.py[42637]: expidite DEBUG  [140733605933408] Orchestrator running (running)
+Nov 20 15:14:46 expidite-2ccf6789c489 kernel: rp1-cfe 1f00110000.csi: Using a link rate of 900 Mbps
+Nov 20 15:14:47 expidite-2ccf6789c489 /home/bee-ops/venv/lib/python3.13/site-packages/bee_ops/run_my_sensor.py[42637]: expidite DEBUG  [140733605933408] Orchestrator running (running)
+Nov 20 15:14:47 expidite-2ccf6789c489 kernel: rp1-cfe 1f00110000.csi: Using a link rate of 900 Mbps
+Nov 20 15:14:47 expidite-2ccf6789c489 /home/bee-ops/venv/lib/python3.13/site-packages/bee_ops/run_my_sensor.py[42637]: expidite DEBUG  [140733520474464] Wifi timer callback
+Nov 20 15:14:48 expidite-2ccf6789c489 /home/bee-ops/venv/lib/python3.13/site-packages/bee_ops/run_my_sensor.py[42637]: expidite ERROR  [140733520474464] RAISE_WARNING#V1_2ccf6789c489: Wifi timer callback threw an exception: 'DeviceManager' object has no attribute 'ping_success_count_run'
+                                                                                                                       Traceback (most recent call last):
+                                                                                                                         File "/home/bee-ops/venv/lib/python3.13/site-packages/expidite_rpi/core/device_manager.py", line 248, in wifi_timer_callback
+                                                                                                                           if self.ping_success_count_run % 30 == 0:
+                                                                                                                              ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+                                                                                                                       AttributeError: 'DeviceManager' object has no attribute 'ping_success_count_run'
+Nov 20 15:14:48 expidite-2ccf6789c489 /home/bee-ops/venv/lib/python3.13/site-packages/bee_ops/run_my_sensor.py[42637]: expidite DEBUG  [140733512020320] LED timer callback
+Nov 20 15:14:48 expidite-2ccf6789c489 /home/bee-ops/venv/lib/python3.13/site-packages/bee_ops/run_my_sensor.py[42637]: expidite DEBUG  [140733605933408] Orchestrator running (running)
+Nov 20 15:14:49 expidite-2ccf6789c489 kernel: rp1-cfe 1f00110000.csi: Using a link rate of 900 Mbps
+Nov 20 15:14:49 expidite-2ccf6789c489 /home/bee-ops/venv/lib/python3.13/site-packages/bee_ops/run_my_sensor.py[42637]: expidite DEBUG  [140733605933408] Orchestrator running (running)
+Nov 20 15:14:50 expidite-2ccf6789c489 /home/bee-ops/venv/lib/python3.13/site-packages/bee_ops/run_my_sensor.py[42637]: expidite DEBUG  [140733520474464] Wifi timer callback
+Nov 20 15:14:50 expidite-2ccf6789c489 /home/bee-ops/venv/lib/python3.13/site-packages/bee_ops/run_my_sensor.py[42637]: expidite ERROR  [140733520474464] RAISE_WARNING#V1_2ccf6789c489: Wifi timer callback threw an exception: 'DeviceManager' object has no attribute 'ping_success_count_run'
+                                                                                                                       Traceback (most recent call last):
+                                                                                                                         File "/home/bee-ops/venv/lib/python3.13/site-packages/expidite_rpi/core/device_manager.py", line 248, in wifi_timer_callback
+                                                                                                                           if self.ping_success_count_run % 30 == 0:
+                                                                                                                              ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+                                                                                                                       AttributeError: 'DeviceManager' object has no attribute 'ping_success_count_run'
+Nov 20 15:14:50 expidite-2ccf6789c489 kernel: rp1-cfe 1f00110000.csi: Using a link rate of 900 Mbps
+Nov 20 15:14:50 expidite-2ccf6789c489 /home/bee-ops/venv/lib/python3.13/site-packages/bee_ops/run_my_sensor.py[42637]: expidite DEBUG  [140733605933408] Orchestrator running (running)
+Nov 20 15:14:51 expidite-2ccf6789c489 kernel: rp1-cfe 1f00110000.csi: Using a link rate of 900 Mbps
+Nov 20 15:14:51 expidite-2ccf6789c489 /home/bee-ops/venv/lib/python3.13/site-packages/bee_ops/run_my_sensor.py[42637]: expidite DEBUG  [140733605933408] Orchestrator running (running)
+Nov 20 15:14:52 expidite-2ccf6789c489 /home/bee-ops/venv/lib/python3.13/site-packages/bee_ops/run_my_sensor.py[42637]: expidite DEBUG  [140733520474464] Wifi timer callback
+Nov 20 15:14:52 expidite-2ccf6789c489 /home/bee-ops/venv/lib/python3.13/site-packages/bee_ops/run_my_sensor.py[42637]: expidite ERROR  [140733520474464] RAISE_WARNING#V1_2ccf6789c489: Wifi timer callback threw an exception: 'DeviceManager' object has no attribute 'ping_success_count_run'
+                                                                                                                       Traceback (most recent call last):
+                                                                                                                         File "/home/bee-ops/venv/lib/python3.13/site-packages/expidite_rpi/core/device_manager.py", line 248, in wifi_timer_callback
+                                                                                                                           if self.ping_success_count_run % 30 == 0:
+                                                                                                                              ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+                                                                                                                       AttributeError: 'DeviceManager' object has no attribute 'ping_success_count_run'
+Nov 20 15:14:52 expidite-2ccf6789c489 /home/bee-ops/venv/lib/python3.13/site-packages/bee_ops/run_my_sensor.py[42637]: expidite DEBUG  [140733605933408] Orchestrator running (running)
+Nov 20 15:14:52 expidite-2ccf6789c489 kernel: rp1-cfe 1f00110000.csi: Using a link rate of 900 Mbps
+Nov 20 15:14:53 expidite-2ccf6789c489 /home/bee-ops/venv/lib/python3.13/site-packages/bee_ops/run_my_sensor.py[42637]: expidite DEBUG  [140733512020320] LED timer callback
+Nov 20 15:14:53 expidite-2ccf6789c489 /home/bee-ops/venv/lib/python3.13/site-packages/bee_ops/run_my_sensor.py[42637]: expidite DEBUG  [140733605933408] Orchestrator running (running)
+Nov 20 15:14:53 expidite-2ccf6789c489 kernel: rp1-cfe 1f00110000.csi: Using a link rate of 900 Mbps
+Nov 20 15:14:54 expidite-2ccf6789c489 /home/bee-ops/venv/lib/python3.13/site-packages/bee_ops/run_my_sensor.py[42637]: expidite DEBUG  [140733520474464] Wifi timer callback
+Nov 20 15:14:54 expidite-2ccf6789c489 /home/bee-ops/venv/lib/python3.13/site-packages/bee_ops/run_my_sensor.py[42637]: expidite ERROR  [140733520474464] RAISE_WARNING#V1_2ccf6789c489: Wifi timer callback threw an exception: 'DeviceManager' object has no attribute 'ping_success_count_run'
+                                                                                                                       Traceback (most recent call last):
+                                                                                                                         File "/home/bee-ops/venv/lib/python3.13/site-packages/expidite_rpi/core/device_manager.py", line 248, in wifi_timer_callback
+                                                                                                                           if self.ping_counter.success_count_run % 30 == 0:
+                                                                                                                              ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+                                                                                                                       AttributeError: 'DeviceManager' object has no attribute 'ping_success_count_run'
+Nov 20 15:14:54 expidite-2ccf6789c489 /home/bee-ops/venv/lib/python3.13/site-packages/bee_ops/run_my_sensor.py[42637]: expidite DEBUG  [140733605933408] Orchestrator running (running)
+Nov 20 15:14:54 expidite-2ccf6789c489 kernel: rp1-cfe 1f00110000.csi: Using a link rate of 900 Mbps
+Nov 20 15:14:55 expidite-2ccf6789c489 /home/bee-ops/venv/lib/python3.13/site-packages/bee_ops/run_my_sensor.py[42637]: expidite DEBUG  [140733605933408] Orchestrator running (running)
+Nov 20 15:14:55 expidite-2ccf6789c489 kernel: rp1-cfe 1f00110000.csi: Using a link rate of 900 Mbps
+Nov 20 15:14:56 expidite-2ccf6789c489 /home/bee-ops/venv/lib/python3.13/site-packages/bee_ops/run_my_sensor.py[42637]: expidite DEBUG  [140733520474464] Wifi timer callback
+Nov 20 15:14:56 expidite-2ccf6789c489 /home/bee-ops/venv/lib/python3.13/site-packages/bee_ops/run_my_sensor.py[42637]: expidite ERROR  [140733520474464] RAISE_WARNING#V1_2ccf6789c489: Wifi timer callback threw an exception: 'DeviceManager' object has no attribute 'ping_success_count_run'
+                                                                                                                       Traceback (most recent call last):
+                                                                                                                         File "/home/bee-ops/venv/lib/python3.13/site-packages/expidite_rpi/core/device_manager.py", line 248, in wifi_timer_callback
+                                                                                                                           if self.ping_counter.success_count_run % 30 == 0:
+                                                                                                                              ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+                                                                                                                       AttributeError: 'DeviceManager' object has no attribute 'ping_success_count_run'
+Nov 20 15:14:56 expidite-2ccf6789c489 /home/bee-ops/venv/lib/python3.13/site-packages/bee_ops/run_my_sensor.py[42637]: expidite DEBUG  [140733605933408] Orchestrator running (running)
+Nov 20 15:14:56 expidite-2ccf6789c489 kernel: rp1-cfe 1f00110000.csi: Using a link rate of 900 Mbps
+Nov 20 15:14:57 expidite-2ccf6789c489 /home/bee-ops/venv/lib/python3.13/site-packages/bee_ops/run_my_sensor.py[42637]: expidite DEBUG  [140733605933408] Orchestrator running (running)
+Nov 20 15:14:57 expidite-2ccf6789c489 kernel: rp1-cfe 1f00110000.csi: Using a link rate of 900 Mbps
+Nov 20 15:14:58 expidite-2ccf6789c489 /home/bee-ops/venv/lib/python3.13/site-packages/bee_ops/run_my_sensor.py[42637]: expidite DEBUG  [140733520474464] Wifi timer callback
+Nov 20 15:14:58 expidite-2ccf6789c489 /home/bee-ops/venv/lib/python3.13/site-packages/bee_ops/run_my_sensor.py[42637]: expidite ERROR  [140733520474464] RAISE_WARNING#V1_2ccf6789c489: Wifi timer callback threw an exception: 'DeviceManager' object has no attribute 'ping_success_count_run'
+                                                                                                                       Traceback (most recent call last):
+                                                                                                                         File "/home/bee-ops/venv/lib/python3.13/site-packages/expidite_rpi/core/device_manager.py", line 248, in wifi_timer_callback
+                                                                                                                           if self.ping_counter.success_count_run % 30 == 0:
+                                                                                                                              ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+                                                                                                                       AttributeError: 'DeviceManager' object has no attribute 'ping_success_count_run'
+Nov 20 15:14:58 expidite-2ccf6789c489 /home/bee-ops/venv/lib/python3.13/site-packages/bee_ops/run_my_sensor.py[42637]: expidite DEBUG  [140733512020320] LED timer callback
+Nov 20 15:14:58 expidite-2ccf6789c489 /home/bee-ops/venv/lib/python3.13/site-packages/bee_ops/run_my_sensor.py[42637]: expidite DEBUG  [140733605933408] Orchestrator running (running)
+Nov 20 15:14:58 expidite-2ccf6789c489 kernel: rp1-cfe 1f00110000.csi: Using a link rate of 900 Mbps
+Nov 20 15:14:59 expidite-2ccf6789c489 /home/bee-ops/venv/lib/python3.13/site-packages/bee_ops/run_my_sensor.py[42637]: expidite DEBUG  [140733605933408] Orchestrator running (running)
+Nov 20 15:14:59 expidite-2ccf6789c489 kernel: rp1-cfe 1f00110000.csi: Using a link rate of 900 Mbps
+Nov 20 15:15:00 expidite-2ccf6789c489 /home/bee-ops/venv/lib/python3.13/site-packages/bee_ops/run_my_sensor.py[42637]: expidite DEBUG  [140733520474464] Wifi timer callback
+Nov 20 15:15:00 expidite-2ccf6789c489 /home/bee-ops/venv/lib/python3.13/site-packages/bee_ops/run_my_sensor.py[42637]: expidite ERROR  [140733520474464] RAISE_WARNING#V1_2ccf6789c489: Wifi timer callback threw an exception: 'DeviceManager' object has no attribute 'ping_success_count_run'
+                                                                                                                       Traceback (most recent call last):
+                                                                                                                         File "/home/bee-ops/venv/lib/python3.13/site-packages/expidite_rpi/core/device_manager.py", line 248, in wifi_timer_callback
+                                                                                                                           if self.ping_counter.success_count_run % 30 == 0:
+                                                                                                                              ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+                                                                                                                       AttributeError: 'DeviceManager' object has no attribute 'ping_success_count_run'
+Nov 20 15:15:00 expidite-2ccf6789c489 /home/bee-ops/venv/lib/python3.13/site-packages/bee_ops/run_my_sensor.py[42637]: expidite DEBUG  [140733605933408] Orchestrator running (running)
+Nov 20 15:15:00 expidite-2ccf6789c489 kernel: rp1-cfe 1f00110000.csi: Using a link rate of 900 Mbps
+Nov 20 15:15:01 expidite-2ccf6789c489 /home/bee-ops/venv/lib/python3.13/site-packages/bee_ops/run_my_sensor.py[42637]: expidite DEBUG  [140733605933408] Orchestrator running (running)
+Nov 20 15:15:02 expidite-2ccf6789c489 kernel: rp1-cfe 1f00110000.csi: Using a link rate of 900 Mbps
+Nov 20 15:15:02 expidite-2ccf6789c489 /home/bee-ops/venv/lib/python3.13/site-packages/bee_ops/run_my_sensor.py[42637]: expidite DEBUG  [140733520474464] Wifi timer callback
+Nov 20 15:15:02 expidite-2ccf6789c489 /home/bee-ops/venv/lib/python3.13/site-packages/bee_ops/run_my_sensor.py[42637]: expidite ERROR  [140733520474464] RAISE_WARNING#V1_2ccf6789c489: Wifi timer callback threw an exception: 'DeviceManager' object has no attribute 'ping_success_count_run'
+                                                                                                                       Traceback (most recent call last):
+                                                                                                                         File "/home/bee-ops/venv/lib/python3.13/site-packages/expidite_rpi/core/device_manager.py", line 248, in wifi_timer_callback
+                                                                                                                           if self.ping_counter.success_count_run % 30 == 0:
+                                                                                                                              ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+                                                                                                                       AttributeError: 'DeviceManager' object has no attribute 'ping_success_count_run'
+Nov 20 15:15:02 expidite-2ccf6789c489 /home/bee-ops/venv/lib/python3.13/site-packages/bee_ops/run_my_sensor.py[42637]: expidite DEBUG  [140733605933408] Orchestrator running (running)
+Nov 20 15:15:03 expidite-2ccf6789c489 kernel: rp1-cfe 1f00110000.csi: Using a link rate of 900 Mbps
+Nov 20 15:15:03 expidite-2ccf6789c489 /home/bee-ops/venv/lib/python3.13/site-packages/bee_ops/run_my_sensor.py[42637]: expidite DEBUG  [140733512020320] LED timer callback
+Nov 20 15:15:03 expidite-2ccf6789c489 /home/bee-ops/venv/lib/python3.13/site-packages/bee_ops/run_my_sensor.py[42637]: expidite DEBUG  [140733605933408] Orchestrator running (running)
+Nov 20 15:15:04 expidite-2ccf6789c489 /home/bee-ops/venv/lib/python3.13/site-packages/bee_ops/run_my_sensor.py[42637]: expidite DEBUG  [140733520474464] Wifi timer callback
+Nov 20 15:15:04 expidite-2ccf6789c489 /home/bee-ops/venv/lib/python3.13/site-packages/bee_ops/run_my_sensor.py[42637]: expidite ERROR  [140733520474464] RAISE_WARNING#V1_2ccf6789c489: Wifi timer callback threw an exception: 'DeviceManager' object has no attribute 'ping_success_count_run'
+                                                                                                                       Traceback (most recent call last):
+                                                                                                                         File "/home/bee-ops/venv/lib/python3.13/site-packages/expidite_rpi/core/device_manager.py", line 248, in wifi_timer_callback
+                                                                                                                           if self.ping_counter.success_count_run % 30 == 0:
+                                                                                                                              ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+                                                                                                                       AttributeError: 'DeviceManager' object has no attribute 'ping_success_count_run'
+Nov 20 15:15:04 expidite-2ccf6789c489 kernel: rp1-cfe 1f00110000.csi: Using a link rate of 900 Mbps
+Nov 20 15:15:04 expidite-2ccf6789c489 /home/bee-ops/venv/lib/python3.13/site-packages/bee_ops/run_my_sensor.py[42637]: expidite DEBUG  [140733605933408] Orchestrator running (running)
+Nov 20 15:15:05 expidite-2ccf6789c489 /home/bee-ops/venv/lib/python3.13/site-packages/bee_ops/run_my_sensor.py[42637]: expidite DEBUG  [140733605933408] Orchestrator running (running)
+Nov 20 15:15:05 expidite-2ccf6789c489 kernel: rp1-cfe 1f00110000.csi: Using a link rate of 900 Mbps
+Nov 20 15:15:06 expidite-2ccf6789c489 /home/bee-ops/venv/lib/python3.13/site-packages/bee_ops/run_my_sensor.py[42637]: expidite DEBUG  [140733520474464] Wifi timer callback
+Nov 20 15:15:06 expidite-2ccf6789c489 /home/bee-ops/venv/lib/python3.13/site-packages/bee_ops/run_my_sensor.py[42637]: expidite ERROR  [140733520474464] RAISE_WARNING#V1_2ccf6789c489: Wifi timer callback threw an exception: 'DeviceManager' object has no attribute 'ping_success_count_run'
+                                                                                                                       Traceback (most recent call last):
+                                                                                                                         File "/home/bee-ops/venv/lib/python3.13/site-packages/expidite_rpi/core/device_manager.py", line 248, in wifi_timer_callback
+                                                                                                                           if self.ping_counter.success_count_run % 30 == 0:
+                                                                                                                              ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+                                                                                                                       AttributeError: 'DeviceManager' object has no attribute 'ping_success_count_run'
+Nov 20 15:15:06 expidite-2ccf6789c489 /home/bee-ops/venv/lib/python3.13/site-packages/bee_ops/run_my_sensor.py[42637]: expidite DEBUG  [140733605933408] Orchestrator running (running)
+Nov 20 15:15:06 expidite-2ccf6789c489 kernel: rp1-cfe 1f00110000.csi: Using a link rate of 900 Mbps
+Nov 20 15:15:07 expidite-2ccf6789c489 /home/bee-ops/venv/lib/python3.13/site-packages/bee_ops/run_my_sensor.py[42637]: expidite DEBUG  [140733605933408] Orchestrator running (running)
+Nov 20 15:15:07 expidite-2ccf6789c489 kernel: rp1-cfe 1f00110000.csi: Using a link rate of 900 Mbps
+Nov 20 15:15:08 expidite-2ccf6789c489 /home/bee-ops/venv/lib/python3.13/site-packages/bee_ops/run_my_sensor.py[42637]: expidite DEBUG  [140733520474464] Wifi timer callback
+Nov 20 15:15:08 expidite-2ccf6789c489 /home/bee-ops/venv/lib/python3.13/site-packages/bee_ops/run_my_sensor.py[42637]: expidite ERROR  [140733520474464] RAISE_WARNING#V1_2ccf6789c489: Wifi timer callback threw an exception: 'DeviceManager' object has no attribute 'ping_success_count_run'
+                                                                                                                       Traceback (most recent call last):
+                                                                                                                         File "/home/bee-ops/venv/lib/python3.13/site-packages/expidite_rpi/core/device_manager.py", line 248, in wifi_timer_callback
+                                                                                                                           if self.ping_counter.success_count_run % 30 == 0:
+                                                                                                                              ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+                                                                                                                       AttributeError: 'DeviceManager' object has no attribute 'ping_success_count_run'
+Nov 20 15:15:08 expidite-2ccf6789c489 /home/bee-ops/venv/lib/python3.13/site-packages/bee_ops/run_my_sensor.py[42637]: expidite DEBUG  [140733512020320] LED timer callback
+Nov 20 15:15:08 expidite-2ccf6789c489 /home/bee-ops/venv/lib/python3.13/site-packages/bee_ops/run_my_sensor.py[42637]: expidite DEBUG  [140733605933408] Orchestrator running (running)
+Nov 20 15:15:08 expidite-2ccf6789c489 kernel: rp1-cfe 1f00110000.csi: Using a link rate of 900 Mbps
+Nov 20 15:15:09 expidite-2ccf6789c489 kernel: rp1-cfe 1f00110000.csi: Using a link rate of 900 Mbps
+Nov 20 15:15:10 expidite-2ccf6789c489 kernel: rp1-cfe 1f00110000.csi: Using a link rate of 900 Mbps
+Nov 20 15:15:11 expidite-2ccf6789c489 kernel: rp1-cfe 1f00110000.csi: Using a link rate of 900 Mbps
+Nov 20 15:15:12 expidite-2ccf6789c489 kernel: rp1-cfe 1f00110000.csi: Using a link rate of 900 Mbps
+Nov 20 15:15:13 expidite-2ccf6789c489 kernel: rp1-cfe 1f00110000.csi: Using a link rate of 900 Mbps
+Nov 20 15:15:14 expidite-2ccf6789c489 kernel: rp1-cfe 1f00110000.csi: Using a link rate of 900 Mbps
+Nov 20 15:15:16 expidite-2ccf6789c489 kernel: rp1-cfe 1f00110000.csi: Using a link rate of 900 Mbps
+Nov 20 15:15:17 expidite-2ccf6789c489 kernel: rp1-cfe 1f00110000.csi: Using a link rate of 900 Mbps
+Nov 20 15:15:18 expidite-2ccf6789c489 kernel: rp1-cfe 1f00110000.csi: Using a link rate of 900 Mbps
+Nov 20 15:15:19 expidite-2ccf6789c489 kernel: rp1-cfe 1f00110000.csi: Using a link rate of 900 Mbps
+Nov 20 15:15:20 expidite-2ccf6789c489 kernel: rp1-cfe 1f00110000.csi: Using a link rate of 900 Mbps
+Nov 20 15:15:21 expidite-2ccf6789c489 kernel: rp1-cfe 1f00110000.csi: Using a link rate of 900 Mbps
+Nov 20 15:15:22 expidite-2ccf6789c489 kernel: rp1-cfe 1f00110000.csi: Using a link rate of 900 Mbps
+Nov 20 15:15:23 expidite-2ccf6789c489 kernel: rp1-cfe 1f00110000.csi: Using a link rate of 900 Mbps
+Nov 20 15:15:24 expidite-2ccf6789c489 kernel: rp1-cfe 1f00110000.csi: Using a link rate of 900 Mbps
+Nov 20 15:15:25 expidite-2ccf6789c489 kernel: rp1-cfe 1f00110000.csi: Using a link rate of 900 Mbps
+Nov 20 15:15:26 expidite-2ccf6789c489 kernel: rp1-cfe 1f00110000.csi: Using a link rate of 900 Mbps
+Nov 20 15:15:27 expidite-2ccf6789c489 sudo[43528]:  bee-ops : TTY=pts/1 ; PWD=/home/bee-ops/.expidite ; USER=root ; COMMAND=/usr/sbin/swapoff -a
+Nov 20 15:15:27 expidite-2ccf6789c489 sudo[43528]: pam_unix(sudo:session): session opened for user root(uid=0) by bee-ops(uid=1000)
+Nov 20 15:15:27 expidite-2ccf6789c489 sudo[43528]: pam_unix(sudo:session): session closed for user root
+Nov 20 15:15:27 expidite-2ccf6789c489 sudo[43532]:  bee-ops : TTY=pts/1 ; PWD=/home/bee-ops/.expidite ; USER=root ; COMMAND=/usr/bin/systemctl mask swap.target
+Nov 20 15:15:27 expidite-2ccf6789c489 sudo[43532]: pam_unix(sudo:session): session opened for user root(uid=0) by bee-ops(uid=1000)
+Nov 20 15:15:27 expidite-2ccf6789c489 systemd[1]: Reload requested from client PID 43535 ('systemctl') (unit user@1000.service)...
+Nov 20 15:15:27 expidite-2ccf6789c489 systemd[1]: Reloading...
+Nov 20 15:15:27 expidite-2ccf6789c489 systemd[1]: Reloading finished in 260 ms.
+Nov 20 15:15:27 expidite-2ccf6789c489 sudo[43532]: pam_unix(sudo:session): session closed for user root
+Nov 20 15:15:27 expidite-2ccf6789c489 systemd[1]: Starting man-db.service - Daily man-db regeneration...
+Nov 20 15:15:27 expidite-2ccf6789c489 crontab[43639]: (bee-ops) LIST (bee-ops)
+Nov 20 15:15:27 expidite-2ccf6789c489 EXPIDITE[43638]: nohup: ignoring input
+Nov 20 15:15:27 expidite-2ccf6789c489 crontab[43641]: (bee-ops) REPLACE (bee-ops)
+Nov 20 15:15:27 expidite-2ccf6789c489 crontab[43644]: (bee-ops) LIST (bee-ops)
+Nov 20 15:15:27 expidite-2ccf6789c489 crontab[43643]: (bee-ops) REPLACE (bee-ops)
+Nov 20 15:15:27 expidite-2ccf6789c489 crontab[43647]: (bee-ops) LIST (bee-ops)
+Nov 20 15:15:27 expidite-2ccf6789c489 crontab[43646]: (bee-ops) REPLACE (bee-ops)
+Nov 20 15:15:27 expidite-2ccf6789c489 /home/bee-ops/venv/lib/python3.13/site-packages/bee_ops/run_my_sensor.py[43637]: expidite INFO   [140735829034848] Loading /home/bee-ops/.expidite/system.cfg...
+Nov 20 15:15:27 expidite-2ccf6789c489 kernel: rp1-cfe 1f00110000.csi: Using a link rate of 900 Mbps
+Nov 20 15:15:28 expidite-2ccf6789c489 systemd[1]: man-db.service: Deactivated successfully.
+Nov 20 15:15:28 expidite-2ccf6789c489 systemd[1]: Finished man-db.service - Daily man-db regeneration.
+Nov 20 15:15:28 expidite-2ccf6789c489 /home/bee-ops/venv/lib/python3.13/site-packages/bee_ops/run_my_sensor.py[43637]: bee_ops INFO   [140735829034848] Creating RpiCore...
+Nov 20 15:15:28 expidite-2ccf6789c489 /home/bee-ops/venv/lib/python3.13/site-packages/bee_ops/run_my_sensor.py[43637]: bee_ops INFO   [140735829034848] Configuring RpiCore...
+Nov 20 15:15:29 expidite-2ccf6789c489 kernel: rp1-cfe 1f00110000.csi: Using a link rate of 900 Mbps
+Nov 20 15:15:30 expidite-2ccf6789c489 kernel: rp1-cfe 1f00110000.csi: Using a link rate of 900 Mbps
+Nov 20 15:15:31 expidite-2ccf6789c489 kernel: rp1-cfe 1f00110000.csi: Using a link rate of 900 Mbps
+Nov 20 15:15:31 expidite-2ccf6789c489 /home/bee-ops/venv/lib/python3.13/site-packages/bee_ops/run_my_sensor.py[43637]: expidite INFO   [140735829034848] TEST_CREATE of fleet config with 1 devices.
+Nov 20 15:15:31 expidite-2ccf6789c489 /home/bee-ops/venv/lib/python3.13/site-packages/bee_ops/run_my_sensor.py[43637]: expidite INFO   [140735829034848] Creating DP trees for 2ccf6789c489 using <function create_hivecam_device at 0x7fff43dfb380> and None
+Nov 20 15:15:31 expidite-2ccf6789c489 /home/bee-ops/venv/lib/python3.13/site-packages/bee_ops/run_my_sensor.py[43637]: expidite INFO   [140735829034848] Initialise sensor <RpicamSensor(RpicamSensor, initial)>
+Nov 20 15:15:31 expidite-2ccf6789c489 /home/bee-ops/venv/lib/python3.13/site-packages/bee_ops/run_my_sensor.py[43637]: expidite INFO   [140735829034848] Completed TEST_CREATE of fleet config.
+Nov 20 15:15:31 expidite-2ccf6789c489 /home/bee-ops/venv/lib/python3.13/site-packages/bee_ops/run_my_sensor.py[43637]: expidite INFO   [140735829034848] Setting log level in inventory from 20 to 10
+Nov 20 15:15:31 expidite-2ccf6789c489 /home/bee-ops/venv/lib/python3.13/site-packages/bee_ops/run_my_sensor.py[43637]: expidite DEBUG  [140735829034848] Debug logging enabled for expidite
+Nov 20 15:15:31 expidite-2ccf6789c489 /home/bee-ops/venv/lib/python3.13/site-packages/bee_ops/run_my_sensor.py[43637]: expidite INFO   [140735829034848] Inventory reloaded: found 1 devices
+Nov 20 15:15:31 expidite-2ccf6789c489 /home/bee-ops/venv/lib/python3.13/site-packages/bee_ops/run_my_sensor.py[43637]: bee_ops INFO   [140735829034848] Starting RpiCore...
+Nov 20 15:15:31 expidite-2ccf6789c489 /home/bee-ops/venv/lib/python3.13/site-packages/bee_ops/run_my_sensor.py[43637]: expidite INFO   [140735829034848] Starting RpiCore
+Nov 20 15:15:31 expidite-2ccf6789c489 /home/bee-ops/venv/lib/python3.13/site-packages/bee_ops/run_my_sensor.py[43637]: expidite DEBUG  [140735829034848] Start orchestrator with watchdog
+Nov 20 15:15:31 expidite-2ccf6789c489 /home/bee-ops/venv/lib/python3.13/site-packages/bee_ops/run_my_sensor.py[43637]: expidite INFO   [140734330040672] [dp_trees_create_method=<function create_hivecam_device at 0x7fff43dfb380>]
+                                                                                                                       [name='Robson1']
+                                                                                                                       [device_id='2ccf6789c489']
+                                                                                                                       [notes='Nick test device']
+                                                                                                                       [tags={}]
+                                                                                                                       [datastore='ROBSON']
+                                                                                                                       [cc_for_upload='expidite-upload']
+                                                                                                                       [cc_for_journals='expidite-journals']
+                                                                                                                       [cc_for_system_records='expidite-system-records']
+                                                                                                                       [cc_for_fair='expidite-fair']
+                                                                                                                       [cc_for_fair_latest='expidite-fair-device-latest']
+                                                                                                                       [cc_for_system_test='expidite-system-test']
+                                                                                                                       [heart_beat_frequency=600]
+                                                                                                                       [env_sensor_frequency=600]
+                                                                                                                       [review_mode_frequency=5]
+                                                                                                                       [max_recording_timer=180]
+                                                                                                                       [log_level=10]
+                                                                                                                       [attempt_wifi_recovery=True]
+                                                                                                                       [wifi_clients::
+                                                                                                                         [0]
+                                                                                                                           {ssid='bee-ops'}
+                                                                                                                           {priority=80}
+                                                                                                                           {pw='abcdabcd'}
+                                                                                                                         [1]
+                                                                                                                           {ssid='bee-ops-eero'}
+                                                                                                                           {priority=80}
+                                                                                                                           {pw='abcdabcd'}
+                                                                                                                         [2]
+                                                                                                                           {ssid='VM0045991'}
+                                                                                                                           {priority=70}
+                                                                                                                           {pw='beTtkkh8bghyrafc'}
+                                                                                                                       ]
+                                                                                                                       [tests_to_run=[]]
+Nov 20 15:15:31 expidite-2ccf6789c489 /home/bee-ops/venv/lib/python3.13/site-packages/bee_ops/run_my_sensor.py[43637]: expidite INFO   [140734330040672] Initialising EdgeOrchestrator <expidite_rpi.core.edge_orchestrator.EdgeOrchestrator object at 0x7fff43d423c0>
+Nov 20 15:15:31 expidite-2ccf6789c489 /home/bee-ops/venv/lib/python3.13/site-packages/bee_ops/run_my_sensor.py[43637]: expidite DEBUG  [140734330040672] Reset orchestrator state
+Nov 20 15:15:31 expidite-2ccf6789c489 /home/bee-ops/venv/lib/python3.13/site-packages/bee_ops/run_my_sensor.py[43637]: expidite INFO   [140734330040672] Initialise sensor <DeviceHealth(DeviceHealth, initial)>
+Nov 20 15:15:31 expidite-2ccf6789c489 /home/bee-ops/venv/lib/python3.13/site-packages/bee_ops/run_my_sensor.py[43637]: expidite DEBUG  [140734330040672] Initialising DPworker <DPworker(SYS-0, initial)>
+Nov 20 15:15:31 expidite-2ccf6789c489 /home/bee-ops/venv/lib/python3.13/site-packages/bee_ops/run_my_sensor.py[43637]: expidite DEBUG  [140734330040672] Creating AsyncCloudConnector instance
+Nov 20 15:15:31 expidite-2ccf6789c489 /home/bee-ops/venv/lib/python3.13/site-packages/bee_ops/run_my_sensor.py[43637]: expidite INFO   [140734330040672] Initialise sensor <StatTracker(StatTracker, initial)>
+Nov 20 15:15:31 expidite-2ccf6789c489 /home/bee-ops/venv/lib/python3.13/site-packages/bee_ops/run_my_sensor.py[43637]: expidite DEBUG  [140734330040672] Initialising DPworker <DPworker(SYS-0, initial)>
+Nov 20 15:15:31 expidite-2ccf6789c489 /home/bee-ops/venv/lib/python3.13/site-packages/bee_ops/run_my_sensor.py[43637]: expidite INFO   [140734330040672] Initialised EdgeOrchestrator <expidite_rpi.core.edge_orchestrator.EdgeOrchestrator object at 0x7fff43d423c0>
+Nov 20 15:15:31 expidite-2ccf6789c489 /home/bee-ops/venv/lib/python3.13/site-packages/bee_ops/run_my_sensor.py[43637]: expidite INFO   [140734330040672] Creating DP trees for 2ccf6789c489 using <function create_hivecam_device at 0x7fff43dfb380> and None
+Nov 20 15:15:31 expidite-2ccf6789c489 /home/bee-ops/venv/lib/python3.13/site-packages/bee_ops/run_my_sensor.py[43637]: expidite INFO   [140734330040672] Initialise sensor <RpicamSensor(RpicamSensor, initial)>
+Nov 20 15:15:31 expidite-2ccf6789c489 /home/bee-ops/venv/lib/python3.13/site-packages/bee_ops/run_my_sensor.py[43637]: expidite DEBUG  [140734330040672] Initialising DPworker <DPworker(CAMERA-0, initial)>
+Nov 20 15:15:31 expidite-2ccf6789c489 /home/bee-ops/venv/lib/python3.13/site-packages/bee_ops/run_my_sensor.py[43637]: expidite INFO   [140734330040672] Starting EdgeOrchestrator <expidite_rpi.core.edge_orchestrator.EdgeOrchestrator object at 0x7fff43d423c0>
+Nov 20 15:15:31 expidite-2ccf6789c489 sudo[43685]:  bee-ops : TTY=pts/1 ; PWD=/home/bee-ops/.expidite ; USER=root ; COMMAND=/usr/bin/nmcli -t -f NAME connection show
+Nov 20 15:15:31 expidite-2ccf6789c489 sudo[43685]: pam_unix(sudo:session): session opened for user root(uid=0) by bee-ops(uid=1000)
+Nov 20 15:15:31 expidite-2ccf6789c489 sudo[43685]: pam_unix(sudo:session): session closed for user root
+Nov 20 15:15:31 expidite-2ccf6789c489 /home/bee-ops/venv/lib/python3.13/site-packages/bee_ops/run_my_sensor.py[43637]: expidite INFO   [140734330040672] Client wifi connection bee-ops already exists
+Nov 20 15:15:31 expidite-2ccf6789c489 /home/bee-ops/venv/lib/python3.13/site-packages/bee_ops/run_my_sensor.py[43637]: expidite INFO   [140734330040672] Client wifi connection bee-ops-eero already exists
+Nov 20 15:15:31 expidite-2ccf6789c489 /home/bee-ops/venv/lib/python3.13/site-packages/bee_ops/run_my_sensor.py[43637]: expidite INFO   [140734330040672] Client wifi connection VM0045991 already exists
+Nov 20 15:15:31 expidite-2ccf6789c489 /home/bee-ops/venv/lib/python3.13/site-packages/bee_ops/run_my_sensor.py[43637]: expidite INFO   [140734330040672] DeviceManager Wifi timer started
+Nov 20 15:15:31 expidite-2ccf6789c489 /home/bee-ops/venv/lib/python3.13/site-packages/bee_ops/run_my_sensor.py[43637]: expidite INFO   [140734330040672] DeviceManager LED timer started
+Nov 20 15:15:31 expidite-2ccf6789c489 /home/bee-ops/venv/lib/python3.13/site-packages/bee_ops/run_my_sensor.py[43637]: expidite DEBUG  [140734330040672] Save FAIR record for <expidite_rpi.core.edge_orchestrator.EdgeOrchestrator object at 0x7fff43d423c0>
+Nov 20 15:15:31 expidite-2ccf6789c489 /home/bee-ops/venv/lib/python3.13/site-packages/bee_ops/run_my_sensor.py[43637]: expidite DEBUG  [140734296224096] _async_upload with delete_src=True, iteration 0 for [PosixPath('/expidite/tmp/tmp_20251120T151531718_0.4096/V3_2ccf6789c489_20251120T151531710.yaml')]
+Nov 20 15:15:31 expidite-2ccf6789c489 /home/bee-ops/venv/lib/python3.13/site-packages/bee_ops/run_my_sensor.py[43637]: expidite INFO   [140734330040672] Starting DPworker <DPworker(SYS-0, initial)> in Mode.EDGE mode
+Nov 20 15:15:31 expidite-2ccf6789c489 /home/bee-ops/venv/lib/python3.13/site-packages/bee_ops/run_my_sensor.py[43637]: expidite INFO   [140734287769952] Invoking run() on <DPworker(SYS-0, started 140734287769952)> in Mode.EDGE mode
+Nov 20 15:15:31 expidite-2ccf6789c489 /home/bee-ops/venv/lib/python3.13/site-packages/bee_ops/run_my_sensor.py[43637]: expidite DEBUG  [140734287769952] No DataProcessors registered; exiting DPworker loop; <DPworker(SYS-0, started 140734287769952)>
+Nov 20 15:15:31 expidite-2ccf6789c489 /home/bee-ops/venv/lib/python3.13/site-packages/bee_ops/run_my_sensor.py[43637]: expidite INFO   [140734330040672] Starting DPworker <DPworker(SYS-0, initial)> in Mode.EDGE mode
+Nov 20 15:15:31 expidite-2ccf6789c489 /home/bee-ops/venv/lib/python3.13/site-packages/bee_ops/run_my_sensor.py[43637]: expidite INFO   [140734279315808] Invoking run() on <DPworker(SYS-0, started 140734279315808)> in Mode.EDGE mode
+Nov 20 15:15:31 expidite-2ccf6789c489 /home/bee-ops/venv/lib/python3.13/site-packages/bee_ops/run_my_sensor.py[43637]: expidite DEBUG  [140734279315808] No DataProcessors registered; exiting DPworker loop; <DPworker(SYS-0, started 140734279315808)>
+Nov 20 15:15:31 expidite-2ccf6789c489 /home/bee-ops/venv/lib/python3.13/site-packages/bee_ops/run_my_sensor.py[43637]: expidite INFO   [140734330040672] Starting DPworker <DPworker(CAMERA-0, initial)> in Mode.EDGE mode
+Nov 20 15:15:31 expidite-2ccf6789c489 /home/bee-ops/venv/lib/python3.13/site-packages/bee_ops/run_my_sensor.py[43637]: expidite DEBUG  [140733931581792] _async_upload with delete_src=True, iteration 0 for [PosixPath('/expidite/tmp/tmp_20251120T151531729_0.7817/V3_2ccf6789c489.yaml')]
+Nov 20 15:15:31 expidite-2ccf6789c489 /home/bee-ops/venv/lib/python3.13/site-packages/bee_ops/run_my_sensor.py[43637]: expidite INFO   [140733923127648] Invoking run() on <DPworker(CAMERA-0, started 140733923127648)> in Mode.EDGE mode
+Nov 20 15:15:31 expidite-2ccf6789c489 /home/bee-ops/venv/lib/python3.13/site-packages/bee_ops/run_my_sensor.py[43637]: expidite INFO   [140734330040672] Starting sensor thread <DeviceHealth(DeviceHealth, initial)>
+Nov 20 15:15:31 expidite-2ccf6789c489 /home/bee-ops/venv/lib/python3.13/site-packages/bee_ops/run_my_sensor.py[43637]: expidite DEBUG  [140733923127648] _get_ds_files returning 0 files for RPICAM_2ccf6789c489_00_00
+Nov 20 15:15:31 expidite-2ccf6789c489 /home/bee-ops/venv/lib/python3.13/site-packages/bee_ops/run_my_sensor.py[43637]: expidite DEBUG  [140733923127648] Recorded SCORP stat for HIVECAMXY duration 0.001401
+Nov 20 15:15:31 expidite-2ccf6789c489 /home/bee-ops/venv/lib/python3.13/site-packages/bee_ops/run_my_sensor.py[43637]: expidite DEBUG  [140733923127648] DataProcessor (<bee_ops.sensors.processor_video_hivecam_hybrid.HivecamDp object at 0x7fff43d33610>) sleeping for 59.998517 seconds
+Nov 20 15:15:31 expidite-2ccf6789c489 /home/bee-ops/venv/lib/python3.13/site-packages/bee_ops/run_my_sensor.py[43637]: expidite INFO   [140733914673504] Starting DeviceHealth thread <DeviceHealth(DeviceHealth, started 140733914673504)>
+Nov 20 15:15:31 expidite-2ccf6789c489 /home/bee-ops/venv/lib/python3.13/site-packages/bee_ops/run_my_sensor.py[43637]: expidite INFO   [140734330040672] Starting sensor thread <StatTracker(StatTracker, initial)>
+Nov 20 15:15:31 expidite-2ccf6789c489 /home/bee-ops/venv/lib/python3.13/site-packages/bee_ops/run_my_sensor.py[43637]: expidite INFO   [140733906219360] Starting SelfTracker thread <StatTracker(StatTracker, started 140733906219360)>
+Nov 20 15:15:31 expidite-2ccf6789c489 /home/bee-ops/venv/lib/python3.13/site-packages/bee_ops/run_my_sensor.py[43637]: expidite DEBUG  [140733906219360] SelfTracker 0 running log_sample_data() for 3 DP engines
+Nov 20 15:15:31 expidite-2ccf6789c489 /home/bee-ops/venv/lib/python3.13/site-packages/bee_ops/run_my_sensor.py[43637]: expidite DEBUG  [140733906219360] Logged sample data for SCORE & SCORP
+Nov 20 15:15:31 expidite-2ccf6789c489 /home/bee-ops/venv/lib/python3.13/site-packages/bee_ops/run_my_sensor.py[43637]: expidite DEBUG  [140733906219360] Logged sample data for SCORE & SCORP
+Nov 20 15:15:31 expidite-2ccf6789c489 /home/bee-ops/venv/lib/python3.13/site-packages/bee_ops/run_my_sensor.py[43637]: expidite DEBUG  [140733906219360] Logged sample data for SCORE & SCORP
+Nov 20 15:15:31 expidite-2ccf6789c489 /home/bee-ops/venv/lib/python3.13/site-packages/bee_ops/run_my_sensor.py[43637]: expidite DEBUG  [140733906219360] Logged sample data for SCORE & SCORP
+Nov 20 15:15:31 expidite-2ccf6789c489 /home/bee-ops/venv/lib/python3.13/site-packages/bee_ops/run_my_sensor.py[43637]: expidite INFO   [140734330040672] Starting sensor thread <RpicamSensor(RpicamSensor, initial)>
+Nov 20 15:15:31 expidite-2ccf6789c489 /home/bee-ops/venv/lib/python3.13/site-packages/bee_ops/run_my_sensor.py[43637]: expidite DEBUG  [140734330040672] Datastream thread <DPworker(SYS-0, stopped 140734287769952)> is not alive
+Nov 20 15:15:31 expidite-2ccf6789c489 /home/bee-ops/venv/lib/python3.13/site-packages/bee_ops/run_my_sensor.py[43637]: expidite DEBUG  [140734330040672] Datastream thread <DPworker(SYS-0, stopped 140734279315808)> is not alive
+Nov 20 15:15:31 expidite-2ccf6789c489 /home/bee-ops/venv/lib/python3.13/site-packages/bee_ops/run_my_sensor.py[43637]: expidite INFO   [140733897765216] Recording video with command: rpicam-vid --rot 180 -b 3000000 --camera 0 --framerate 30 --lens-position 5 --exposure sport --width 640 --height 480 -o /expidite/tmp/tmp_20251120T151531735_0.6521.mp4 -t 180000
+Nov 20 15:15:31 expidite-2ccf6789c489 /home/bee-ops/venv/lib/python3.13/site-packages/bee_ops/run_my_sensor.py[43637]: expidite INFO   [140734330040672] EdgeOrchestrator started: {'RpiCore running': 'False', 'Sensor threads': '[<DeviceHealth(DeviceHealth, started 140733914673504)>, <StatTracker(StatTracker, started 140733906219360)>, <RpicamSensor(RpicamSensor, started 140733897765216)>]', 'Sensor threads alive': '3', 'DPtrees': '[<DPworker(SYS-0, stopped 140734287769952)>, <DPworker(SYS-0, stopped 140734279315808)>, <DPworker(CAMERA-0, started 140733923127648)>]', 'DPtrees alive': '1'}
+Nov 20 15:15:31 expidite-2ccf6789c489 /home/bee-ops/venv/lib/python3.13/site-packages/bee_ops/run_my_sensor.py[43637]: expidite DEBUG  [140734330040672] Orchestrator running (running)
+Nov 20 15:15:31 expidite-2ccf6789c489 /home/bee-ops/venv/lib/python3.13/site-packages/bee_ops/run_my_sensor.py[43637]: expidite ERROR  [140733897765216] RAISE_WARNING#V1_2ccf6789c489: Error in RpicamSensor: RAISE_WARNING#V1_2ccf6789c489: Error running command: rpicam-vid --rot 180 -b 3000000 --camera 0 --framerate 30 --lens-position 5 --exposure sport --width 640 --height 480 -o /expidite/tmp/tmp_20251120T151531735_0.6521.mp4 -t 180000, Error: b"[2:44:11.421106409] [43704] \x1b[1;32m INFO \x1b[1;37mCamera \x1b[1;34mcamera_manager.cpp:330 \x1b[0mlibcamera v0.5.2+99-bfd68f78\n[2:44:11.432248841] [43714] \x1b[1;32m INFO \x1b[1;37mRPI \x1b[1;34mpisp.cpp:720 \x1b[0mlibpisp version 1.3.0\n[2:44:11.432820228] [43714] \x1b[1;31mERROR \x1b[1;37mV4L2 \x1b[1;34mv4l2_device.cpp:390 \x1b[0;32m'imx708': \x1b[0mUnable to set controls: Device or resource busy\n[2:44:11.435028481] [43714] \x1b[1;32m INFO \x1b[1;37mIPAProxy \x1b[1;34mipa_proxy.cpp:180 \x1b[0mUsing tuning file /usr/share/libcamera/ipa/rpi/pisp/imx708.json\n[2:44:11.442189479] [43714] \x1b[1;32m INFO \x1b[1;37mCamera \x1b[1;34mcamera_manager.cpp:220 \x1b[0mAdding camera '/base/axi/pcie@1000120000/rp1/i2c@88000/imx708@1a' for pipeline handler rpi/pisp\n[2:44:11.442207257] [43714] \x1b[1;32m INFO \x1b[1;37mRPI \x1b[1;34mpisp.cpp:1179 \x1b[0mRegistered camera /base/axi/pcie@1000120000/rp1/i2c@88000/imx708@1a to CFE device /dev/media1 and ISP device /dev/media0 using PiSP variant BCM2712_C0\nMade X/EGL preview window\nMade DRM preview window\nPreview window unavailable\n[2:44:11.456341309] [43704] \x1b[1;32m INFO \x1b[1;37mCamera \x1b[1;34mcamera.cpp:1020 \x1b[0mPipeline handler in use by another process\nERROR: *** failed to acquire camera /base/axi/pcie@1000120000/rp1/i2c@88000/imx708@1a ***\n"
+                                                                                                                       Traceback (most recent call last):
+                                                                                                                         File "/home/bee-ops/venv/lib/python3.13/site-packages/expidite_rpi/sensors/sensor_rpicam_vid.py", line 154, in run
+                                                                                                                           rc = utils.run_cmd(cmd)
+                                                                                                                         File "/home/bee-ops/venv/lib/python3.13/site-packages/expidite_rpi/utils/utils.py", line 185, in run_cmd
+                                                                                                                           raise Exception(f"{root_cfg.RAISE_WARN()}Error running command: {cmd}, Error: {err!s}")
+                                                                                                                       Exception: RAISE_WARNING#V1_2ccf6789c489: Error running command: rpicam-vid --rot 180 -b 3000000 --camera 0 --framerate 30 --lens-position 5 --exposure sport --width 640 --height 480 -o /expidite/tmp/tmp_20251120T151531735_0.6521.mp4 -t 180000, Error: b"[2:44:11.421106409] [43704] \x1b[1;32m INFO \x1b[1;37mCamera \x1b[1;34mcamera_manager.cpp:330 \x1b[0mlibcamera v0.5.2+99-bfd68f78\n[2:44:11.432248841] [43714] \x1b[1;32m INFO \x1b[1;37mRPI \x1b[1;34mpisp.cpp:720 \x1b[0mlibpisp version 1.3.0\n[2:44:11.432820228] [43714] \x1b[1;31mERROR \x1b[1;37mV4L2 \x1b[1;34mv4l2_device.cpp:390 \x1b[0;32m'imx708': \x1b[0mUnable to set controls: Device or resource busy\n[2:44:11.435028481] [43714] \x1b[1;32m INFO \x1b[1;37mIPAProxy \x1b[1;34mipa_proxy.cpp:180 \x1b[0mUsing tuning file /usr/share/libcamera/ipa/rpi/pisp/imx708.json\n[2:44:11.442189479] [43714] \x1b[1;32m INFO \x1b[1;37mCamera \x1b[1;34mcamera_manager.cpp:220 \x1b[0mAdding camera '/base/axi/pcie@1000120000/rp1/i2c@88000/imx708@1a' for pipeline handler rpi/pisp\n[2:44:11.442207257] [43714] \x1b[1;32m INFO \x1b[1;37mRPI \x1b[1;34mpisp.cpp:1179 \x1b[0mRegistered camera /base/axi/pcie@1000120000/rp1/i2c@88000/imx708@1a to CFE device /dev/media1 and ISP device /dev/media0 using PiSP variant BCM2712_C0\nMade X/EGL preview window\nMade DRM preview window\nPreview window unavailable\n[2:44:11.456341309] [43704] \x1b[1;32m INFO \x1b[1;37mCamera \x1b[1;34mcamera.cpp:1020 \x1b[0mPipeline handler in use by another process\nERROR: *** failed to acquire camera /base/axi/pcie@1000120000/rp1/i2c@88000/imx708@1a ***\n"
+Nov 20 15:15:32 expidite-2ccf6789c489 /home/bee-ops/venv/lib/python3.13/site-packages/bee_ops/run_my_sensor.py[43637]: expidite DEBUG  [140733931581792] Deleting uploaded file: /expidite/tmp/tmp_20251120T151531729_0.7817/V3_2ccf6789c489.yaml
+Nov 20 15:15:32 expidite-2ccf6789c489 /home/bee-ops/venv/lib/python3.13/site-packages/bee_ops/run_my_sensor.py[43637]: expidite DEBUG  [140734296224096] Deleting uploaded file: /expidite/tmp/tmp_20251120T151531718_0.4096/V3_2ccf6789c489_20251120T151531710.yaml
+Nov 20 15:15:32 expidite-2ccf6789c489 kernel: rp1-cfe 1f00110000.csi: Using a link rate of 900 Mbps
+Nov 20 15:15:32 expidite-2ccf6789c489 /home/bee-ops/venv/lib/python3.13/site-packages/bee_ops/run_my_sensor.py[43637]: expidite DEBUG  [140735829034848] Datastream thread <DPworker(SYS-0, stopped 140734287769952)> is not alive
+Nov 20 15:15:32 expidite-2ccf6789c489 /home/bee-ops/venv/lib/python3.13/site-packages/bee_ops/run_my_sensor.py[43637]: expidite DEBUG  [140735829034848] Datastream thread <DPworker(SYS-0, stopped 140734279315808)> is not alive
+Nov 20 15:15:32 expidite-2ccf6789c489 /home/bee-ops/venv/lib/python3.13/site-packages/bee_ops/run_my_sensor.py[43637]: expidite INFO   [140735829034848] Initialise sensor <DeviceHealth(DeviceHealth, initial)>
+Nov 20 15:15:32 expidite-2ccf6789c489 /home/bee-ops/venv/lib/python3.13/site-packages/bee_ops/run_my_sensor.py[43637]: expidite DEBUG  [140734330040672] Orchestrator running (running)
+Nov 20 15:15:33 expidite-2ccf6789c489 kernel: rp1-cfe 1f00110000.csi: Using a link rate of 900 Mbps
+Nov 20 15:15:33 expidite-2ccf6789c489 /home/bee-ops/venv/lib/python3.13/site-packages/bee_ops/run_my_sensor.py[43637]: expidite DEBUG  [140734313132384] Wifi timer callback
+Nov 20 15:15:33 expidite-2ccf6789c489 sudo[43734]:  bee-ops : TTY=pts/1 ; PWD=/home/bee-ops/.expidite ; USER=root ; COMMAND=/usr/bin/nmcli -g SSID device wifi
+Nov 20 15:15:33 expidite-2ccf6789c489 sudo[43734]: pam_unix(sudo:session): session opened for user root(uid=0) by bee-ops(uid=1000)
+Nov 20 15:15:33 expidite-2ccf6789c489 /home/bee-ops/venv/lib/python3.13/site-packages/bee_ops/run_my_sensor.py[43637]: expidite DEBUG  [140734330040672] Orchestrator running (running)
+Nov 20 15:15:34 expidite-2ccf6789c489 kernel: rp1-cfe 1f00110000.csi: Using a link rate of 900 Mbps
+Nov 20 15:15:34 expidite-2ccf6789c489 /home/bee-ops/venv/lib/python3.13/site-packages/bee_ops/run_my_sensor.py[43637]: expidite DEBUG  [140734330040672] Orchestrator running (running)
+Nov 20 15:15:35 expidite-2ccf6789c489 sudo[43734]: pam_unix(sudo:session): session closed for user root
+Nov 20 15:15:35 expidite-2ccf6789c489 /home/bee-ops/venv/lib/python3.13/site-packages/bee_ops/run_my_sensor.py[43637]: expidite INFO   [140734313132384] VM0045991
+                                                                                                                       VM0045991
+                                                                                                                       SKYFHJ9Z
+                                                                                                                       
+                                                                                                                       BT-RTCPW9
+                                                                                                                       EE WiFi
+Nov 20 15:15:35 expidite-2ccf6789c489 sudo[43747]:  bee-ops : TTY=pts/1 ; PWD=/home/bee-ops/.expidite ; USER=root ; COMMAND=/usr/bin/vcgencmd get_throttled
+Nov 20 15:15:35 expidite-2ccf6789c489 sudo[43749]:  bee-ops : TTY=pts/1 ; PWD=/home/bee-ops/.expidite ; USER=root ; COMMAND=/usr/sbin/ifconfig wlan0
+Nov 20 15:15:35 expidite-2ccf6789c489 sudo[43746]:  bee-ops : TTY=pts/1 ; PWD=/home/bee-ops/.expidite ; USER=root ; COMMAND=/usr/bin/vcgencmd get_throttled
+Nov 20 15:15:35 expidite-2ccf6789c489 sudo[43747]: pam_unix(sudo:session): session opened for user root(uid=0) by bee-ops(uid=1000)
+Nov 20 15:15:35 expidite-2ccf6789c489 sudo[43746]: pam_unix(sudo:session): session opened for user root(uid=0) by bee-ops(uid=1000)
+Nov 20 15:15:35 expidite-2ccf6789c489 sudo[43749]: pam_unix(sudo:session): session opened for user root(uid=0) by bee-ops(uid=1000)
+Nov 20 15:15:35 expidite-2ccf6789c489 sudo[43749]: pam_unix(sudo:session): session closed for user root
+Nov 20 15:15:35 expidite-2ccf6789c489 sudo[43746]: pam_unix(sudo:session): session closed for user root
+Nov 20 15:15:35 expidite-2ccf6789c489 sudo[43747]: pam_unix(sudo:session): session closed for user root
+Nov 20 15:15:35 expidite-2ccf6789c489 /home/bee-ops/venv/lib/python3.13/site-packages/bee_ops/run_my_sensor.py[43637]: expidite INFO   [140734313132384] wlan0: flags=4163<UP,BROADCAST,RUNNING,MULTICAST>  mtu 1500
+                                                                                                                               inet 192.168.0.28  netmask 255.255.255.0  broadcast 192.168.0.255
+                                                                                                                               inet6 fe80::2563:13ff:d296:9d92  prefixlen 64  scopeid 0x20<link>
+                                                                                                                               ether 2c:cf:67:89:c4:89  txqueuelen 1000  (Ethernet)
+                                                                                                                               RX packets 29063  bytes 13695046 (13.0 MiB)
+                                                                                                                               RX errors 0  dropped 1  overruns 0  frame 0
+                                                                                                                               TX packets 32124  bytes 5715410 (5.4 MiB)
+                                                                                                                               TX errors 0  dropped 0 overruns 0  carrier 0  collisions 0
+Nov 20 15:15:35 expidite-2ccf6789c489 sudo[43760]:  bee-ops : TTY=pts/1 ; PWD=/home/bee-ops/.expidite ; USER=root ; COMMAND=/usr/bin/nmcli device wifi list ifname wlan0
+Nov 20 15:15:35 expidite-2ccf6789c489 sudo[43760]: pam_unix(sudo:session): session opened for user root(uid=0) by bee-ops(uid=1000)
+Nov 20 15:15:35 expidite-2ccf6789c489 sudo[43760]: pam_unix(sudo:session): session closed for user root
+Nov 20 15:15:35 expidite-2ccf6789c489 /home/bee-ops/venv/lib/python3.13/site-packages/bee_ops/run_my_sensor.py[43637]: expidite INFO   [140734313132384]         2C:FB:0F:75:8E:1C  VM0045991  Infra  1     405 Mbit/s  57      ▂▄▆_  WPA2     
+                                                                                                                       *       2C:FB:0F:75:8E:1D  VM0045991  Infra  108   540 Mbit/s  57      ▂▄▆_  WPA2     
+                                                                                                                               6A:D7:AA:59:46:52  EE WiFi    Infra  11    195 Mbit/s  34      ▂▄__  --       
+                                                                                                                               6A:D7:AA:59:46:55  --         Infra  11    195 Mbit/s  34      ▂▄__  WPA2     
+                                                                                                                               80:75:1F:B9:56:52  SKYFHJ9Z   Infra  6     260 Mbit/s  32      ▂▄__  WPA2     
+                                                                                                                               C0:D7:AA:59:46:51  BT-RTCPW9  Infra  11    195 Mbit/s  32      ▂▄__  WPA2
+Nov 20 15:15:35 expidite-2ccf6789c489 sudo[43769]:  bee-ops : TTY=pts/1 ; PWD=/home/bee-ops/.expidite ; USER=root ; COMMAND=/usr/sbin/arp -n
+Nov 20 15:15:35 expidite-2ccf6789c489 sudo[43769]: pam_unix(sudo:session): session opened for user root(uid=0) by bee-ops(uid=1000)
+Nov 20 15:15:35 expidite-2ccf6789c489 sudo[43769]: pam_unix(sudo:session): session closed for user root
+Nov 20 15:15:35 expidite-2ccf6789c489 /home/bee-ops/venv/lib/python3.13/site-packages/bee_ops/run_my_sensor.py[43637]: expidite INFO   [140734313132384] Address                  HWtype  HWaddress           Flags Mask            Iface
+                                                                                                                       192.168.0.1              ether   2c:fb:0f:75:8e:1b   C                     wlan0
+                                                                                                                       192.168.0.15             ether   dc:41:a9:a3:23:3e   C                     wlan0
+Nov 20 15:15:35 expidite-2ccf6789c489 /home/bee-ops/venv/lib/python3.13/site-packages/bee_ops/run_my_sensor.py[43637]: bee_ops INFO   [140735829034848] 
+                                                                                                                       
+                                                                                                                       
+                                                                                                                       RpiCore running: True
+                                                                                                                       
+                                                                                                                       
+                                                                                                                       # SENSOR CORE STATUS
+                                                                                                                         RpiCore running          True
+                                                                                                                         Sensor threads           [<DeviceHealth(DeviceHealth, started 140733914673504)>, <StatTracker(StatTracker, started 140733906219360)>, <RpicamSensor(RpicamSensor, started 140733897765216)>]
+                                                                                                                         Sensor threads alive     3
+                                                                                                                         DPtrees                  [<DPworker(SYS-0, stopped 140734287769952)>, <DPworker(SYS-0, stopped 140734279315808)>, <DPworker(CAMERA-0, started 140733923127648)>]
+                                                                                                                         DPtrees alive            1
+                                                                                                                       
+                                                                                                                       
+                                                                                                                       # DEVICE HEALTH
+                                                                                                                         boot_time                2025-11-20T12:31:20.000+00:00
+                                                                                                                         last_update_time         2025-11-20T15:15:27.556+00:00
+                                                                                                                         cpu_percent              14.9
+                                                                                                                         total_memory_gb          7.87
+                                                                                                                         memory_percent           9.5
+                                                                                                                         memory_free              6964M
+                                                                                                                         disk_percent             27.9
+                                                                                                                         disk_bytes_written_in_period 10601472
+                                                                                                                         io_bytes_sent            5728369
+                                                                                                                         expidite_mount_size      1.17 GB
+                                                                                                                         expidite_mount_percent   0.0
+                                                                                                                         packet_loss              0.0
+                                                                                                                         current_ping_fail_run    0
+                                                                                                                         cpu_temperature          47.4
+                                                                                                                         ssid                     VM0045991
+                                                                                                                         signal_strength          51
+                                                                                                                         ip_address               192.168.0.28
+                                                                                                                         power_status             0x0
+                                                                                                                         process_list             bee_ops.run_my_sensor
+                                                                                                                         expidite_version         Version: 0.1.125
+                                                                                                                         user_code_version        Version: 0.1.183
+Nov 20 15:15:35 expidite-2ccf6789c489 /home/bee-ops/venv/lib/python3.13/site-packages/bee_ops/run_my_sensor.py[43637]: expidite DEBUG  [140733914673504] Log sensor_data: {'boot_time': '2025-11-20T12:31:20.000+00:00', 'last_update_time': '2025-11-20T15:15:27.556+00:00', 'cpu_percent': '0.0', 'total_memory_gb': '7.87', 'memory_percent': '9.5', 'memory_free': '6964M', 'disk_percent': '27.9', 'disk_bytes_written_in_period': '10601472', 'io_bytes_sent': '5728369', 'expidite_mount_size': '1.17 GB', 'expidite_mount_percent': '0.0', 'packet_loss': '0.0', 'current_ping_fail_run': '0', 'cpu_temperature': '47.95', 'ssid': 'VM0045991', 'signal_strength': '51', 'ip_address': '192.168.0.28', 'power_status': '0x0', 'process_list': 'bee_ops.run_my_sensor', 'expidite_version': 'Version: 0.1.125', 'user_code_version': 'Version: 0.1.183'} to DPnode:HEART_2ccf6789c489_00_00 stream 0
+Nov 20 15:15:35 expidite-2ccf6789c489 /home/bee-ops/venv/lib/python3.13/site-packages/bee_ops/run_my_sensor.py[43637]: expidite DEBUG  [140733914673504] Creating JournalPool instance for mode: Mode.EDGE
+Nov 20 15:15:35 expidite-2ccf6789c489 /home/bee-ops/venv/lib/python3.13/site-packages/bee_ops/run_my_sensor.py[43637]: expidite DEBUG  [140733914673504] Lock: adding rows for stream HEART
+Nov 20 15:15:35 expidite-2ccf6789c489 /home/bee-ops/venv/lib/python3.13/site-packages/bee_ops/run_my_sensor.py[43637]: expidite DEBUG  [140733914673504] Unlock: added rows for stream HEART
+Nov 20 15:15:35 expidite-2ccf6789c489 /home/bee-ops/venv/lib/python3.13/site-packages/bee_ops/run_my_sensor.py[43637]: expidite INFO   [140733914673504] TELEM#V1: Save log: {'boot_time': '2025-11-20T12:31:20.000+00:00', 'last_update_time': '2025-11-20T15:15:27.556+00:00', 'cpu_percent': '0.0', 'total_memory_gb': '7.87', 'memory_percent': '9.5', 'memory_free': '6964M', 'disk_percent': '27.9', 'disk_bytes_written_in_period': '10601472', 'io_bytes_sent': '5728369', 'expidite_mount_size': '1.17 GB', 'expidite_mount_percent': '0.0', 'cpu_temperature': '47.95', 'ssid': 'VM0045991', 'signal_strength': '51', 'packet_loss': '0.0', 'current_ping_fail_run': '0', 'ip_address': '192.168.0.28', 'power_status': '0x0', 'process_list': 'bee_ops.run_my_sensor', 'expidite_version': 'Version: 0.1.125', 'user_code_version': 'Version: 0.1.183', 'version_id': 'V3', 'data_type_id': 'HEART', 'device_id': '2ccf6789c489', 'sensor_index': 0, 'stream_index': 0, 'timestamp': '2025-11-20T15:15:35.085+00:00', 'device_name': 'Robson1'}
+Nov 20 15:15:35 expidite-2ccf6789c489 /home/bee-ops/venv/lib/python3.13/site-packages/bee_ops/run_my_sensor.py[43637]: expidite INFO   [140733914673504] Fetched 1 logs from the journal.
+Nov 20 15:15:35 expidite-2ccf6789c489 /home/bee-ops/venv/lib/python3.13/site-packages/bee_ops/run_my_sensor.py[43637]: expidite DEBUG  [140733914673504] Log sensor_data: {'time_logged': datetime.datetime(2025, 11, 20, 15, 15, 31, 787772, tzinfo=datetime.timezone(datetime.timedelta(0), 'GMT')), 'message': 'expidite ERROR  [140733897765216] RAISE_WARNING#V1_2ccf6789c489: Error in RpicamSensor: RAISE_WARNING#V1_2ccf6789c489: Error running command: rpicam-vid --rot 180 -b 3000000 --camera 0 --framerate 30 --lens-position 5 --exposure sport --width 640 --height 480 -o /expidite/tmp/tmp_20251120T151531735_0.6521.mp4 -t 180000, Error: b"[2:44:11.421106409] [43704] \\x1b[1;32m INFO \\x1b[1;37mCamera \\x1b[1;34mcamera_manager.cpp:330 \\x1b[0mlibcamera v0.5.2+99-bfd68f78\\n[2:44:11.432248841] [43714] \\x1b[1;32m INFO \\x1b[1;37mRPI \\x1b[1;34mpisp.cpp:720 \\x1b[0mlibpisp version 1.3.0\\n[2:44:11.432820228] [43714] \\x1b[1;31mERROR \\x1b[1;37mV4L2 \\x1b[1;34mv4l2_device.cpp:390 \\x1b[0;32m\'imx708\': \\x1b[0mUnable to set controls: Device or resource busy\\n[2:44:11.435028481] [43714] \\x1b[1;32m INFO \\x1b[1;37mIPAProxy \\x1b[1;34mipa_proxy.cpp:180 \\x1b[0mUsing tuning file /usr/share/libcamera/ipa/rpi/pisp/imx708.json\\n[2:44:11.442189479] [43714] \\x1b[1;32m INFO \\x1b[1;37mCamera \\x1b[1;34mcamera_manager.cpp:220 \\x1b[0mAdding camera \'/base/axi/pcie@1000120000/rp1/i2c@88000/imx708@1a\' for pipeline handler rpi/pisp\\n[2:44:11.442207257] [43714] \\x1b[1;32m INFO \\x1b[1;37mRPI \\x1b[1;34mpisp.cpp:1179 \\x1b[0mRegistered camera /base/axi/pcie@1000120000/rp1/i2c@88000/imx708@1a to CFE device /dev/media1 and ISP device /dev/media0 using PiSP variant BCM2712_C0\\nMade X/EGL preview window\\nMade DRM preview window\\nPreview window unavailable\\n[2:44:11.456341309] [43704] \\x1b[1;32m INFO \\x1b[1;37mCamera \\x1b[1;34mcamera.cpp:1020 \\x1b[0mPipeline handler in use by another process\\nERROR: *** failed to acquire camera /base/axi/pcie@1000120000/rp1/i2c@88000/imx708@1a ***\\n"\nTraceback (most recent call last):\n  File "/home/bee-ops/venv/lib/python3.13/site-packages/expidite_rpi/sensors/sensor_rpicam_vid.py", line 154, in run\n    rc = utils.run_cmd(cmd)\n  File "/home/bee-ops/venv/lib/python3.13/site-packages/expidite_rpi/utils/utils.py", line 185, in run_cmd\n    raise Exception(f"{root_cfg.RAISE_WARN()}Error running command: {cmd}, Error: {err!s}")\nException: RAISE_WARNING#V1_2ccf6789c489: Error running command: rpicam-vid --rot 180 -b 3000000 --camera 0 --framerate 30 --lens-position 5 --exposure sport --width 640 --height 480 -o /expidite/tmp/tmp_20251120T151531735_0.6521.mp4 -t 180000, Error: b"[2:44:11.421106409] [43704] \\x1b[1;32m INFO \\x1b[1;37mCamera \\x1b[1;34mcamera_manager.cpp:330 \\x1b[0mlibcamera v0.5.2+99-bfd68f78\\n[2:44:11.432248841] [43714] \\x1b[1;32m INFO \\x1b[1;37mRPI \\x1b[1;34mpisp.cpp:720 \\x1b[0mlibpisp version 1.3.0\\n[2:44:11.432820228] [43714] \\x1b[1;31mERROR \\x1b[1;37mV4L2 \\x1b[1;34mv4l2_device.cpp:390 \\x1b[0;32m\'imx708\': \\x1b[0mUnable to set controls: Device or resource busy\\n[2:44:11.435028481] [43714] \\x1b[1;32m INFO \\x1b[1;37mIPAProxy \\x1b[1;34mipa_proxy.cpp:180 \\x1b[0mUsing tuning file /usr/share/libcamera/ipa/rpi/pisp/imx708.json\\n[2:44:11.442189479] [43714] \\x1b[1;32m INFO \\x1b[1;37mCamera \\x1b[1;34mcamera_manager.cpp:220 \\x1b[0mAdding camera \'/base/axi/pcie@1000120000/rp1/i2c@88000/imx708@1a\' for pipeline handler rpi/pisp\\n[2:44:11.442207257] [43714] \\x1b[1;32m INFO \\x1b[1;37mRPI \\x1b[1;34mpisp.cpp:1179 \\x1b[0mRegistered camera /base/axi/pcie@1000120000/rp1/i2c@88000/imx708@1a to CFE device /dev/media1 and ISP device /dev/media0 using PiSP variant BCM2712_C0\\nMade X/EGL preview window\\nMade DRM preview window\\nPreview window unavailable\\n[2:44:11.456341309] [43704] \\x1b[1;32m INFO \\x1b[1;37mCamera \\x1b[1;34mcamera.cpp:1020 \\x1b[0mPipeline handler in use by another process\\nERROR: *** failed to acquire camera /base/axi/pcie@1000120000/rp1/i2c@88000/imx708@1a ***\\n"', 'process_id': 43637, 'process_name': 'python', 'executable_path': '/usr/bin/python3.13', 'priority': 3} to DPnode:WARNING_2ccf6789c489_00_01 stream 1
+Nov 20 15:15:35 expidite-2ccf6789c489 /home/bee-ops/venv/lib/python3.13/site-packages/bee_ops/run_my_sensor.py[43637]: expidite DEBUG  [140733914673504] Lock: adding rows for stream WARNING
+Nov 20 15:15:35 expidite-2ccf6789c489 /home/bee-ops/venv/lib/python3.13/site-packages/bee_ops/run_my_sensor.py[43637]: expidite DEBUG  [140733914673504] Unlock: added rows for stream WARNING
+Nov 20 15:15:35 expidite-2ccf6789c489 /home/bee-ops/venv/lib/python3.13/site-packages/bee_ops/run_my_sensor.py[43637]: expidite INFO   [140733914673504] TELEM#V1: Save log: {'time_logged': datetime.datetime(2025, 11, 20, 15, 15, 31, 787772, tzinfo=datetime.timezone(datetime.timedelta(0), 'GMT')), 'message': 'expidite ERROR  [140733897765216] RAISE_WARNING#V1_2ccf6789c489: Error in RpicamSensor: RAISE_WARNING#V1_2ccf6789c489: Error running command: rpicam-vid --rot 180 -b 3000000 --camera 0 --framerate 30 --lens-position 5 --exposure sport --width 640 --height 480 -o /expidite/tmp/tmp_20251120T151531735_0.6521.mp4 -t 180000, Error: b"[2:44:11.421106409] [43704] \\x1b[1;32m INFO \\x1b[1;37mCamera \\x1b[1;34mcamera_manager.cpp:330 \\x1b[0mlibcamera v0.5.2+99-bfd68f78\\n[2:44:11.432248841] [43714] \\x1b[1;32m INFO \\x1b[1;37mRPI \\x1b[1;34mpisp.cpp:720 \\x1b[0mlibpisp version 1.3.0\\n[2:44:11.432820228] [43714] \\x1b[1;31mERROR \\x1b[1;37mV4L2 \\x1b[1;34mv4l2_device.cpp:390 \\x1b[0;32m\'imx708\': \\x1b[0mUnable to set controls: Device or resource busy\\n[2:44:11.435028481] [43714] \\x1b[1;32m INFO \\x1b[1;37mIPAProxy \\x1b[1;34mipa_proxy.cpp:180 \\x1b[0mUsing tuning file /usr/share/libcamera/ipa/rpi/pisp/imx708.json\\n[2:44:11.442189479] [43714] \\x1b[1;32m INFO \\x1b[1;37mCamera \\x1b[1;34mcamera_manager.cpp:220 \\x1b[0mAdding camera \'/base/axi/pcie@1000120000/rp1/i2c@88000/imx708@1a\' for pipeline handler rpi/pisp\\n[2:44:11.442207257] [43714] \\x1b[1;32m INFO \\x1b[1;37mRPI \\x1b[1;34mpisp.cpp:1179 \\x1b[0mRegistered camera /base/axi/pcie@1000120000/rp1/i2c@88000/imx708@1a to CFE device /dev/media1 and ISP device /dev/media0 using PiSP variant BCM2712_C0\\nMade X/EGL preview window\\nMade DRM preview window\\nPreview window unavailable\\n[2:44:11.456341309] [43704] \\x1b[1;32m INFO \\x1b[1;37mCamera \\x1b[1;34mcamera.cpp:1020 \\x1b[0mPipeline handler in use by another process\\nERROR: *** failed to acquire camera /base/axi/pcie@1000120000/rp1/i2c@88000/imx708@1a ***\\n"\nTraceback (most recent call last):\n  File "/home/bee-ops/venv/lib/python3.13/site-packages/expidite_rpi/sensors/sensor_rpicam_vid.py", line 154, in run\n    rc = utils.run_cmd(cmd)\n  File "/home/bee-ops/venv/lib/python3.13/site-packages/expidite_rpi/utils/utils.py", line 185, in run_cmd\n    raise Exception(f"{root_cfg.RAISE_WARN()}Error running command: {cmd}, Error: {err!s}")\nException: RAISE_WARNING#V1_2ccf6789c489: Error running command: rpicam-vid --rot 180 -b 3000000 --camera 0 --framerate 30 --lens-position 5 --exposure sport --width 640 --height 480 -o /expidite/tmp/tmp_20251120T151531735_0.6521.mp4 -t 180000, Error: b"[2:44:11.421106409] [43704] \\x1b[1;32m INFO \\x1b[1;37mCamera \\x1b[1;34mcamera_manager.cpp:330 \\x1b[0mlibcamera v0.5.2+99-bfd68f78\\n[2:44:11.432248841] [43714] \\x1b[1;32m INFO \\x1b[1;37mRPI \\x1b[1;34mpisp.cpp:720 \\x1b[0mlibpisp version 1.3.0\\n[2:44:11.432820228] [43714] \\x1b[1;31mERROR \\x1b[1;37mV4L2 \\x1b[1;34mv4l2_device.cpp:390 \\x1b[0;32m\'imx708\': \\x1b[0mUnable to set controls: Device or resource busy\\n[2:44:11.435028481] [43714] \\x1b[1;32m INFO \\x1b[1;37mIPAProxy \\x1b[1;34mipa_proxy.cpp:180 \\x1b[0mUsing tuning file /usr/share/libcamera/ipa/rpi/pisp/imx708.json\\n[2:44:11.442189479] [43714] \\x1b[1;32m INFO \\x1b[1;37mCamera \\x1b[1;34mcamera_manager.cpp:220 \\x1b[0mAdding camera \'/base/axi/pcie@1000120000/rp1/i2c@88000/imx708@1a\' for pipeline handler rpi/pisp\\n[2:44:11.442207257] [43714] \\x1b[1;32m INFO \\x1b[1;37mRPI \\x1b[1;34mpisp.cpp:1179 \\x1b[0mRegistered camera /base/axi/pcie@1000120000/rp1/i2c@88000/imx708@1a to CFE device /dev/media1 and ISP device /dev/media0 using PiSP variant BCM2712_C0\\nMade X/EGL preview window\\nMade DRM preview window\\nPreview window unavailable\\n[2:44:11.456341309] [43704] \\x1b[1;32m INFO \\x1b[1;37mCamera \\x1b[1;34mcamera.cpp:1020 \\x1b[0mPipeline handler in use by another process\\nERROR: *** failed to acquire camera /base/axi/pcie@1000120000/rp1/i2c@88000/imx708@1a ***\\n"', 'process_id': 43637, 'process_name': 'python', 'executable_path': '/usr/bin/python3.13', 'priority': 3, 'version_id': 'V3', 'data_type_id': 'WARNING', 'device_id': '2ccf6789c489', 'sensor_index': 0, 'stream_index': 1, 'timestamp': '2025-11-20T15:15:35.089+00:00', 'device_name': 'Robson1'}
+Nov 20 15:15:35 expidite-2ccf6789c489 kernel: rp1-cfe 1f00110000.csi: Using a link rate of 900 Mbps
+Nov 20 15:15:35 expidite-2ccf6789c489 /home/bee-ops/venv/lib/python3.13/site-packages/bee_ops/run_my_sensor.py[43637]: expidite DEBUG  [140734330040672] Orchestrator running (running)
+Nov 20 15:15:36 expidite-2ccf6789c489 kernel: rp1-cfe 1f00110000.csi: Using a link rate of 900 Mbps
+Nov 20 15:15:36 expidite-2ccf6789c489 /home/bee-ops/venv/lib/python3.13/site-packages/bee_ops/run_my_sensor.py[43637]: expidite DEBUG  [140734304678240] LED timer callback
+Nov 20 15:15:36 expidite-2ccf6789c489 /home/bee-ops/venv/lib/python3.13/site-packages/bee_ops/run_my_sensor.py[43637]: expidite DEBUG  [140734330040672] Orchestrator running (running)
+Nov 20 15:15:37 expidite-2ccf6789c489 /home/bee-ops/venv/lib/python3.13/site-packages/bee_ops/run_my_sensor.py[43637]: expidite DEBUG  [140734313132384] Wifi timer callback
+Nov 20 15:15:37 expidite-2ccf6789c489 kernel: rp1-cfe 1f00110000.csi: Using a link rate of 900 Mbps
+Nov 20 15:15:37 expidite-2ccf6789c489 /home/bee-ops/venv/lib/python3.13/site-packages/bee_ops/run_my_sensor.py[43637]: expidite DEBUG  [140734330040672] Orchestrator running (running)
+Nov 20 15:15:38 expidite-2ccf6789c489 kernel: rp1-cfe 1f00110000.csi: Using a link rate of 900 Mbps
+Nov 20 15:15:38 expidite-2ccf6789c489 /home/bee-ops/venv/lib/python3.13/site-packages/bee_ops/run_my_sensor.py[43637]: expidite DEBUG  [140734330040672] Orchestrator running (running)
+Nov 20 15:15:39 expidite-2ccf6789c489 /home/bee-ops/venv/lib/python3.13/site-packages/bee_ops/run_my_sensor.py[43637]: expidite DEBUG  [140734313132384] Wifi timer callback
+Nov 20 15:15:39 expidite-2ccf6789c489 /home/bee-ops/venv/lib/python3.13/site-packages/bee_ops/run_my_sensor.py[43637]: expidite DEBUG  [140734330040672] Orchestrator running (running)
+Nov 20 15:15:39 expidite-2ccf6789c489 kernel: rp1-cfe 1f00110000.csi: Using a link rate of 900 Mbps
+Nov 20 15:15:40 expidite-2ccf6789c489 /home/bee-ops/venv/lib/python3.13/site-packages/bee_ops/run_my_sensor.py[43637]: expidite DEBUG  [140734330040672] Orchestrator running (running)
+Nov 20 15:15:40 expidite-2ccf6789c489 kernel: rp1-cfe 1f00110000.csi: Using a link rate of 900 Mbps
+Nov 20 15:15:41 expidite-2ccf6789c489 /home/bee-ops/venv/lib/python3.13/site-packages/bee_ops/run_my_sensor.py[43637]: expidite DEBUG  [140734313132384] Wifi timer callback
+Nov 20 15:15:41 expidite-2ccf6789c489 /home/bee-ops/venv/lib/python3.13/site-packages/bee_ops/run_my_sensor.py[43637]: expidite DEBUG  [140734304678240] LED timer callback
+Nov 20 15:15:41 expidite-2ccf6789c489 /home/bee-ops/venv/lib/python3.13/site-packages/bee_ops/run_my_sensor.py[43637]: expidite DEBUG  [140734330040672] Orchestrator running (running)
+Nov 20 15:15:41 expidite-2ccf6789c489 kernel: rp1-cfe 1f00110000.csi: Using a link rate of 900 Mbps
+Nov 20 15:15:42 expidite-2ccf6789c489 /home/bee-ops/venv/lib/python3.13/site-packages/bee_ops/run_my_sensor.py[43637]: expidite DEBUG  [140734330040672] Orchestrator running (running)
+Nov 20 15:15:43 expidite-2ccf6789c489 kernel: rp1-cfe 1f00110000.csi: Using a link rate of 900 Mbps
+Nov 20 15:15:43 expidite-2ccf6789c489 /home/bee-ops/venv/lib/python3.13/site-packages/bee_ops/run_my_sensor.py[43637]: expidite DEBUG  [140734313132384] Wifi timer callback
+Nov 20 15:15:43 expidite-2ccf6789c489 /home/bee-ops/venv/lib/python3.13/site-packages/bee_ops/run_my_sensor.py[43637]: expidite DEBUG  [140734330040672] Orchestrator running (running)
+Nov 20 15:15:44 expidite-2ccf6789c489 kernel: rp1-cfe 1f00110000.csi: Using a link rate of 900 Mbps
+Nov 20 15:15:44 expidite-2ccf6789c489 /home/bee-ops/venv/lib/python3.13/site-packages/bee_ops/run_my_sensor.py[43637]: expidite DEBUG  [140734330040672] Orchestrator running (running)
+Nov 20 15:15:45 expidite-2ccf6789c489 kernel: rp1-cfe 1f00110000.csi: Using a link rate of 900 Mbps
+Nov 20 15:15:45 expidite-2ccf6789c489 /home/bee-ops/venv/lib/python3.13/site-packages/bee_ops/run_my_sensor.py[43637]: expidite DEBUG  [140734313132384] Wifi timer callback
+Nov 20 15:15:45 expidite-2ccf6789c489 /home/bee-ops/venv/lib/python3.13/site-packages/bee_ops/run_my_sensor.py[43637]: expidite DEBUG  [140734330040672] Orchestrator running (running)
+Nov 20 15:15:46 expidite-2ccf6789c489 kernel: rp1-cfe 1f00110000.csi: Using a link rate of 900 Mbps
+Nov 20 15:15:46 expidite-2ccf6789c489 /home/bee-ops/venv/lib/python3.13/site-packages/bee_ops/run_my_sensor.py[43637]: expidite DEBUG  [140734304678240] LED timer callback
+Nov 20 15:15:46 expidite-2ccf6789c489 /home/bee-ops/venv/lib/python3.13/site-packages/bee_ops/run_my_sensor.py[43637]: expidite DEBUG  [140734330040672] Orchestrator running (running)
+Nov 20 15:15:47 expidite-2ccf6789c489 /home/bee-ops/venv/lib/python3.13/site-packages/bee_ops/run_my_sensor.py[43637]: expidite DEBUG  [140734313132384] Wifi timer callback
+Nov 20 15:15:47 expidite-2ccf6789c489 kernel: rp1-cfe 1f00110000.csi: Using a link rate of 900 Mbps
+Nov 20 15:15:47 expidite-2ccf6789c489 /home/bee-ops/venv/lib/python3.13/site-packages/bee_ops/run_my_sensor.py[43637]: expidite DEBUG  [140734330040672] Orchestrator running (running)
+Nov 20 15:15:48 expidite-2ccf6789c489 kernel: rp1-cfe 1f00110000.csi: Using a link rate of 900 Mbps
+Nov 20 15:15:48 expidite-2ccf6789c489 /home/bee-ops/venv/lib/python3.13/site-packages/bee_ops/run_my_sensor.py[43637]: expidite DEBUG  [140734330040672] Orchestrator running (running)
+Nov 20 15:15:49 expidite-2ccf6789c489 /home/bee-ops/venv/lib/python3.13/site-packages/bee_ops/run_my_sensor.py[43637]: expidite DEBUG  [140734313132384] Wifi timer callback
+Nov 20 15:15:49 expidite-2ccf6789c489 kernel: rp1-cfe 1f00110000.csi: Using a link rate of 900 Mbps
+Nov 20 15:15:49 expidite-2ccf6789c489 /home/bee-ops/venv/lib/python3.13/site-packages/bee_ops/run_my_sensor.py[43637]: expidite DEBUG  [140734330040672] Orchestrator running (running)
+Nov 20 15:15:50 expidite-2ccf6789c489 kernel: rp1-cfe 1f00110000.csi: Using a link rate of 900 Mbps
+Nov 20 15:15:50 expidite-2ccf6789c489 /home/bee-ops/venv/lib/python3.13/site-packages/bee_ops/run_my_sensor.py[43637]: expidite DEBUG  [140734330040672] Orchestrator running (running)
+Nov 20 15:15:51 expidite-2ccf6789c489 /home/bee-ops/venv/lib/python3.13/site-packages/bee_ops/run_my_sensor.py[43637]: expidite DEBUG  [140734313132384] Wifi timer callback
+Nov 20 15:15:51 expidite-2ccf6789c489 kernel: rp1-cfe 1f00110000.csi: Using a link rate of 900 Mbps
+Nov 20 15:15:51 expidite-2ccf6789c489 /home/bee-ops/venv/lib/python3.13/site-packages/bee_ops/run_my_sensor.py[43637]: expidite DEBUG  [140734304678240] LED timer callback
+Nov 20 15:15:51 expidite-2ccf6789c489 /home/bee-ops/venv/lib/python3.13/site-packages/bee_ops/run_my_sensor.py[43637]: expidite DEBUG  [140734330040672] Orchestrator running (running)
+Nov 20 15:15:52 expidite-2ccf6789c489 kernel: rp1-cfe 1f00110000.csi: Using a link rate of 900 Mbps
+Nov 20 15:15:52 expidite-2ccf6789c489 /home/bee-ops/venv/lib/python3.13/site-packages/bee_ops/run_my_sensor.py[43637]: expidite DEBUG  [140734330040672] Orchestrator running (running)
+Nov 20 15:15:53 expidite-2ccf6789c489 /home/bee-ops/venv/lib/python3.13/site-packages/bee_ops/run_my_sensor.py[43637]: expidite DEBUG  [140734313132384] Wifi timer callback
+Nov 20 15:15:53 expidite-2ccf6789c489 /home/bee-ops/venv/lib/python3.13/site-packages/bee_ops/run_my_sensor.py[43637]: expidite DEBUG  [140734330040672] Orchestrator running (running)
+Nov 20 15:15:53 expidite-2ccf6789c489 kernel: rp1-cfe 1f00110000.csi: Using a link rate of 900 Mbps
+Nov 20 15:15:54 expidite-2ccf6789c489 /home/bee-ops/venv/lib/python3.13/site-packages/bee_ops/run_my_sensor.py[43637]: expidite DEBUG  [140734330040672] Orchestrator running (running)
+Nov 20 15:15:54 expidite-2ccf6789c489 kernel: rp1-cfe 1f00110000.csi: Using a link rate of 900 Mbps
+Nov 20 15:15:55 expidite-2ccf6789c489 /home/bee-ops/venv/lib/python3.13/site-packages/bee_ops/run_my_sensor.py[43637]: expidite DEBUG  [140734313132384] Wifi timer callback
+Nov 20 15:15:55 expidite-2ccf6789c489 /home/bee-ops/venv/lib/python3.13/site-packages/bee_ops/run_my_sensor.py[43637]: expidite DEBUG  [140734330040672] Orchestrator running (running)
+Nov 20 15:15:55 expidite-2ccf6789c489 kernel: rp1-cfe 1f00110000.csi: Using a link rate of 900 Mbps
+Nov 20 15:15:56 expidite-2ccf6789c489 /home/bee-ops/venv/lib/python3.13/site-packages/bee_ops/run_my_sensor.py[43637]: expidite DEBUG  [140734304678240] LED timer callback
+Nov 20 15:15:56 expidite-2ccf6789c489 /home/bee-ops/venv/lib/python3.13/site-packages/bee_ops/run_my_sensor.py[43637]: expidite DEBUG  [140734330040672] Orchestrator running (running)
+Nov 20 15:15:57 expidite-2ccf6789c489 kernel: rp1-cfe 1f00110000.csi: Using a link rate of 900 Mbps
+Nov 20 15:15:57 expidite-2ccf6789c489 /home/bee-ops/venv/lib/python3.13/site-packages/bee_ops/run_my_sensor.py[43637]: expidite DEBUG  [140734313132384] Wifi timer callback
+Nov 20 15:15:57 expidite-2ccf6789c489 /home/bee-ops/venv/lib/python3.13/site-packages/bee_ops/run_my_sensor.py[43637]: expidite DEBUG  [140734330040672] Orchestrator running (running)
+Nov 20 15:15:58 expidite-2ccf6789c489 kernel: rp1-cfe 1f00110000.csi: Using a link rate of 900 Mbps
+Nov 20 15:15:58 expidite-2ccf6789c489 /home/bee-ops/venv/lib/python3.13/site-packages/bee_ops/run_my_sensor.py[43637]: expidite DEBUG  [140734330040672] Orchestrator running (running)
+Nov 20 15:15:59 expidite-2ccf6789c489 kernel: rp1-cfe 1f00110000.csi: Using a link rate of 900 Mbps
+Nov 20 15:15:59 expidite-2ccf6789c489 /home/bee-ops/venv/lib/python3.13/site-packages/bee_ops/run_my_sensor.py[43637]: expidite DEBUG  [140734313132384] Wifi timer callback
+Nov 20 15:15:59 expidite-2ccf6789c489 /home/bee-ops/venv/lib/python3.13/site-packages/bee_ops/run_my_sensor.py[43637]: expidite DEBUG  [140734330040672] Orchestrator running (running)
+Nov 20 15:16:00 expidite-2ccf6789c489 kernel: rp1-cfe 1f00110000.csi: Using a link rate of 900 Mbps
+Nov 20 15:16:00 expidite-2ccf6789c489 /home/bee-ops/venv/lib/python3.13/site-packages/bee_ops/run_my_sensor.py[43637]: expidite DEBUG  [140734330040672] Orchestrator running (running)
+Nov 20 15:16:01 expidite-2ccf6789c489 kernel: rp1-cfe 1f00110000.csi: Using a link rate of 900 Mbps
+Nov 20 15:16:01 expidite-2ccf6789c489 /home/bee-ops/venv/lib/python3.13/site-packages/bee_ops/run_my_sensor.py[43637]: expidite DEBUG  [140734313132384] Wifi timer callback
+Nov 20 15:16:01 expidite-2ccf6789c489 cron[767]: (bee-ops) RELOAD (crontabs/bee-ops)
+Nov 20 15:16:01 expidite-2ccf6789c489 /home/bee-ops/venv/lib/python3.13/site-packages/bee_ops/run_my_sensor.py[43637]: expidite DEBUG  [140734304678240] LED timer callback
+Nov 20 15:16:01 expidite-2ccf6789c489 /home/bee-ops/venv/lib/python3.13/site-packages/bee_ops/run_my_sensor.py[43637]: expidite DEBUG  [140734330040672] Orchestrator running (running)
+Nov 20 15:16:02 expidite-2ccf6789c489 kernel: rp1-cfe 1f00110000.csi: Using a link rate of 900 Mbps
+Nov 20 15:16:02 expidite-2ccf6789c489 /home/bee-ops/venv/lib/python3.13/site-packages/bee_ops/run_my_sensor.py[43637]: expidite DEBUG  [140734330040672] Orchestrator running (running)
+Nov 20 15:16:03 expidite-2ccf6789c489 /home/bee-ops/venv/lib/python3.13/site-packages/bee_ops/run_my_sensor.py[43637]: expidite DEBUG  [140734313132384] Wifi timer callback
+Nov 20 15:16:03 expidite-2ccf6789c489 kernel: rp1-cfe 1f00110000.csi: Using a link rate of 900 Mbps
+Nov 20 15:16:03 expidite-2ccf6789c489 /home/bee-ops/venv/lib/python3.13/site-packages/bee_ops/run_my_sensor.py[43637]: expidite DEBUG  [140734330040672] Orchestrator running (running)
+Nov 20 15:16:04 expidite-2ccf6789c489 kernel: rp1-cfe 1f00110000.csi: Using a link rate of 900 Mbps
+Nov 20 15:16:04 expidite-2ccf6789c489 /home/bee-ops/venv/lib/python3.13/site-packages/bee_ops/run_my_sensor.py[43637]: expidite DEBUG  [140734330040672] Orchestrator running (running)
+Nov 20 15:16:05 expidite-2ccf6789c489 /home/bee-ops/venv/lib/python3.13/site-packages/bee_ops/run_my_sensor.py[43637]: expidite DEBUG  [140734313132384] Wifi timer callback
+Nov 20 15:16:05 expidite-2ccf6789c489 kernel: rp1-cfe 1f00110000.csi: Using a link rate of 900 Mbps
+Nov 20 15:16:05 expidite-2ccf6789c489 /home/bee-ops/venv/lib/python3.13/site-packages/bee_ops/run_my_sensor.py[43637]: expidite DEBUG  [140734330040672] Orchestrator running (running)
+Nov 20 15:16:06 expidite-2ccf6789c489 /home/bee-ops/venv/lib/python3.13/site-packages/bee_ops/run_my_sensor.py[43637]: expidite DEBUG  [140734304678240] LED timer callback
+Nov 20 15:16:06 expidite-2ccf6789c489 /home/bee-ops/venv/lib/python3.13/site-packages/bee_ops/run_my_sensor.py[43637]: expidite DEBUG  [140734330040672] Orchestrator running (running)
+Nov 20 15:16:06 expidite-2ccf6789c489 kernel: rp1-cfe 1f00110000.csi: Using a link rate of 900 Mbps
+Nov 20 15:16:07 expidite-2ccf6789c489 /home/bee-ops/venv/lib/python3.13/site-packages/bee_ops/run_my_sensor.py[43637]: expidite DEBUG  [140734313132384] Wifi timer callback
+Nov 20 15:16:07 expidite-2ccf6789c489 /home/bee-ops/venv/lib/python3.13/site-packages/bee_ops/run_my_sensor.py[43637]: expidite DEBUG  [140734330040672] Orchestrator running (running)
+Nov 20 15:16:07 expidite-2ccf6789c489 kernel: rp1-cfe 1f00110000.csi: Using a link rate of 900 Mbps
+Nov 20 15:16:08 expidite-2ccf6789c489 /home/bee-ops/venv/lib/python3.13/site-packages/bee_ops/run_my_sensor.py[43637]: expidite DEBUG  [140734330040672] Orchestrator running (running)
+Nov 20 15:16:08 expidite-2ccf6789c489 kernel: rp1-cfe 1f00110000.csi: Using a link rate of 900 Mbps
+Nov 20 15:16:09 expidite-2ccf6789c489 /home/bee-ops/venv/lib/python3.13/site-packages/bee_ops/run_my_sensor.py[43637]: expidite DEBUG  [140734313132384] Wifi timer callback
+Nov 20 15:16:09 expidite-2ccf6789c489 /home/bee-ops/venv/lib/python3.13/site-packages/bee_ops/run_my_sensor.py[43637]: expidite DEBUG  [140734330040672] Orchestrator running (running)
+Nov 20 15:16:10 expidite-2ccf6789c489 kernel: rp1-cfe 1f00110000.csi: Using a link rate of 900 Mbps
+Nov 20 15:16:10 expidite-2ccf6789c489 /home/bee-ops/venv/lib/python3.13/site-packages/bee_ops/run_my_sensor.py[43637]: expidite DEBUG  [140734330040672] Orchestrator running (running)
+Nov 20 15:16:11 expidite-2ccf6789c489 kernel: rp1-cfe 1f00110000.csi: Using a link rate of 900 Mbps
+Nov 20 15:16:11 expidite-2ccf6789c489 /home/bee-ops/venv/lib/python3.13/site-packages/bee_ops/run_my_sensor.py[43637]: expidite DEBUG  [140734313132384] Wifi timer callback
+Nov 20 15:16:11 expidite-2ccf6789c489 /home/bee-ops/venv/lib/python3.13/site-packages/bee_ops/run_my_sensor.py[43637]: expidite DEBUG  [140734304678240] LED timer callback
+Nov 20 15:16:11 expidite-2ccf6789c489 /home/bee-ops/venv/lib/python3.13/site-packages/bee_ops/run_my_sensor.py[43637]: expidite DEBUG  [140734330040672] Orchestrator running (running)
+Nov 20 15:16:12 expidite-2ccf6789c489 kernel: rp1-cfe 1f00110000.csi: Using a link rate of 900 Mbps
+Nov 20 15:16:12 expidite-2ccf6789c489 /home/bee-ops/venv/lib/python3.13/site-packages/bee_ops/run_my_sensor.py[43637]: expidite DEBUG  [140734330040672] Orchestrator running (running)
+Nov 20 15:16:13 expidite-2ccf6789c489 kernel: rp1-cfe 1f00110000.csi: Using a link rate of 900 Mbps
+Nov 20 15:16:13 expidite-2ccf6789c489 /home/bee-ops/venv/lib/python3.13/site-packages/bee_ops/run_my_sensor.py[43637]: expidite DEBUG  [140734313132384] Wifi timer callback
+Nov 20 15:16:13 expidite-2ccf6789c489 /home/bee-ops/venv/lib/python3.13/site-packages/bee_ops/run_my_sensor.py[43637]: expidite DEBUG  [140734330040672] Orchestrator running (running)
+Nov 20 15:16:14 expidite-2ccf6789c489 kernel: rp1-cfe 1f00110000.csi: Using a link rate of 900 Mbps
+Nov 20 15:16:14 expidite-2ccf6789c489 /home/bee-ops/venv/lib/python3.13/site-packages/bee_ops/run_my_sensor.py[43637]: expidite DEBUG  [140734330040672] Orchestrator running (running)
+Nov 20 15:16:15 expidite-2ccf6789c489 kernel: rp1-cfe 1f00110000.csi: Using a link rate of 900 Mbps
+Nov 20 15:16:15 expidite-2ccf6789c489 /home/bee-ops/venv/lib/python3.13/site-packages/bee_ops/run_my_sensor.py[43637]: expidite DEBUG  [140734313132384] Wifi timer callback
+Nov 20 15:16:15 expidite-2ccf6789c489 /home/bee-ops/venv/lib/python3.13/site-packages/bee_ops/run_my_sensor.py[43637]: expidite DEBUG  [140734330040672] Orchestrator running (running)
+Nov 20 15:16:16 expidite-2ccf6789c489 kernel: rp1-cfe 1f00110000.csi: Using a link rate of 900 Mbps
+Nov 20 15:16:16 expidite-2ccf6789c489 /home/bee-ops/venv/lib/python3.13/site-packages/bee_ops/run_my_sensor.py[43637]: expidite DEBUG  [140734304678240] LED timer callback
+Nov 20 15:16:16 expidite-2ccf6789c489 /home/bee-ops/venv/lib/python3.13/site-packages/bee_ops/run_my_sensor.py[43637]: expidite DEBUG  [140734330040672] Orchestrator running (running)
+Nov 20 15:16:17 expidite-2ccf6789c489 kernel: rp1-cfe 1f00110000.csi: Using a link rate of 900 Mbps
+Nov 20 15:16:17 expidite-2ccf6789c489 /home/bee-ops/venv/lib/python3.13/site-packages/bee_ops/run_my_sensor.py[43637]: expidite DEBUG  [140734313132384] Wifi timer callback
+Nov 20 15:16:17 expidite-2ccf6789c489 /home/bee-ops/venv/lib/python3.13/site-packages/bee_ops/run_my_sensor.py[43637]: expidite DEBUG  [140734330040672] Orchestrator running (running)
+Nov 20 15:16:18 expidite-2ccf6789c489 kernel: rp1-cfe 1f00110000.csi: Using a link rate of 900 Mbps
+Nov 20 15:16:18 expidite-2ccf6789c489 /home/bee-ops/venv/lib/python3.13/site-packages/bee_ops/run_my_sensor.py[43637]: expidite DEBUG  [140734330040672] Orchestrator running (running)
+Nov 20 15:16:19 expidite-2ccf6789c489 /home/bee-ops/venv/lib/python3.13/site-packages/bee_ops/run_my_sensor.py[43637]: expidite DEBUG  [140734313132384] Wifi timer callback
+Nov 20 15:16:19 expidite-2ccf6789c489 kernel: rp1-cfe 1f00110000.csi: Using a link rate of 900 Mbps
+Nov 20 15:16:19 expidite-2ccf6789c489 /home/bee-ops/venv/lib/python3.13/site-packages/bee_ops/run_my_sensor.py[43637]: expidite DEBUG  [140734330040672] Orchestrator running (running)
+Nov 20 15:16:20 expidite-2ccf6789c489 /home/bee-ops/venv/lib/python3.13/site-packages/bee_ops/run_my_sensor.py[43637]: expidite DEBUG  [140734330040672] Orchestrator running (running)
+Nov 20 15:16:20 expidite-2ccf6789c489 kernel: rp1-cfe 1f00110000.csi: Using a link rate of 900 Mbps
+Nov 20 15:16:21 expidite-2ccf6789c489 /home/bee-ops/venv/lib/python3.13/site-packages/bee_ops/run_my_sensor.py[43637]: expidite DEBUG  [140734313132384] Wifi timer callback
+Nov 20 15:16:21 expidite-2ccf6789c489 /home/bee-ops/venv/lib/python3.13/site-packages/bee_ops/run_my_sensor.py[43637]: expidite DEBUG  [140734304678240] LED timer callback
+Nov 20 15:16:21 expidite-2ccf6789c489 /home/bee-ops/venv/lib/python3.13/site-packages/bee_ops/run_my_sensor.py[43637]: expidite DEBUG  [140734330040672] Orchestrator running (running)
+Nov 20 15:16:21 expidite-2ccf6789c489 kernel: rp1-cfe 1f00110000.csi: Using a link rate of 900 Mbps
+Nov 20 15:16:22 expidite-2ccf6789c489 /home/bee-ops/venv/lib/python3.13/site-packages/bee_ops/run_my_sensor.py[43637]: expidite DEBUG  [140734330040672] Orchestrator running (running)
+Nov 20 15:16:22 expidite-2ccf6789c489 kernel: rp1-cfe 1f00110000.csi: Using a link rate of 900 Mbps
+Nov 20 15:16:23 expidite-2ccf6789c489 /home/bee-ops/venv/lib/python3.13/site-packages/bee_ops/run_my_sensor.py[43637]: expidite DEBUG  [140734313132384] Wifi timer callback
+Nov 20 15:16:23 expidite-2ccf6789c489 /home/bee-ops/venv/lib/python3.13/site-packages/bee_ops/run_my_sensor.py[43637]: expidite DEBUG  [140734330040672] Orchestrator running (running)
+Nov 20 15:16:24 expidite-2ccf6789c489 kernel: rp1-cfe 1f00110000.csi: Using a link rate of 900 Mbps
+Nov 20 15:16:24 expidite-2ccf6789c489 /home/bee-ops/venv/lib/python3.13/site-packages/bee_ops/run_my_sensor.py[43637]: expidite DEBUG  [140734330040672] Orchestrator running (running)
+Nov 20 15:16:25 expidite-2ccf6789c489 kernel: rp1-cfe 1f00110000.csi: Using a link rate of 900 Mbps
+Nov 20 15:16:25 expidite-2ccf6789c489 /home/bee-ops/venv/lib/python3.13/site-packages/bee_ops/run_my_sensor.py[43637]: expidite DEBUG  [140734313132384] Wifi timer callback
+Nov 20 15:16:25 expidite-2ccf6789c489 /home/bee-ops/venv/lib/python3.13/site-packages/bee_ops/run_my_sensor.py[43637]: expidite DEBUG  [140734330040672] Orchestrator running (running)
+Nov 20 15:16:26 expidite-2ccf6789c489 kernel: rp1-cfe 1f00110000.csi: Using a link rate of 900 Mbps
+Nov 20 15:16:26 expidite-2ccf6789c489 /home/bee-ops/venv/lib/python3.13/site-packages/bee_ops/run_my_sensor.py[43637]: expidite DEBUG  [140734304678240] LED timer callback
+Nov 20 15:16:26 expidite-2ccf6789c489 /home/bee-ops/venv/lib/python3.13/site-packages/bee_ops/run_my_sensor.py[43637]: expidite DEBUG  [140734330040672] Orchestrator running (running)
+Nov 20 15:16:27 expidite-2ccf6789c489 kernel: rp1-cfe 1f00110000.csi: Using a link rate of 900 Mbps
+Nov 20 15:16:27 expidite-2ccf6789c489 /home/bee-ops/venv/lib/python3.13/site-packages/bee_ops/run_my_sensor.py[43637]: expidite DEBUG  [140734313132384] Wifi timer callback
+Nov 20 15:16:27 expidite-2ccf6789c489 /home/bee-ops/venv/lib/python3.13/site-packages/bee_ops/run_my_sensor.py[43637]: expidite DEBUG  [140734330040672] Orchestrator running (running)
+Nov 20 15:16:28 expidite-2ccf6789c489 kernel: rp1-cfe 1f00110000.csi: Using a link rate of 900 Mbps
+Nov 20 15:16:28 expidite-2ccf6789c489 /home/bee-ops/venv/lib/python3.13/site-packages/bee_ops/run_my_sensor.py[43637]: expidite DEBUG  [140734330040672] Orchestrator running (running)
+Nov 20 15:16:29 expidite-2ccf6789c489 kernel: rp1-cfe 1f00110000.csi: Using a link rate of 900 Mbps
+Nov 20 15:16:29 expidite-2ccf6789c489 /home/bee-ops/venv/lib/python3.13/site-packages/bee_ops/run_my_sensor.py[43637]: expidite DEBUG  [140734313132384] Wifi timer callback
+Nov 20 15:16:29 expidite-2ccf6789c489 /home/bee-ops/venv/lib/python3.13/site-packages/bee_ops/run_my_sensor.py[43637]: expidite DEBUG  [140734330040672] Orchestrator running (running)
+Nov 20 15:16:30 expidite-2ccf6789c489 kernel: rp1-cfe 1f00110000.csi: Using a link rate of 900 Mbps
+Nov 20 15:16:30 expidite-2ccf6789c489 /home/bee-ops/venv/lib/python3.13/site-packages/bee_ops/run_my_sensor.py[43637]: expidite DEBUG  [140734330040672] Orchestrator running (running)
+Nov 20 15:16:31 expidite-2ccf6789c489 kernel: rp1-cfe 1f00110000.csi: Using a link rate of 900 Mbps
+Nov 20 15:16:31 expidite-2ccf6789c489 /home/bee-ops/venv/lib/python3.13/site-packages/bee_ops/run_my_sensor.py[43637]: expidite DEBUG  [140734313132384] Wifi timer callback
+Nov 20 15:16:31 expidite-2ccf6789c489 /home/bee-ops/venv/lib/python3.13/site-packages/bee_ops/run_my_sensor.py[43637]: expidite DEBUG  [140734304678240] LED timer callback
+Nov 20 15:16:31 expidite-2ccf6789c489 /home/bee-ops/venv/lib/python3.13/site-packages/bee_ops/run_my_sensor.py[43637]: expidite DEBUG  [140733923127648] _get_ds_files returning 0 files for RPICAM_2ccf6789c489_00_00
+Nov 20 15:16:31 expidite-2ccf6789c489 /home/bee-ops/venv/lib/python3.13/site-packages/bee_ops/run_my_sensor.py[43637]: expidite DEBUG  [140733923127648] Recorded SCORP stat for HIVECAMXY duration 0.000313
+Nov 20 15:16:31 expidite-2ccf6789c489 /home/bee-ops/venv/lib/python3.13/site-packages/bee_ops/run_my_sensor.py[43637]: expidite DEBUG  [140733923127648] DataProcessor (<bee_ops.sensors.processor_video_hivecam_hybrid.HivecamDp object at 0x7fff43d33610>) sleeping for 59.999552 seconds
+Nov 20 15:16:31 expidite-2ccf6789c489 /home/bee-ops/venv/lib/python3.13/site-packages/bee_ops/run_my_sensor.py[43637]: expidite DEBUG  [140734330040672] Orchestrator running (running)
+Nov 20 15:16:31 expidite-2ccf6789c489 /home/bee-ops/venv/lib/python3.13/site-packages/bee_ops/run_my_sensor.py[43637]: expidite INFO   [140733897765216] Recording video with command: rpicam-vid --rot 180 -b 3000000 --camera 0 --framerate 30 --lens-position 5 --exposure sport --width 640 --height 480 -o /expidite/tmp/tmp_20251120T151631787_0.6462.mp4 -t 180000
+Nov 20 15:16:31 expidite-2ccf6789c489 /home/bee-ops/venv/lib/python3.13/site-packages/bee_ops/run_my_sensor.py[43637]: expidite ERROR  [140733897765216] RAISE_WARNING#V1_2ccf6789c489: Error in RpicamSensor: RAISE_WARNING#V1_2ccf6789c489: Error running command: rpicam-vid --rot 180 -b 3000000 --camera 0 --framerate 30 --lens-position 5 --exposure sport --width 640 --height 480 -o /expidite/tmp/tmp_20251120T151631787_0.6462.mp4 -t 180000, Error: b"[2:45:11.476920275] [43945] \x1b[1;32m INFO \x1b[1;37mCamera \x1b[1;34mcamera_manager.cpp:330 \x1b[0mlibcamera v0.5.2+99-bfd68f78\n[2:45:11.489504221] [43948] \x1b[1;32m INFO \x1b[1;37mRPI \x1b[1;34mpisp.cpp:720 \x1b[0mlibpisp version 1.3.0\n[2:45:11.490260867] [43948] \x1b[1;31mERROR \x1b[1;37mV4L2 \x1b[1;34mv4l2_device.cpp:390 \x1b[0;32m'imx708': \x1b[0mUnable to set controls: Device or resource busy\n[2:45:11.493292544] [43948] \x1b[1;32m INFO \x1b[1;37mIPAProxy \x1b[1;34mipa_proxy.cpp:180 \x1b[0mUsing tuning file /usr/share/libcamera/ipa/rpi/pisp/imx708.json\n[2:45:11.503551015] [43948] \x1b[1;32m INFO \x1b[1;37mCamera \x1b[1;34mcamera_manager.cpp:220 \x1b[0mAdding camera '/base/axi/pcie@1000120000/rp1/i2c@88000/imx708@1a' for pipeline handler rpi/pisp\n[2:45:11.503568200] [43948] \x1b[1;32m INFO \x1b[1;37mRPI \x1b[1;34mpisp.cpp:1179 \x1b[0mRegistered camera /base/axi/pcie@1000120000/rp1/i2c@88000/imx708@1a to CFE device /dev/media1 and ISP device /dev/media0 using PiSP variant BCM2712_C0\nMade X/EGL preview window\nMade DRM preview window\nPreview window unavailable\n[2:45:11.522410074] [43945] \x1b[1;32m INFO \x1b[1;37mCamera \x1b[1;34mcamera.cpp:1020 \x1b[0mPipeline handler in use by another process\nERROR: *** failed to acquire camera /base/axi/pcie@1000120000/rp1/i2c@88000/imx708@1a ***\n"
+                                                                                                                       Traceback (most recent call last):
+                                                                                                                         File "/home/bee-ops/venv/lib/python3.13/site-packages/expidite_rpi/sensors/sensor_rpicam_vid.py", line 154, in run
+                                                                                                                           rc = utils.run_cmd(cmd)
+                                                                                                                         File "/home/bee-ops/venv/lib/python3.13/site-packages/expidite_rpi/utils/utils.py", line 185, in run_cmd
+                                                                                                                           raise Exception(f"{root_cfg.RAISE_WARN()}Error running command: {cmd}, Error: {err!s}")
+                                                                                                                       Exception: RAISE_WARNING#V1_2ccf6789c489: Error running command: rpicam-vid --rot 180 -b 3000000 --camera 0 --framerate 30 --lens-position 5 --exposure sport --width 640 --height 480 -o /expidite/tmp/tmp_20251120T151631787_0.6462.mp4 -t 180000, Error: b"[2:45:11.476920275] [43945] \x1b[1;32m INFO \x1b[1;37mCamera \x1b[1;34mcamera_manager.cpp:330 \x1b[0mlibcamera v0.5.2+99-bfd68f78\n[2:45:11.489504221] [43948] \x1b[1;32m INFO \x1b[1;37mRPI \x1b[1;34mpisp.cpp:720 \x1b[0mlibpisp version 1.3.0\n[2:45:11.490260867] [43948] \x1b[1;31mERROR \x1b[1;37mV4L2 \x1b[1;34mv4l2_device.cpp:390 \x1b[0;32m'imx708': \x1b[0mUnable to set controls: Device or resource busy\n[2:45:11.493292544] [43948] \x1b[1;32m INFO \x1b[1;37mIPAProxy \x1b[1;34mipa_proxy.cpp:180 \x1b[0mUsing tuning file /usr/share/libcamera/ipa/rpi/pisp/imx708.json\n[2:45:11.503551015] [43948] \x1b[1;32m INFO \x1b[1;37mCamera \x1b[1;34mcamera_manager.cpp:220 \x1b[0mAdding camera '/base/axi/pcie@1000120000/rp1/i2c@88000/imx708@1a' for pipeline handler rpi/pisp\n[2:45:11.503568200] [43948] \x1b[1;32m INFO \x1b[1;37mRPI \x1b[1;34mpisp.cpp:1179 \x1b[0mRegistered camera /base/axi/pcie@1000120000/rp1/i2c@88000/imx708@1a to CFE device /dev/media1 and ISP device /dev/media0 using PiSP variant BCM2712_C0\nMade X/EGL preview window\nMade DRM preview window\nPreview window unavailable\n[2:45:11.522410074] [43945] \x1b[1;32m INFO \x1b[1;37mCamera \x1b[1;34mcamera.cpp:1020 \x1b[0mPipeline handler in use by another process\nERROR: *** failed to acquire camera /base/axi/pcie@1000120000/rp1/i2c@88000/imx708@1a ***\n"
+Nov 20 15:16:32 expidite-2ccf6789c489 kernel: rp1-cfe 1f00110000.csi: Using a link rate of 900 Mbps
+Nov 20 15:16:32 expidite-2ccf6789c489 /home/bee-ops/venv/lib/python3.13/site-packages/bee_ops/run_my_sensor.py[43637]: expidite DEBUG  [140734330040672] Orchestrator running (running)
+Nov 20 15:16:33 expidite-2ccf6789c489 /home/bee-ops/venv/lib/python3.13/site-packages/bee_ops/run_my_sensor.py[43637]: expidite DEBUG  [140734313132384] Wifi timer callback
+Nov 20 15:16:33 expidite-2ccf6789c489 /home/bee-ops/venv/lib/python3.13/site-packages/bee_ops/run_my_sensor.py[43637]: expidite INFO   [140734313132384] Ping successful count run: 30, all (good/bad): 30/0
+Nov 20 15:16:33 expidite-2ccf6789c489 /home/bee-ops/venv/lib/python3.13/site-packages/bee_ops/run_my_sensor.py[43637]: expidite INFO   [140734313132384] Starting diagnostic collection to /expidite/diags/V3_DIAGS_2ccf6789c489_20251120T151633756.log.gz
+Nov 20 15:16:33 expidite-2ccf6789c489 /home/bee-ops/venv/lib/python3.13/site-packages/bee_ops/run_my_sensor.py[43637]: expidite DEBUG  [140734330040672] Orchestrator running (running)
+Nov 20 15:16:33 expidite-2ccf6789c489 kernel: rp1-cfe 1f00110000.csi: Using a link rate of 900 Mbps
+Nov 20 15:16:34 expidite-2ccf6789c489 /home/bee-ops/venv/lib/python3.13/site-packages/bee_ops/run_my_sensor.py[43637]: expidite DEBUG  [140734330040672] Orchestrator running (running)
+Nov 20 15:16:34 expidite-2ccf6789c489 kernel: rp1-cfe 1f00110000.csi: Using a link rate of 900 Mbps
+Nov 20 15:16:35 expidite-2ccf6789c489 /home/bee-ops/venv/lib/python3.13/site-packages/bee_ops/run_my_sensor.py[43637]: expidite DEBUG  [140734330040672] Orchestrator running (running)
+Nov 20 15:16:35 expidite-2ccf6789c489 kernel: rp1-cfe 1f00110000.csi: Using a link rate of 900 Mbps
+Nov 20 15:16:36 expidite-2ccf6789c489 /home/bee-ops/venv/lib/python3.13/site-packages/bee_ops/run_my_sensor.py[43637]: expidite DEBUG  [140734304678240] LED timer callback
+Nov 20 15:16:36 expidite-2ccf6789c489 /home/bee-ops/venv/lib/python3.13/site-packages/bee_ops/run_my_sensor.py[43637]: expidite DEBUG  [140734330040672] Orchestrator running (running)
+Nov 20 15:16:36 expidite-2ccf6789c489 kernel: rp1-cfe 1f00110000.csi: Using a link rate of 900 Mbps
+
+======================================================================================================================================================
+
+### Expidite files (ls -lhR /expidite) ###
+Exit code: 0
+--- STDOUT ---
+/expidite:
+total 0
+drwxrwxr-x 2 bee-ops bee-ops 60 Nov 20 15:16 diags
+drwxrwxr-x 2 bee-ops bee-ops 40 Nov 20 12:31 etl_archive
+drwxrwxr-x 2 bee-ops bee-ops 40 Nov 20 12:31 logs
+drwxrwxr-x 2 bee-ops bee-ops 40 Nov 20 15:05 processing
+drwxrwxr-x 2 bee-ops bee-ops 40 Nov 20 12:31 staging
+drwxrwxr-x 3 bee-ops bee-ops 60 Nov 20 15:15 tmp
+drwxrwxr-x 2 bee-ops bee-ops 40 Nov 20 12:31 unzip
+drwxrwxr-x 2 bee-ops bee-ops 40 Nov 20 15:15 upload
+
+/expidite/diags:
+total 0
+-rw-rw-r-- 1 bee-ops bee-ops 0 Nov 20 15:16 V3_DIAGS_2ccf6789c489_20251120T151633756.log.gz
+
+/expidite/etl_archive:
+total 0
+
+/expidite/logs:
+total 0
+
+/expidite/processing:
+total 0
+
+/expidite/staging:
+total 0
+
+/expidite/tmp:
+total 0
+drwxrwxr-x 2 bee-ops bee-ops 80 Nov 20 12:31 tmp_flags
+
+/expidite/tmp/tmp_flags:
+total 16K
+-rw-rw-r-- 1 bee-ops bee-ops 0 Nov 20 15:16 EXPIDITE_IS_RUNNING_FLAG
+-rw-rw-r-- 1 bee-ops bee-ops 9 Nov 20 15:16 LED_STATUS
+
+/expidite/unzip:
+total 0
+
+/expidite/upload:
+total 0
+
+======================================================================================================================================================
+
+### Expidite config files (ls -lhR /home/bee-ops/.expidite) ###
+Exit code: 0
+--- STDOUT ---
+/home/bee-ops/.expidite:
+total 60K
+-rw-rw-r-- 1 bee-ops bee-ops   17 Nov 20 15:11 expidite_code_version
+drwxrwxr-x 2 bee-ops bee-ops 4.0K Nov 20 15:15 flags
+-rw-rw-r-- 1 bee-ops bee-ops  470 Nov 16 14:56 keys.env
+-rwxrwxr-x 1 bee-ops bee-ops  39K Nov 16 17:04 rpi_installer.sh
+-rw-rw-r-- 1 bee-ops bee-ops 2.2K Nov 20 15:15 system.cfg
+-rw-rw-r-- 1 bee-ops bee-ops   17 Nov 20 15:15 user_code_version
+
+/home/bee-ops/.expidite/flags:
+total 12K
+-rw-rw-r-- 1 bee-ops bee-ops 41 Nov 20 15:11 expidite-repo-last-hash
+-rw-rw-r-- 1 bee-ops bee-ops 11 Nov 20 12:30 last_reboot_time
+-rw-rw-r-- 1 bee-ops bee-ops  0 Nov 20 15:15 rpi_installer_ran
+-rw-rw-r-- 1 bee-ops bee-ops 41 Nov 20 12:30 user-repo-last-hash
+
+======================================================================================================================================================
+
+### EXPIDITE_IS_RUNNING_FLAG (cat /expidite/tmp/tmp_flags/EXPIDITE_IS_RUNNING_FLAG) ###
+Exit code: 0
+
+======================================================================================================================================================
+
+### LED_STATUS_FILE (cat /expidite/tmp/tmp_flags/LED_STATUS) ###
+Exit code: 0
+--- STDOUT ---
+green:on
+
+======================================================================================================================================================
+
+Expidite version: Version: 0.1.125
+User code version: Version: 0.1.183
+
+Expidite system configuration:
+    my_git_repo_url: github.com/Oxford-Bee-Ops/bee_ops.git
+    my_git_branch: main
+    my_git_ssh_private_key_file: id_ed25519
+    my_fleet_config: bee_ops.configs.fleet_config_robson.INVENTORY
+    my_start_script: bee_ops.run_my_sensor
+    install_type: INSTALL_TYPE.RPI_SENSOR
+    enable_volatile_logs: Yes
+    auto_start: Yes
+    enable_firewall: Yes
+    enable_predictable_interface_names: Yes
+    enable_i2c: Yes
+    venv_dir: venv
+    expidite_git_branch: nickb/reboot-diags
+    manage_leds: Yes
+    use_local_cloud: No
+    local_cloud: local_cloud
+    reprocessor: No
+
+Expidite device configuration:
+[dp_trees_create_method=<function create_hivecam_device at 0x7fff43dfb380>]
+[name='Robson1']
+[device_id='2ccf6789c489']
+[notes='Nick test device']
+[tags={}]
+[datastore='ROBSON']
+[cc_for_upload='expidite-upload']
+[cc_for_journals='expidite-journals']
+[cc_for_system_records='expidite-system-records']
+[cc_for_fair='expidite-fair']
+[cc_for_fair_latest='expidite-fair-device-latest']
+[cc_for_system_test='expidite-system-test']
+[heart_beat_frequency=600]
+[env_sensor_frequency=600]
+[review_mode_frequency=5]
+[max_recording_timer=180]
+[log_level=10]
+[attempt_wifi_recovery=True]
+[wifi_clients::
+  [0]
+    {ssid='bee-ops'}
+    {priority=80}
+    {pw='abcdabcd'}
+  [1]
+    {ssid='bee-ops-eero'}
+    {priority=80}
+    {pw='abcdabcd'}
+  [2]
+    {ssid='VM0045991'}
+    {priority=70}
+    {pw='beTtkkh8bghyrafc'}
+]
+[tests_to_run=[]]
+
+Storage account: beeopsstoragesystemtest
+
+
+Device health
+    boot_time: 2025-11-20T12:31:20.000+00:00
+    last_update_time: 2025-11-20T15:15:27.556+00:00
+    cpu_percent: 0.0
+    total_memory_gb: 7.87
+    memory_percent: 8.9
+    memory_free: 7017M
+    disk_percent: 27.9
+    disk_bytes_written_in_period: 10900480
+    io_bytes_sent: 5837943
+    expidite_mount_size: 1.17 GB
+    expidite_mount_percent: 0.0
+    packet_loss: 0.0
+    current_ping_fail_run: 0
+    cpu_temperature: 45.2
+    ssid: VM0045991
+    signal_strength: 54
+    ip_address: 192.168.0.28
+    power_status: 0x0
+    process_list: bee_ops.run_my_sensor
+    expidite_version: Version: 0.1.125
+    user_code_version: Version: 0.1.183
+
+Ping counts: None
+
+======================================================================================================================================================

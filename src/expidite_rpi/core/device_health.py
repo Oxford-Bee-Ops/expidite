@@ -206,8 +206,11 @@ class DeviceHealth(Sensor):
     ############################################################################################################
     # Diagnostics utility functions
     ############################################################################################################
-    def get_health(self) -> dict[str, Any]:
-        """Get the health of the device."""
+    def get_health(self, check_memory_usage: bool = True) -> dict[str, Any]:
+        """Get the health of the device.
+
+        check_memory_usage Set False to prevent recursion when used for diagnostics collection.
+        """
         health: dict[str, Any] = {}
         try:
             cpu_temp: str = ""
@@ -307,7 +310,7 @@ class DeviceHealth(Sensor):
 
             # Memory usage - if greater than 75% then generate some diagnostics
             memory_usage = psutil.virtual_memory().percent
-            if memory_usage > 75:
+            if check_memory_usage and memory_usage > 75:
                 if root_cfg.running_on_rpi:
                     DeviceHealth.log_top_memory_processes()
                     # Running low on free RAM can cause any OS process to be killed to free up memory, and can

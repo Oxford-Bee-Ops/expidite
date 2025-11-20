@@ -102,9 +102,16 @@ class DeviceStatus:
             if root_cfg.keys:
                 f.write(f"\nStorage account: {root_cfg.keys.get_storage_account()}\n")
 
+            # Import here to avoid circular dependency.
+            from expidite_rpi.core.device_health import DeviceHealth
+            health = DeviceHealth().get_health(check_memory_usage = False)
+            if health:
+                f.write("\nDevice health\n")
+                for key, value in health.items():
+                    f.write(f"    {key}: {value}\n")
+
             f.write("\n")
             write_bar()
-            # NICKB TODO health = DeviceHealth().get_health() (see RpiCore for how to display it.
 
         logger.info(f"Completed diagnostic collection to {log_filename}")
 
