@@ -131,6 +131,7 @@ LOG_DIR: Path = ROOT_WORKING_DIR / "logs"
 TEST_DIR: Path = SC_CODE_DIR / "test"
 FLAGS_DIR: Path = CFG_DIR / "flags"  # For persistent flags
 TMP_FLAGS_DIR: Path = TMP_DIR / "tmp_flags"  # For transient flags
+DIAGS_DIR = ROOT_WORKING_DIR / "diags" # For diags bundles saved before reboots
 
 
 ###########################################################################################
@@ -151,6 +152,7 @@ dirs = [
     TEST_DIR,
     FLAGS_DIR,
     TMP_FLAGS_DIR,
+    DIAGS_DIR,
     EDGE_PROCESSING_DIR,
     EDGE_STAGING_DIR,
     EDGE_UPLOAD_DIR,

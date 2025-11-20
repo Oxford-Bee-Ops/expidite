@@ -1,15 +1,10 @@
-import subprocess
-import os
 import datetime
-import platform
-import sys
+import os
+import subprocess
 
 from expidite_rpi.core import configuration as root_cfg
 
 logger = root_cfg.setup_logger("expidite")
-
-# NICKB Replace with the correct location.
-LOG_DIR = "/expidite/nick-test"
 
 # List of diagnostic commands to execute. Each command's output will be logged.
 # Commands are tailored for standard Linux environments like Raspberry Pi OS.
@@ -49,16 +44,13 @@ DIAGNOSTIC_COMMANDS = [
 class DeviceStatus:
     @staticmethod
     def collect_diagnostics(reason: str):
-        """Collects and saves all diagnostic outputs to a time-stamped file."""
+        """Collects and saves diagnostic outputs to a time-stamped file."""
 
         if not root_cfg.running_on_rpi:
             return
 
-        # Ensure log directory exists
-        os.makedirs(LOG_DIR, exist_ok=True)
-
         timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
-        log_filename = os.path.join(LOG_DIR, f"diag_{timestamp}.txt")
+        log_filename = os.path.join(root_cfg.DIAGS_DIR, f"diag_{timestamp}.txt")
 
         logger.info(f"Starting diagnostic collection. Log file: {log_filename}")
 
