@@ -48,7 +48,7 @@ class SHT31_CFG:
 
 class SHT31(Sensor):
     # Init
-    def __init__(self, config: SHT31SensorCfg):
+    def __init__(self, config: SHT31SensorCfg) -> None:
         super().__init__(config)
         self.config = config
 

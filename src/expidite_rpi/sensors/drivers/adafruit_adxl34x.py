@@ -179,7 +179,7 @@ class ADXL345:
 
     """
 
-    def __init__(self, address: int = _ADXL345_DEFAULT_ADDRESS):
+    def __init__(self, address: int = _ADXL345_DEFAULT_ADDRESS) -> None:
         if board is not None:
             # CircuitPython/Raspberry Pi with Blinka
             i2c = board.I2C()

@@ -93,7 +93,7 @@ class UnalignedStruct(Struct):
     of the registers. Most registers of this sort are left aligned to preserve the sign bit
     """
 
-    def __init__(self, register_address, struct_format, bitwidth, length):
+    def __init__(self, register_address, struct_format, bitwidth, length) -> None:
         super().__init__(register_address, struct_format)
         self._width = bitwidth
         self._num_bytes = length

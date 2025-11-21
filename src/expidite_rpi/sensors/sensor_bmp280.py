@@ -47,7 +47,7 @@ DEFAULT_BMP280_SENSOR_CFG = BMP280SensorCfg(
 
 class BMP280(Sensor):
     # Init
-    def __init__(self, config: BMP280SensorCfg):
+    def __init__(self, config: BMP280SensorCfg) -> None:
         super().__init__(config)
         self.config = config
 
