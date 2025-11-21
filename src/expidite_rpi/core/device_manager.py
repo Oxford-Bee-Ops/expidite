@@ -83,8 +83,7 @@ class DeviceManager:
         if root_cfg.running_on_rpi:
             # We don't need to check often. These diagnostics are generated rarely and are not required in
             # real time.
-            # NICKB self.diagnostics_upload_timer = utils.RepeatTimer(interval=3600,
-            self.diagnostics_upload_timer = utils.RepeatTimer(interval=35,
+            self.diagnostics_upload_timer = utils.RepeatTimer(interval=3600,
                                                               function=self.diagnostics_upload_timer_callback)
             self.diagnostics_upload_timer.start()
             logger.info("Diagnostics Upload timer started")
@@ -369,8 +368,6 @@ class DeviceManager:
                 str(self.ping_success_count_all),
                 str(self.ping_failure_count_all),
             )
-            # NICK REMOVE
-            DiagnosticsBundle.collect("Rebooting for NICKB TEST")
 
         # Set ping status so that the LEDs reflect this change
         self.set_ping_status(True)

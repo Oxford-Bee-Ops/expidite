@@ -65,6 +65,13 @@ class DiagnosticsBundle:
         if not root_cfg.running_on_rpi:
             return
 
+        # Limit disk usage by limiting the number of files. If we have connectivity they should be getting
+        # uploaded to cloud storage and then deleted. If not, then there isn't much value in keep storing for
+        # files.
+        if len(os.listdir(root_cfg.DIAGS_DIR)) > 10:
+            logger.info("Skip diagnostic collection because too many existing files")
+            return
+
         log_filename = file_naming.get_diags_filename()
 
         logger.info(f"Starting diagnostic collection to {log_filename}")
