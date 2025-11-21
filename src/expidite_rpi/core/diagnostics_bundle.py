@@ -1,8 +1,11 @@
 import gzip
+import os
 import subprocess
+from pathlib import Path
 
 from expidite_rpi.core import api, file_naming
 from expidite_rpi.core import configuration as root_cfg
+from expidite_rpi.core.cloud_connector import CloudConnector
 
 logger = root_cfg.setup_logger("expidite")
 
@@ -134,5 +137,22 @@ class DiagnosticsBundle:
 
     @staticmethod
     def upload():
-        """Upload existing diagnostics bundles from disk to cloud storage."""
-        pass
+        """Upload existing diagnostics bundles, if any, from disk to cloud storage."""
+        try:
+            for filename in os.listdir(root_cfg.DIAGS_DIR):
+                if filename.endswith(".gz"):
+                    full_path = os.path.join(root_cfg.DIAGS_DIR, filename)
+
+                    if os.path.isfile(full_path):
+                        logger.info(f"Upload diagnostic bundle {filename}")
+                        cc = CloudConnector.get_instance(root_cfg.CLOUD_TYPE)
+                        cc.upload_to_container(
+                            root_cfg.my_device.cc_for_diagnostics_bundles,
+                            [Path(full_path)],
+                            delete_src=True,
+                            storage_tier=api.StorageTier.COOL,
+                        )
+        except FileNotFoundError:
+            print("Error: Directory not found")
+        except PermissionError:
+            print("Error: Permission denied")

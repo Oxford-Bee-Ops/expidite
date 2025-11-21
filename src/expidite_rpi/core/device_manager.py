@@ -37,6 +37,7 @@ class DeviceManager:
         self.ping_success_count_run = 0
         self.led_timer: Optional[utils.RepeatTimer] = None
         self.wifi_timer: Optional[utils.RepeatTimer] = None
+        self.diagnostics_upload_timer: Optional[utils.RepeatTimer] = None
 
 
     def start(self) -> None:
@@ -79,6 +80,14 @@ class DeviceManager:
             self.led_timer.start()
             logger.info("DeviceManager LED timer started")
 
+        if root_cfg.running_on_rpi:
+            # We don't need to check often. These diagnostics are generated rarely and are not required in
+            # real time.
+            self.diagnostics_upload_timer = utils.RepeatTimer(interval=3600,
+                                                              function=self.diagnostics_upload_timer_callback)
+            self.diagnostics_upload_timer.start()
+            logger.info("Diagnostics Upload timer started")
+
     def stop(self) -> None:
         """Stop the DeviceManager threads."""
         if self.led_timer is not None:
@@ -87,6 +96,9 @@ class DeviceManager:
         if self.wifi_timer is not None:
             self.wifi_timer.cancel()
             logger.info("DeviceManager Wifi timer stopped")
+        if self.diagnostics_upload_timer is not None:
+            self.diagnostics_upload_timer.cancel()
+            logger.info("Diagnostics Upload timer stopped")
 
     #############################################################################################################
     # LED management functions
@@ -361,3 +373,7 @@ class DeviceManager:
         self.set_ping_status(True)
 
         self.last_ping_was_ok = True
+
+    @staticmethod
+    def diagnostics_upload_timer_callback() -> None:
+        DiagnosticsBundle.upload()
