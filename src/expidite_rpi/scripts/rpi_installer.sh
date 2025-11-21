@@ -653,7 +653,8 @@ create_mount() {
             echo "The expidite mount point has been added to fstab."
         fi
 
-        # The diags mountpoint is always on disk, so that it survives reboot.
+        # The diagnostics mountpoint is always on disk, so that it survives reboot. This is OK because its use is very
+        # limited - only for when diagnostics are saved when rebooting as a recovery action.
         diags_mountpoint="/expidite-diags"
         sudo mkdir -p $diags_mountpoint
         sudo chown -R $USER:$USER $diags_mountpoint

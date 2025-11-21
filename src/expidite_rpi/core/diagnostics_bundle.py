@@ -131,3 +131,8 @@ class DiagnosticsBundle:
             return "COMMAND TIMEOUT: Command exceeded 15 seconds.", "", 1
         except Exception as e:
             return f"EXECUTION ERROR: {e}", "", 1
+
+    @staticmethod
+    def upload():
+        """Upload existing diagnostics bundles from disk to cloud storage."""
+        pass
