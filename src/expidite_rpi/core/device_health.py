@@ -9,6 +9,7 @@ import psutil
 from expidite_rpi.core import api
 from expidite_rpi.core import configuration as root_cfg
 from expidite_rpi.core.device_manager import DeviceManager
+from expidite_rpi.core.diagnostics_bundle import DiagnosticsBundle
 from expidite_rpi.core.dp_config_objects import SensorCfg, Stream
 from expidite_rpi.core.sensor import Sensor
 from expidite_rpi.utils import utils
@@ -205,8 +206,11 @@ class DeviceHealth(Sensor):
     ############################################################################################################
     # Diagnostics utility functions
     ############################################################################################################
-    def get_health(self) -> dict[str, Any]:
-        """Get the health of the device."""
+    def get_health(self, check_memory_usage: bool = True) -> dict[str, Any]:
+        """Get the health of the device.
+
+        check_memory_usage Set False to prevent recursion when used for diagnostics collection.
+        """
         health: dict[str, Any] = {}
         try:
             cpu_temp: str = ""
@@ -306,7 +310,7 @@ class DeviceHealth(Sensor):
 
             # Memory usage - if greater than 75% then generate some diagnostics
             memory_usage = psutil.virtual_memory().percent
-            if memory_usage > 75:
+            if check_memory_usage and memory_usage > 75:
                 if root_cfg.running_on_rpi:
                     DeviceHealth.log_top_memory_processes()
                     # Running low on free RAM can cause any OS process to be killed to free up memory, and can
@@ -314,6 +318,7 @@ class DeviceHealth(Sensor):
                     # generally considered good practice to recover before performance degrades.
                     if memory_usage > 90:
                         logger.error(root_cfg.RAISE_WARN() + "Memory usage >90%, rebooting")
+                        DiagnosticsBundle.collect("Memory usage >90%, rebooting")
                         utils.run_cmd("sudo reboot", ignore_errors=True)
 
             # Get the expidite version and user code version from the files
