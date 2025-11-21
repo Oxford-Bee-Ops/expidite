@@ -886,7 +886,7 @@ class AsyncCloudConnector(CloudConnector):
             for i, file in enumerate(src_files):
                 # Move the files to the tmp_dir
                 tmp_file = tmp_dir / file.name
-                file.rename(tmp_file)
+                shutil.move(file, tmp_file)
                 src_files[i] = tmp_file
 
         if src_files:
