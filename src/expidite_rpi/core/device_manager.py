@@ -245,10 +245,6 @@ class DeviceManager:
             else:
                 self.action_on_ping_ok()
 
-                # NICKB REMOVE - temporary for testing only.
-                if self.ping_success_count_run % 30 == 0:
-                    DeviceStatus.collect_diagnostics("Nick testing")
-
             # Log useful info and status periodically
             if self.log_counter % self.wifi_log_frequency == 0:
                 self.log_wifi_info()
