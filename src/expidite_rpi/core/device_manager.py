@@ -84,7 +84,7 @@ class DeviceManager:
             # We don't need to check often. These diagnostics are generated rarely and are not required in
             # real time.
             # NICKB self.diagnostics_upload_timer = utils.RepeatTimer(interval=3600,
-            self.diagnostics_upload_timer = utils.RepeatTimer(interval=120,
+            self.diagnostics_upload_timer = utils.RepeatTimer(interval=35,
                                                               function=self.diagnostics_upload_timer_callback)
             self.diagnostics_upload_timer.start()
             logger.info("Diagnostics Upload timer started")
@@ -379,4 +379,9 @@ class DeviceManager:
 
     @staticmethod
     def diagnostics_upload_timer_callback() -> None:
-        DiagnosticsBundle.upload()
+        try:
+            logger.debug("Diagnostics upload timer callback")
+            DiagnosticsBundle.upload()
+        except Exception as e:
+            logger.error(f"{root_cfg.RAISE_WARN()}Diagnostics upload callback threw an exception: " + str(e),
+                        exc_info=True)
