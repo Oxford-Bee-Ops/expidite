@@ -42,8 +42,7 @@ class AHT20(Sensor):
         self.config = config
 
     # Separate thread to log data
-    def run(self):
-
+    def run(self) -> None:
         while self.continue_recording():
             try:
                 aht20 = AHT20_driver(1)

@@ -78,7 +78,7 @@ select = [
     # 72 "ANN001",
     # 4 "ANN002",
     # 4 "ANN003",
-    # 65 return type "ANN201",
+    # 45 return type "ANN201",
     "ANN202",
     "ANN204",
     "ANN205",

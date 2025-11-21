@@ -60,7 +60,7 @@ Sensors inherit from both `Thread` and `DPnode`:
 
 ```python
 class MySensor(Sensor):
-    def run(self):
+    def run(self) -> None:
         while self.continue_recording():
             data = self.read_sensor_data()
             self.log(0, data)  # Log to stream 0

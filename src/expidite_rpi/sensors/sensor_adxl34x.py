@@ -51,7 +51,7 @@ class ADXL34X(Sensor):
         super().__init__(config)
         self.config = config
 
-    def run(self):
+    def run(self) -> None:
         accelerometer = None
         while self.continue_recording():
             try:

@@ -10,7 +10,7 @@ test_logger = root_cfg.setup_logger("expidite")
 
 
 @pytest.fixture(autouse=True)
-def log_test_lifecycle(request):
+def log_test_lifecycle(request) -> None:
     """
     Pytest fixture that automatically logs the start and end of every test.
     This runs for all tests without requiring a decorator.
@@ -37,7 +37,7 @@ def log_test_lifecycle(request):
 
 
 @pytest.hookimpl(tryfirst=True, hookwrapper=True)
-def pytest_runtest_makereport(item, call):
+def pytest_runtest_makereport(item, call) -> None:
     """
     Hook to capture test results for the log_test_lifecycle fixture.
     """
@@ -46,7 +46,7 @@ def pytest_runtest_makereport(item, call):
     setattr(item, f"rep_{rep.when}", rep)
 
 @pytest.fixture(autouse=True)
-def shutdown_cloud_connector():
+def shutdown_cloud_connector() -> None:
     yield
     # Ensure CloudConnector is properly shut down after each test
     try:

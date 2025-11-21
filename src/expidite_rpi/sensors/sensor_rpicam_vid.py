@@ -118,7 +118,7 @@ class RpicamSensor(Sensor):
                          exc_info=True)
 
 
-    def run(self):
+    def run(self) -> None:
         """Main loop for the RpicamSensor - runs continuously unless paused."""
         if not root_cfg.running_on_rpi and root_cfg.ST_MODE != root_cfg.SOFTWARE_TEST_MODE.TESTING:
             logger.warning("Video configuration is only supported on Raspberry Pi.")

@@ -66,7 +66,7 @@ def AHT20_crc8_calculate(all_data_int):
     return mod_value
 
 
-def AHT20_crc8_check(all_data_int):
+def AHT20_crc8_check(all_data_int) -> bool:
     """
     The input data should be:
     Status Humidity0 Humidity1 Humidity2|Temperature0 Temperature1 Temperature2 CRCCode.
@@ -79,7 +79,7 @@ def AHT20_crc8_check(all_data_int):
         return False
 
 
-def CRC8_check(all_data_int, init_value=0x00):
+def CRC8_check(all_data_int, init_value=0x00) -> bool:
     divider = 0x107
     DATA_FOR_CHECK = all_data_int[0]
     for data in all_data_int[1:-1]:
