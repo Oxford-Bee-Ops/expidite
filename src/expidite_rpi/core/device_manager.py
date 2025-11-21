@@ -7,7 +7,7 @@ from typing import Optional
 
 from expidite_rpi.core import api
 from expidite_rpi.core import configuration as root_cfg
-from expidite_rpi.core.device_status import DeviceStatus
+from expidite_rpi.core.diagnostics_bundle import DiagnosticsBundle
 from expidite_rpi.utils import utils
 
 logger = root_cfg.setup_logger("expidite")
@@ -308,7 +308,7 @@ class DeviceManager:
         # Ping cycle is 2s, so 60*60*2 = 4 hours.
         if self.ping_failure_count_run == (60 * 60 * 2):
             logger.error(f"{root_cfg.RAISE_WARN()}Rebooting device due to no internet for >4 hours")
-            DeviceStatus.collect_diagnostics("Rebooting device due to no internet for >4 hours")
+            DiagnosticsBundle.collect("Rebooting device due to no internet for >4 hours")
             utils.run_cmd("sudo reboot")
 
         elif self.ping_failure_count_run % retry_frequency == 60:

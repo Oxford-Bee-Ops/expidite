@@ -9,7 +9,7 @@ import psutil
 from expidite_rpi.core import api
 from expidite_rpi.core import configuration as root_cfg
 from expidite_rpi.core.device_manager import DeviceManager
-from expidite_rpi.core.device_status import DeviceStatus
+from expidite_rpi.core.diagnostics_bundle import DiagnosticsBundle
 from expidite_rpi.core.dp_config_objects import SensorCfg, Stream
 from expidite_rpi.core.sensor import Sensor
 from expidite_rpi.utils import utils
@@ -318,7 +318,7 @@ class DeviceHealth(Sensor):
                     # generally considered good practice to recover before performance degrades.
                     if memory_usage > 90:
                         logger.error(root_cfg.RAISE_WARN() + "Memory usage >90%, rebooting")
-                        DeviceStatus.collect_diagnostics("Memory usage >90%, rebooting")
+                        DiagnosticsBundle.collect("Memory usage >90%, rebooting")
                         utils.run_cmd("sudo reboot", ignore_errors=True)
 
             # Get the expidite version and user code version from the files

@@ -54,9 +54,9 @@ DIAGNOSTIC_COMMANDS = [
 # There is a small amount of duplication here with DeviceHealth, RpiCore and bcli. This is hard to avoid while
 # keeping this class self contained.
 ##############################################################################################################
-class DeviceStatus:
+class DiagnosticsBundle:
     @staticmethod
-    def collect_diagnostics(reason: str):
+    def collect(reason: str):
         """Collects and saves a diagnostics bundle to a time-stamped file."""
 
         if not root_cfg.running_on_rpi:
@@ -77,7 +77,7 @@ class DeviceStatus:
 
             for title, command in DIAGNOSTIC_COMMANDS:
                 f.write(f"\n### {title} ({command}) ###\n")
-                stdout, stderr, returncode = DeviceStatus.run_cmd(command)
+                stdout, stderr, returncode = DiagnosticsBundle.run_cmd(command)
                 f.write(f"Exit code: {returncode}\n")
 
                 if stdout:
