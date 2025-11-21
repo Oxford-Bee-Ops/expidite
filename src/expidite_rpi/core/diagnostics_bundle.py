@@ -77,7 +77,7 @@ class DiagnosticsBundle:
 
             for title, command in DIAGNOSTIC_COMMANDS:
                 f.write(f"\n### {title} ({command}) ###\n")
-                stdout, stderr, returncode = DiagnosticsBundle.run_cmd(command)
+                stdout, stderr, returncode = DiagnosticsBundle._run_cmd(command)
                 f.write(f"Exit code: {returncode}\n")
 
                 if stdout:
@@ -116,7 +116,7 @@ class DiagnosticsBundle:
         logger.info(f"Completed diagnostic collection to {log_filename}")
 
     @staticmethod
-    def run_cmd(command) -> tuple[str, str, int]:
+    def _run_cmd(command) -> tuple[str, str, int]:
         """Executes a shell command and returns its output and any errors."""
         try:
             result = subprocess.run(
