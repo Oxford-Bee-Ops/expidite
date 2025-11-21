@@ -233,6 +233,29 @@ class InteractiveMenu:
         click.echo(f"{dash_line}")
         click.echo(f"{self.sc.display_configuration()}")
 
+    ####################################################################################################
+    # Sensing menu functions
+    ####################################################################################################
+    def trigger_sensing(self) -> None:
+        """Trigger sensing on all sensors by setting the sensor flag."""
+        # Need to ask for input on duration of recording in seconds
+        click.echo(f"{dash_line}")
+        click.echo("# TRIGGER SENSING ON ALL SENSORS")
+        click.echo("Note: this will have no effect if sensors are already recording continuously.\n")
+        duration = click.prompt("Enter duration of recording in whole seconds", type=int, default=60)
+        click.echo(f"Triggering sensing on all sensors for {duration} seconds...")
+        # Write the duration to a file or set a flag that sensors can read
+        with open(root_cfg.SENSOR_TRIGGER_FLAG, "w") as f:
+            f.write(str(duration))
+        # Provide a count down timer
+        for i in range(duration, 0, -1):
+            click.echo(f"Sensing in progress... {i} seconds remaining", nl=False)
+            click.echo("\r", nl=False)
+            time.sleep(1)
+        # When the countdown is complete, remove the trigger file
+        if root_cfg.SENSOR_TRIGGER_FLAG.exists():
+            root_cfg.SENSOR_TRIGGER_FLAG.unlink()
+        click.echo("Sensing complete.")
 
 
     ####################################################################################################
@@ -892,8 +915,9 @@ class InteractiveMenu:
             click.echo("1. View Config")
             click.echo("2. View Status")
             click.echo("3. Validate device")
-            click.echo("4. Maintenance Commands")
-            click.echo("5. Debug Commands")
+            click.echo("4. Sensing Commands")
+            click.echo("5. Maintenance Commands")
+            click.echo("6. Debug Commands")
             try:
                 choice = click.prompt("\nEnter your choice", type=int, default=0)
                 click.echo("\n")
@@ -908,8 +932,10 @@ class InteractiveMenu:
             elif choice == 3:
                 self.validate_device()
             elif choice == 4:
-                self.maintenance_menu()
+                self.sensing_menu()
             elif choice == 5:
+                self.maintenance_menu()
+            elif choice == 6:
                 self.debug_menu()
             elif choice == 0:
                 click.echo("Exiting...")
@@ -921,6 +947,25 @@ class InteractiveMenu:
         assert isinstance(cc, AsyncCloudConnector)
         cc.shutdown()
 
+    def sensing_menu(self) -> None:
+        """Menu for sensing commands."""
+        while True:
+            click.echo(f"{header}Sensing Menu:")
+            click.echo("0. Back to Main Menu")
+            click.echo("1. Trigger sensing operation now")
+            try:
+                choice = click.prompt("\nEnter your choice", type=int, default=0)
+                click.echo("\n")
+            except ValueError:
+                click.echo("Invalid input. Please enter a number.")
+                continue
+
+            if choice == 1:
+                self.trigger_sensing()
+            elif choice == 0:
+                break
+            else:
+                click.echo("Invalid choice. Please try again.")
 
     def debug_menu(self) -> None:
         """Menu for debugging commands."""

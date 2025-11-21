@@ -579,7 +579,7 @@ class LocalCloudConnector(CloudConnector):
                 dst_file.parent.mkdir(parents=True, exist_ok=True)
                 shutil.copy(file, dst_file)
                 if delete_src:
-                    file.unlink()
+                    file.unlink(missing_ok=True)
 
     def download_from_container(
         self, src_container: str, src_file: str, dst_file: Path

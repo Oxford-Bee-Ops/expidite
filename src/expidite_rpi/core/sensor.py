@@ -4,7 +4,7 @@
 #  - SensorConfig: Dataclass for sensor configuration, specified in sensor_cac.py
 #  - Sensor: Super class for all sensor classes
 ####################################################################################################
-from abc import ABC, abstractmethod
+from abc import ABC
 from datetime import datetime, timedelta
 from threading import Event, Thread
 
@@ -110,12 +110,50 @@ class Sensor(Thread, DPnode, ABC):
 
         EdgeOrchestrator.get_instance().sensor_failed(self)
 
-    # All Sensor sub-classes must implement this method
-    # Implementations should respect the stop_requested flag and terminate within a reasonable time (~3min)
-    @abstractmethod
+    # Sensors should sub-class this method to implement continuous sensing.
+    # If not sub-classed, this default implements on-demand triggered sensing.
+    # Implementations should use continue_recording() to control recording loops and terminate
+    # within a reasonable time (~3min).
     def run(self) -> None:
         """The run method is where the sensor does its work of sensing and logging data.
-        The subclass *must* use "while not self.stop_requested.is_set()" and
-        "self.stop_requested.wait(sleep_time)" to enable prompt and clean shutdown."""
+        For continuous sensing, this method should be sub-classed to implement the sensing loop.
+        The subclass *must* use "while self.continue_recording()" and
+        "self.stop_requested.wait(sleep_time)" to enable prompt and clean shutdown.
+        For on-demand, triggered sensing, the subclass may leave this method unimplemented, but
+        instead implement the sensing_triggered() method which will be invoked when triggered."""
+        logger.info(f"Sensor {self!r} running in on-demand triggered sensing mode")
+        while self.continue_recording():
+            # Check for the sensing trigger set via the BCLI
+            if root_cfg.SENSOR_TRIGGER_FLAG.exists():
+                try:
+                    start_time = datetime.now()
+                    # Read the duration from the flag file
+                    with open(root_cfg.SENSOR_TRIGGER_FLAG, "r") as f:
+                        duration_str = f.read().strip()
+                    duration = int(duration_str)
+
+                    # Invoke the sensing_triggered method
+                    logger.info(f"Sensing trigger detected for duration {duration} seconds")
+                    self.sensing_triggered(duration)
+
+                    # Clear the file after processing and after the requisite duration
+                    elapsed = (datetime.now() - start_time).total_seconds()
+                    if elapsed < duration:
+                        wait_time = duration - elapsed
+                        logger.info(f"Waiting additional {wait_time:.1f}s to complete requested duration")
+                        self.stop_requested.wait(wait_time)
+                    root_cfg.SENSOR_TRIGGER_FLAG.unlink(missing_ok=True)
+
+                except Exception as e:
+                    logger.error(f"Error processing sensing trigger: {e}", exc_info=True)
+                    # Ensure the trigger flag file is removed on error
+                    root_cfg.SENSOR_TRIGGER_FLAG.unlink(missing_ok=True)
+            self.stop_requested.wait(1)
+
+
+    # Sensors should sub-class this method to implement on-demand, triggered, sensing.
+    def sensing_triggered(self, duration: int) -> None:
+        """The sensing_triggered method is where the sensor does its work of sensing and logging data
+        in response to an external trigger, typically being invoked via the BCLI."""
 
         assert False, "Sub-classes must override this method"

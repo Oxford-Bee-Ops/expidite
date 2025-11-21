@@ -205,6 +205,9 @@ REVIEW_MODE_FLAG = FLAGS_DIR / "IN_REVIEW_MODE_FLAG"
 EXPIDITE_IS_RUNNING_FLAG = TMP_FLAGS_DIR / "EXPIDITE_IS_RUNNING_FLAG"
 # Used to control the LED status indicator
 LED_STATUS_FILE = TMP_FLAGS_DIR / "LED_STATUS"
+# Used to trigger sensors to take on-demand readings
+# BCLI will write the duration of recording to the file in seconds
+SENSOR_TRIGGER_FLAG = TMP_FLAGS_DIR / "SENSOR_TRIGGER_FLAG"
 
 ############################################################################################
 # Software testing flag

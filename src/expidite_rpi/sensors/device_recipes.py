@@ -25,6 +25,7 @@ from expidite_rpi.sensors.processor_video_trapcam import (
 )
 from expidite_rpi.sensors.sensor_adxl34x import ADXL34X, DEFAULT_ADXL34X_SENSOR_CFG
 from expidite_rpi.sensors.sensor_aht20 import AHT20, DEFAULT_AHT20_SENSOR_CFG
+from expidite_rpi.sensors.sensor_audio_on_demand import DEFAULT_AUDIO_SENSOR_CFG, AudioSensor
 from expidite_rpi.sensors.sensor_bmp280 import BMP280, DEFAULT_BMP280_SENSOR_CFG
 from expidite_rpi.sensors.sensor_ltr390 import DEFAULT_LTR390_SENSOR_CFG, LTR390
 from expidite_rpi.sensors.sensor_rpicam_vid import (
@@ -35,6 +36,7 @@ from expidite_rpi.sensors.sensor_rpicam_vid import (
 )
 from expidite_rpi.sensors.sensor_sht31 import DEFAULT_SHT31_SENSOR_CFG, SHT31
 from expidite_rpi.sensors.sensor_sht40 import DEFAULT_SHT40_SENSOR_CFG, SHT40
+from expidite_rpi.sensors.sensor_video_on_demand import DEFAULT_VIDEO_OD_SENSOR_CFG, VideoOnDemandSensor
 
 logger = root_cfg.setup_logger("expidite")
 
@@ -111,7 +113,6 @@ def create_continuous_video_4fps_device() -> list[DPtree]:
     my_tree = DPtree(my_sensor)
     return [my_tree]
 
-
 ###################################################################################################
 # Trap cameras
 #
@@ -174,3 +175,26 @@ def create_aruco_camera_device(sensor_index: int) -> list[DPtree]:
     )
     return [my_tree]
 
+#####################################################################################################
+# On-demand audio and video devices
+#####################################################################################################
+def create_on_demand_audio_video_device() -> list[DPtree]:
+    """Create a device that has both on-demand audio and video sensors.
+    Recording is triggered via the BCLI sensing options."""
+
+    # Audio Sensor
+    audio_cfg = DEFAULT_AUDIO_SENSOR_CFG
+    audio_cfg.sensor_index = 1
+    my_audio_sensor = AudioSensor(audio_cfg)
+
+    # Video Sensor
+    video_cfg = DEFAULT_VIDEO_OD_SENSOR_CFG
+    video_cfg.sensor_index = 0
+    my_video_sensor = VideoOnDemandSensor(video_cfg)
+
+    # Create DPtrees for each sensor
+    my_audio_tree = DPtree(my_audio_sensor)
+    my_video_tree = DPtree(my_video_sensor)
+
+    # Return both trees as a list
+    return [my_audio_tree, my_video_tree]
