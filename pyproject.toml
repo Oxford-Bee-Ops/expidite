@@ -74,6 +74,7 @@ select = [
     "I",   # isort
     "RUF", # ruff-specific rules
     "PIE", # flake8-pie
+    "ANN202", # flake8-annotations, better if we enforce all the ANN rules, but need to fix violations first
 ]
 fixable = ["ALL"]
 

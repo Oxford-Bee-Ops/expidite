@@ -22,7 +22,7 @@ INVENTORY: list[DeviceCfg] = [
 class Test_BMP280_device:
 
     @pytest.mark.unittest
-    def test_BMP280_device(self):
+    def test_BMP280_device(self) -> None:
         logger.info("Running test_BMP280_device")
 
         with RpiEmulator.get_instance() as th:

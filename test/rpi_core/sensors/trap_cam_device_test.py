@@ -25,7 +25,7 @@ INVENTORY: list[DeviceCfg] = [
 class Test_trap_cam_device:
 
     @pytest.mark.unittest
-    def test_trap_cam_device(self):
+    def test_trap_cam_device(self) -> None:
         logger.info("Running test_trap_cam_device")
 
         with RpiEmulator.get_instance() as th:

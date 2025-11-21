@@ -245,7 +245,7 @@ class VideoArucoProcessor(DataProcessor):
         known_marker_info = return_data.known_markers.for_csv
         unknown_marker_info = return_data.unknown_markers.for_csv
 
-        def add_marker_info(list_to_update, corners_as_3d_array, marker_id):
+        def add_marker_info(list_to_update, corners_as_3d_array, marker_id) -> None:
             # Note, a corner set from detectMarkers() is a 3D array, (1,4,2).
             # 4 = number of corners, 2 = x,y for each corner.  Not sure
             # why we need the extra dimension, but hence taking the [0] element
