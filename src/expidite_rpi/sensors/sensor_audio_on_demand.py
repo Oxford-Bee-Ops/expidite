@@ -31,10 +31,11 @@ class AudioSensorCfg(SensorCfg):
     ############################################################
     # Custom fields
     ############################################################
-    # arecord command to call.
+    # arecord command to call with the following placeholders:
+    # HW_INDEX: dynamically replaced with the hardware index of the USB microphone to use.
     # DURATION: The duration of each audio recording in seconds.
     # FILENAME: The filename to use for the audio recording.
-    arecord_cmd: str = "arecord -D hw:SENSOR_INDEX -r 44100 -c 1 -f S16_LE -t wav -d DURATION FILENAME"
+    arecord_cmd: str = "arecord -D HW_INDEX -r 44100 -c 1 -f S16_LE -t wav -d DURATION FILENAME"
 
 DEFAULT_AUDIO_SENSOR_CFG = AudioSensorCfg(
     sensor_type=api.SENSOR_TYPE.USB,
@@ -60,14 +61,14 @@ class AudioSensor(Sensor):
         assert self.config.arecord_cmd.startswith("arecord "), (
             f"arecord_cmd must start with 'arecord ': {self.config.arecord_cmd}"
         )
+        assert "HW_INDEX" in self.config.arecord_cmd, (
+            "arecord_cmd must contain the HW_INDEX placeholder"
+        )
         assert "FILENAME" in self.config.arecord_cmd, (
             "arecord_cmd must contain the FILENAME placeholder"
         )
         assert "DURATION" in self.config.arecord_cmd, (
             "arecord_cmd must contain the DURATION placeholder"
-        )
-        assert "SENSOR_INDEX" in self.config.arecord_cmd, (
-            "arecord_cmd must contain the SENSOR_INDEX placeholder"
         )
 
         # Validate that the required streams exist in the configuration
@@ -89,10 +90,18 @@ class AudioSensor(Sensor):
         logger.info(f"AudioSensor triggered to record for {duration!s} seconds")
 
         try:
+            # Find a USB audio device
+            usb_str = utils.run_cmd("arecord -l | grep -i usb")
+            if not usb_str:
+                raise RuntimeError("No USB audio device found for recording")
+            card_index = usb_str.split("card ")[1].split(":")[0].strip()
+            device_index = usb_str.split("device ")[1].split(":")[0].strip()
+            hw_index = f"hw:{card_index},{device_index}"
+
             start_time = api.utc_now()
             wav_output_filename = file_naming.get_temporary_filename(api.FORMAT.WAV)
             arecord_cmd = self.config.arecord_cmd
-            arecord_cmd = arecord_cmd.replace("SENSOR_INDEX", str(self.sensor_index))
+            arecord_cmd = arecord_cmd.replace("HW_INDEX", hw_index)
             arecord_cmd = arecord_cmd.replace("DURATION", str(duration))
             arecord_cmd = arecord_cmd.replace("FILENAME", str(wav_output_filename))
 
