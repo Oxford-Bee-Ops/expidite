@@ -22,7 +22,7 @@ VIDEO_OD_STREAM: Stream = Stream(
             type_id=VIDEO_OD_DATA_TYPE_ID,
             index=VIDEO_OD_STREAM_INDEX,
             format=api.FORMAT.MP4,
-            cloud_container="expidite-upload",
+            cloud_container="expidite-od",
             sample_probability="1.0",
         )
 
@@ -36,7 +36,9 @@ class VideoOnDemandSensorCfg(SensorCfg):
     # The filename should be substituted with FILENAME.
     # The recording duration after -t should be substituted with DURATION in seconds.
     # Example: "rpicam-vid --framerate 5 --width 640 --height 640 -o FILENAME -t DURATION"
-    video_od_cmd: str = "rpicam-vid --framerate 5 --width 640 --height 480 -o FILENAME -t DURATION"
+    # Lens position set for focusing at 30cm (where it's best to focus slightly closer at 0.25m)
+    video_od_cmd: str = (f"rpicam-vid --lens-position 4 --framerate 10 "
+                         f"--width 1920 --height 1080 -o FILENAME -t DURATION")
 
 DEFAULT_VIDEO_OD_SENSOR_CFG = VideoOnDemandSensorCfg(
     sensor_type=api.SENSOR_TYPE.CAMERA,
