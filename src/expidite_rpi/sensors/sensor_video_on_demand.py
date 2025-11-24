@@ -37,8 +37,8 @@ class VideoOnDemandSensorCfg(SensorCfg):
     # The recording duration after -t should be substituted with DURATION in seconds.
     # Example: "rpicam-vid --framerate 5 --width 640 --height 640 -o FILENAME -t DURATION"
     # Lens position set for focusing at 30cm (where it's best to focus slightly closer at 0.25m)
-    video_od_cmd: str = (f"rpicam-vid --lens-position 4 --framerate 10 "
-                         f"--width 1080 --height 1080 -o FILENAME -t DURATION")
+    video_od_cmd: str = ("rpicam-vid --lens-position 4 --framerate 10 "
+                         "--width 1080 --height 1080 -o FILENAME -t DURATION")
 
 DEFAULT_VIDEO_OD_SENSOR_CFG = VideoOnDemandSensorCfg(
     sensor_type=api.SENSOR_TYPE.CAMERA,
