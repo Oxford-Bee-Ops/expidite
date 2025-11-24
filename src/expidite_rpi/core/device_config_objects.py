@@ -91,6 +91,9 @@ class DeviceCfg(Configuration):
     # Cloud storage container for system test results
     cc_for_system_test: str = "expidite-system-test"
 
+    # Cloud storage container for diagnostics bundles.
+    cc_for_diagnostics_bundles: str = "expidite-diags"
+
     # Frequency of sending device health heart beat
     heart_beat_frequency: int = 60 * 10
 

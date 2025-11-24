@@ -7,6 +7,7 @@ from typing import Optional
 
 from expidite_rpi.core import api
 from expidite_rpi.core import configuration as root_cfg
+from expidite_rpi.core.diagnostics_bundle import DiagnosticsBundle
 from expidite_rpi.utils import utils
 
 logger = root_cfg.setup_logger("expidite")
@@ -36,6 +37,7 @@ class DeviceManager:
         self.ping_success_count_run = 0
         self.led_timer: Optional[utils.RepeatTimer] = None
         self.wifi_timer: Optional[utils.RepeatTimer] = None
+        self.diagnostics_upload_timer: Optional[utils.RepeatTimer] = None
 
 
     def start(self) -> None:
@@ -78,6 +80,14 @@ class DeviceManager:
             self.led_timer.start()
             logger.info("DeviceManager LED timer started")
 
+        if root_cfg.running_on_rpi:
+            # We don't need to check often. These diagnostics are generated rarely and are not required in
+            # real time.
+            self.diagnostics_upload_timer = utils.RepeatTimer(interval=3600,
+                                                              function=self.diagnostics_upload_timer_callback)
+            self.diagnostics_upload_timer.start()
+            logger.info("Diagnostics Upload timer started")
+
     def stop(self) -> None:
         """Stop the DeviceManager threads."""
         if self.led_timer is not None:
@@ -86,6 +96,9 @@ class DeviceManager:
         if self.wifi_timer is not None:
             self.wifi_timer.cancel()
             logger.info("DeviceManager Wifi timer stopped")
+        if self.diagnostics_upload_timer is not None:
+            self.diagnostics_upload_timer.cancel()
+            logger.info("Diagnostics Upload timer stopped")
 
     #############################################################################################################
     # LED management functions
@@ -307,6 +320,7 @@ class DeviceManager:
         # Ping cycle is 2s, so 60*60*2 = 4 hours.
         if self.ping_failure_count_run == (60 * 60 * 2):
             logger.error(f"{root_cfg.RAISE_WARN()}Rebooting device due to no internet for >4 hours")
+            DiagnosticsBundle.collect("Rebooting device due to no internet for >4 hours")
             utils.run_cmd("sudo reboot")
 
         elif self.ping_failure_count_run % retry_frequency == 60:
@@ -359,3 +373,12 @@ class DeviceManager:
         self.set_ping_status(True)
 
         self.last_ping_was_ok = True
+
+    @staticmethod
+    def diagnostics_upload_timer_callback() -> None:
+        try:
+            logger.debug("Diagnostics upload timer callback")
+            DiagnosticsBundle.upload()
+        except Exception as e:
+            logger.error(f"{root_cfg.RAISE_WARN()}Diagnostics upload callback threw an exception: " + str(e),
+                        exc_info=True)
