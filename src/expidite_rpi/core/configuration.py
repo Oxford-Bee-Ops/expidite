@@ -104,6 +104,7 @@ if running_on_windows:
     # We use a time string in the root_working_dir to avoid clashes when running multiple instances
     # of RpiCore on the same machine
     ROOT_WORKING_DIR: Path = Path(tempfile.gettempdir()) / "expidite" / api.utc_to_fname_str()
+    DIAGS_DIR: Path = HOME_DIR / "expidite-diags"
     assert HOME_DIR is not None, f"No 'code' directory found in path {Path.cwd()}"
 
 elif running_on_rpi:
@@ -113,6 +114,7 @@ elif running_on_rpi:
     SC_CODE_DIR = CODE_DIR / "expidite"
     CFG_DIR = HOME_DIR / ".expidite"  # In the base user directory on the RPi
     ROOT_WORKING_DIR = Path("/expidite")
+    DIAGS_DIR = Path("/expidite-diags")
     utils_clean.create_root_working_dir(ROOT_WORKING_DIR)
 
 elif running_on_linux:
@@ -122,6 +124,7 @@ elif running_on_linux:
     SC_CODE_DIR = Path("/app")
     CFG_DIR = Path("/run/secrets")
     ROOT_WORKING_DIR = Path("/expidite")
+    DIAGS_DIR = Path("/expidite-diags") # Deliberately separate, so that it survives reboot.
     utils_clean.create_root_working_dir(ROOT_WORKING_DIR)
 else:
     raise Exception("Unknown platform: " + platform.platform())
@@ -151,6 +154,7 @@ dirs = [
     TEST_DIR,
     FLAGS_DIR,
     TMP_FLAGS_DIR,
+    DIAGS_DIR,
     EDGE_PROCESSING_DIR,
     EDGE_STAGING_DIR,
     EDGE_UPLOAD_DIR,
