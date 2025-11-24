@@ -79,3 +79,8 @@ fixable = ["ALL"]
 
 [tool.ruff.lint.pydocstyle]
 convention = "google"
+
+[tool.mypy]
+files = "**/*.py"
+check_untyped_defs = true # Override default. Type-checks the interior of functions without type annotations.
+ignore_missing_imports = true # Override default. Suppresses error messages about imports that cannot be resolved.
