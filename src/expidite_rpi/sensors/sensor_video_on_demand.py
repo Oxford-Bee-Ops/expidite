@@ -23,7 +23,7 @@ VIDEO_OD_STREAM: Stream = Stream(
             index=VIDEO_OD_STREAM_INDEX,
             format=api.FORMAT.MP4,
             cloud_container="expidite-upload",
-            sample_probability="0.0",
+            sample_probability="1.0",
         )
 
 @dataclass

@@ -23,7 +23,7 @@ AUDIO_SENSOR_STREAM = Stream(
             index=AUDIO_SENSOR_STREAM_INDEX,
             format=api.FORMAT.WAV,
             cloud_container="expidite-audio",
-            sample_probability="0.0",
+            sample_probability="1.0",
         )
 
 @dataclass
