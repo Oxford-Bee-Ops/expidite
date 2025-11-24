@@ -105,8 +105,9 @@ class DiagnosticsBundle:
             f.write(f"\nExpidite version: {expidite_version}\n")
             f.write(f"User code version: {user_code_version}\n")
             f.write("\nExpidite system configuration:\n")
-            for key, value in root_cfg.system_cfg.model_dump().items():
-                f.write(f"    {key}: {value}\n")
+            if root_cfg.system_cfg is not None:
+                for key, value in root_cfg.system_cfg.model_dump().items():
+                    f.write(f"    {key}: {value}\n")
 
             f.write(f"\nExpidite device configuration:\n{root_cfg.my_device.display()}")
             if root_cfg.keys:
