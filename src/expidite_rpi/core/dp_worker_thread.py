@@ -216,5 +216,6 @@ class DPworker(Thread):
             df = pd.concat(df_list, ignore_index=True)
             logger.debug(f"Loaded {len(df)} rows from CSV files for {data_id}")
         else:
+            df = None
             logger.debug(f"No CSV files found for {data_id}")
         return df
