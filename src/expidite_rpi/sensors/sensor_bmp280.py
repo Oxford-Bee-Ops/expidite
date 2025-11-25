@@ -52,8 +52,7 @@ class BMP280(Sensor):
         self.config = config
 
     # Separate thread to log data
-    def run(self):
-
+    def run(self) -> None:
         i2c = board.I2C()
         sensor = adafruit_bmp280.Adafruit_BMP280_I2C(i2c, address=BMP280_SENSOR_INDEX)
 

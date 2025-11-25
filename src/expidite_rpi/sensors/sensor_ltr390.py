@@ -53,8 +53,7 @@ class LTR390(Sensor):
         super().__init__(config)
         self.config = config
 
-    def run(self):
-
+    def run(self) -> None:
         i2c = board.I2C()
         sensor = adafruit_ltr390.LTR390(i2c)
         current_gain = 4 # This is the index for 18x gain

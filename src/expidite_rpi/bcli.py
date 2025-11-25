@@ -1061,7 +1061,7 @@ class InteractiveMenu:
 # Main function to run the CLI
 # Main just calls the interactive menu
 #################################################################################
-def main():
+def main() -> None:
     # Disable console logging during CLI execution
     with disable_console_logging("expidite"):
         try:

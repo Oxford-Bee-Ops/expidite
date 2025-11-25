@@ -419,7 +419,7 @@ class LTR390Driver:  # pylint:disable=too-many-instance-attributes
         """Set the precision of the internal ADC used to read the light measurements"""
         return self._resolution_bits
 
-    def set_resolution(self, value: int):
+    def set_resolution(self, value: int) -> None:
         if not Resolution.is_valid(value):
             raise AttributeError("resolution must be a Resolution")
         self._resolution_bits = value

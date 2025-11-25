@@ -14,7 +14,7 @@ from expidite_rpi.core import configuration as root_cfg
 
 logger = root_cfg.setup_logger("expidite")
 
-def main():
+def main() -> None:
     """Run RpiCore as defined in the system.cfg file."""
 
     try:

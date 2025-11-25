@@ -12,7 +12,7 @@ from expidite_rpi.core import configuration as root_cfg
 
 logger = root_cfg.setup_logger("expidite")
 
-def main():
+def main() -> None:
     """Run expidite-rpi in System Test mode invoking the tests defined in DeviceCfg.tests_to_run."""
 
     # We expect:

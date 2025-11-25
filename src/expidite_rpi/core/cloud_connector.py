@@ -547,7 +547,7 @@ class LocalCloudConnector(CloudConnector):
             self.local_cloud.mkdir(parents=True, exist_ok=True)
         return self.local_cloud
 
-    def clear_local_cloud(self):
+    def clear_local_cloud(self) -> None:
         """Clear the local cloud storage - this is used for testing only"""
         if self.local_cloud.exists():
             shutil.rmtree(self.local_cloud)
@@ -837,7 +837,7 @@ class AsyncCloudConnector(CloudConnector):
         # Start the worker thread to process the upload queue
         self._worker_pool.submit(self.do_work)
 
-    def shutdown(self):
+    def shutdown(self) -> None:
         """ Shutdown the worker pool.
         Will wait until scheduled uploads are complete before returning."""
 

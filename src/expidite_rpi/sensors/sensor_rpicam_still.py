@@ -95,7 +95,7 @@ class RpicamStillSensor(Sensor):
                              f"{RPICAM_STILL_REVIEW_MODE_STREAM_INDEX}: {e}")
 
 
-    def run(self):
+    def run(self) -> None:
         """Main loop for the RpicamStillSensor - runs continuously unless paused."""
         if not root_cfg.running_on_rpi and root_cfg.ST_MODE != root_cfg.SOFTWARE_TEST_MODE.TESTING:
             logger.warning("Only supported on Raspberry Pi.")

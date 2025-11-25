@@ -52,7 +52,7 @@ class SHT31(Sensor):
         super().__init__(config)
         self.config = config
 
-    def read_data(self):
+    def read_data(self) -> tuple[float, float]:
         cTemp: float
         humidity: float
 
@@ -84,8 +84,7 @@ class SHT31(Sensor):
         return cTemp, humidity
 
     # Separate thread to log data
-    def run(self):
-
+    def run(self) -> None:
         while self.continue_recording():
             try:
                 temperature, humidity = self.read_data()

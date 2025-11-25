@@ -17,7 +17,7 @@ from expidite_rpi.sensors.drivers.crc8_helper import AHT20_crc8_check
 if sys.platform == "win32":
     class MockSMBus:
         def __init__(self, *args, **kwargs) -> None: pass
-        def write_i2c_block_data(self, *args, **kwargs): pass
+        def write_i2c_block_data(self, *args, **kwargs) -> None: pass
         def read_i2c_block_data(self, *args, **kwargs): return [0]*7
 
     mock_smbus2 = types.ModuleType("smbus2")

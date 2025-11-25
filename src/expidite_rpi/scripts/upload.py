@@ -5,7 +5,7 @@ from expidite_rpi.core import configuration as root_cfg
 from expidite_rpi.core.cloud_connector import CloudConnector
 
 
-def main():
+def main() -> None:
     if len(sys.argv) != 2:
         print("Usage: python upload.py <filename>")
         sys.exit(1)

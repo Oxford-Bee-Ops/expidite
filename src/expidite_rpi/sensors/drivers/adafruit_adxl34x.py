@@ -260,7 +260,7 @@ class ADXL345:
 
         return self._event_status
 
-    def enable_motion_detection(self, *, threshold: int = 18):
+    def enable_motion_detection(self, *, threshold: int = 18) -> None:
         """
         The activity detection parameters.
 
@@ -339,7 +339,7 @@ class ADXL345:
         duration: int = 50,
         latency: int = 20,
         window: int = 255,
-    ):
+    ) -> None:
         """
         The tap detection parameters.
 

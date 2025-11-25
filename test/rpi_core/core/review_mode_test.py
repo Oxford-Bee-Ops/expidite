@@ -26,7 +26,7 @@ from expidite_rpi.sensors.sensor_rpicam_vid import (
 class TestReviewModeExercise:
     """Test class for exercising review mode functionality."""
 
-    def setup_method(self):
+    def setup_method(self) -> None:
         """Set up test environment before each test."""
         # Enable testing mode so sensor doesn't check for Raspberry Pi
         root_cfg.ST_MODE = root_cfg.SOFTWARE_TEST_MODE.TESTING
@@ -37,7 +37,7 @@ class TestReviewModeExercise:
         # Mock the review mode flag file path
         self.review_flag_path = self.temp_dir / "review_mode_flag"
 
-    def teardown_method(self):
+    def teardown_method(self) -> None:
         """Clean up after each test."""
         # Clean up temp files
         if self.review_flag_path.exists():
@@ -49,7 +49,9 @@ class TestReviewModeExercise:
     @patch('expidite_rpi.utils.utils.run_cmd')
     @patch('expidite_rpi.core.file_naming.get_temporary_filename')
     @patch.object(RpicamSensor, 'save_recording')
-    def test_review_mode_output_direct_call(self, mock_save_recording, mock_get_filename, mock_run_cmd):
+    def test_review_mode_output_direct_call(
+        self, mock_save_recording, mock_get_filename, mock_run_cmd
+    ) -> None:
         """Test calling review_mode_output() directly."""
         # Arrange
         test_file = self.temp_dir / "test_review_image.jpg"
@@ -80,7 +82,7 @@ class TestReviewModeExercise:
     @patch('expidite_rpi.core.file_naming.get_temporary_filename')
     @patch.object(RpicamSensor, 'save_recording')
     def test_sensor_run_in_review_mode(self, mock_save_recording, mock_get_filename,
-                                       mock_run_cmd, mock_review_flag):
+                                       mock_run_cmd, mock_review_flag) -> None:
         """Test the main sensor run() loop with review mode activated."""
         # Arrange
         mock_review_flag.exists.return_value = True
@@ -120,7 +122,7 @@ class TestReviewModeExercise:
     @patch.object(RpicamSensor, 'save_recording')
     def test_sensor_toggles_between_normal_and_review_mode(self, mock_save_recording,
                                                           mock_get_filename, mock_run_cmd,
-                                                          mock_in_review_mode):
+                                                          mock_in_review_mode) -> None:
         """Test sensor behavior when toggling between normal and review modes."""
         # Arrange
         test_file = self.temp_dir / "test_file.mp4"
@@ -163,7 +165,7 @@ class TestReviewModeExercise:
         assert stream_indices_used == expected_indices
 
     @patch('expidite_rpi.utils.utils.run_cmd')
-    def test_review_mode_command_construction(self, mock_run_cmd):
+    def test_review_mode_command_construction(self, mock_run_cmd) -> None:
         """Test that review mode constructs the correct rpicam-still command."""
         # Arrange
         custom_review_cmd = "rpicam-still --width 1280 --height 720 --quality 95 -o FILENAME"

@@ -48,7 +48,7 @@ POLL_INTERVAL = float(os.environ.get("LED_POLL_SEC", "1.0"))
 DEFAULT_BLINK_RATE = 0.5
 stop_event = Event()
 
-def run_pinctrl(args):
+def run_pinctrl(args) -> None:
     cmd = ["pinctrl", *args]
     try:
         subprocess.run(cmd, check=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
@@ -56,18 +56,18 @@ def run_pinctrl(args):
         # If pinctrl fails, ignore but log to stderr
         print(f"pinctrl failed: {' '.join(cmd)}", file=sys.stderr)
 
-def ensure_output(pin: Pin):
+def ensure_output(pin: Pin) -> None:
     run_pinctrl(["set", pin.gpio_pin, "op"])
 
-def set_high(pin: Pin):
+def set_high(pin: Pin) -> None:
     ensure_output(pin)
     run_pinctrl(["set", pin.gpio_pin, "dh"])
 
-def set_low(pin: Pin):
+def set_low(pin: Pin) -> None:
     ensure_output(pin)
     run_pinctrl(["set", pin.gpio_pin, "dl"])
 
-def blink_loop(rate: float, pin: Pin):
+def blink_loop(rate: float, pin: Pin) -> None:
     # rate is seconds for half-cycle (on or off)
     try:
         while not pin.blink_stop.wait(0):
@@ -80,26 +80,26 @@ def blink_loop(rate: float, pin: Pin):
     except Exception as e:
         print("blink thread error:", e, file=sys.stderr)
 
-def start_blink(rate, pin: Pin):
+def start_blink(rate, pin: Pin) -> None:
     stop_blink(pin=pin)
     pin.blink_stop.clear()
     pin.blink_thread = Thread(target=blink_loop, args=(rate, pin), daemon=True)
     pin.blink_thread.start()
 
-def stop_blink(pin: Pin):
+def stop_blink(pin: Pin) -> None:
     if pin.blink_thread and pin.blink_thread.is_alive():
         pin.blink_stop.set()
         pin.blink_thread.join(timeout=1.0)
     pin.blink_thread = None
     pin.blink_stop.clear()
 
-def reset_status():
+def reset_status() -> None:
     stop_blink(GREEN_PIN)
     stop_blink(RED_PIN)
     set_low(GREEN_PIN)
     set_low(RED_PIN)
 
-def parse_status(text: str):
+def parse_status(text: str) -> tuple[str, str, Optional[float]]:
     """The text is always a colour (green|red) followed by a status (on|off|blink:N), with an optional
     blink rate.
     For example:
@@ -137,7 +137,7 @@ def parse_status(text: str):
 
     return (colour, status, rate)
 
-def read_status_file():
+def read_status_file() -> str:
     try:
         if LED_STATUS_FILE.exists():
             with open(LED_STATUS_FILE, "r") as f:
@@ -148,7 +148,7 @@ def read_status_file():
         print("Error reading status file:", e, file=sys.stderr)
         return "red:on"
 
-def acquire_lock_or_exit():
+def acquire_lock_or_exit() -> None:
     if LOCK_FILE.exists():
         print(f"Lock file {LOCK_FILE} exists, exiting.", file=sys.stderr)
         sys.exit(1)
@@ -156,10 +156,10 @@ def acquire_lock_or_exit():
         LOCK_FILE.parent.mkdir(parents=True, exist_ok=True)
         LOCK_FILE.touch(exist_ok=False)
 
-def handle_signal(signum, frame):
+def handle_signal(signum, frame) -> None:
     stop_event.set()
 
-def main():
+def main() -> None:
     acquire_lock_or_exit()
     signal.signal(signal.SIGINT, handle_signal)
     signal.signal(signal.SIGTERM, handle_signal)

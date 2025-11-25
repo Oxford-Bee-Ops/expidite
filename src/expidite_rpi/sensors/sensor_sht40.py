@@ -48,8 +48,7 @@ class SHT40(Sensor):
         self.config = config
 
     # Separate thread to log data
-    def run(self):
-
+    def run(self) -> None:
         with LinuxI2cTransceiver("/dev/i2c-1") as i2c_transceiver:
             channel = I2cChannel(I2cConnection(i2c_transceiver),
                                 slave_address=0x44,
