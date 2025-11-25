@@ -93,7 +93,7 @@ class TestReviewModeExercise:
 
         # Mock continue_recording to run only a few iterations
         call_count = 0
-        def mock_continue_recording():
+        def mock_continue_recording() -> bool:
             nonlocal call_count
             call_count += 1
             return call_count <= 3  # Run 3 iterations then stop
@@ -133,7 +133,7 @@ class TestReviewModeExercise:
         review_mode_states = [False, True, True, False]  # Normal, Review, Review, Normal
         state_index = 0
 
-        def mock_review_mode():
+        def mock_review_mode() -> bool:
             nonlocal state_index
             if state_index < len(review_mode_states):
                 result = review_mode_states[state_index]
@@ -144,7 +144,7 @@ class TestReviewModeExercise:
         mock_in_review_mode.side_effect = mock_review_mode
 
         call_count = 0
-        def mock_continue_recording():
+        def mock_continue_recording() -> bool:
             nonlocal call_count
             call_count += 1
             return call_count <= 4  # Run 4 iterations

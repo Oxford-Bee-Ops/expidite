@@ -59,7 +59,7 @@ DIAGNOSTIC_COMMANDS = [
 ##############################################################################################################
 class DiagnosticsBundle:
     @staticmethod
-    def collect(reason: str):
+    def collect(reason: str) -> None:
         """Collects and saves a diagnostics bundle to a time-stamped file."""
 
         if not root_cfg.running_on_rpi:
@@ -76,7 +76,7 @@ class DiagnosticsBundle:
 
         logger.info(f"Starting diagnostic collection to {log_filename}")
 
-        def write_bar():
+        def write_bar() -> None:
             f.write("=" * 150 + "\n")
 
         with gzip.open(log_filename, "wt") as f:
@@ -144,7 +144,7 @@ class DiagnosticsBundle:
             return f"EXECUTION ERROR: {e}", "", 1
 
     @staticmethod
-    def upload():
+    def upload() -> None:
         """Upload existing diagnostics bundles, if any, from disk to cloud storage."""
         try:
             for filename in os.listdir(root_cfg.DIAGS_DIR):
