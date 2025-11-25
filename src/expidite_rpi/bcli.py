@@ -170,7 +170,7 @@ def check_device_in_inventory() -> None:
 
 class InteractiveMenu:
     """Interactive menu for navigating commands."""
-    def __init__(self):
+    def __init__(self) -> None:
         self.sc = RpiCore()
         inventory = root_cfg.load_configuration()
         logger.debug(f"Inventory: {inventory}")

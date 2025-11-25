@@ -51,7 +51,7 @@ DEFAULT_AUDIO_SENSOR_CFG = AudioSensorCfg(
 class AudioSensor(Sensor):
 
     # Constructor for the AudioSensor class
-    def __init__(self, config: AudioSensorCfg):
+    def __init__(self, config: AudioSensorCfg) -> None:
         super().__init__(config)
         self.config: AudioSensorCfg = config
         # Check that the arecord_cmd is valid

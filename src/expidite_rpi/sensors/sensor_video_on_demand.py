@@ -49,7 +49,7 @@ DEFAULT_VIDEO_OD_SENSOR_CFG = VideoOnDemandSensorCfg(
 )
 
 class VideoOnDemandSensor(Sensor):
-    def __init__(self, config: VideoOnDemandSensorCfg):
+    def __init__(self, config: VideoOnDemandSensorCfg) -> None:
         """Constructor for the VideoOnDemandSensor class"""
         super().__init__(config)
         self.config = config

@@ -47,7 +47,7 @@ DEFAULT_ADXL34X_SENSOR_CFG = ADXL34XSensorCfg(
 
 class ADXL34X(Sensor):
     # Init
-    def __init__(self, config: ADXL34XSensorCfg):
+    def __init__(self, config: ADXL34XSensorCfg) -> None:
         super().__init__(config)
         self.config = config
 

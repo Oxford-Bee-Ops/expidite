@@ -61,7 +61,7 @@ class EdgeOrchestrator:
 
     root_cfg.set_mode(root_cfg.Mode.EDGE)
 
-    def __new__(cls, *args, **kwargs): # type: ignore
+    def __new__(cls, *args, **kwargs) -> "EdgeOrchestrator": # type: ignore
         if not cls._instance:
             cls._instance = super(EdgeOrchestrator, cls).__new__(cls, *args, **kwargs)
         return cls._instance

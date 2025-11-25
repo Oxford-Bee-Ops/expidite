@@ -37,7 +37,7 @@ DEFAULT_AHT20_SENSOR_CFG = AHT20SensorCfg(
 
 class AHT20(Sensor):
     # Init
-    def __init__(self, config: AHT20SensorCfg):
+    def __init__(self, config: AHT20SensorCfg) -> None:
         super().__init__(config)
         self.config = config
 

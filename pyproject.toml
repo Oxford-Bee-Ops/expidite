@@ -76,6 +76,9 @@ select = [
     "PIE", # flake8-pie
     # flake8-annotations Ideally enforce all rules, but we need to fix violations before enforcing more.
     "ANN202",
+    "ANN204",
+    "ANN205",
+    "ANN206",
 ]
 fixable = ["ALL"]
 

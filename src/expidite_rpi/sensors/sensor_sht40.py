@@ -43,7 +43,7 @@ DEFAULT_SHT40_SENSOR_CFG = SHT40SensorCfg(
 
 class SHT40(Sensor):
     # Init
-    def __init__(self, config: SHT40SensorCfg):
+    def __init__(self, config: SHT40SensorCfg) -> None:
         super().__init__(config)
         self.config = config
 

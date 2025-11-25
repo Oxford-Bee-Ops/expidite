@@ -48,7 +48,7 @@ class DPtree:
     - get_node: Retrieves a node from the tree by its data_id.
     - get_processors: Retrieves all processor nodes in the tree.
     """
-    def __init__(self, sensor: Sensor):
+    def __init__(self, sensor: Sensor) -> None:
         """
         Initializes a DPtree with a Sensor instance that forms the root of the tree.
         """

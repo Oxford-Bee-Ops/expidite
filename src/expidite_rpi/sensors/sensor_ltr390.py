@@ -49,7 +49,7 @@ DEFAULT_LTR390_SENSOR_CFG = LTR390SensorCfg(
 
 class LTR390(Sensor):
     # Init
-    def __init__(self, config: LTR390SensorCfg):
+    def __init__(self, config: LTR390SensorCfg) -> None:
         super().__init__(config)
         self.config = config
 

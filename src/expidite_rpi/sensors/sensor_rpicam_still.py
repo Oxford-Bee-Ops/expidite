@@ -60,7 +60,7 @@ DEFAULT_RPICAM_STILL_SENSOR_CFG = RpicamStillSensorCfg(
 )
 
 class RpicamStillSensor(Sensor):
-    def __init__(self, config: RpicamStillSensorCfg):
+    def __init__(self, config: RpicamStillSensorCfg) -> None:
         """Constructor for the RpicamStillSensor class"""
         super().__init__(config)
         self.config = config

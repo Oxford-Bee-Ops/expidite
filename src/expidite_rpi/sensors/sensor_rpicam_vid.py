@@ -61,7 +61,7 @@ DEFAULT_RPICAM_SENSOR_CFG = RpicamSensorCfg(
 )
 
 class RpicamSensor(Sensor):
-    def __init__(self, config: RpicamSensorCfg):
+    def __init__(self, config: RpicamSensorCfg) -> None:
         """Constructor for the RpicamSensor class"""
         super().__init__(config)
         self.config = config

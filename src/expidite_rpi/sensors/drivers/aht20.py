@@ -16,7 +16,7 @@ from expidite_rpi.sensors.drivers.crc8_helper import AHT20_crc8_check
 # for testing purposes. This prevents "ModuleNotFoundError: No module named 'fcntl'".
 if sys.platform == "win32":
     class MockSMBus:
-        def __init__(self, *args, **kwargs): pass
+        def __init__(self, *args, **kwargs) -> None: pass
         def write_i2c_block_data(self, *args, **kwargs): pass
         def read_i2c_block_data(self, *args, **kwargs): return [0]*7
 
@@ -43,7 +43,7 @@ AHT20_STATUSBIT_CALIBRATED = 3  # The 3rd bit is the CAL (calibration) Enable bi
 class AHT20:
     # I2C communication driver for AHT20, using only smbus2
 
-    def __init__(self, BusNum=1):
+    def __init__(self, BusNum=1) -> None:
         # Initialize AHT20
         self.BusNum = BusNum
         self.cmd_soft_reset()
