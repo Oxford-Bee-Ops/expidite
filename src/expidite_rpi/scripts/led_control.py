@@ -140,7 +140,7 @@ def parse_status(text: str) -> tuple[str, str, Optional[float]]:
 def read_status_file() -> str:
     try:
         if LED_STATUS_FILE.exists():
-            with open(LED_STATUS_FILE, "r") as f:
+            with open(LED_STATUS_FILE) as f:
                 return f.read()
         else:
             return "red:on"

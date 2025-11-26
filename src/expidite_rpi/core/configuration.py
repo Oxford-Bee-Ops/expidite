@@ -42,7 +42,7 @@ WATCHDOG_FREQUENCY: float = 1
 ############################################################################################
 def _get_pi_model() -> str:
     try:
-        with open("/proc/device-tree/model", "r") as model_file:
+        with open("/proc/device-tree/model") as model_file:
             return model_file.read()
     except FileNotFoundError:
         print("ERROR: proc/device-tree/model file not found. Are you running this on a Raspberry Pi?")
@@ -484,10 +484,10 @@ def get_version_info() -> tuple[str, str]:
     expidite_version = "unknown"
     user_code_version = "unknown"
     if EXPIDITE_VERSION_FILE.exists():
-        with open(EXPIDITE_VERSION_FILE, "r") as f:
+        with open(EXPIDITE_VERSION_FILE) as f:
             expidite_version = f.read().strip()
     if USER_CODE_VERSION_FILE.exists():
-        with open(USER_CODE_VERSION_FILE, "r") as f:
+        with open(USER_CODE_VERSION_FILE) as f:
             user_code_version = f.read().strip()
 
     return (expidite_version, user_code_version)

@@ -74,11 +74,13 @@ select = [
     "I",   # isort
     "RUF", # ruff-specific rules
     "PIE", # flake8-pie
-    # flake8-annotations Ideally enforce all rules, but we need to fix violations before enforcing more.
+    # flake8-annotations Ideally enforce all ANN rules, but we need to fix violations before enforcing more.
     "ANN202",
     "ANN204",
     "ANN205",
     "ANN206",
+    # pyupgrade Ideally enforce all UP rules, but we need to fix violations before enforcing more.
+    "UP015",
 ]
 fixable = ["ALL"]
 

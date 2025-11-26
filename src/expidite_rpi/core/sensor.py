@@ -128,7 +128,7 @@ class Sensor(Thread, DPnode, ABC):
                 try:
                     start_time = datetime.now()
                     # Read the duration from the flag file
-                    with open(root_cfg.SENSOR_TRIGGER_FLAG, "r") as f:
+                    with open(root_cfg.SENSOR_TRIGGER_FLAG) as f:
                         duration_str = f.read().strip()
                     duration = int(duration_str)
 

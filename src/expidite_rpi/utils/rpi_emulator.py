@@ -210,7 +210,7 @@ class RpiEmulator:
                 files = list((self.local_cloud /container).glob(file_prefix))
                 for file in files:
                     # Check the number of data rows in the file
-                    with open(file, "r") as f:
+                    with open(file) as f:
                         lines = f.readlines()
                         # Ignore any blank lines at the end of the file
                         lines = [line for line in lines if line.strip()]
