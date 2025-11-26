@@ -3,7 +3,7 @@ import io
 import shutil
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from dataclasses import dataclass
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
 from queue import Empty, Queue
 from threading import Event
@@ -423,9 +423,9 @@ class CloudConnector:
         if blob_client.exists():
             last_modified = blob_client.get_blob_properties().last_modified
             # The Azure timezone is UTC but it's not explicitly set; set it
-            return last_modified.replace(tzinfo=timezone.utc)
+            return last_modified.replace(tzinfo=UTC)
         else:
-            return datetime.min.replace(tzinfo=timezone.utc)
+            return datetime.min.replace(tzinfo=UTC)
 
     def shutdown(self) -> None:
         """Shutdown the CloudConnector instance"""
@@ -796,10 +796,10 @@ class LocalCloudConnector(CloudConnector):
         if blob_client.exists():
             last_modified = blob_client.stat().st_mtime
             # The Azure timezone is UTC but it's not explicitly set; set it
-            return datetime.fromtimestamp(last_modified, tz=timezone.utc)
+            return datetime.fromtimestamp(last_modified, tz=UTC)
         else:
             logger.warning(f"Blob {blob_name} does not exist in container {container}")
-            return datetime.min.replace(tzinfo=timezone.utc)
+            return datetime.min.replace(tzinfo=UTC)
 
 #####################################################################################################
 # AsyncCloudConnector class

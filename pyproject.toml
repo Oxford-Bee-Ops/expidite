@@ -82,6 +82,7 @@ select = [
     # pyupgrade Ideally enforce all UP rules, but we need to fix violations before enforcing more.
     "UP006",
     "UP015",
+    "UP017",
     "UP039",
 ]
 fixable = ["ALL"]
