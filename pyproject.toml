@@ -43,7 +43,7 @@ dev = [
     "types-PyYAML",
     "pandas-stubs",
     "types-psutil",
-    "ruff == 0.14.5",
+    "ruff == 0.14.6",
     "mypy == 1.18.2",
     "codespell == 2.4.1",
 ]
@@ -67,24 +67,27 @@ indent-style = "space"
 line-ending = "auto"
 
 [tool.ruff.lint]
+# Enfore these rules.
 select = [
     "F",   # pyflakes
     "E",   # pycodestyle error
     "W",   # pycodestyle warning
     "I",   # isort
     "RUF", # ruff-specific rules
+    "ANN", # flake8-annotations
+    "PERF", # flake8-performance
     "PIE", # flake8-pie
-    # flake8-annotations Ideally enforce all ANN rules, but we need to fix violations before enforcing more.
-    "ANN202",
-    "ANN204",
-    "ANN205",
-    "ANN206",
-    # pyupgrade Ideally enforce all UP rules, but we need to fix violations before enforcing more.
-    "UP006",
-    "UP015",
-    "UP017",
-    "UP035",
-    "UP039",
+    "RET", # flake8-return
+    "SIM", # flake8-simplify
+    "UP", # pyupgrade
+]
+# These rules are desirable to enforce - ignore them temporarily until we can fix the existing violations.
+ignore = [
+    "ANN001", "ANN002", "ANN003", "ANN201", "ANN401",
+    "PERF401",
+    "RET504", "RET505", "RET507", "RET508",
+    "SIM102", "SIM103", "SIM105", "SIM108", "SIM110", "SIM117", "SIM118", "SIM201",
+    "UP007", "UP008", "UP031", "UP045",
 ]
 fixable = ["ALL"]
 
