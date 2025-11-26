@@ -2,12 +2,13 @@
 # EdgeOrchestrator: Manages the state of the sensor threads
 ####################################################################################################
 import threading
+from collections.abc import Callable
 from dataclasses import asdict
 from datetime import timedelta
 from enum import Enum
 from pathlib import Path
 from time import sleep
-from typing import Callable, Optional
+from typing import Optional
 
 import yaml
 from yaml import Dumper

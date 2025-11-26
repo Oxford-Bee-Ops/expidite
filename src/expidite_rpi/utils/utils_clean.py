@@ -3,10 +3,11 @@
 ####################################################################################################
 import logging
 import subprocess
+from collections.abc import Generator
 from contextlib import contextmanager
 from dataclasses import fields, is_dataclass
 from pathlib import Path
-from typing import Any, Generator, Union
+from typing import Any, Union
 
 from pydantic_settings import BaseSettings
 

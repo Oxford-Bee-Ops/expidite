@@ -1,8 +1,9 @@
 
 # Modified from original to improve type checking and PEP adherence
+from collections.abc import Iterable
 from struct import pack_into, unpack_from
 from time import sleep
-from typing import ClassVar, Iterable, Optional
+from typing import ClassVar, Optional
 
 from adafruit_bus_device import i2c_device  # type: ignore
 from adafruit_register.i2c_bit import ROBit, RWBit  # type: ignore
