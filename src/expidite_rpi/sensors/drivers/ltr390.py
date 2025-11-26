@@ -2,7 +2,7 @@
 # Modified from original to improve type checking and PEP adherence
 from struct import pack_into, unpack_from
 from time import sleep
-from typing import ClassVar, Iterable, Optional, Tuple
+from typing import ClassVar, Iterable, Optional
 
 from adafruit_bus_device import i2c_device  # type: ignore
 from adafruit_register.i2c_bit import ROBit, RWBit  # type: ignore
@@ -134,7 +134,7 @@ class CV:
     @classmethod
     def add_values(
         cls,
-        value_tuples: Iterable[Tuple[str, int, str, Optional[float], int, Optional[float]]],
+        value_tuples: Iterable[tuple[str, int, str, Optional[float], int, Optional[float]]],
     ) -> None:
         """Add CV values to the class"""
         cls.string = {}

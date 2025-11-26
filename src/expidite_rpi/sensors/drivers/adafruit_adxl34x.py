@@ -30,7 +30,6 @@ Implementation Notes
 """
 
 from struct import unpack
-from typing import Dict, Tuple
 
 from adafruit_bus_device import i2c_device  # type: ignore
 from micropython import const  # type: ignore
@@ -197,7 +196,7 @@ class ADXL345:
         self._event_status: dict = {}
 
     @property
-    def acceleration(self) -> Tuple[int, int, int]:
+    def acceleration(self) -> tuple[int, int, int]:
         """The x, y, z acceleration values returned in a 3-tuple in :math:`m / s ^ 2`"""
         x, y, z = unpack("<hhh", self._read_register(_REG_DATAX0, 6))
         x = x * _ADXL345_MG2G_MULTIPLIER * _STANDARD_GRAVITY
@@ -221,7 +220,7 @@ class ADXL345:
         return unpack("<h", self._read_register(_REG_DATAZ0, 2))[0]
 
     @property
-    def events(self) -> Dict[str, bool]:
+    def events(self) -> dict[str, bool]:
         """
         :attr:`events` will return a dictionary with a key for each
         event type that has been enabled.
@@ -425,7 +424,7 @@ class ADXL345:
         self._write_register_byte(_REG_DATA_FORMAT, format_register)
 
     @property
-    def offset(self) -> Tuple[int, int, int]:
+    def offset(self) -> tuple[int, int, int]:
         """
         The x, y, z offsets as a tuple of raw count values.
 
@@ -435,7 +434,7 @@ class ADXL345:
         return x_offset, y_offset, z_offset
 
     @offset.setter
-    def offset(self, val: Tuple[int, int, int]) -> None:
+    def offset(self, val: tuple[int, int, int]) -> None:
         x_offset, y_offset, z_offset = val
         self._write_register_byte(_REG_OFSX, x_offset)
         self._write_register_byte(_REG_OFSY, y_offset)

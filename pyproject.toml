@@ -80,6 +80,7 @@ select = [
     "ANN205",
     "ANN206",
     # pyupgrade Ideally enforce all UP rules, but we need to fix violations before enforcing more.
+    "UP006",
     "UP015",
 ]
 fixable = ["ALL"]

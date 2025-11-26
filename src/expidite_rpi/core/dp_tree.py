@@ -1,4 +1,4 @@
-from typing import List, NamedTuple, Tuple
+from typing import NamedTuple
 
 from expidite_rpi.core import configuration as root_cfg
 from expidite_rpi.core.dp_config_objects import Stream
@@ -62,7 +62,7 @@ class DPtree:
 
     def connect(
         self,
-        source: Tuple[DPnode, int],
+        source: tuple[DPnode, int],
         sink: DPnode,
     ) -> None:
         """
@@ -134,7 +134,7 @@ class DPtree:
         """
         return self._nodes[data_id]
 
-    def get_edges(self) -> List[Edge]:
+    def get_edges(self) -> list[Edge]:
         """
         Retrieves all edges in the tree.
 
@@ -143,7 +143,7 @@ class DPtree:
         """
         return self._edges
 
-    def get_processors(self) -> List[DPnode]:
+    def get_processors(self) -> list[DPnode]:
         """
         Retrieves all processor nodes in the tree.
 
