@@ -462,7 +462,6 @@ class InteractiveMenu:
         else:
             click.echo(f"Error: scripts directory does not exist at {scripts_dir}. "
                        f"Please check your installation.")
-            return
 
 
     def start_rpi_core(self) -> None:
@@ -518,7 +517,6 @@ class InteractiveMenu:
                 run_cmd_live_echo(cmd)
 
         click.echo("RpiCore started.")
-        return
 
 
     def stop_rpi_core(self, pkill: bool) -> None:
@@ -529,7 +527,6 @@ class InteractiveMenu:
 
         if pkill and root_cfg.system_cfg:
                 run_cmd(f"sudo pkill -f 'python -m {root_cfg.system_cfg.my_start_script}'")
-        return
 
 
     def enable_rpi_connect(self) -> None:
