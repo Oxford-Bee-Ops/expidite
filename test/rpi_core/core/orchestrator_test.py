@@ -79,9 +79,10 @@ class Test_Orchestrator:
         root_cfg.update_my_device_id("d01111111111")
 
         with rpi_emulator.RpiEmulator.get_instance():
-
             orchestrator = EdgeOrchestrator.get_instance()
-            root_cfg.set_inventory(root_cfg.load_configuration())
+            inventory = root_cfg.load_configuration()
+            if inventory:
+                root_cfg.set_inventory(inventory)
 
             # Direct use of edge_orchestrator to include main() keep-alive
             logger.info("sensor_test: Direct use of EdgeOrchestor to include keep-alive")

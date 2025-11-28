@@ -126,7 +126,7 @@ class CloudConnector:
                         data,
                         overwrite=True,
                         connection_timeout=600,
-                        standard_blob_tier=storage_tier,
+                        standard_blob_tier=storage_tier.value,
                     )
                 if delete_src:
                     logger.debug(f"Deleting uploaded file: {file}")
@@ -233,7 +233,7 @@ class CloudConnector:
             src_blob = from_container.get_blob_client(blob_name)
             dst_blob = to_container.get_blob_client(blob_name)
             dst_blob.start_copy_from_url(src_blob.url,
-                                         standard_blob_tier=storage_tier)
+                                         standard_blob_tier=storage_tier.value)
             if delete_src:
                 src_blob.delete_blob()
 

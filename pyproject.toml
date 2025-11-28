@@ -67,7 +67,7 @@ indent-style = "space"
 line-ending = "auto"
 
 [tool.ruff.lint]
-# Enfore these rules.
+# Enforce these rules.
 select = [
     "F",   # pyflakes
     "E",   # pycodestyle error
