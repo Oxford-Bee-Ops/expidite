@@ -622,6 +622,13 @@ create_mount() {
         sudo mkdir -p $mountpoint
         sudo chown -R $USER:$USER $mountpoint
     fi
+
+    # The diagnostics mountpoint is always on disk, so that it survives reboot. This is OK because its use is very
+    # limited - only for when diagnostics are saved when rebooting as a recovery action.
+    diags_mountpoint="/expidite-diags"
+    sudo mkdir -p $diags_mountpoint
+    sudo chown -R $USER:$USER $diags_mountpoint
+
     # Are we mounting on SSD or RAM disk?
     if grep -qs "/dev/sda" /etc/mtab; then
         echo "Mounted on SSD; no further action reqd."
@@ -652,12 +659,6 @@ create_mount() {
             sudo mount -a
             echo "The expidite mount point has been added to fstab."
         fi
-
-        # The diagnostics mountpoint is always on disk, so that it survives reboot. This is OK because its use is very
-        # limited - only for when diagnostics are saved when rebooting as a recovery action.
-        diags_mountpoint="/expidite-diags"
-        sudo mkdir -p $diags_mountpoint
-        sudo chown -R $USER:$USER $diags_mountpoint
 
         # Disable swap. We want to protect the SD card by minimising disk writes, and swap memory can require
         # frequent disk writes.
