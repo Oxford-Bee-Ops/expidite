@@ -76,7 +76,7 @@ def display_dataclass(obj: Any, indent: int=0) -> str:
         elif is_dataclass(value):
             # Recursively display nested dataclass
             result += f"{fb(indent)}{field.name}::\n{display_dataclass(value, indent + 1)}{nlb(indent)}\n"
-        elif isinstance(value, list) and all(isinstance(item, (str, float, int)) for item in value):
+        elif isinstance(value, list) and all(isinstance(item, str | float | int) for item in value):
             # Treat lists of simple types as a single block
             result += f"{fb(indent)}{field.name}={value}{bb(indent)}\n"
         elif isinstance(value, list):

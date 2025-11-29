@@ -222,8 +222,11 @@ class VideoArucoProcessor(DataProcessor):
         df = pd.DataFrame(all_markers_full_info)
         return df
 
-    def _get_aruco_markers_in_frame(
-        self, detector: cv2.aruco.ArucoDetector, frame, frame_num: int
+    def _get_aruco_markers_in_frame(  # type: ignore[no-untyped-def]
+        self,
+        detector: cv2.aruco.ArucoDetector,
+        frame,
+        frame_num: int
     ) -> FrameMarkersData:
         """Find Aruco markers, and possible markers, in a single frame.
 
@@ -245,7 +248,11 @@ class VideoArucoProcessor(DataProcessor):
         known_marker_info = return_data.known_markers.for_csv
         unknown_marker_info = return_data.unknown_markers.for_csv
 
-        def add_marker_info(list_to_update, corners_as_3d_array, marker_id) -> None:
+        def add_marker_info(
+            list_to_update: list[dict],
+            corners_as_3d_array: array,
+            marker_id: list[int] | None
+        ) -> None:
             # Note, a corner set from detectMarkers() is a 3D array, (1,4,2).
             # 4 = number of corners, 2 = x,y for each corner.  Not sure
             # why we need the extra dimension, but hence taking the [0] element

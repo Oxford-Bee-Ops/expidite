@@ -127,7 +127,7 @@ class DiagnosticsBundle:
         logger.info(f"Completed diagnostic collection to {log_filename}")
 
     @staticmethod
-    def _run_cmd(command) -> tuple[str, str, int]:
+    def _run_cmd(command: str) -> tuple[str, str, int]:
         """Executes a shell command and returns its output and any errors."""
         try:
             result = subprocess.run(

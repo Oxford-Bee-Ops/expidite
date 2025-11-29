@@ -82,7 +82,7 @@ class RpiEmulator:
 
         return self
 
-    def __exit__(self, exc_type, exc_value, traceback) -> None:
+    def __exit__(self, exc_type, exc_value, traceback) -> None:  # type: ignore[no-untyped-def]
         """Exit the context manager."""
         logger.info("Exiting RpiEmulator context.")
         #self.cc.clear_local_cloud()
@@ -290,7 +290,7 @@ class RpiEmulator:
                 return recording.recordings
         return None
 
-    def ok_to_save_recording(self, type_id) -> bool:
+    def ok_to_save_recording(self, type_id: str) -> bool:
         """Check if we are allowed to save a recording.
         We have to check both the global recording cap and the per-type recording cap."""
         previous_recordings = self.recordings_saved.get(type_id, 0)

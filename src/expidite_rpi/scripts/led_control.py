@@ -26,6 +26,7 @@ import time
 from dataclasses import dataclass, field
 from pathlib import Path
 from threading import Event, Thread
+from types import FrameType
 from typing import Optional
 
 LED_STATUS_FILE = Path("/expidite") / "tmp" / "tmp_flags" / "LED_STATUS"
@@ -48,7 +49,7 @@ POLL_INTERVAL = float(os.environ.get("LED_POLL_SEC", "1.0"))
 DEFAULT_BLINK_RATE = 0.5
 stop_event = Event()
 
-def run_pinctrl(args) -> None:
+def run_pinctrl(args: list[str]) -> None:
     cmd = ["pinctrl", *args]
     try:
         subprocess.run(cmd, check=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
@@ -80,7 +81,7 @@ def blink_loop(rate: float, pin: Pin) -> None:
     except Exception as e:
         print("blink thread error:", e, file=sys.stderr)
 
-def start_blink(rate, pin: Pin) -> None:
+def start_blink(rate: float | None, pin: Pin) -> None:
     stop_blink(pin=pin)
     pin.blink_stop.clear()
     pin.blink_thread = Thread(target=blink_loop, args=(rate, pin), daemon=True)
@@ -156,7 +157,7 @@ def acquire_lock_or_exit() -> None:
         LOCK_FILE.parent.mkdir(parents=True, exist_ok=True)
         LOCK_FILE.touch(exist_ok=False)
 
-def handle_signal(signum, frame) -> None:
+def handle_signal(signum: int, frame: FrameType | None) -> None:
     stop_event.set()
 
 def main() -> None:
