@@ -19,7 +19,7 @@ root_cfg.ST_MODE = root_cfg.SOFTWARE_TEST_MODE.TESTING
 
 class Test_example_device:
     @pytest.fixture
-    def inventory(self):
+    def inventory(self) -> list[DeviceCfg]:
         return [
             DeviceCfg(
                 name="Alex",
@@ -31,20 +31,19 @@ class Test_example_device:
         ]
 
     @pytest.mark.unittest
-    def test_example_device(self, rpi_emulator) -> None:
+    def test_example_device(self, rpi_emulator: RpiEmulator) -> None:
         logger.info("Running test_example_device")
-        rpi: RpiEmulator = rpi_emulator
 
         # Limit the RpiCore to 3 recordings so we can easily validate the results
-        rpi.set_recording_cap(3)
+        rpi_emulator.set_recording_cap(3)
 
         # Configure RpiCore with the test device
         sc = RpiCore()
-        sc.configure(rpi.inventory)
+        sc.configure(rpi_emulator.inventory)
         sc.start()
-        while not rpi.recordings_cap_hit(type_id=EXAMPLE_FILE_TYPE_ID):
+        while not rpi_emulator.recordings_cap_hit(type_id=EXAMPLE_FILE_TYPE_ID):
             sleep(1)
-        while rpi.recordings_still_to_process():
+        while rpi_emulator.recordings_still_to_process():
             sleep(1)
         sc.stop()
 
@@ -55,10 +54,10 @@ class Test_example_device:
         # but the originals all get deleted after processing by the example processor.
         # The example processor takes the jpg files and saves:
         # - a df stream with "pixel_count" (EXAMPLE_DF_DS_TYPE_ID).
-        rpi.assert_records("expidite-fair", {"V3_*": 1})
-        rpi.assert_records("expidite-journals", {"V3_DUMML*": 1, "V3_DUMMD*": 1})
-        rpi.assert_records("expidite-upload", {"V3_DUMMF*": 3})
-        df = rpi.get_journal_as_df("expidite-journals", "V3_DUMMD*")
+        rpi_emulator.assert_records("expidite-fair", {"V3_*": 1})
+        rpi_emulator.assert_records("expidite-journals", {"V3_DUMML*": 1, "V3_DUMMD*": 1})
+        rpi_emulator.assert_records("expidite-upload", {"V3_DUMMF*": 3})
+        df = rpi_emulator.get_journal_as_df("expidite-journals", "V3_DUMMD*")
         assert df is not None, "Expected df to be not None"
         for field in api.ALL_RECORD_ID_FIELDS:
             assert field in df.columns, "Expected all of the api.RECORD_ID fields, missing: " + field
@@ -70,13 +69,13 @@ class Test_example_device:
         assert (df["pixel_count"] == 25).all(), "Expected pixel_count to be 25"
         assert (df["timestamp"].str.contains("T")).all(), "Expected timestamp to contain T"
 
-        df_log = rpi.get_journal_as_df("expidite-journals", "V3_DUMML*")
+        df_log = rpi_emulator.get_journal_as_df("expidite-journals", "V3_DUMML*")
         assert df_log is not None, "Expected df_log to be not None"
         assert df_log["temperature"].max() == len(df_log), (
             f"value_ticker {df_log['temperature'].max()} = len(df_log) {len(df_log)}"
         )
 
-        score_df = rpi.get_journal_as_df("expidite-system-records", "V3_SCORE*")
+        score_df = rpi_emulator.get_journal_as_df("expidite-system-records", "V3_SCORE*")
         grouped_df = score_df.groupby("observed_type_id").agg({"count": "sum"}).reset_index()
         assert len(grouped_df) > 0, "No records found in the score datastream"
         # Select the row with the observed_type_id of EXAMPLE_DF_DS_TYPE_ID and get the count

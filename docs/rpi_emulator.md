@@ -118,12 +118,14 @@ The cleanest approach uses a pytest fixture to inject the RpiEmulator instance:
 
 ```python
 import pytest
+from typing import List
 from expidite_rpi.rpi_core import RpiCore
 from expidite_rpi.core.device_config_objects import DeviceCfg
+from expidite_rpi.utils.rpi_emulator import RpiEmulator
 
 class TestMySensor:
     @pytest.fixture
-    def inventory(self):
+    def inventory(self) -> List[DeviceCfg]:
         return [
             DeviceCfg(
                 name="TestDevice",
@@ -133,7 +135,7 @@ class TestMySensor:
         ]
 
     @pytest.mark.unittest
-    def test_sensor_operation(self, rpi_emulator):
+    def test_sensor_operation(self, rpi_emulator: RpiEmulator) -> None:
         # Configure test environment
         rpi_emulator.set_recording_cap(1, type_id="MYSENSOR")
 
@@ -158,6 +160,27 @@ class TestMySensor:
 - Requires an `inventory` fixture to be defined in your test
 - Automatically applies `mock_timers` to your inventory
 - Stores the mocked inventory in `rpi_emulator.inventory`
+- Provides full type annotations for proper IDE support
+
+### Type Annotations for IDE Support
+
+To get proper IntelliSense and type checking in your IDE, use these type annotations:
+
+```python
+from typing import List
+from expidite_rpi.utils.rpi_emulator import RpiEmulator
+from expidite_rpi.core.device_config_objects import DeviceCfg
+
+class TestExample:
+    @pytest.fixture
+    def inventory(self) -> List[DeviceCfg]:
+        return [...]
+
+    def test_method(self, rpi_emulator: RpiEmulator) -> None:
+        # Now you get full autocomplete and type checking
+        rpi_emulator.set_recording_cap(1)  # IDE knows all methods
+        rpi_emulator.assert_records(...)    # Parameters are typed
+```
 
 ### Method 2: Context Manager (Alternative)
 

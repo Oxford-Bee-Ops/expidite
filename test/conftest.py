@@ -1,9 +1,11 @@
 import time
+from collections.abc import Generator
 
 import pytest
 
 from expidite_rpi.core import configuration as root_cfg
 from expidite_rpi.core.cloud_connector import CloudConnector
+from expidite_rpi.core.device_config_objects import DeviceCfg
 from expidite_rpi.utils.rpi_emulator import RpiEmulator
 
 # Set up logger for test execution
@@ -55,7 +57,10 @@ def log_test_lifecycle(request):
 
     # Log test end
     duration = time.time() - start_time
-    test_result = "PASSED" if not request.node.rep_call.failed else "FAILED"
+    if hasattr(request.node, "rep_call"):
+        test_result = "PASSED" if not request.node.rep_call.failed else "FAILED"
+    else:
+        test_result = "UNKNOWN"
 
     if test_result == "PASSED":
         test_logger.info(
@@ -91,7 +96,7 @@ def shutdown_cloud_connector():
 
 
 @pytest.fixture
-def inventory():
+def inventory() -> list[DeviceCfg]:
     """
     Pytest fixture that should be overridden in each test to provide device inventory.
     This fixture should be defined in each test class or test file that uses rpi_emulator.
@@ -99,7 +104,7 @@ def inventory():
 
     Example usage in test:
         @pytest.fixture
-        def inventory(self):
+        def inventory(self) -> List[DeviceCfg]:
             return [
                 DeviceCfg(
                     name="TestDevice",
@@ -110,13 +115,13 @@ def inventory():
     """
     try:
         inventory = root_cfg.load_configuration()
+        return inventory
     except Exception as e:
         raise RuntimeError(f"Failed to load inventory from configuration: {e}")
-    return inventory
 
 
 @pytest.fixture
-def rpi(inventory):
+def rpi_emulator(inventory: list[DeviceCfg]) -> Generator[RpiEmulator, None, None]:
     """
     Pytest fixture that provides an RpiEmulator instance with mocked timers.
     Automatically applies mock_timers to the provided inventory.
@@ -125,11 +130,11 @@ def rpi(inventory):
 
     Usage:
         @pytest.fixture
-        def inventory(self):
+        def inventory(self) -> List[DeviceCfg]:
             return [DeviceCfg(...)]
 
         @pytest.mark.unittest
-        def test_my_sensor(self, rpi_emulator):
+        def test_my_sensor(self, rpi_emulator: RpiEmulator):
             rpi_emulator.set_recording_cap(1, type_id="MYSENSOR")
             # inventory is already mocked with timers
             # test code here...

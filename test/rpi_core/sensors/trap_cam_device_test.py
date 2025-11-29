@@ -7,7 +7,7 @@ from expidite_rpi.core.device_config_objects import DeviceCfg
 from expidite_rpi.rpi_core import RpiCore
 from expidite_rpi.sensors import device_recipes
 from expidite_rpi.sensors.sensor_rpicam_vid import RPICAM_DATA_TYPE_ID
-from expidite_rpi.utils.rpi_emulator import RpiTestRecording
+from expidite_rpi.utils.rpi_emulator import RpiEmulator, RpiTestRecording
 
 logger = root_cfg.setup_logger("expidite")
 
@@ -16,7 +16,7 @@ root_cfg.ST_MODE = root_cfg.SOFTWARE_TEST_MODE.TESTING
 
 class Test_trap_cam_device:
     @pytest.fixture
-    def inventory(self):
+    def inventory(self) -> list[DeviceCfg]:
         return [
             DeviceCfg(
                 name="Alex",
@@ -27,11 +27,11 @@ class Test_trap_cam_device:
         ]
 
     @pytest.mark.unittest
-    def test_trap_cam_device(self, rpi) -> None:
+    def test_trap_cam_device(self, rpi_emulator: RpiEmulator) -> None:
         logger.info("Running test_trap_cam_device")
 
         # Set the file to be fed into the trap camera device
-        rpi.set_recordings(
+        rpi_emulator.set_recordings(
             [
                 RpiTestRecording(
                     cmd_prefix="rpicam-vid",
@@ -47,28 +47,28 @@ class Test_trap_cam_device:
         )
 
         # Limit the RpiCore to 1 recording so we can easily validate the results
-        rpi.set_recording_cap(1)
+        rpi_emulator.set_recording_cap(1)
 
         # Configure RpiCore with the trap camera device
         sc = RpiCore()
-        sc.configure(rpi.inventory)
+        sc.configure(rpi_emulator.inventory)
         sc.start()
-        while not rpi.recordings_cap_hit(type_id=RPICAM_DATA_TYPE_ID):
+        while not rpi_emulator.recordings_cap_hit(type_id=RPICAM_DATA_TYPE_ID):
             sleep(1)
-        while rpi.recordings_still_to_process():
+        while rpi_emulator.recordings_still_to_process():
             sleep(1)
         sleep(3)
         sc.stop()
         sleep(3)
 
         # We should have identified bees in the video and save the info to the EXITCAM datastream
-        rpi.assert_records("expidite-fair", {"V3_*": 1})
-        rpi.assert_records("expidite-journals", {"*": 0})
-        rpi.assert_records("expidite-upload", {"V3_TRAPCAM*": 1})
-        rpi.assert_records(
+        rpi_emulator.assert_records("expidite-fair", {"V3_*": 1})
+        rpi_emulator.assert_records("expidite-journals", {"*": 0})
+        rpi_emulator.assert_records("expidite-upload", {"V3_TRAPCAM*": 1})
+        rpi_emulator.assert_records(
             "expidite-system-records", {"V3_SCORE": 1, "V3_SCORP": 1, "V3_HEART": 1, "V3_WARNING": 0}
         )
-        score_df = rpi.get_journal_as_df("expidite-system-records", "V3_SCORE*")
+        score_df = rpi_emulator.get_journal_as_df("expidite-system-records", "V3_SCORE*")
         # Groupby observed_type_id
         grouped_df = score_df.groupby("observed_type_id").agg(
             {

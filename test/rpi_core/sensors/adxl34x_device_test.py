@@ -6,13 +6,14 @@ from expidite_rpi.core import configuration as root_cfg
 from expidite_rpi.core.device_config_objects import DeviceCfg
 from expidite_rpi.rpi_core import RpiCore
 from expidite_rpi.sensors.device_recipes import create_adxl34x_device
+from expidite_rpi.utils.rpi_emulator import RpiEmulator
 
 logger = root_cfg.setup_logger("expidite")
 
 
 class Test_adxl34x_device:
     @pytest.fixture
-    def inventory(self):
+    def inventory(self) -> list[DeviceCfg]:
         return [
             DeviceCfg(
                 name="Alex",
@@ -23,7 +24,7 @@ class Test_adxl34x_device:
         ]
 
     @pytest.mark.unittest
-    def test_adxl34x_device(self, rpi) -> None:
+    def test_adxl34x_device(self, rpi_emulator: RpiEmulator) -> None:
         logger.info("Running test_adxl34x_device")
 
         if root_cfg.running_on_windows:
@@ -32,9 +33,9 @@ class Test_adxl34x_device:
 
         # Configure RpiCore with the test device
         sc = RpiCore()
-        sc.configure(rpi.inventory)
+        sc.configure(rpi_emulator.inventory)
         sc.start()
         sleep(2)
         sc.stop()
         sleep(2)
-        rpi.assert_records("expidite-fair", {"V3_*": 1})
+        rpi_emulator.assert_records("expidite-fair", {"V3_*": 1})

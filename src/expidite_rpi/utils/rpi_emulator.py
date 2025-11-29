@@ -45,6 +45,7 @@ class RpiEmulator:
         self.recordings_saved: dict[str, int] = {}
         self.recording_cap: int = -1
         self.recording_cap_dict: dict[str, int] = {}
+        self.inventory: list[DeviceCfg] = []
 
     @staticmethod
     def get_instance() -> "RpiEmulator":
