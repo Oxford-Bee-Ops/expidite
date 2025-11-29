@@ -15,10 +15,19 @@ The RPI Emulator (`rpi_emulator.py`) is a testing framework that enables thoroug
 
 ### Design Pattern
 
-The RPI Emulator follows the **Singleton Context Manager** pattern:
+The RPI Emulator can be used in two ways:
 
+**Pytest Fixture (Recommended):**
 ```python
-with RpiEmulator.get_instance() as th:
+@pytest.mark.unittest
+def test_my_sensor(self, rpi_emulator):
+    # Test code here - emulator is provided as parameter
+    # Resources are automatically managed by pytest
+```
+
+**Context Manager (Alternative):**
+```python
+with RpiEmulator.get_instance() as rpi_emulator:
     # Test code here - emulator is active
     # Resources are automatically cleaned up on exit
 ```
@@ -59,24 +68,26 @@ test_recordings = [
     )
 ]
 
-with RpiEmulator.get_instance() as th:
-    th.set_recordings(test_recordings)
+# Using pytest fixture
+@pytest.mark.unittest
+def test_with_recordings(self, rpi_emulator):
+    rpi_emulator.set_recordings(test_recordings)
     # When sensors run rpicam-vid commands, they'll get these recordings
 ```
 
 #### Recording Caps and Limits
 
 ```python
-with RpiEmulator.get_instance() as th:
+# Using pytest fixture
+@pytest.mark.unittest
+def test_with_caps(self, rpi_emulator):
     # Limit total recordings across all sensors
-    th.set_recording_cap(5)
+    rpi_emulator.set_recording_cap(5)
 
     # Limit recordings for specific data types
-    th.set_recording_cap(3, type_id="RPICAM")
-    th.set_recording_cap(2, type_id="AUDIO")
-```
-
-### 3. Cloud Storage Emulation
+    rpi_emulator.set_recording_cap(3, type_id="RPICAM")
+    rpi_emulator.set_recording_cap(2, type_id="AUDIO")
+```### 3. Cloud Storage Emulation
 
 The emulator automatically configures a local filesystem-based cloud connector:
 
@@ -101,68 +112,98 @@ JOURNAL_SYNC_FREQUENCY = 1
 
 ## Usage Patterns
 
-### Basic Test Structure
+### Method 1: Pytest Fixture (Recommended)
+
+The cleanest approach uses a pytest fixture to inject the RpiEmulator instance:
 
 ```python
 import pytest
-from expidite_rpi.utils.rpi_emulator import RpiEmulator
 from expidite_rpi.rpi_core import RpiCore
+from expidite_rpi.core.device_config_objects import DeviceCfg
 
+class TestMySensor:
+    @pytest.fixture
+    def inventory(self):
+        return [
+            DeviceCfg(
+                name="TestDevice",
+                device_id="d01111111111",
+                dp_trees_create_method=create_test_device,
+            ),
+        ]
+
+    @pytest.mark.unittest
+    def test_sensor_operation(self, rpi_emulator):
+        # Configure test environment
+        rpi_emulator.set_recording_cap(1, type_id="MYSENSOR")
+
+        # Set up RpiCore with mocked inventory (timers already mocked)
+        sc = RpiCore()
+        sc.configure(rpi_emulator.inventory)
+        sc.start()
+
+        # Wait for expected operations
+        while not rpi_emulator.recordings_cap_hit(type_id="MYSENSOR"):
+            time.sleep(0.1)
+
+        # Clean shutdown
+        sc.stop()
+
+        # Validate results
+        rpi_emulator.assert_records("expidite-upload", {"V3_MYSENSOR*": 1})
+```
+
+**Note**: The `rpi_emulator` fixture automatically:
+- Handles the context manager lifecycle
+- Requires an `inventory` fixture to be defined in your test
+- Automatically applies `mock_timers` to your inventory
+- Stores the mocked inventory in `rpi_emulator.inventory`
+
+### Method 2: Context Manager (Alternative)
+
+For cases where you need more control over the emulator lifecycle:
+
+```python
 class TestMySensor:
     @pytest.mark.unittest
     def test_sensor_operation(self):
-        with RpiEmulator.get_instance() as th:
+        with RpiEmulator.get_instance() as rpi_emulator:
             # Configure test environment
-            th.set_recording_cap(1, type_id="MYSENSOR")
+            rpi_emulator.set_recording_cap(1, type_id="MYSENSOR")
 
-            # Set up RpiCore with test configuration
-            sc = RpiCore()
-            sc.configure(test_inventory)
-            sc.start()
-
-            # Wait for expected operations
-            while not th.recordings_cap_hit(type_id="MYSENSOR"):
-                time.sleep(0.1)
-
-            # Clean shutdown
-            sc.stop()
-
-            # Validate results
-            th.assert_records("expidite-upload", {"V3_MYSENSOR*": 1})
-```
-
-### Device Testing Pattern
+            # Rest of test code...
+```### Device Testing Pattern
 
 ```python
 from expidite_rpi.core.device_config_objects import DeviceCfg
 
-INVENTORY = [
-    DeviceCfg(
-        name="TestDevice",
-        device_id="d01111111111",  # Standard test device ID
-        notes="Testing camera device",
-        dp_trees_create_method=create_camera_device,
-    ),
-]
-
 class TestCameraDevice:
+    @pytest.fixture
+    def inventory(self):
+        return [
+            DeviceCfg(
+                name="TestDevice",
+                device_id="d01111111111",  # Standard test device ID
+                notes="Testing camera device",
+                dp_trees_create_method=create_camera_device,
+            ),
+        ]
+
     @pytest.mark.unittest
-    def test_camera_device(self):
-        with RpiEmulator.get_instance() as th:
-            # Mock timers for faster testing
-            inventory = th.mock_timers(INVENTORY)
+    def test_camera_device(self, rpi_emulator):
+        # Inventory is already mocked with timers via rpi_emulator fixture
 
-            # Configure RpiCore
-            sc = RpiCore()
-            sc.configure(inventory)
-            sc.start()
+        # Configure RpiCore
+        sc = RpiCore()
+        sc.configure(rpi_emulator.inventory)
+        sc.start()
 
-            # Wait for processing to complete
-            time.sleep(2)
-            sc.stop()
+        # Wait for processing to complete
+        time.sleep(2)
+        sc.stop()
 
-            # Validate expected outputs
-            th.assert_records("expidite-upload", {"V3_RPICAM*": 1})
+        # Validate expected outputs
+        rpi_emulator.assert_records("expidite-upload", {"V3_RPICAM*": 1})
 ```
 
 ### Using Pre-recorded Test Data
@@ -172,19 +213,18 @@ from expidite_rpi.utils.rpi_emulator import RpiTestRecording
 
 class TestVideoProcessor:
     @pytest.mark.unittest
-    def test_video_processing(self):
-        with RpiEmulator.get_instance() as th:
-            # Use actual video file for testing
-            th.set_recordings([
-                RpiTestRecording(
-                    cmd_prefix="rpicam-vid",
-                    recordings=[
-                        root_cfg.TEST_DIR / "resources" / "test_video.mp4"
-                    ]
-                )
-            ])
+    def test_video_processing(self, rpi_emulator):
+        # Use actual video file for testing
+        rpi_emulator.set_recordings([
+            RpiTestRecording(
+                cmd_prefix="rpicam-vid",
+                recordings=[
+                    root_cfg.TEST_DIR / "resources" / "test_video.mp4"
+                ]
+            )
+        ])
 
-            # Rest of test...
+        # Rest of test...
 ```
 
 ## Validation Methods
@@ -193,20 +233,20 @@ class TestVideoProcessor:
 
 ```python
 # Validate expected number of files
-th.assert_records(
+rpi_emulator.assert_records(
     container="expidite-upload",
     expected_files={"V3_CAMERA*": 2, "V3_AUDIO*": 1}
 )
 
 # Validate file contents (for CSV/journal files)
-th.assert_records(
+rpi_emulator.assert_records(
     container="expidite-journals",
     expected_files={"V3_SENSOR*": 1},
     expected_rows={"V3_SENSOR*": 10}  # 10 data rows (excluding header)
 )
 
 # Get data for custom validation
-df = th.get_journal_as_df("expidite-journals", "V3_TEMPERATURE")
+df = rpi_emulator.get_journal_as_df("expidite-journals", "V3_TEMPERATURE")
 assert df["temperature"].mean() > 20.0
 ```
 
@@ -214,11 +254,11 @@ assert df["temperature"].mean() > 20.0
 
 ```python
 # Check if recording cap reached for specific sensor type
-while not th.recordings_cap_hit(type_id="RPICAM"):
+while not rpi_emulator.recordings_cap_hit(type_id="RPICAM"):
     time.sleep(0.1)
 
 # Check if all files have been processed
-while th.recordings_still_to_process():
+while rpi_emulator.recordings_still_to_process():
     time.sleep(0.1)
 ```
 
@@ -266,29 +306,52 @@ def shutdown_cloud_connector():
 
 ## Best Practices
 
-### 1. Context Manager Usage
+### 1. Use Pytest Fixtures (Recommended)
 
-Always use the context manager pattern:
-
-```python
-# ✅ Correct
-with RpiEmulator.get_instance() as th:
-    # Test code
-
-# ❌ Incorrect - resources not cleaned up
-th = RpiEmulator.get_instance()
-```
-
-### 2. Timer Mocking
-
-Always use mocked timers for faster tests:
+Use the `rpi_emulator` fixture for cleaner test code:
 
 ```python
-# Mock device timers
-inventory = th.mock_timers(INVENTORY)
+# ✅ Recommended - Clean and minimal indentation
+@pytest.mark.unittest
+def test_my_sensor(self, rpi_emulator):
+    rpi_emulator.set_recording_cap(1, type_id="MYSENSOR")
+    # Test code here
+
+# ✅ Alternative - Context manager for advanced usage
+def test_advanced_scenario(self):
+    with RpiEmulator.get_instance() as rpi_emulator:
+        # Test code when you need custom lifecycle control
+
+# ❌ Avoid - Manual instance management
+rpi_emulator = RpiEmulator.get_instance()  # Resources not cleaned up
 ```
 
-### 3. Proper Cleanup
+### 2. Define Inventory Fixture
+
+Always define an `inventory` fixture in your test:
+
+```python
+@pytest.fixture
+def inventory(self):
+    return [
+        DeviceCfg(
+            name="TestDevice",
+            device_id="d01111111111",
+            dp_trees_create_method=create_test_device,
+        ),
+    ]
+```
+
+### 3. Use Mocked Inventory
+
+The `rpi_emulator` fixture automatically mocks timers:
+
+```python
+# Timers are already mocked - use the mocked inventory
+sc.configure(rpi_emulator.inventory)
+```
+
+### 4. Proper Cleanup
 
 Ensure sensors are properly stopped:
 
@@ -326,7 +389,7 @@ After test execution, examine the local cloud directory:
 
 ```python
 # Files are stored in the local cloud directory
-local_cloud = th.cc.get_local_cloud()
+local_cloud = rpi_emulator.cc.get_local_cloud()
 print(f"Local cloud files: {list(local_cloud.rglob('*'))}")
 ```
 
@@ -334,8 +397,8 @@ print(f"Local cloud files: {list(local_cloud.rglob('*'))}")
 
 ```python
 # Check what recordings were used
-print(f"Recordings saved: {th.recordings_saved}")
-print(f"Current recording index: {th.previous_recordings_index}")
+print(f"Recordings saved: {rpi_emulator.recordings_saved}")
+print(f"Current recording index: {rpi_emulator.previous_recordings_index}")
 ```
 
 ## Common Test Scenarios
@@ -344,75 +407,102 @@ print(f"Current recording index: {th.previous_recordings_index}")
 
 ```python
 class TestContinuousSensor:
+    @pytest.fixture
+    def inventory(self):
+        return [
+            DeviceCfg(
+                name="ContinuousSensor",
+                device_id="d01111111111",
+                dp_trees_create_method=create_continuous_sensor,
+            ),
+        ]
+
     @pytest.mark.unittest
-    def test_continuous_operation(self):
-        with RpiEmulator.get_instance() as th:
-            th.set_recording_cap(3, type_id="SENSOR_DATA")
+    def test_continuous_operation(self, rpi_emulator):
+        rpi_emulator.set_recording_cap(3, type_id="SENSOR_DATA")
 
-            sc = RpiCore()
-            sc.configure(inventory)
-            sc.start()
+        sc = RpiCore()
+        sc.configure(rpi_emulator.inventory)
+        sc.start()
 
-            # Wait for multiple recordings
-            while not th.recordings_cap_hit(type_id="SENSOR_DATA"):
-                time.sleep(0.1)
+        # Wait for multiple recordings
+        while not rpi_emulator.recordings_cap_hit(type_id="SENSOR_DATA"):
+            time.sleep(0.1)
 
-            sc.stop()
-            th.assert_records("expidite-journals", {"V3_SENSOR*": 3})
+        sc.stop()
+        rpi_emulator.assert_records("expidite-journals", {"V3_SENSOR*": 3})
 ```
 
 ### Testing On-Demand Sensors
 
 ```python
 class TestOnDemandSensor:
+    @pytest.fixture
+    def inventory(self):
+        return [
+            DeviceCfg(
+                name="OnDemandSensor",
+                device_id="d01111111111",
+                dp_trees_create_method=create_on_demand_sensor,
+            ),
+        ]
+
     @pytest.mark.unittest
-    def test_triggered_sensing(self):
-        with RpiEmulator.get_instance() as th:
-            sc = RpiCore()
-            sc.configure(inventory)
-            sc.start()
+    def test_triggered_sensing(self, rpi_emulator):
+        sc = RpiCore()
+        sc.configure(rpi_emulator.inventory)
+        sc.start()
 
-            # Trigger sensing via flag file
-            with open(root_cfg.SENSOR_TRIGGER_FLAG, "w") as f:
-                f.write("30")  # 30 second recording
+        # Trigger sensing via flag file
+        with open(root_cfg.SENSOR_TRIGGER_FLAG, "w") as f:
+            f.write("30")  # 30 second recording
 
-            # Wait for completion
-            time.sleep(2)
-            sc.stop()
+        # Wait for completion
+        time.sleep(2)
+        sc.stop()
 
-            th.assert_records("expidite-upload", {"V3_VIDEOOD*": 1})
+        rpi_emulator.assert_records("expidite-upload", {"V3_VIDEOOD*": 1})
 ```
 
 ### Testing Data Processors
 
 ```python
 class TestDataProcessor:
+    @pytest.fixture
+    def inventory(self):
+        return [
+            DeviceCfg(
+                name="VideoProcessor",
+                device_id="d01111111111",
+                dp_trees_create_method=create_video_processor,
+            ),
+        ]
+
     @pytest.mark.unittest
-    def test_video_processing(self):
-        with RpiEmulator.get_instance() as th:
-            # Provide specific test video
-            th.set_recordings([
-                RpiTestRecording(
-                    cmd_prefix="rpicam-vid",
-                    recordings=[test_video_path]
-                )
-            ])
+    def test_video_processing(self, rpi_emulator):
+        # Provide specific test video
+        rpi_emulator.set_recordings([
+            RpiTestRecording(
+                cmd_prefix="rpicam-vid",
+                recordings=[test_video_path]
+            )
+        ])
 
-            th.set_recording_cap(1)
-            sc = RpiCore()
-            sc.configure(processor_inventory)
-            sc.start()
+        rpi_emulator.set_recording_cap(1)
+        sc = RpiCore()
+        sc.configure(rpi_emulator.inventory)
+        sc.start()
 
-            # Wait for processing chain completion
-            while not th.recordings_cap_hit(type_id="RPICAM"):
-                time.sleep(0.1)
-            while th.recordings_still_to_process():
-                time.sleep(0.1)
+        # Wait for processing chain completion
+        while not rpi_emulator.recordings_cap_hit(type_id="RPICAM"):
+            time.sleep(0.1)
+        while rpi_emulator.recordings_still_to_process():
+            time.sleep(0.1)
 
-            sc.stop()
+        sc.stop()
 
-            # Validate processor outputs
-            th.assert_records("expidite-upload", {"V3_PROCESSED*": 1})
+        # Validate processor outputs
+        rpi_emulator.assert_records("expidite-upload", {"V3_PROCESSED*": 1})
 ```
 
 ## Error Handling
@@ -423,14 +513,14 @@ class TestDataProcessor:
    ```python
    # Error: "The recording cap is not set for that type_id"
    # Solution: Always set recording caps before starting tests
-   th.set_recording_cap(1, type_id="SENSOR_TYPE")
+   rpi_emulator.set_recording_cap(1, type_id="SENSOR_TYPE")
    ```
 
 2. **Missing Test Recordings**
    ```python
    # Error: "Recording not found for command"
    # Solution: Provide test recordings or allow dummy generation
-   th.set_recordings([...])  # or let emulator generate dummy files
+   rpi_emulator.set_recordings([...])  # or let emulator generate dummy files
    ```
 
 3. **Test Hanging**

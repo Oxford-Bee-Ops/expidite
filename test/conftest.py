@@ -4,6 +4,7 @@ import pytest
 
 from expidite_rpi.core import configuration as root_cfg
 from expidite_rpi.core.cloud_connector import CloudConnector
+from expidite_rpi.utils.rpi_emulator import RpiEmulator
 
 # Set up logger for test execution
 test_logger = root_cfg.setup_logger("expidite")
@@ -87,3 +88,55 @@ def shutdown_cloud_connector():
     except Exception:
         # Ignore errors if connector was never created
         pass
+
+
+@pytest.fixture
+def inventory():
+    """
+    Pytest fixture that should be overridden in each test to provide device inventory.
+    This fixture should be defined in each test class or test file that uses rpi_emulator.
+    This default will use the inventory defined in the CFG_DIR/system.cfg file.
+
+    Example usage in test:
+        @pytest.fixture
+        def inventory(self):
+            return [
+                DeviceCfg(
+                    name="TestDevice",
+                    device_id="d01111111111",
+                    dp_trees_create_method=create_test_device,
+                ),
+            ]
+    """
+    try:
+        inventory = root_cfg.load_configuration()
+    except Exception as e:
+        raise RuntimeError(f"Failed to load inventory from configuration: {e}")
+    return inventory
+
+
+@pytest.fixture
+def rpi(inventory):
+    """
+    Pytest fixture that provides an RpiEmulator instance with mocked timers.
+    Automatically applies mock_timers to the provided inventory.
+
+    Requires an 'inventory' fixture to be defined in the test.
+
+    Usage:
+        @pytest.fixture
+        def inventory(self):
+            return [DeviceCfg(...)]
+
+        @pytest.mark.unittest
+        def test_my_sensor(self, rpi_emulator):
+            rpi_emulator.set_recording_cap(1, type_id="MYSENSOR")
+            # inventory is already mocked with timers
+            # test code here...
+    """
+    with RpiEmulator.get_instance() as emulator:
+        # Automatically mock timers for the provided inventory
+        mocked_inventory = emulator.mock_timers(inventory)
+        # Store the mocked inventory on the emulator for easy access
+        emulator.inventory = mocked_inventory
+        yield emulator
