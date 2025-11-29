@@ -330,7 +330,12 @@ install_expidite() {
     # 3. Compare and install only if changed (or if [ "$new_install" == "yes" ])
     if [[ "$EXP_REMOTE_HASH" != "$EXP_LOCAL_HASH" || "$new_install" == "yes" ]]; then
         echo "Detected new commit $EXP_REMOTE_HASH on branch $expidite_git_branch."
-        pip install "git+https://github.com/oxford-bee-ops/expidite.git@$expidite_git_branch" || { echo "Failed to install Expidite"; }
+        #
+        echo "NICKB INSTALL FROM git+https://github.com/oxford-bee-ops/expidite.git@$EXP_REMOTE_HASH config-setting="
+        # pip install "git+https://github.com/oxford-bee-ops/expidite.git@$expidite_git_branch" || { echo "Failed to install Expidite"; }
+        pip install "git+https://github.com/oxford-bee-ops/expidite.git@$EXP_REMOTE_HASH" --config-setting="--depth=1" || { echo "Failed to install Expidite"; }
+        #
+        #
         updated_version=$(pip show expidite | grep Version)
         echo "Expidite installed successfully.  Now version: $updated_version"
 
@@ -526,8 +531,12 @@ install_user_code() {
                 # For SSH URLs, pip expects git+ssh:// format
                 # Convert git@github.com:owner/repo.git to ssh://git@github.com/owner/repo.git
                 ssh_url="${fixed_git_repo_url/github.com:/github.com/}"
-                pip_url="git+ssh://$ssh_url@$my_git_branch"
-                if pip install "$pip_url"; then
+                #
+                # pip_url="git+ssh://$ssh_url@$my_git_branch"
+                pip_url="git+ssh://$ssh_url@$REMOTE_HASH"
+                echo "NICKB INSTALL FROM $pip_url CONFIG SETTING"
+                #
+                if pip install "$pip_url" --config-setting="--depth=1"; then
                     install_success="true"
                 else
                     echo "Failed to install $pip_url"
@@ -860,6 +869,7 @@ reboot_if_required() {
         echo "$(date +%s)" > "$REBOOT_TIMESTAMP_FILE"
         
         echo "Reboot required. This will be reboot #$reboot_count. Rebooting now..."
+        sleep 60
         sudo reboot
     else
         echo "No reboot required."
