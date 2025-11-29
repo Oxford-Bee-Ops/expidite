@@ -28,8 +28,7 @@ class Test_sht31_device:
         logger.info("Running test_sht31_device")
 
         # Configure RpiCore with the test device
-        sc = RpiCore()
-        sc.configure(rpi_emulator.inventory)
+        sc = RpiCore(rpi_emulator.inventory)
         sc.start()
         sleep(2)
         sc.stop()

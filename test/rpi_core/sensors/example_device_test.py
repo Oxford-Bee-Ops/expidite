@@ -38,8 +38,7 @@ class Test_example_device:
         rpi_emulator.set_recording_cap(3)
 
         # Configure RpiCore with the test device
-        sc = RpiCore()
-        sc.configure(rpi_emulator.inventory)
+        sc = RpiCore(rpi_emulator.inventory)
         sc.start()
         while not rpi_emulator.recordings_cap_hit(type_id=EXAMPLE_FILE_TYPE_ID):
             sleep(1)

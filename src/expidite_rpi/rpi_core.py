@@ -27,6 +27,10 @@ class RpiCore:
     # it in their own code.
     KEYS_FILE: Path = root_cfg.KEYS_FILE
 
+    def __init__(self, inventory: Optional[list[DeviceCfg]] = None) -> None:
+        if inventory:
+            self.configure(inventory)
+
     def load_configuration(self) -> list[DeviceCfg] | None:
         """Load the configuration specified in the system.cfg file found in $HOME/.rpi.
         The output can be passed to test_configuration() or configure().

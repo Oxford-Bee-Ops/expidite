@@ -32,8 +32,7 @@ class Test_adxl34x_device:
             return
 
         # Configure RpiCore with the test device
-        sc = RpiCore()
-        sc.configure(rpi_emulator.inventory)
+        sc = RpiCore(rpi_emulator.inventory)
         sc.start()
         sleep(2)
         sc.stop()

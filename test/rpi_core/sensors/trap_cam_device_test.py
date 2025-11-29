@@ -50,8 +50,7 @@ class Test_trap_cam_device:
         rpi_emulator.set_recording_cap(1)
 
         # Configure RpiCore with the trap camera device
-        sc = RpiCore()
-        sc.configure(rpi_emulator.inventory)
+        sc = RpiCore(rpi_emulator.inventory)
         sc.start()
         while not rpi_emulator.recordings_cap_hit(type_id=RPICAM_DATA_TYPE_ID):
             sleep(1)
