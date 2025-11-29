@@ -43,8 +43,8 @@ dev = [
     "types-PyYAML",
     "pandas-stubs",
     "types-psutil",
-    "ruff == 0.14.6",
-    "mypy == 1.18.2",
+    "ruff == 0.14.7",
+    "mypy == 1.19.0",
     "codespell == 2.4.1",
 ]
 
