@@ -101,15 +101,20 @@ python_version = "3.11"
 files = "**/*.py"
 
 # Override defaults to be more strict.
+check_untyped_defs = true # Type-check the interior of functions without type annotations.
 disallow_untyped_defs = true # Prevent functions with missing or incomplete type annotations.
 disallow_untyped_calls = true # Prevent calls to functions without type annotations from functions with them.
-check_untyped_defs = true # Type-check the interior of functions without type annotations.
 ignore_missing_imports = true # Suppress error messages about imports that cannot be resolved.
+strict_equality = true # Prohibit equality checks, identity checks, and container checks between non-overlapping types.
+warn_return_any = true # Prevent returning a value with type Any from a function declared with a non-Any return type.
 
 # TODO: Fix these modules to comply, then remove this section.
 [[tool.mypy.overrides]]
-module = ["expidite_rpi.sensors.drivers.*", "test.*"]
+module = ["test.*"]
 disallow_untyped_defs = false
 [[tool.mypy.overrides]]
 module = ["expidite_rpi.sensors.drivers.*"]
+disallow_untyped_defs = false
 disallow_untyped_calls = false
+strict_equality = false
+warn_return_any = false

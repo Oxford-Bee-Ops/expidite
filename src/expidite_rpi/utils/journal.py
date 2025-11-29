@@ -113,7 +113,7 @@ class Journal:
     # Delete the journal file on disk and discard the data
     def delete(self) -> None:
         self._data = pd.DataFrame()
-        if (self.fname != Journal._temp_fname) and self.fname.exists():
+        if (str(self.fname) != Journal._temp_fname) and self.fname.exists():
             os.remove(self.fname)
 
     # Add a row to the data list

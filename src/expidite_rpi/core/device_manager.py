@@ -174,7 +174,7 @@ class DeviceManager:
                 client.priority is None or
                 client.pw is None or
                 client.ssid == "" or
-                client.priority == "" or
+                client.priority == 0 or
                 client.pw == ""):
                 logger.warning(f"Skipping invalid wifi client: {client}")
                 continue
