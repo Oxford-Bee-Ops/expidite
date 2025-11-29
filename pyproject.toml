@@ -99,8 +99,10 @@ convention = "google"
 [tool.mypy]
 python_version = "3.11"
 files = "**/*.py"
+
 # Override defaults to be more strict.
 disallow_untyped_defs = true # Prevent functions with missing or incomplete type annotations.
+disallow_untyped_calls = true # Prevent calls to functions without type annotations from functions with them.
 check_untyped_defs = true # Type-check the interior of functions without type annotations.
 ignore_missing_imports = true # Suppress error messages about imports that cannot be resolved.
 
@@ -108,3 +110,6 @@ ignore_missing_imports = true # Suppress error messages about imports that canno
 [[tool.mypy.overrides]]
 module = ["expidite_rpi.sensors.drivers.*", "test.*"]
 disallow_untyped_defs = false
+[[tool.mypy.overrides]]
+module = ["expidite_rpi.sensors.drivers.*"]
+disallow_untyped_calls = false
