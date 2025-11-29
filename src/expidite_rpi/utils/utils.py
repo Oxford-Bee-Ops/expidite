@@ -49,7 +49,8 @@ last_space_check = dt.datetime(1970, 1, 1, tzinfo=ZoneInfo("UTC"))
 last_check_outcome = False
 high_memory_usage_threshold = 75.0
 
-def failing_to_keep_up()-> bool:
+
+def failing_to_keep_up() -> bool:
     """Function that allows us to back off intensive operations if we're running low on space"""
     # Cache the result for 30 seconds to avoid repeated disk checks
     global last_space_check, last_check_outcome
@@ -59,8 +60,9 @@ def failing_to_keep_up()-> bool:
     else:
         last_space_check = now
 
-    if (root_cfg.running_on_rpi and
-        (psutil.disk_usage(str(root_cfg.ROOT_WORKING_DIR)).percent > high_memory_usage_threshold)):
+    if root_cfg.running_on_rpi and (
+        psutil.disk_usage(str(root_cfg.ROOT_WORKING_DIR)).percent > high_memory_usage_threshold
+    ):
         logger.warning(f"{root_cfg.RAISE_WARN()} Failing to keep up due to low disk space")
         last_check_outcome = True
     else:
@@ -140,7 +142,7 @@ def is_sampling_period(
 ############################################################
 # Run a system command and return the output, or throw an exception on bad return code
 ############################################################
-def run_cmd(cmd: str, ignore_errors: bool=False, grep_strs: Optional[list[str]]=None) -> str:
+def run_cmd(cmd: str, ignore_errors: bool = False, grep_strs: Optional[list[str]] = None) -> str:
     """Run a system command and return the output, or throw an exception on bad return code.
 
     Parameters:
@@ -199,8 +201,9 @@ def run_cmd(cmd: str, ignore_errors: bool=False, grep_strs: Optional[list[str]]=
         else:
             raise e
 
+
 # Get entries from the journalctl log
-def save_journald_log_entries(output_file_name: Path, grep_str: str="", since_minutes: int=31) -> None:
+def save_journald_log_entries(output_file_name: Path, grep_str: str = "", since_minutes: int = 31) -> None:
     if root_cfg.running_on_windows:
         logger.warning("save_journald_log_entries not supported on Windows")
     else:
@@ -265,7 +268,8 @@ def get_current_user() -> str:
     else:
         try:
             import pwd
-            return pwd.getpwuid(os.getuid()).pw_name # type: ignore
+
+            return pwd.getpwuid(os.getuid()).pw_name  # type: ignore
         except Exception as e:
             return f"Error retrieving user: {e}"
 
@@ -304,7 +308,7 @@ def is_already_running(process_name: str) -> bool:
 # This function discards all lines and all parts of the line that don't match the module string
 # It builds up a set of the module strings, discarding duplicates
 ###########################################################
-def check_running_processes(search_string: str="core") -> set:
+def check_running_processes(search_string: str = "core") -> set:
     if root_cfg.running_on_windows:
         logger.warning("check_running_processes not supported on Windows")
         return set()
@@ -358,7 +362,7 @@ def list_files_older_than(search_string: Path, age_in_seconds: float) -> list[Pa
     return old_files
 
 
-def list_all_large_dirs(path: str, recursion: int=0) -> int:
+def list_all_large_dirs(path: str, recursion: int = 0) -> int:
     """Utility function that walks the directory tree and logs all directories using more than 1GB of space"""
     total = 0
     if recursion == 0:
@@ -400,5 +404,3 @@ def convert_h264_to_mp4(src_file: Path, dst_file: Path) -> None:
         str(dst_file),
     ]
     subprocess.run(command, check=True)
-
-

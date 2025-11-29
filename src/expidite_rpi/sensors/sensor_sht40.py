@@ -12,18 +12,19 @@ from expidite_rpi.core.sensor import Sensor, SensorCfg
 
 logger = root_cfg.setup_logger("expidite")
 
-SHT40_SENSOR_INDEX = 68 # SHT40 i2c address, 0x44(68)
+SHT40_SENSOR_INDEX = 68  # SHT40 i2c address, 0x44(68)
 SHT40_SENSOR_TYPE_ID = "SHT40"
 SHT40_FIELDS = ["temperature", "humidity"]
 SHT40_STREAM_INDEX = 0
 SHT40_STREAM: Stream = Stream(
-            description="Temperature and humidity data from SHT40",
-            type_id=SHT40_SENSOR_TYPE_ID,
-            index=SHT40_STREAM_INDEX,
-            format=api.FORMAT.LOG,
-            fields=SHT40_FIELDS,
-            cloud_container="expidite-journals",
-        )
+    description="Temperature and humidity data from SHT40",
+    type_id=SHT40_SENSOR_TYPE_ID,
+    index=SHT40_STREAM_INDEX,
+    format=api.FORMAT.LOG,
+    fields=SHT40_FIELDS,
+    cloud_container="expidite-journals",
+)
+
 
 @dataclass
 class SHT40SensorCfg(SensorCfg):
@@ -32,12 +33,13 @@ class SHT40SensorCfg(SensorCfg):
     ############################################################
     pass
 
+
 DEFAULT_SHT40_SENSOR_CFG = SHT40SensorCfg(
     sensor_type=api.SENSOR_TYPE.I2C,
     sensor_index=SHT40_SENSOR_INDEX,
     sensor_model="SHT40",
     description="SHT40 Temperature and Humidity sensor",
-    outputs=[SHT40_STREAM]
+    outputs=[SHT40_STREAM],
 )
 
 
@@ -50,9 +52,9 @@ class SHT40(Sensor):
     # Separate thread to log data
     def run(self) -> None:
         with LinuxI2cTransceiver("/dev/i2c-1") as i2c_transceiver:
-            channel = I2cChannel(I2cConnection(i2c_transceiver),
-                                slave_address=0x44,
-                                crc=CrcCalculator(8, 0x31, 0xff, 0x0))
+            channel = I2cChannel(
+                I2cConnection(i2c_transceiver), slave_address=0x44, crc=CrcCalculator(8, 0x31, 0xFF, 0x0)
+            )
             sensor = Sht4xDevice(channel)
 
             try:
@@ -73,18 +75,24 @@ class SHT40(Sensor):
 
                     self.log(
                         stream_index=SHT40_STREAM_INDEX,
-                        sensor_data={"temperature": ("%.1f" % temperature.value),
-                                     "humidity": ("%.1f" % humidity.value)},
+                        sensor_data={
+                            "temperature": ("%.1f" % temperature.value),
+                            "humidity": ("%.1f" % humidity.value),
+                        },
                     )
-                    logger.debug(f"SHT40 sensor {self.sensor_index} data: "
-                                 f"{temperature.value:.1f}C, {humidity.value:.1f}%")
+                    logger.debug(
+                        f"SHT40 sensor {self.sensor_index} data: "
+                        f"{temperature.value:.1f}C, {humidity.value:.1f}%"
+                    )
 
                     # If the humidity is high, run a heating cycle to prevent condensation
                     # We do it after measurement to avoid affecting the reading
                     # It takes a few seconds to heat up and cool down
                     if humidity.value > 90:
-                        logger.info(f"SHT40 sensor {self.sensor_index} high humidity "
-                                    f"{humidity.value:.1f}%, activating heater")
+                        logger.info(
+                            f"SHT40 sensor {self.sensor_index} high humidity "
+                            f"{humidity.value:.1f}%, activating heater"
+                        )
                         sensor.activate_medium_heater_power_long()
 
                 except Exception as e:
@@ -94,7 +102,5 @@ class SHT40(Sensor):
                         wait_period = root_cfg.my_device.review_mode_frequency
                     else:
                         wait_period = root_cfg.my_device.env_sensor_frequency
-                    logger.debug(f"SHT40 sensor {self.sensor_index} sleeping for "
-                                f"{wait_period} seconds")
+                    logger.debug(f"SHT40 sensor {self.sensor_index} sleeping for {wait_period} seconds")
                     self.stop_requested.wait(wait_period)
-

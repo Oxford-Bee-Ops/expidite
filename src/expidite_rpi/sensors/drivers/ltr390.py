@@ -1,4 +1,3 @@
-
 # Modified from original to improve type checking and PEP adherence
 from collections.abc import Iterable
 from struct import pack_into, unpack_from
@@ -102,7 +101,7 @@ class UnalignedStruct(Struct):
     def __get__(
         self,
         obj,
-        objtype = None,
+        objtype=None,
     ) -> int:
         # read bytes into buffer at correct alignment
         raw_value = unpack_from(self.format, self.buffer, offset=1)[0]
@@ -127,6 +126,7 @@ class UnalignedStruct(Struct):
 
 class CV:
     """struct helper"""
+
     string: ClassVar[dict[int, str]] = {}
     lsb: ClassVar[dict[int, float]] = {}
     factor: ClassVar[dict[int, float]] = {}
@@ -260,6 +260,7 @@ MeasurementDelay.add_values(
     )
 )
 
+
 class LTR390Driver:  # pylint:disable=too-many-instance-attributes
     """Class to use the LTR390 Ambient Light and UV sensor
 
@@ -346,7 +347,7 @@ class LTR390Driver:  # pylint:disable=too-many-instance-attributes
         if not self._enable_bit:
             raise RuntimeError("Unable to enable sensor")
         self.set_mode(bool(UV))
-        self.set_gain(Gain.GAIN_3X) # type: ignore
+        self.set_gain(Gain.GAIN_3X)  # type: ignore
 
         # Note: This code doesn't work for anything other than 16-bit resolution !!!
         # Suspect a bug in the UnalignedStruct class, which doesn't use the bitwidth parameter

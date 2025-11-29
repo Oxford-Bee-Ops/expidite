@@ -22,8 +22,8 @@ INVENTORY: list[DeviceCfg] = [
     ),
 ]
 
-class Test_trap_cam_device:
 
+class Test_trap_cam_device:
     @pytest.mark.unittest
     def test_trap_cam_device(self) -> None:
         logger.info("Running test_trap_cam_device")
@@ -33,15 +33,20 @@ class Test_trap_cam_device:
             inventory = th.mock_timers(INVENTORY)
 
             # Set the file to be fed into the trap camera device
-            th.set_recordings([
-                RpiTestRecording(
-                    cmd_prefix="rpicam-vid",
-                    recordings=[
-                        root_cfg.TEST_DIR / "rpi_core" / "sensors" / "resources" /
-                        "V3_TRAPCAM_Bees_in_a_tube.mp4"
-                    ],
-                )
-            ])
+            th.set_recordings(
+                [
+                    RpiTestRecording(
+                        cmd_prefix="rpicam-vid",
+                        recordings=[
+                            root_cfg.TEST_DIR
+                            / "rpi_core"
+                            / "sensors"
+                            / "resources"
+                            / "V3_TRAPCAM_Bees_in_a_tube.mp4"
+                        ],
+                    )
+                ]
+            )
 
             # Limit the RpiCore to 1 recording so we can easily validate the results
             th.set_recording_cap(1)
@@ -59,17 +64,19 @@ class Test_trap_cam_device:
             sleep(3)
 
             # We should have identified bees in the video and save the info to the EXITCAM datastream
-            th.assert_records("expidite-fair",
-                            {"V3_*": 1})
-            th.assert_records("expidite-journals",
-                            {"*": 0})
-            th.assert_records("expidite-upload",
-                            {"V3_TRAPCAM*": 1})
-            th.assert_records("expidite-system-records",
-                            {"V3_SCORE": 1, "V3_SCORP": 1, "V3_HEART": 1, "V3_WARNING": 0})
+            th.assert_records("expidite-fair", {"V3_*": 1})
+            th.assert_records("expidite-journals", {"*": 0})
+            th.assert_records("expidite-upload", {"V3_TRAPCAM*": 1})
+            th.assert_records(
+                "expidite-system-records", {"V3_SCORE": 1, "V3_SCORP": 1, "V3_HEART": 1, "V3_WARNING": 0}
+            )
             score_df = th.get_journal_as_df("expidite-system-records", "V3_SCORE*")
             # Groupby observed_type_id
-            grouped_df = score_df.groupby("observed_type_id").agg({"count": "sum",})
+            grouped_df = score_df.groupby("observed_type_id").agg(
+                {
+                    "count": "sum",
+                }
+            )
             assert len(grouped_df) > 0, "No records found in the score datastream"
             assert grouped_df.loc["RPICAM", "count"] == 1, "RPICAM count is not 1"
             assert grouped_df.loc["TRAPCAM", "count"] == 1, "TRAPCAM count is not 1"

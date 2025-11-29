@@ -18,25 +18,26 @@ logger = root_cfg.setup_logger("expidite")
 RPICAM_STILL_DATA_TYPE_ID = "RPICAMSTILL"
 RPICAM_STILL_STREAM_INDEX: int = 0
 RPICAM_STILL_STREAM: Stream = Stream(
-            description="Basic still image recorder.",
-            type_id=RPICAM_STILL_DATA_TYPE_ID,
-            index=RPICAM_STILL_STREAM_INDEX,
-            format=api.FORMAT.JPG,
-            cloud_container="expidite-upload",
-            sample_probability="1.0",
-        )
+    description="Basic still image recorder.",
+    type_id=RPICAM_STILL_DATA_TYPE_ID,
+    index=RPICAM_STILL_STREAM_INDEX,
+    format=api.FORMAT.JPG,
+    cloud_container="expidite-upload",
+    sample_probability="1.0",
+)
 RPICAM_STILL_REVIEW_MODE_DATA_TYPE_ID = "RPICAMSTILLRM"
 RPICAM_STILL_REVIEW_MODE_STREAM_INDEX: int = 1
 RPICAM_STILL_REVIEW_MODE_STREAM: Stream = Stream(
-            description="Review mode image stream.",
-            type_id=RPICAM_STILL_REVIEW_MODE_DATA_TYPE_ID,
-            index=RPICAM_STILL_REVIEW_MODE_STREAM_INDEX,
-            format=api.FORMAT.JPG,  # Consistent JPG format
-            cloud_container="expidite-review-mode",
-            sample_probability="1.0",
-            file_naming=api.FILE_NAMING.REVIEW_MODE,
-            storage_tier=api.StorageTier.HOT,
-        )
+    description="Review mode image stream.",
+    type_id=RPICAM_STILL_REVIEW_MODE_DATA_TYPE_ID,
+    index=RPICAM_STILL_REVIEW_MODE_STREAM_INDEX,
+    format=api.FORMAT.JPG,  # Consistent JPG format
+    cloud_container="expidite-review-mode",
+    sample_probability="1.0",
+    file_naming=api.FILE_NAMING.REVIEW_MODE,
+    storage_tier=api.StorageTier.HOT,
+)
+
 
 @dataclass
 class RpicamStillSensorCfg(SensorCfg):
@@ -48,8 +49,9 @@ class RpicamStillSensorCfg(SensorCfg):
     # The filename should be substituted with FILENAME.
     # The FILENAME suffix should match the datastream input_format.
     rpicam_cmd: str = "rpicam-still -o FILENAME"
-    recording_interval_seconds: int = 60*60  # Interval between still images
+    recording_interval_seconds: int = 60 * 60  # Interval between still images
     rpicam_review_mode_cmd: str = "rpicam-still --width 640 --height 480 -o FILENAME"
+
 
 DEFAULT_RPICAM_STILL_SENSOR_CFG = RpicamStillSensorCfg(
     sensor_type=api.SENSOR_TYPE.CAMERA,
@@ -58,6 +60,7 @@ DEFAULT_RPICAM_STILL_SENSOR_CFG = RpicamStillSensorCfg(
     description="Video sensor that uses rpicam-still",
     outputs=[RPICAM_STILL_STREAM, RPICAM_STILL_REVIEW_MODE_STREAM],
 )
+
 
 class RpicamStillSensor(Sensor):
     def __init__(self, config: RpicamStillSensorCfg) -> None:
@@ -68,15 +71,11 @@ class RpicamStillSensor(Sensor):
         self.rpicam_cmd = self.config.rpicam_cmd
         self.recording_interval_seconds = config.recording_interval_seconds
 
-        assert self.rpicam_cmd, (
-            f"rpicam_cmd must be set in the sensor configuration: {self.rpicam_cmd}"
-        )
+        assert self.rpicam_cmd, f"rpicam_cmd must be set in the sensor configuration: {self.rpicam_cmd}"
         assert self.rpicam_cmd.startswith("rpicam-still "), (
             f"rpicam_cmd must start with 'rpicam-still ': {self.rpicam_cmd}"
         )
-        assert "FILENAME" in self.rpicam_cmd, (
-            f"FILENAME placeholder missing in rpicam_cmd: {self.rpicam_cmd}"
-        )
+        assert "FILENAME" in self.rpicam_cmd, f"FILENAME placeholder missing in rpicam_cmd: {self.rpicam_cmd}"
         assert "FILENAME " in self.rpicam_cmd, (
             f"FILENAME placeholder should be specified without any suffix rpicam_cmd: {self.rpicam_cmd}"
         )
@@ -85,15 +84,17 @@ class RpicamStillSensor(Sensor):
         try:
             self.get_stream(RPICAM_STILL_STREAM_INDEX)  # Main image stream
         except ValueError as e:
-            raise ValueError(f"RpicamStillSensor requires a main image stream at index "
-                             f"{RPICAM_STILL_STREAM_INDEX}: {e}")
+            raise ValueError(
+                f"RpicamStillSensor requires a main image stream at index {RPICAM_STILL_STREAM_INDEX}: {e}"
+            )
 
         try:
             self.get_stream(RPICAM_STILL_REVIEW_MODE_STREAM_INDEX)  # Review mode stream
         except ValueError as e:
-            raise ValueError(f"RpicamStillSensor requires a review mode stream at index "
-                             f"{RPICAM_STILL_REVIEW_MODE_STREAM_INDEX}: {e}")
-
+            raise ValueError(
+                f"RpicamStillSensor requires a review mode stream at index "
+                f"{RPICAM_STILL_REVIEW_MODE_STREAM_INDEX}: {e}"
+            )
 
     def run(self) -> None:
         """Main loop for the RpicamStillSensor - runs continuously unless paused."""
@@ -137,10 +138,9 @@ class RpicamStillSensor(Sensor):
                 logger.info(f"Video recording completed with rc={rc}")
 
                 # Save the video file to the datastream
-                self.save_recording(stream_index_to_use,
-                                    filename,
-                                    start_time=start_time,
-                                    end_time=api.utc_now())
+                self.save_recording(
+                    stream_index_to_use, filename, start_time=start_time, end_time=api.utc_now()
+                )
 
                 exception_count = 0  # Reset exception count on success
 

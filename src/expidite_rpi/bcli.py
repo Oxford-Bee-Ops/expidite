@@ -30,6 +30,7 @@ header = dash_line + "\n\n"
 # Utility functions
 ###################################################################################################
 
+
 # Wrapper for utils.run_cmd so that we can display error rather than throwing an exception
 def run_cmd(cmd: str) -> str:
     """Run a command and return its output or an error message."""
@@ -39,6 +40,7 @@ def run_cmd(cmd: str) -> str:
         return utils.run_cmd(cmd, ignore_errors=True)
     except Exception as e:
         return f"Error: {e}"
+
 
 def reader(proc: subprocess.Popen, queue: queue.Queue) -> None:
     """
@@ -124,9 +126,11 @@ def check_keys_env() -> bool:
         click.echo("# You'll find this in portal.azure.com > Storage accounts > Security + networking.")
         click.echo("# ")
         click.echo("# The final line will look like:")
-        click.echo("# cloud_storage_key=\"DefaultEndpointsProtocol=https;AccountName=mystorageprod;"
-                   "AccountKey=UnZzSivXKjXl0NffCODRGqNDFGCwSBHDG1UcaIeGOdzo2zfFs45GXTB9JjFfD/"
-                   "ZDuaLH8m3tf6+ASt2HoD+w==;EndpointSuffix=core.windows.net;\"")
+        click.echo(
+            '# cloud_storage_key="DefaultEndpointsProtocol=https;AccountName=mystorageprod;'
+            "AccountKey=UnZzSivXKjXl0NffCODRGqNDFGCwSBHDG1UcaIeGOdzo2zfFs45GXTB9JjFfD/"
+            'ZDuaLH8m3tf6+ASt2HoD+w==;EndpointSuffix=core.windows.net;"'
+        )
         click.echo("# ")
         click.echo("# Press any key to continue once you have done so")
         click.echo("# ")
@@ -142,10 +146,13 @@ def check_device_in_inventory() -> None:
             click.echo(f"{dash_line}")
             click.echo("# DEVICE NOT FOUND IN INVENTORY")
             click.echo("# ")
-            click.echo(f"# This device ID ({root_cfg.my_device_id}) "
-                       f"is not configured in your fleet inventory.")
-            click.echo(f"# Fleet inventory: "
-                       f"{root_cfg.system_cfg.my_fleet_config if root_cfg.system_cfg else 'NOT SET'}")
+            click.echo(
+                f"# This device ID ({root_cfg.my_device_id}) is not configured in your fleet inventory."
+            )
+            click.echo(
+                f"# Fleet inventory: "
+                f"{root_cfg.system_cfg.my_fleet_config if root_cfg.system_cfg else 'NOT SET'}"
+            )
             click.echo("# ")
             click.echo("# This typically means one of:")
             click.echo("# 1. The device's MAC address has not been added to your fleet configuration")
@@ -170,6 +177,7 @@ def check_device_in_inventory() -> None:
 
 class InteractiveMenu:
     """Interactive menu for navigating commands."""
+
     def __init__(self) -> None:
         self.sc = RpiCore()
         inventory = root_cfg.load_configuration()
@@ -190,7 +198,6 @@ class InteractiveMenu:
         except Exception as e:
             click.echo(f"Error in script start up: {e}")
 
-
     def view_rpi_core_config(self) -> None:
         """View the rpi core configuration."""
         # Check we have blob storage access
@@ -205,13 +212,13 @@ class InteractiveMenu:
             edge_orch.load_config()
             for i, dptree in enumerate(edge_orch.dp_trees):
                 sensor_cfg = dptree.sensor.config
-                click.echo(f"{i}> {sensor_cfg.sensor_type} {sensor_cfg.sensor_index} "
-                           f" {sensor_cfg.sensor_model}")
+                click.echo(
+                    f"{i}> {sensor_cfg.sensor_type} {sensor_cfg.sensor_index}  {sensor_cfg.sensor_model}"
+                )
                 streams = dptree.sensor.config.outputs
                 if streams is not None:
                     for stream in streams:
                         click.echo(f"  {stream.type_id}: - {stream.description}")
-
 
         # Display system.cfg
         if root_cfg.system_cfg:
@@ -257,7 +264,6 @@ class InteractiveMenu:
             root_cfg.SENSOR_TRIGGER_FLAG.unlink()
         click.echo("Sensing complete.")
 
-
     ####################################################################################################
     # Debug menu functions
     ####################################################################################################
@@ -284,9 +290,9 @@ class InteractiveMenu:
                     stderr=subprocess.PIPE,
                 )
             else:
-                process = subprocess.Popen(["journalctl", "-f"],
-                                           stdout=subprocess.PIPE,
-                                           stderr=subprocess.PIPE)
+                process = subprocess.Popen(
+                    ["journalctl", "-f"], stdout=subprocess.PIPE, stderr=subprocess.PIPE
+                )
             while True:
                 if process.stdout is not None:
                     line = process.stdout.readline().decode("utf-8").strip()
@@ -325,9 +331,7 @@ class InteractiveMenu:
         click.echo(f"{dash_line}")
         click.echo("# ERROR LOGS (journalctl grep check)")
         click.echo(f"{dash_line}")
-        utils.run_cmd("journalctl",
-                      ignore_errors=True,
-                      grep_strs=["error"])
+        utils.run_cmd("journalctl", ignore_errors=True, grep_strs=["error"])
 
     def display_rpi_core_logs(self) -> None:
         """Display regular rpi_core logs."""
@@ -339,11 +343,8 @@ class InteractiveMenu:
         click.echo("# Displaying expidite logs for the last 15 minutes")
         click.echo(f"{dash_line}")
         since_time = api.utc_now() - timedelta(minutes=15)
-        logs = device_health.get_logs(since=since_time,
-                                      min_priority=6,
-                                      grep_str=["expidite"])
+        logs = device_health.get_logs(since=since_time, min_priority=6, grep_str=["expidite"])
         self.display_logs(logs)
-
 
     def display_sensor_logs(self) -> None:
         if root_cfg.running_on_windows:
@@ -354,9 +355,9 @@ class InteractiveMenu:
         click.echo("# Displaying sensor output logs (last 30 minutes)")
         click.echo(f"{dash_line}")
         since_time = api.utc_now() - timedelta(minutes=30)
-        logs = device_health.get_logs(since=since_time,
-                                      min_priority=6,
-                                      grep_str=[api.TELEM_TAG, "Save log: "])
+        logs = device_health.get_logs(
+            since=since_time, min_priority=6, grep_str=[api.TELEM_TAG, "Save log: "]
+        )
         try:
             for log in logs:
                 # Nicely format sensor logs
@@ -381,7 +382,6 @@ class InteractiveMenu:
         except Exception as e:
             logger.error(f"Error parsing log dictionary: {e}")
 
-
     def display_score_logs(self) -> None:
         """View the SCORE logs."""
         if root_cfg.running_on_windows:
@@ -391,8 +391,9 @@ class InteractiveMenu:
         click.echo("# Expidite SCORE logs of sensor output (last 15 minutes)")
         click.echo(f"{dash_line}")
         since_time = api.utc_now() - timedelta(minutes=15)
-        logs = device_health.get_logs(since=since_time, min_priority=6,
-                                      grep_str=[api.TELEM_TAG, "Save log: ", "SCORE"])
+        logs = device_health.get_logs(
+            since=since_time, min_priority=6, grep_str=[api.TELEM_TAG, "Save log: ", "SCORE"]
+        )
 
         try:
             for log in logs:
@@ -403,15 +404,15 @@ class InteractiveMenu:
                 observed_sensor_index = log_dict.get("observed_sensor_index", "UNKNOWN")
                 count = log_dict.get("count", "UNKNOWN")
                 sample_period = log_dict.get("sample_period", "UNKNOWN")
-                click.echo(f"\n{observed_type_id + ' ' + observed_sensor_index:<20} | "
-                           f"{count!s:<4} | {sample_period:<20}")
+                click.echo(
+                    f"\n{observed_type_id + ' ' + observed_sensor_index:<20} | "
+                    f"{count!s:<4} | {sample_period:<20}"
+                )
             if not logs:
                 click.echo("No SCORE logs found.")
             click.echo(f"\n{dash_line}\n")
         except Exception as e:
             logger.error(f"Error parsing log dictionary: {e}")
-
-
 
     def display_running_processes(self) -> None:
         # Running processes
@@ -421,18 +422,14 @@ class InteractiveMenu:
         if root_cfg.system_cfg is None:
             click.echo("System.cfg is not set. Please check your installation.")
             return
-        process_set = (
-            utils.check_running_processes(search_string=f"{root_cfg.system_cfg.my_start_script}")
-        )
+        process_set = utils.check_running_processes(search_string=f"{root_cfg.system_cfg.my_start_script}")
         process_list_str = (
-            str(process_set).replace("{",
-                                     "").replace("}", "").replace("'", "").replace('"', "").strip()
+            str(process_set).replace("{", "").replace("}", "").replace("'", "").replace('"', "").strip()
         )
         click.echo(f"{dash_line}")
         click.echo("# Display running RpiCore processes")
         click.echo(f"{dash_line}\n")
         click.echo(f"{process_list_str}\n")
-
 
     def show_recordings(self) -> None:
         # List all files under the root_working_dir
@@ -460,9 +457,9 @@ class InteractiveMenu:
         if scripts_dir.exists():
             run_cmd_live_echo(f"sudo -u $USER {scripts_dir}/rpi_installer.sh")
         else:
-            click.echo(f"Error: scripts directory does not exist at {scripts_dir}. "
-                       f"Please check your installation.")
-
+            click.echo(
+                f"Error: scripts directory does not exist at {scripts_dir}. Please check your installation."
+            )
 
     def start_rpi_core(self) -> None:
         """Start the RpiCore service."""
@@ -470,9 +467,11 @@ class InteractiveMenu:
 
         # If my_start_script is a resolvable module in this environment, then we use that to start the service
         # using that user-provided script.
-        if (root_cfg.system_cfg is None or
-            root_cfg.system_cfg.my_start_script is None or
-            root_cfg.system_cfg.my_start_script == root_cfg.FAILED_TO_LOAD):
+        if (
+            root_cfg.system_cfg is None
+            or root_cfg.system_cfg.my_start_script is None
+            or root_cfg.system_cfg.my_start_script == root_cfg.FAILED_TO_LOAD
+        ):
             click.echo("System.cfg has no my_start_script configuration")
             click.echo("Do you want to start RpiCore using the default configuration? (y/n)")
             char = click.getchar()
@@ -495,8 +494,9 @@ class InteractiveMenu:
                     click.echo("Exiting...")
                     return
             except ImportError as e:
-                logger.error(f"{root_cfg.RAISE_WARN()}Module {my_start_script} not resolvable ({e})",
-                             exc_info=True)
+                logger.error(
+                    f"{root_cfg.RAISE_WARN()}Module {my_start_script} not resolvable ({e})", exc_info=True
+                )
                 click.echo(f"Module {my_start_script} not resolvable ({e})")
                 click.echo("Exiting...")
                 return
@@ -518,7 +518,6 @@ class InteractiveMenu:
 
         click.echo("RpiCore started.")
 
-
     def stop_rpi_core(self, pkill: bool) -> None:
         """Stop the RpiCore service."""
         click.echo("Stopping RpiCore... this may take up to 180s to complete.")
@@ -526,8 +525,7 @@ class InteractiveMenu:
         root_cfg.STOP_EXPIDITE_FLAG.touch()
 
         if pkill and root_cfg.system_cfg:
-                run_cmd(f"sudo pkill -f 'python -m {root_cfg.system_cfg.my_start_script}'")
-
+            run_cmd(f"sudo pkill -f 'python -m {root_cfg.system_cfg.my_start_script}'")
 
     def enable_rpi_connect(self) -> None:
         """Enable the RPi Connect service."""
@@ -607,12 +605,12 @@ class InteractiveMenu:
             click.echo("Monitoring sensor output...")
             # Start monitoring sensor output by calling the display_sensor_logs function
             # Strip everything before "Save log:" and exclude SCORE and SCORP logs
-            run_cmd_live_echo("journalctl -f | grep 'Save log:' | grep -v SCORE | grep -v SCORP "
-                              "| sed 's/.*Save log: //'")
+            run_cmd_live_echo(
+                "journalctl -f | grep 'Save log:' | grep -v SCORE | grep -v SCORP | sed 's/.*Save log: //'"
+            )
         else:
             click.echo("Exiting.")
             return
-
 
     def show_crontab_entries(self) -> None:
         """Display the crontab entries for the user."""
@@ -628,7 +626,6 @@ class InteractiveMenu:
             click.echo(job)
         click.echo("\n")
 
-
     def reboot_device(self) -> None:
         """Reboot the device."""
         if not root_cfg.running_on_rpi:
@@ -641,19 +638,19 @@ class InteractiveMenu:
         click.echo("Rebooting the device...")
         run_cmd_live_echo("sudo reboot")
 
-
     def update_storage_key(self) -> None:
         """Update the storage key in ~/.expidite/keys.env."""
         # Ask the user for the new storage key
-        click.echo("This option enables you to update the SAS key "
-                   "for access to your Azure cloud storage. "
-                   "This is normal practice when you are going to use this device for a new experiment. "
-                   "You'll find the SAS key in portal.azure.com > Storage accounts > "
-                   "Security + networking > Shared Access Signature (SAS)."
-                   "\nIt should look something like:\n"
-                   "'DefaultEndpointsProtocol=https;AccountName=mystorageaccount;"
-                   "AccountKey=UnZzSivXKjXl0NffCODRGqNDFGCwSBHDG1UcaIeGOdzo2zfFs45"
-                   "GXTB9JjFfD/ZDuaLH8m3te6+ASt2HoD+w==;EndpointSuffix=core.windows.net;'\n"
+        click.echo(
+            "This option enables you to update the SAS key "
+            "for access to your Azure cloud storage. "
+            "This is normal practice when you are going to use this device for a new experiment. "
+            "You'll find the SAS key in portal.azure.com > Storage accounts > "
+            "Security + networking > Shared Access Signature (SAS)."
+            "\nIt should look something like:\n"
+            "'DefaultEndpointsProtocol=https;AccountName=mystorageaccount;"
+            "AccountKey=UnZzSivXKjXl0NffCODRGqNDFGCwSBHDG1UcaIeGOdzo2zfFs45"
+            "GXTB9JjFfD/ZDuaLH8m3te6+ASt2HoD+w==;EndpointSuffix=core.windows.net;'\n"
         )
         click.echo("Enter the new storage key:")
         # Strip any leading or trailing whitespace or " or ' characters so we can handle
@@ -666,14 +663,13 @@ class InteractiveMenu:
             click.echo("That doesn't look like a valid key. Please try again.")
             return
 
-
         # Check the key is valid by trying to create a CloudConnector instance
         try:
             test_file = root_cfg.KEYS_FILE.with_suffix(".test")
             if test_file.exists():
                 test_file.unlink()
             with open(test_file, "w") as f:
-                f.write(f"cloud_storage_key=\"{new_key}\"\n")
+                f.write(f'cloud_storage_key="{new_key}"\n')
             cc = CloudConnector.get_instance(root_cfg.CloudType.AZURE)
             cc.set_keys(keys_file=test_file)
             cc.list_cloud_files(root_cfg.my_device.cc_for_fair)
@@ -727,11 +723,12 @@ class InteractiveMenu:
         try:
             if root_cfg.running_on_rpi:
                 output = run_cmd("rpi-connect status")
-                if ("Signed in: yes" in output):
+                if "Signed in: yes" in output:
                     click.echo("\nrpi-connect is running.")
                 else:
-                    click.echo("\nERROR: rpi-connect is not running. Please start it using the "
-                            "maintenance menu.")
+                    click.echo(
+                        "\nERROR: rpi-connect is not running. Please start it using the maintenance menu."
+                    )
                     success = False
 
             # Check that the devices configured are working
@@ -775,8 +772,9 @@ class InteractiveMenu:
                     click.echo("\nFound the correct number of USB audio device(s).")
                     click.echo(sound_test)
                 else:
-                    click.echo(f"\nERROR: Found {sound_count} USB audio device(s), "
-                            f"but expected {num_usb_devices}.")
+                    click.echo(
+                        f"\nERROR: Found {sound_count} USB audio device(s), but expected {num_usb_devices}."
+                    )
                     success = False
 
             if api.SENSOR_TYPE.I2C.value in sensors:
@@ -838,8 +836,9 @@ class InteractiveMenu:
             return
         scripts_dir = Path.home() / root_cfg.system_cfg.venv_dir / "scripts"
         if not scripts_dir.exists():
-            click.echo(f"Error: scripts directory does not exist at {scripts_dir}. "
-                       f"Please check your installation.")
+            click.echo(
+                f"Error: scripts directory does not exist at {scripts_dir}. Please check your installation."
+            )
             return
         run_cmd_live_echo(f"sudo {scripts_dir}/network_test.sh q")
         click.echo(f"{dash_line}\n")
@@ -868,8 +867,9 @@ class InteractiveMenu:
                     click.echo("Exiting...")
                     return
             except ImportError as e:
-                logger.error(f"{root_cfg.RAISE_WARN()}Module {my_start_script} not resolvable ({e})",
-                             exc_info=True)
+                logger.error(
+                    f"{root_cfg.RAISE_WARN()}Module {my_start_script} not resolvable ({e})", exc_info=True
+                )
                 click.echo(f"Module {my_start_script} not resolvable ({e})")
                 click.echo("Exiting...")
                 return
@@ -892,13 +892,12 @@ class InteractiveMenu:
                     click.echo(f"Running command: {cmd}")
                     run_cmd_live_echo(cmd)
 
-
     ####################################################################################################
     # Interactive menu functions
     ####################################################################################################
     def interactive_menu(self) -> None:
         """Interactive menu for navigating commands."""
-        #click.clear()
+        # click.clear()
 
         # Check if we need to setup keys or git repo or inventory
         check_if_setup_required()
@@ -980,7 +979,11 @@ class InteractiveMenu:
             click.echo("9. Show Crontab Entries")
             click.echo("10. nmap ping scan of local network")
             try:
-                choice = click.prompt("\nEnter your choice", type=int, default=0, )
+                choice = click.prompt(
+                    "\nEnter your choice",
+                    type=int,
+                    default=0,
+                )
                 click.echo("\n")
             except ValueError:
                 click.echo("Invalid input. Please enter a number.")
@@ -1010,7 +1013,6 @@ class InteractiveMenu:
                 break
             else:
                 click.echo("Invalid choice. Please try again.")
-
 
     def maintenance_menu(self) -> None:
         """Menu for maintenance commands."""
@@ -1075,6 +1077,7 @@ def main() -> None:
             assert isinstance(cc, AsyncCloudConnector)
             cc.shutdown()
             click.echo("Done")
+
 
 if __name__ == "__main__":
     os.chdir(root_cfg.HOME_DIR)

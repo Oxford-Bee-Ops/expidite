@@ -124,7 +124,7 @@ elif running_on_linux:
     SC_CODE_DIR = Path("/app")
     CFG_DIR = Path("/run/secrets")
     ROOT_WORKING_DIR = Path("/expidite")
-    DIAGS_DIR = Path("/expidite-diags") # Deliberately separate, so that it survives reboot.
+    DIAGS_DIR = Path("/expidite-diags")  # Deliberately separate, so that it survives reboot.
     utils_clean.create_root_working_dir(ROOT_WORKING_DIR)
 else:
     raise Exception("Unknown platform: " + platform.platform())
@@ -170,6 +170,7 @@ SYSTEM_CFG_FILE: Path = CFG_DIR / "system.cfg"
 EXPIDITE_VERSION_FILE: Path = CFG_DIR / "expidite_code_version"
 USER_CODE_VERSION_FILE: Path = CFG_DIR / "user_code_version"
 
+
 ############################################################################################
 # Mode of operation
 # Set by the EdgeOrchestrator or the ETL orchestrator
@@ -178,14 +179,18 @@ class Mode(Enum):
     EDGE = "edge"
     ETL = "etl"
 
+
 _mode = Mode.EDGE
+
 
 def get_mode() -> Mode:
     return _mode
 
+
 def set_mode(mode: Mode) -> None:
     global _mode
     _mode = mode
+
 
 ############################################################
 # PERSISTENT FLAGS
@@ -212,13 +217,17 @@ LED_STATUS_FILE = TMP_FLAGS_DIR / "LED_STATUS"
 # BCLI will write the duration of recording to the file in seconds
 SENSOR_TRIGGER_FLAG = TMP_FLAGS_DIR / "SENSOR_TRIGGER_FLAG"
 
+
 ############################################################################################
 # Software testing flag
 ############################################################################################
 class SOFTWARE_TEST_MODE(Enum):
     """Test modes for the RpiCore"""
+
     LIVE = "live"
     TESTING = "testing"
+
+
 ST_MODE: SOFTWARE_TEST_MODE = SOFTWARE_TEST_MODE.LIVE
 
 ############################################################################################################
@@ -243,9 +252,9 @@ def set_log_level(level: int) -> None:
     module_logger.debug("Debug logging enabled for expidite")
 
 
-def setup_logger(name: str,
-                 level: Optional[int] = None,
-                 filename: Optional[str | Path] = None) -> logging.Logger:
+def setup_logger(
+    name: str, level: Optional[int] = None, filename: Optional[str | Path] = None
+) -> logging.Logger:
     global _DEFAULT_LOG
     if level is not None:
         set_log_level(level)
@@ -261,9 +270,7 @@ def setup_logger(name: str,
     else:  # elif root_cfg.running_on_windows
         logger = logging.getLogger(name)
         logger.setLevel(_LOG_LEVEL)
-        formatter = logging.Formatter(
-            "%(asctime)-15s %(name)-6s %(levelname)-6s [%(thread)d] %(message)s"
-        )
+        formatter = logging.Formatter("%(asctime)-15s %(name)-6s %(levelname)-6s [%(thread)d] %(message)s")
 
         # By default, we always want to log to a file
         # Check whether there are any FileHander handlers already
@@ -306,10 +313,13 @@ def setup_logger(name: str,
     logging.getLogger("PIL").setLevel(logging.WARNING)
     return logger
 
+
 def RAISE_WARN() -> str:
     return f"{api.RAISE_WARN_TAG}_{my_device_id}: "
 
+
 logger = setup_logger("expidite")
+
 
 ################################################################################################
 # Load the keys.env file
@@ -335,7 +345,9 @@ def _load_keys() -> Optional[Keys | None]:
         print("#################################################################")
         return None
 
+
 keys = _load_keys()
+
 
 def check_keys() -> tuple[bool, str]:
     """Check the keys.env file exists and has loaded; provided a helpful display string if not."""
@@ -343,13 +355,10 @@ def check_keys() -> tuple[bool, str]:
     success = False
     error = ""
     if not KEYS_FILE.exists():
-        error = (f"Keys file {KEYS_FILE} does not exist. "
-                    f"Please create it and set the 'cloud_storage_key' key.")
+        error = f"Keys file {KEYS_FILE} does not exist. Please create it and set the 'cloud_storage_key' key."
     elif (KEYS_FILE.exists()) and (
-        (keys is None
-        ) or (keys.cloud_storage_key is None
-        ) or (keys.cloud_storage_key == FAILED_TO_LOAD)
-        ):
+        (keys is None) or (keys.cloud_storage_key is None) or (keys.cloud_storage_key == FAILED_TO_LOAD)
+    ):
         error = f"Keys file {KEYS_FILE} exists but 'cloud_storage_key' key not set."
     else:
         success = True
@@ -381,16 +390,20 @@ def _load_system_cfg() -> Optional[SystemCfg | None]:
         logger.error(f"{RAISE_WARN()}Failed to load {SYSTEM_CFG_FILE}: {e}")
         return SystemCfg()
 
+
 system_cfg = _load_system_cfg()
+
 
 ############################################################################################
 # Cloud configuration
 ############################################################################################
 class CloudType(Enum):
     """Enum for the supported cloud types"""
+
     AZURE = "azure"
-    SYNC_AZURE = "sync_azure" # Enforced synchronous mode
+    SYNC_AZURE = "sync_azure"  # Enforced synchronous mode
     LOCAL_EMULATOR = "local"
+
 
 CLOUD_TYPE: CloudType = CloudType.AZURE
 if system_cfg and system_cfg.use_local_cloud.lower() == "yes":
@@ -413,10 +426,7 @@ my_device: DeviceCfg = DUMMY_DEVICE
 def load_configuration() -> Optional[list[DeviceCfg] | None]:
     """Load the inventory using the my_fleet_config value defined in SystemCfg class."""
     inventory: list[DeviceCfg] = []
-    if (system_cfg and
-        system_cfg.my_fleet_config and
-        system_cfg.my_fleet_config != FAILED_TO_LOAD):
-
+    if system_cfg and system_cfg.my_fleet_config and system_cfg.my_fleet_config != FAILED_TO_LOAD:
         # Try to load the fleet config by instantiating the class
         try:
             module_path, obj_name = system_cfg.my_fleet_config.rsplit(".", 1)
@@ -442,7 +452,7 @@ def set_inventory(inventory: list[DeviceCfg]) -> dict[str, DeviceCfg]:
         INVENTORY[device.device_id] = device
     if my_device_id in INVENTORY:
         my_device = INVENTORY[my_device_id]
-        if (my_device.log_level < _LOG_LEVEL):
+        if my_device.log_level < _LOG_LEVEL:
             logger.info(f"Setting log level in inventory from {_LOG_LEVEL!s} to {my_device.log_level!s}")
             set_log_level(my_device.log_level)
     else:
@@ -450,6 +460,7 @@ def set_inventory(inventory: list[DeviceCfg]) -> dict[str, DeviceCfg]:
     logger.info(f"Inventory reloaded: found {len(INVENTORY)} devices")
 
     return INVENTORY
+
 
 def check_inventory_loaded() -> bool:
     """Check if the inventory has been loaded.
@@ -461,6 +472,7 @@ def check_inventory_loaded() -> bool:
     else:
         return True
 
+
 def update_my_device_id(new_device_id: str) -> None:
     """Function used in testing to change the device_id"""
     global my_device_id, my_device
@@ -468,6 +480,7 @@ def update_my_device_id(new_device_id: str) -> None:
     my_device_id = new_device_id
     if my_device_id in INVENTORY:
         my_device = INVENTORY[my_device_id]
+
 
 def display_config(device_id: Optional[str] = None) -> str:
     if device_id is None:
@@ -477,6 +490,7 @@ def display_config(device_id: Optional[str] = None) -> str:
     display_str = f"Device: {device_id}\n"
     display_str += INVENTORY[device_id].display()
     return display_str
+
 
 def get_version_info() -> tuple[str, str]:
     """Get the version string of the expidite code and the user code."""

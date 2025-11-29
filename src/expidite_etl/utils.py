@@ -8,8 +8,8 @@ from expidite_rpi.core.cloud_connector import CloudConnector
 
 logger = root_cfg.setup_logger("expidite")
 
-class CloudUtilities:
 
+class CloudUtilities:
     @staticmethod
     def download_journal_set(container_name: str, type_id: str) -> pd.DataFrame:
         """
@@ -28,9 +28,7 @@ class CloudUtilities:
         cc = CloudConnector.get_instance(root_cfg.CloudType.AZURE)
         tmp_dir = file_naming.get_temporary_dir()
         files = cc.list_cloud_files(container_name, prefix=f"V3_{type_id}", suffix=".csv")
-        cc.download_container(src_container=container_name,
-                              dst_dir=tmp_dir,
-                              files=files)
+        cc.download_container(src_container=container_name, dst_dir=tmp_dir, files=files)
         df_list = []
         for file in tmp_dir.glob("*.csv"):
             df = pd.read_csv(file)

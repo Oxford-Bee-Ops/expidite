@@ -9,9 +9,9 @@ from expidite_rpi.core.cloud_connector import AsyncCloudConnector, CloudConnecto
 
 logger = root_cfg.setup_logger("expidite", level=logging.DEBUG)
 
-class TestCloudConnector:
 
-    """ CloudConnector defines the following methods:
+class TestCloudConnector:
+    """CloudConnector defines the following methods:
 
     def get_instance(type: Optional[CloudType]=CloudType.AZURE) -> "CloudConnector":
     def stop(self) -> None:
@@ -50,6 +50,7 @@ class TestCloudConnector:
         more_recent_than: Optional[datetime] = None,
     def get_blob_modified_time(self, container: str, blob_name: str) -> datetime:
     """
+
     def test_production_cloud_connector(self) -> None:
         """Test the AsyncCloudConnector."""
         logger.info("Testing AsyncCloudConnector")
@@ -63,7 +64,6 @@ class TestCloudConnector:
         self.set_of_cc_tests(cc)
         cc.shutdown()
 
-
     def test_local_cloud_connector(self) -> None:
         """Test the LocalCloudConnector."""
         logger.info("Testing LocalCloudConnector")
@@ -74,7 +74,6 @@ class TestCloudConnector:
 
         # Run the standard set of tests for the CloudConnector
         self.set_of_cc_tests(cc)
-
 
     def set_of_cc_tests(self, cc: CloudConnector) -> None:
         """Standard set of actions that should work on any type of CloudConnector."""
@@ -147,5 +146,3 @@ class TestCloudConnector:
         assert not cc.exists(dst_container, src_file.name), "File still exists after delete"
 
         sleep(1)
-
-

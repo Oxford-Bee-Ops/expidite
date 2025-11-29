@@ -48,6 +48,7 @@ class WifiClient:
     priority: int
     pw: str
 
+
 ############################################################################################
 # Configuration for a device
 ############################################################################################
@@ -151,6 +152,7 @@ class Keys(BaseSettings):
 
 class SystemCfg(BaseSettings):
     """Class to hold the keys for the system"""
+
     ############################################################
     # Mandatory custom settings
     ############################################################
@@ -180,10 +182,10 @@ class SystemCfg(BaseSettings):
     #   - api.INSTALL_TYPE.ETL to use the device as an ETL device
     install_type: api.INSTALL_TYPE = api.INSTALL_TYPE.RPI_SENSOR
     # Logging and storage settings
-    enable_volatile_logs: str ="Yes"
+    enable_volatile_logs: str = "Yes"
     # Do you want RpiCore to start automatically after running the rpi_installer.sh script?
     # Anything other than "Yes" will disable auto-start.
-    auto_start: str ="Yes"
+    auto_start: str = "Yes"
     # Enable the UFW firewall
     enable_firewall: str = "Yes"
     # Enable use of predictable network interface names
@@ -193,9 +195,9 @@ class SystemCfg(BaseSettings):
     # The location of the virtual environment relative to the $HOME directory.
     # (ie will expand to "$HOME/$venv_dir").
     # This will be created if it does not exist.
-    venv_dir: str ="venv"
+    venv_dir: str = "venv"
     # The branch of expidite code to use.
-    expidite_git_branch: str ="main"
+    expidite_git_branch: str = "main"
     # Pydantic-settings helper
     model_config = SettingsConfigDict(extra="ignore")
     # Manage the LED status indicator

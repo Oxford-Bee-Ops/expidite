@@ -19,11 +19,10 @@ INVENTORY: list[DeviceCfg] = [
     ),
 ]
 
-class Test_adxl34x_device:
 
+class Test_adxl34x_device:
     @pytest.mark.unittest
     def test_adxl34x_device(self) -> None:
-
         logger.info("Running test_adxl34x_device")
         with RpiEmulator.get_instance() as th:
             # Mock the timers in the inventory for faster testing
@@ -41,5 +40,4 @@ class Test_adxl34x_device:
             sleep(2)
             sc.stop()
             sleep(2)
-            th.assert_records("expidite-fair",
-                            {"V3_*": 1})
+            th.assert_records("expidite-fair", {"V3_*": 1})

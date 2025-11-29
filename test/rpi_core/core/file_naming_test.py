@@ -16,8 +16,8 @@ from expidite_rpi.example.my_sensor_example import (
 logger = root_cfg.setup_logger("expidite")
 root_cfg.ST_MODE = root_cfg.SOFTWARE_TEST_MODE.TESTING
 
-class Test_datastream:
 
+class Test_datastream:
     @pytest.mark.unittest
     def test_file_naming(self) -> None:
         logger.info("Run test_file_naming test")
@@ -44,7 +44,6 @@ class Test_datastream:
         )
         assert fields[api.RECORD_ID.SUFFIX.value] == output_format.value
 
-
     @pytest.mark.unittest
     def test_id_parsing(self) -> None:
         logger.info("Run test_id_parsing test")
@@ -65,10 +64,11 @@ class Test_datastream:
     @pytest.mark.parametrize(
         "fname, expected",
         [
-            ("V3_EXITTRACKER_2ccf6791818a_20250522.csv",
-             datetime(2025, 5, 22, tzinfo=ZoneInfo("UTC"))),
-            ("V3_TRAPCAM_d83adde765e4_01_00_20250523T172338065_20250523T172340565.mp4",
-             datetime(2025, 5, 23, 17, 23, 38, tzinfo=ZoneInfo("UTC"))),
+            ("V3_EXITTRACKER_2ccf6791818a_20250522.csv", datetime(2025, 5, 22, tzinfo=ZoneInfo("UTC"))),
+            (
+                "V3_TRAPCAM_d83adde765e4_01_00_20250523T172338065_20250523T172340565.mp4",
+                datetime(2025, 5, 23, 17, 23, 38, tzinfo=ZoneInfo("UTC")),
+            ),
         ],
     )
     @pytest.mark.unittest

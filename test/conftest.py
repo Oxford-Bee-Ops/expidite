@@ -14,6 +14,7 @@ RED = "\033[91m"
 YELLOW = "\033[93m"
 RESET = "\033[0m"
 
+
 def pytest_terminal_summary(terminalreporter, exitstatus, config):
     tr = terminalreporter
     tr.write_sep("=", "Test Results Summary")
@@ -35,6 +36,7 @@ def pytest_terminal_summary(terminalreporter, exitstatus, config):
         test_name = rep.nodeid.split("::")[-1]
         tr.write_line(f"{test_name} - {outcome_colored} - {duration:.3f}s")
 
+
 @pytest.fixture(autouse=True)
 def log_test_lifecycle(request):
     """
@@ -55,11 +57,13 @@ def log_test_lifecycle(request):
     test_result = "PASSED" if not request.node.rep_call.failed else "FAILED"
 
     if test_result == "PASSED":
-        test_logger.info(f"[PYTEST END] {module_name}::{test_name} - "
-                         f"{test_result} (Duration: {duration:.3f}s)")
+        test_logger.info(
+            f"[PYTEST END] {module_name}::{test_name} - {test_result} (Duration: {duration:.3f}s)"
+        )
     else:
-        test_logger.error(f"[PYTEST END] {module_name}::{test_name} - "
-                          f"{test_result} (Duration: {duration:.3f}s)")
+        test_logger.error(
+            f"[PYTEST END] {module_name}::{test_name} - {test_result} (Duration: {duration:.3f}s)"
+        )
 
 
 @pytest.hookimpl(tryfirst=True, hookwrapper=True)
@@ -70,6 +74,7 @@ def pytest_runtest_makereport(item, call):
     outcome = yield
     rep = outcome.get_result()
     setattr(item, f"rep_{rep.when}", rep)
+
 
 @pytest.fixture(autouse=True)
 def shutdown_cloud_connector():

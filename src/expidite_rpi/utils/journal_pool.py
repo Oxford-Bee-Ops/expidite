@@ -42,9 +42,7 @@ class JournalPool(ABC):
         return JournalPool._instance
 
     @abstractmethod
-    def add_rows(self, stream: Stream,
-                 data: list[dict],
-                 timestamp: Optional[datetime] = None) -> None:
+    def add_rows(self, stream: Stream, data: list[dict], timestamp: Optional[datetime] = None) -> None:
         """Add data rows as a list of dictionaries
 
         The fields in each dictionary must match the DPtreeNodeCfg reqd_fields."""
@@ -52,10 +50,8 @@ class JournalPool(ABC):
         assert False, "Abstract method needs to be implemented"
 
     @abstractmethod
-    def add_rows_from_df(self,
-                         stream: Stream,
-                         data: pd.DataFrame,
-                         timestamp: Optional[datetime] = None
+    def add_rows_from_df(
+        self, stream: Stream, data: pd.DataFrame, timestamp: Optional[datetime] = None
     ) -> None:
         """Add data in the form of a Pandas DataFrame to the Journal, which will auto-sync to the cloud
 
@@ -75,6 +71,7 @@ class JournalPool(ABC):
 
         assert False, "Abstract method needs to be implemented"
 
+
 class CloudJournalPool(JournalPool):
     """The CloudJournalPool is a concrete implementation of a JournalPool for running in ETL mode.
 
@@ -85,10 +82,7 @@ class CloudJournalPool(JournalPool):
         self._cj_pool: dict[str, CloudJournal] = {}
         self.jlock = RLock()
 
-    def add_rows(self,
-                 stream: Stream,
-                 data: list[dict],
-                 timestamp: Optional[datetime] = None) -> None:
+    def add_rows(self, stream: Stream, data: list[dict], timestamp: Optional[datetime] = None) -> None:
         """Add data to the appropriate CloudJournal, which will auto-sync to the cloud
 
         All data MUST relate to the same DAY as timestamp."""
@@ -142,8 +136,7 @@ class CloudJournalPool(JournalPool):
             V3_{DPtreeNodeCfg_type_id}_{day}.csv
         """
         # Check that the output_fields contain at least all the bapi.REQD_RECORD_ID_FIELDS
-        assert stream.fields is not None, (
-            f"output_fields must be set in {stream}")
+        assert stream.fields is not None, f"output_fields must be set in {stream}"
 
         fname = file_naming.get_cloud_journal_filename(stream.type_id, day)
 
@@ -169,20 +162,15 @@ class LocalJournalPool(JournalPool):
         self._jpool: dict[str, Journal] = {}
         self.jlock = RLock()
 
-    def add_rows(self,
-                 stream: Stream,
-                 data: list[dict],
-                 timestamp: Optional[datetime] = None) -> None:
+    def add_rows(self, stream: Stream, data: list[dict], timestamp: Optional[datetime] = None) -> None:
         """Add data to the appropriate Journal, which will auto-upload to the cloud"""
 
         with self.jlock:
             j = self._get_journal(stream)
             j.add_rows(data)
 
-    def add_rows_from_df(self,
-                         stream: Stream,
-                         data: pd.DataFrame,
-                         timestamp: Optional[datetime] = None
+    def add_rows_from_df(
+        self, stream: Stream, data: pd.DataFrame, timestamp: Optional[datetime] = None
     ) -> None:
         """Add data to the appropriate Journal, which will auto-sync to the cloud"""
 

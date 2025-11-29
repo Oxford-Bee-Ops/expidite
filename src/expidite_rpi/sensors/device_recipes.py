@@ -50,6 +50,7 @@ def create_sht31_device() -> list[DPtree]:
     my_tree = DPtree(my_sensor)
     return [my_tree]
 
+
 ######################################################################################################
 # Create SHT40 temp and humidity sensor device
 ######################################################################################################
@@ -59,6 +60,7 @@ def create_sht40_device() -> list[DPtree]:
     my_tree = DPtree(my_sensor)
     return [my_tree]
 
+
 ######################################################################################################
 # Create BMP280 pressure sensor device
 ######################################################################################################
@@ -67,6 +69,7 @@ def create_bmp280_device() -> list[DPtree]:
     my_sensor = BMP280(cfg)
     my_tree = DPtree(my_sensor)
     return [my_tree]
+
 
 ######################################################################################################
 # Create AHT20 temp and humidity sensor device
@@ -87,6 +90,7 @@ def create_adxl34x_device() -> list[DPtree]:
     my_tree = DPtree(my_sensor)
     return [my_tree]
 
+
 ###################################################################################################
 # Create LTR390 light and UV sensor device
 ###################################################################################################
@@ -104,14 +108,16 @@ def create_continuous_video_4fps_device() -> list[DPtree]:
     """Create a standard camera device.
     No recordings are saved to the cloud - it is assumed a DP will process the recordings locally."""
     sensor_index = 0
-    cfg: RpicamSensorCfg = replace(DEFAULT_RPICAM_SENSOR_CFG,
+    cfg: RpicamSensorCfg = replace(
+        DEFAULT_RPICAM_SENSOR_CFG,
         description="Low FPS continuous video recording device",
         sensor_index=sensor_index,
-        rpicam_cmd="rpicam-vid --framerate 4 --width 640 --height 480 -o FILENAME -t 180000 -v 0"
+        rpicam_cmd="rpicam-vid --framerate 4 --width 640 --height 480 -o FILENAME -t 180000 -v 0",
     )
     my_sensor = RpicamSensor(cfg)
     my_tree = DPtree(my_sensor)
     return [my_tree]
+
 
 ###################################################################################################
 # Trap cameras
@@ -129,8 +135,9 @@ def create_trapcam_device(sensor_index: Optional[int] = 0) -> list[DPtree]:
 
     # Define the sensor
     # Use the default rpicam sensor config except for the rpicam command
-    cfg: RpicamSensorCfg = replace(DEFAULT_RPICAM_SENSOR_CFG,
-        rpicam_cmd = "rpicam-vid --framerate 15 --width 640 --height 480 -o FILENAME -t 180000"
+    cfg: RpicamSensorCfg = replace(
+        DEFAULT_RPICAM_SENSOR_CFG,
+        rpicam_cmd="rpicam-vid --framerate 15 --width 640 --height 480 -o FILENAME -t 180000",
     )
     my_sensor = RpicamSensor(cfg)
 
@@ -144,6 +151,7 @@ def create_trapcam_device(sensor_index: Optional[int] = 0) -> list[DPtree]:
         sink=my_dp,
     )
     return [my_tree]
+
 
 def create_double_trapcam_device() -> list[DPtree]:
     camera1 = create_trapcam_device(sensor_index=0)
@@ -164,8 +172,8 @@ def create_aruco_camera_device(sensor_index: int) -> list[DPtree]:
 
     # DataProcessor
     my_dp = processor_video_aruco.VideoArucoProcessor(
-        processor_video_aruco.DEFAULT_AUROCO_PROCESSOR_CFG,
-        sensor_index=sensor_index)
+        processor_video_aruco.DEFAULT_AUROCO_PROCESSOR_CFG, sensor_index=sensor_index
+    )
 
     # Connect the DataProcessor to the Sensor
     my_tree = DPtree(my_sensor)
@@ -174,6 +182,7 @@ def create_aruco_camera_device(sensor_index: int) -> list[DPtree]:
         sink=my_dp,
     )
     return [my_tree]
+
 
 #####################################################################################################
 # On-demand audio and video devices

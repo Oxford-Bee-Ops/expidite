@@ -20,15 +20,18 @@ cv2.setRNGSeed(42)
 
 logger = root_cfg.setup_logger("expidite")
 
+
 @dataclass
 class MarkersData:
     for_csv: list[dict] = field(default_factory=list)
     corner_sets: array = field(default_factory=lambda: array("f"))
 
+
 @dataclass
 class FrameMarkersData:
     known_markers: MarkersData = field(default_factory=MarkersData)
     unknown_markers: MarkersData = field(default_factory=MarkersData)
+
 
 MARKER_INFO_REQD_COLUMNS: list[str] = [
     "filename",
@@ -52,21 +55,22 @@ ARUCO_DATA_DS_TYPE_ID = "ARUCO"
 ARUCO_MARKED_UP_VIDEOS_DS_TYPE_ID = "ARUCOMARKED"
 ARUCO_DATA_STREAM_INDEX: int = 0
 ARUCO_DATA_STREAM: Stream = Stream(
-            description="Identified ARUCO markers in videos.",
-            type_id=ARUCO_DATA_DS_TYPE_ID,
-            index=ARUCO_DATA_STREAM_INDEX,
-            format=api.FORMAT.DF,
-            fields=MARKER_INFO_REQD_COLUMNS,
-        )
+    description="Identified ARUCO markers in videos.",
+    type_id=ARUCO_DATA_DS_TYPE_ID,
+    index=ARUCO_DATA_STREAM_INDEX,
+    format=api.FORMAT.DF,
+    fields=MARKER_INFO_REQD_COLUMNS,
+)
 ARUCO_MARKED_UP_VIDEOS_STREAM_INDEX: int = 1
 ARUCO_MARKED_UP_VIDEOS_STREAM: Stream = Stream(
-            description="Marked up video data from a WHO camera",
-            type_id=ARUCO_MARKED_UP_VIDEOS_DS_TYPE_ID,
-            index=ARUCO_MARKED_UP_VIDEOS_STREAM_INDEX,
-            format=api.FORMAT.MP4,
-            cloud_container="expidite-upload",
-            sample_probability="0.1",
-        )
+    description="Marked up video data from a WHO camera",
+    type_id=ARUCO_MARKED_UP_VIDEOS_DS_TYPE_ID,
+    index=ARUCO_MARKED_UP_VIDEOS_STREAM_INDEX,
+    format=api.FORMAT.MP4,
+    cloud_container="expidite-upload",
+    sample_probability="0.1",
+)
+
 
 @dataclass
 class ArucoProcessorCfg(DataProcessorCfg):
@@ -76,22 +80,21 @@ class ArucoProcessorCfg(DataProcessorCfg):
     aruco_dict_name: str = "DICT_4X4_50"
     save_marked_up_video: bool = True  # Save the marked up video
 
+
 DEFAULT_AUROCO_PROCESSOR_CFG = ArucoProcessorCfg(
-    description = "WHOCAM video processor",
-    outputs = [ARUCO_DATA_STREAM, ARUCO_MARKED_UP_VIDEOS_STREAM],
-    aruco_dict_name = "DICT_4X4_50",
-    save_marked_up_video = True  # Save the marked up video
+    description="WHOCAM video processor",
+    outputs=[ARUCO_DATA_STREAM, ARUCO_MARKED_UP_VIDEOS_STREAM],
+    aruco_dict_name="DICT_4X4_50",
+    save_marked_up_video=True,  # Save the marked up video
 )
 
 
 class VideoArucoProcessor(DataProcessor):
-
     def __init__(self, config: ArucoProcessorCfg, sensor_index: int) -> None:
         super().__init__(config, sensor_index=sensor_index)
         self.config: ArucoProcessorCfg = config
 
-    def process_data(self,
-                     input_data: pd.DataFrame | list[Path]) -> None:
+    def process_data(self, input_data: pd.DataFrame | list[Path]) -> None:
         """Process a list of video files and identify ARUCO markers."""
 
         assert isinstance(input_data, list), f"Expected list of files, got {type(input_data)}"
@@ -107,9 +110,7 @@ class VideoArucoProcessor(DataProcessor):
                 # Step 1: identify & output potential ARUCO markers
                 # This also saves a marked up version of the video to a derived datastream
                 #############################################################################################
-                result = self.process_video_file(f,
-                                                 save_marked_up_video,
-                                                 aruco_dict_name=aruco_dict_name)
+                result = self.process_video_file(f, save_marked_up_video, aruco_dict_name=aruco_dict_name)
                 if result is not None:
                     results.append(result)
 
@@ -124,10 +125,9 @@ class VideoArucoProcessor(DataProcessor):
             sensor_data=pd.concat(results) if len(results) > 0 else pd.DataFrame(),
         )
 
-    def process_video_file(self,
-                           source_file: Path,
-                           save_marked_up_video: bool = True,
-                           aruco_dict_name: str = "DICT_4X4_50") -> pd.DataFrame:
+    def process_video_file(
+        self, source_file: Path, save_marked_up_video: bool = True, aruco_dict_name: str = "DICT_4X4_50"
+    ) -> pd.DataFrame:
         """Process a single file - find potential aruco markers in each frame & save results"""
         # In future this might also return the CSV, so that the results can be
         # combined with other analysis of the video (e.g. to find
@@ -223,10 +223,7 @@ class VideoArucoProcessor(DataProcessor):
         return df
 
     def _get_aruco_markers_in_frame(  # type: ignore[no-untyped-def]
-        self,
-        detector: cv2.aruco.ArucoDetector,
-        frame,
-        frame_num: int
+        self, detector: cv2.aruco.ArucoDetector, frame, frame_num: int
     ) -> FrameMarkersData:
         """Find Aruco markers, and possible markers, in a single frame.
 
@@ -249,9 +246,7 @@ class VideoArucoProcessor(DataProcessor):
         unknown_marker_info = return_data.unknown_markers.for_csv
 
         def add_marker_info(
-            list_to_update: list[dict],
-            corners_as_3d_array: array,
-            marker_id: list[int] | None
+            list_to_update: list[dict], corners_as_3d_array: array, marker_id: list[int] | None
         ) -> None:
             # Note, a corner set from detectMarkers() is a 3D array, (1,4,2).
             # 4 = number of corners, 2 = x,y for each corner.  Not sure

@@ -29,6 +29,7 @@ class RECORD_ID(StrEnum):
     NAME = "device_name"  # Not used programmatically, but helpful for users
     TAGS = "tags"  # Not used programmatically, but helpful for users
 
+
 REQD_RECORD_ID_FIELDS = [
     RECORD_ID.VERSION.value,
     RECORD_ID.DATA_TYPE_ID.value,
@@ -38,15 +39,17 @@ REQD_RECORD_ID_FIELDS = [
     RECORD_ID.TIMESTAMP.value,
 ]
 
-ALL_RECORD_ID_FIELDS = [*REQD_RECORD_ID_FIELDS,
-                        RECORD_ID.END_TIME.value,
-                        RECORD_ID.OFFSET.value,
-                        RECORD_ID.SECONDARY_OFFSET.value,
-                        RECORD_ID.SUFFIX.value,
-                        RECORD_ID.INCREMENT.value,
-                        RECORD_ID.NAME.value,
-                        RECORD_ID.TAGS.value
-                        ]
+ALL_RECORD_ID_FIELDS = [
+    *REQD_RECORD_ID_FIELDS,
+    RECORD_ID.END_TIME.value,
+    RECORD_ID.OFFSET.value,
+    RECORD_ID.SECONDARY_OFFSET.value,
+    RECORD_ID.SUFFIX.value,
+    RECORD_ID.INCREMENT.value,
+    RECORD_ID.NAME.value,
+    RECORD_ID.TAGS.value,
+]
+
 
 ############################################################
 # Sampling override options
@@ -55,6 +58,7 @@ class OVERRIDE(StrEnum):
     AUTO = "auto"  # No override
     SAVE = "save"  # Override to save sample
     DISCARD = "discard"  # Override to discard sample
+
 
 ############################################################
 # Installation types
@@ -67,6 +71,7 @@ class INSTALL_TYPE(Enum):
     ETL = "etl"  # ETL installation
     NOT_SET = "NOT_SET"  # Invalid but used to declare the SensorCfg object
 
+
 #############################################################
 # Blob storage tiers
 #
@@ -75,6 +80,7 @@ class INSTALL_TYPE(Enum):
 #############################################################
 class StorageTier(Enum):
     """Enum for the supported blob tiers"""
+
     HOT = StandardBlobTier.HOT
     COOL = StandardBlobTier.COOL
     COLD = StandardBlobTier.ARCHIVE
@@ -89,6 +95,7 @@ class SENSOR_TYPE(Enum):
     CAMERA = "CAMERA"  # Camera sensor
     SYS = "SYS"  # System sensor (e.g., self-tracking)
     NOT_SET = "NOT_SET"  # Invalid but used to declare the SensorCfg object
+
 
 ############################################################
 # Datastream types
@@ -106,7 +113,9 @@ class FORMAT(Enum):
     TXT = "txt"  # Text format
     YAML = "yaml"  # YAML text format
 
+
 DATA_FORMATS = [FORMAT.DF, FORMAT.CSV, FORMAT.LOG]
+
 
 ############################################################
 # File naming convention to use on a Stream
@@ -117,10 +126,12 @@ DATA_FORMATS = [FORMAT.DF, FORMAT.CSV, FORMAT.LOG]
 ############################################################
 class FILE_NAMING(Enum):
     """Enum for file naming conventions"""
+
     # Default file naming convention
     DEFAULT = "default"
     # Review mode file naming drops the datetime fields so that each file overwrites the previous one
     REVIEW_MODE = "review_mode"
+
 
 ############################################################
 # Tags used in logs sent from sensors to the ETL
@@ -197,4 +208,3 @@ def str_to_iso(t: str) -> str:
     """Convert a string timestamp to an ISO 8601 formatted string."""
     dt = utc_from_str(t)
     return dt.isoformat(timespec="milliseconds")
-

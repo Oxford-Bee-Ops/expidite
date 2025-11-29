@@ -10,6 +10,7 @@ from expidite_rpi.utils.rpi_emulator import RpiEmulator
 
 logger = root_cfg.setup_logger("expidite")
 
+
 class Test_SensorFactory:
     @pytest.mark.unittest
     def test_RpiCore_status(self) -> None:

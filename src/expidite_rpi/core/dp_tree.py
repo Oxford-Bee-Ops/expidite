@@ -7,10 +7,12 @@ from expidite_rpi.core.sensor import Sensor
 
 logger = root_cfg.setup_logger("expidite")
 
+
 class Edge(NamedTuple):
     source: DPnode
     sink: DPnode
     stream: Stream
+
 
 ###############################################################################################
 # DPtree represents the flow of data from the sensor to the cloud.
@@ -48,6 +50,7 @@ class DPtree:
     - get_node: Retrieves a node from the tree by its data_id.
     - get_processors: Retrieves all processor nodes in the tree.
     """
+
     def __init__(self, sensor: Sensor) -> None:
         """
         Initializes a DPtree with a Sensor instance that forms the root of the tree.
@@ -89,8 +92,9 @@ class DPtree:
         if not self.sensor:
             # New tree
             if not isinstance(src_node, Sensor):
-                raise ValueError("The first connect() call must provide a Sensor object "
-                                 "for the 'from' field.")
+                raise ValueError(
+                    "The first connect() call must provide a Sensor object for the 'from' field."
+                )
             self.sensor = src_node
         else:
             # The source should already exist in the tree.
@@ -107,7 +111,6 @@ class DPtree:
         # Build the tree structure by storing the child node with the output index as the key.
         src_node._dpnode_children[stream_index] = sink
         self._edges.append(Edge(src_node, sink, stream))
-
 
     def chain(self, *configs: DPnode) -> None:
         """
@@ -150,9 +153,7 @@ class DPtree:
         Returns:
             A list of DataProcessor objects representing the processors in the tree.
         """
-        return [
-            node for node in self._nodes.values() if not isinstance(node, Sensor)
-        ]
+        return [node for node in self._nodes.values() if not isinstance(node, Sensor)]
 
     def export(self) -> dict:
         """

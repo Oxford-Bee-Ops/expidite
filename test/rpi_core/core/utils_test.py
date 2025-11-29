@@ -40,7 +40,6 @@ class Test_utils:
         ts_of_utils_utc = api.str_to_iso(api.utc_to_fname_str(dt_float))
         print("ts_of_utils_utc:", ts_of_utils_utc, " ts_of_dt:", ts_of_dt)
 
-
     @pytest.mark.unittest
     def test_raise_warn(self) -> None:
         logger.info("Run test_raise_warn test")

@@ -6,9 +6,11 @@ from expidite_rpi.core import configuration as root_cfg
 
 logger = root_cfg.setup_logger("expidite")
 
+
 @dataclass
 class Stream:
     """Defines the format and fields present in a datastream coming from a DPtreeNode."""
+
     # Human-understandable description of the data in the stream
     description: str
     # Used to identify the type & purpose of data in file names, etc.
@@ -30,7 +32,7 @@ class Stream:
     # This string is interpreted by the Sensor or DataProcessor to determine the frequency of
     # raw data sampling. The format of this string is specific to the Sensor or DataProcessor.
     # The default implementation interprets this string as a float sampling probability (0.0-1.0)
-    sample_probability: Optional[str|float] = None
+    sample_probability: Optional[str | float] = None
 
     # What format of file_naming to use for files produced by this stream.
     file_naming: Optional[api.FILE_NAMING] = api.FILE_NAMING.DEFAULT
@@ -39,7 +41,6 @@ class Stream:
     # If you're using Azure for storage, see Azure documentation for details:
     # https://learn.microsoft.com/en-us/azure/storage/blobs/storage-blob-storage-tiers
     storage_tier: api.StorageTier = api.StorageTier.COOL
-
 
     def get_data_id(self, sensor_index: int) -> str:
         """
@@ -50,11 +51,13 @@ class Stream:
         """
         return file_naming.create_data_id(root_cfg.my_device_id, sensor_index, self.type_id, self.index)
 
+
 @dataclass
 class DPtreeNodeCfg:
     """Defines the configuration for a node in the DPtree.
     SensorCfg & DataProcessorCfg inherit from this class.
     """
+
     outputs: list[Stream]
 
     # Human-meaningful description of the node.
@@ -80,6 +83,7 @@ class SensorCfg(DPtreeNodeCfg):
     sensor_model: str
         The device model of the sensor (eg AHT20, PiCameraModule2).
     """
+
     sensor_type: api.SENSOR_TYPE = api.SENSOR_TYPE.NOT_SET
     sensor_index: int = 0
     sensor_model: str = root_cfg.FAILED_TO_LOAD

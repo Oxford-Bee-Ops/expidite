@@ -15,10 +15,12 @@ from expidite_rpi.core import configuration as root_cfg
 class Journal:
     _temp_fname = "_temp_fname"
 
-    def __init__(self,
-                 fname: Optional[Path | str] = None,
-                 cached: bool=True,
-                 reqd_columns: Optional[list[str]]=None) -> None:
+    def __init__(
+        self,
+        fname: Optional[Path | str] = None,
+        cached: bool = True,
+        reqd_columns: Optional[list[str]] = None,
+    ) -> None:
         """Constructor for the Journal class.
 
         Args:
@@ -143,7 +145,7 @@ class Journal:
     #
     # Normally this is returned as a copy, but for performance on read-only operations,
     # the copy can be disabled
-    def get_data(self, copy: bool=True) -> list[dict]:
+    def get_data(self, copy: bool = True) -> list[dict]:
         if copy:
             return self._data.to_dict(orient="records")
         else:
@@ -153,7 +155,7 @@ class Journal:
     #
     # Order the columns by providing a list of column names.
     # Doesn't need to include all columns names; any columns not in the list will be appended
-    def as_df(self, column_order: Optional[list[str]]=None) -> pd.DataFrame:
+    def as_df(self, column_order: Optional[list[str]] = None) -> pd.DataFrame:
         if column_order is None:
             return self._data
         else:

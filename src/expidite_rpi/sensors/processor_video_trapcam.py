@@ -16,13 +16,14 @@ logger = root_cfg.setup_logger("expidite")
 TRAPCAM_TYPE_ID = "TRAPCAM"
 TRAPCAM_STREAM_INDEX: int = 0
 TRAPCAM_STREAM: Stream = Stream(
-            description="Video samples with movement detected.",
-            type_id=TRAPCAM_TYPE_ID,
-            index=TRAPCAM_STREAM_INDEX,
-            format=api.FORMAT.MP4,
-            cloud_container="expidite-upload",
-            sample_probability="1.0",
-        )
+    description="Video samples with movement detected.",
+    type_id=TRAPCAM_TYPE_ID,
+    index=TRAPCAM_STREAM_INDEX,
+    format=api.FORMAT.MP4,
+    cloud_container="expidite-upload",
+    sample_probability="1.0",
+)
+
 
 @dataclass
 class TrapcamDpCfg(DataProcessorCfg):
@@ -32,16 +33,18 @@ class TrapcamDpCfg(DataProcessorCfg):
     min_blob_size: int = 1000  # Minimum blob size in pixels
     max_blob_size: int = 1000000  # Maximum blob size in pixels
 
+
 DEFAULT_TRAPCAM_DP_CFG = TrapcamDpCfg(
     description="Video processor that detects movement in video files and saves segments with movement.",
     outputs=[TRAPCAM_STREAM],
 )
 
+
 class TrapcamDp(DataProcessor):
     def __init__(self, config: TrapcamDpCfg, sensor_index: int) -> None:
         super().__init__(config, sensor_index)
         self.config: TrapcamDpCfg = config
-        self.kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE,(3,3))
+        self.kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (3, 3))
         self.background_subtractor = cv2.createBackgroundSubtractorMOG2()
 
     def process_data(
@@ -65,18 +68,16 @@ class TrapcamDp(DataProcessor):
                     exc_info=True,
                 )
 
-    def process_video(self,
-                      video_path: Path,
-                      min_blob_size: int,
-                      max_blob_size: int) -> None:
-        """ Process a video file to detect movement and save segments with movement.
+    def process_video(self, video_path: Path, min_blob_size: int, max_blob_size: int) -> None:
+        """Process a video file to detect movement and save segments with movement.
         We record for a minimum of 2 seconds after movement is detected."""
 
         cap = cv2.VideoCapture(str(video_path))
         if not cap.isOpened():
             exists = video_path.exists()
-            raise ValueError(f"Unable to open video file (exists={exists}): {video_path};"
-                             f" opencv installation issue?")
+            raise ValueError(
+                f"Unable to open video file (exists={exists}): {video_path}; opencv installation issue?"
+            )
 
         fname_details = file_naming.parse_record_filename(video_path)
         start_time = fname_details[api.RECORD_ID.TIMESTAMP.value]
@@ -85,9 +86,9 @@ class TrapcamDp(DataProcessor):
         fps = int(cap.get(cv2.CAP_PROP_FPS))
         suffix = video_path.suffix[1:]
         if suffix == "h264":
-            fourcc = cv2.VideoWriter.fourcc(*'h264')
+            fourcc = cv2.VideoWriter.fourcc(*"h264")
         elif suffix == "mp4":
-            fourcc = cv2.VideoWriter.fourcc(*'mp4v')
+            fourcc = cv2.VideoWriter.fourcc(*"mp4v")
         else:
             raise ValueError(f"Unsupported video format: {suffix}")
 
@@ -98,8 +99,8 @@ class TrapcamDp(DataProcessor):
         sample_first_frame = 0
         sample_last_movement_frame = 0
         frames_to_record = 1 * fps  # Record for some time after movement is detected
-        discard_threshold = 2 # Discard the recording if it was just noise; ie less than X frames
-        temp_filename: Path = Path("unspecified") # Set when we start saving video
+        discard_threshold = 2  # Discard the recording if it was just noise; ie less than X frames
+        temp_filename: Path = Path("unspecified")  # Set when we start saving video
 
         logger.info(f"Processing video with fps={fps}, res={frame_width}x{frame_height}: {video_path}")
 
@@ -135,17 +136,17 @@ class TrapcamDp(DataProcessor):
                     movement = True
                     break
 
-            if movement and (current_frame > 1): # Ignore the first 2 frames while the BS settles
+            if movement and (current_frame > 1):  # Ignore the first 2 frames while the BS settles
                 if not output_stream:
                     # Not currently recording; start recording
                     sample_first_frame = current_frame
                     sample_last_movement_frame = current_frame
-                    temp_filename=file_naming.get_temporary_filename(api.FORMAT.MP4)
+                    temp_filename = file_naming.get_temporary_filename(api.FORMAT.MP4)
                     output_stream = cv2.VideoWriter(
                         filename=str(temp_filename),
                         fourcc=fourcc,
                         fps=fps,
-                        frameSize=(frame_width, frame_height)
+                        frameSize=(frame_width, frame_height),
                     )
                     output_stream.write(frame)
                 else:
@@ -170,8 +171,9 @@ class TrapcamDp(DataProcessor):
                         sample_duration = (sample_end_time - sample_start_time).total_seconds()
                         if (sample_last_movement_frame - sample_first_frame) > discard_threshold:
                             # Save the video segment to the derived datastream
-                            logger.info(f"Saving video of {sample_duration}s starting {sample_start_time}"
-                                        f" to {self}")
+                            logger.info(
+                                f"Saving video of {sample_duration}s starting {sample_start_time} to {self}"
+                            )
                             self.save_recording(
                                 stream_index=TRAPCAM_STREAM_INDEX,
                                 temporary_file=temp_filename,
@@ -182,10 +184,11 @@ class TrapcamDp(DataProcessor):
                             sum_sample_duration += sample_duration
                         else:
                             # Discard the video segment
-                            logger.info(f"Discarding {(sample_last_movement_frame - sample_first_frame)}"
-                                        f" frames of movement as noise")
+                            logger.info(
+                                f"Discarding {(sample_last_movement_frame - sample_first_frame)}"
+                                f" frames of movement as noise"
+                            )
                             temp_filename.unlink(missing_ok=True)
 
         logger.info(f"Saved {samples_saved} samples ({sum_sample_duration}s) from video: {video_path}")
         cap.release()
-

@@ -23,14 +23,16 @@ logger = root_cfg.setup_logger("expidite")
 class DPnodeStat:
     count: int = 0
     sum: float = 0.0
+
     def record(self, value: float) -> None:
         """Record a sample."""
         self.count += 1
         self.sum += value
 
+
 class DPnode:
-    """Base class for nodes in the DPtree. Sensor and DataProcessor inherit from this class.
-    """
+    """Base class for nodes in the DPtree. Sensor and DataProcessor inherit from this class."""
+
     # Special Datastream for recording sample count / duration from the data pipeline.
     _selftracker: "DPnode"
 
@@ -57,7 +59,6 @@ class DPnode:
 
         # Create the Journals that we will use to store this DPtree's output.
         self.journal_pool: Optional[JournalPool] = None
-
 
     def is_leaf(self, stream_index: int) -> bool:
         """Check if this node is a leaf node (i.e., it has no children).
@@ -112,7 +113,7 @@ class DPnode:
         """
         # Export the configuration of this node as a dictionary.
         # The config is a dataclass, so we can use the __dict__ attribute to get the fields.
-        cfg_export: dict[str|int, dict] = {}
+        cfg_export: dict[str | int, dict] = {}
         cfg_export["node_cfg"] = asdict(self.get_config())
         cfg_export["children"] = {}
         for child_index, child in self._dpnode_children.items():
@@ -168,7 +169,6 @@ class DPnode:
         # We use the TELEM_TAG so that the BCLI can identify these as sensor logs for display.
         logger.info(f"{api.TELEM_TAG}Save log: {log_data!s}")
 
-
     def save_data(self, stream_index: int, sensor_data: pd.DataFrame) -> None:
         """Called by Sensors to save 1 or more 'rows' of Sensor-generated data.
 
@@ -188,7 +188,6 @@ class DPnode:
         with self._stats_lock:
             self._dpnode_score_stats.setdefault(stream.type_id, DPnodeStat()).record(len(sensor_data))
         logger.debug(f"Saved {len(sensor_data)} rows to {self.get_data_id(stream_index)}")
-
 
     def save_recording(
         self,
@@ -241,7 +240,6 @@ class DPnode:
         # Logged in _save_recording()
 
         return new_fname
-
 
     def save_sub_recording(
         self,
@@ -306,7 +304,6 @@ class DPnode:
 
         return new_fname
 
-
     def log_sample_data(self, sample_period_start_time: datetime) -> None:
         """Provide the count & duration of data samples recorded (environmental, media, etc)
         since the last time log_sample_data was called.
@@ -328,7 +325,6 @@ class DPnode:
             for type_id in self._dpnode_scorp_stats.keys():
                 self._dpnode_scorp_stats[type_id] = DPnodeStat()
 
-
         # Log SCORE data
         for type_id, stat in score_stats:
             DPnode._selftracker.log(
@@ -338,7 +334,7 @@ class DPnode:
                     "observed_sensor_index": self.sensor_index,
                     "sample_period": api.utc_to_iso_str(sample_period_start_time),
                     "count": str(stat.sum),
-                }
+                },
             )
 
         # Log SCORP data
@@ -353,10 +349,9 @@ class DPnode:
                     "sample_period": api.utc_to_iso_str(sample_period_start_time),
                     "count": str(stat.count),
                     "duration": str(stat.sum),
-                }
+                },
             )
         logger.debug("Logged sample data for SCORE & SCORP")
-
 
     def save_sample(self, sample_probability: str | float | None) -> bool:
         """Return True if this node should save sample data to the datastore.
@@ -368,14 +363,15 @@ class DPnode:
         try:
             prob = float(sample_probability)
             if prob < 0.0 or prob > 1.0:
-                raise ValueError(f"Invalid sample probability: {sample_probability}; "
-                                 f"expected a value between 0.0 and 1.0")
+                raise ValueError(
+                    f"Invalid sample probability: {sample_probability}; expected a value between 0.0 and 1.0"
+                )
         except ValueError:
-            raise ValueError(f"Invalid sample probability: {sample_probability}; "
-                             f"expected a value between 0.0 and 1.0")
+            raise ValueError(
+                f"Invalid sample probability: {sample_probability}; expected a value between 0.0 and 1.0"
+            )
 
         return random() < prob
-
 
     #########################################################################################################
     #
@@ -439,12 +435,16 @@ class DPnode:
 
         # Check that the start_time and end_time are both timezone aware
         if start_time.tzinfo is None:
-            logger.warning(f"{root_cfg.RAISE_WARN}start_time must be timezone aware. "
-                           "Use api.utc_now() to get the current time.")
+            logger.warning(
+                f"{root_cfg.RAISE_WARN}start_time must be timezone aware. "
+                "Use api.utc_now() to get the current time."
+            )
             start_time = start_time.replace(tzinfo=ZoneInfo("UTC"))
         if end_time is not None and end_time.tzinfo is None:
-            logger.warning(f"{root_cfg.RAISE_WARN}end_time must be timezone aware. "
-                           "Use api.utc_now() to get the current time.")
+            logger.warning(
+                f"{root_cfg.RAISE_WARN}end_time must be timezone aware. "
+                "Use api.utc_now() to get the current time."
+            )
             end_time = end_time.replace(tzinfo=ZoneInfo("UTC"))
 
         if end_time is not None:
@@ -454,13 +454,7 @@ class DPnode:
         # Generate the filename for the recording
         if stream.file_naming is None or stream.file_naming == api.FILE_NAMING.DEFAULT:
             new_fname: Path = file_naming.get_record_filename(
-                dst_dir,
-                data_id,
-                suffix,
-                start_time,
-                end_time,
-                offset_index,
-                secondary_offset_index
+                dst_dir, data_id, suffix, start_time, end_time, offset_index, secondary_offset_index
             )
         elif stream.file_naming == api.FILE_NAMING.REVIEW_MODE:
             new_fname = file_naming.get_review_mode_filename(data_id, suffix)
@@ -480,7 +474,7 @@ class DPnode:
             save_sample = self.save_sample(stream.sample_probability)
         elif override_sampling == api.OVERRIDE.SAVE:
             save_sample = True
-        else: # override_sampling == api.OVERRIDE.DISCARD:
+        else:  # override_sampling == api.OVERRIDE.DISCARD:
             save_sample = False
 
         # There is now a fork based on:
@@ -488,7 +482,7 @@ class DPnode:
         # - b) do we need to save this file to the cloud
         #
         # If save_for_dp, only do this AFTER taking a copy, otherwise we have a race condition.
-        save_for_dp = (dst_dir == root_cfg.EDGE_PROCESSING_DIR)
+        save_for_dp = dst_dir == root_cfg.EDGE_PROCESSING_DIR
 
         if save_sample:
             # Generate a *copy* of the raw sample file so we can move the original to the Processing
@@ -504,10 +498,9 @@ class DPnode:
 
             assert stream.cloud_container is not None
             cloud_container = stream.cloud_container
-            self._get_cc().upload_to_container(cloud_container,
-                                                [sample_fname],
-                                                delete_src=True,
-                                                storage_tier=stream.storage_tier)
+            self._get_cc().upload_to_container(
+                cloud_container, [sample_fname], delete_src=True, storage_tier=stream.storage_tier
+            )
 
         if save_for_dp:
             # Move the file to the EDGE_PROCESSING_DIR
@@ -520,8 +513,9 @@ class DPnode:
         # If we need it, src_file should have been moved to the new_fname or sample_fname.
         # If it still exists, we delete it.
         if src_file.exists():
-            assert (not save_for_dp) and (not save_sample), \
+            assert (not save_for_dp) and (not save_sample), (
                 f"src_file {src_file.name} should not exist if save_for_dp or save_sample is True"
+            )
             src_file.unlink()
 
         # Track the number of measurements recorded
@@ -529,8 +523,10 @@ class DPnode:
             with self._stats_lock:
                 self._dpnode_score_stats.setdefault(stream.type_id, DPnodeStat()).record(1)
 
-        logger.debug(f"Saved_for_dp:{save_for_dp}; save_sample:{save_sample}; "
-                     f"src={src_file.name}; final={new_fname.name}")
+        logger.debug(
+            f"Saved_for_dp:{save_for_dp}; save_sample:{save_sample}; "
+            f"src={src_file.name}; final={new_fname.name}"
+        )
 
         return new_fname
 
@@ -566,8 +562,9 @@ class DPnode:
         # Check the values in the RECORD_ID are not nan or empty
         for field in api.REQD_RECORD_ID_FIELDS:
             if not output_data[field].notna().all():
-                err_str = (f"{root_cfg.RAISE_WARN()}{field} contains NaN or empty values in output df"
-                           f" {data_id}")
+                err_str = (
+                    f"{root_cfg.RAISE_WARN()}{field} contains NaN or empty values in output df {data_id}"
+                )
                 logger.error(err_str)
                 raise Exception(err_str)
 
@@ -591,8 +588,10 @@ class DPnode:
             # Output DF should contain the fields defined by the DP's output_fields list.
             for field in stream.fields:
                 if field not in output_data.columns:
-                    err_str = (f"{root_cfg.RAISE_WARN()}{field} missing from output_df on "
-                            f"{data_id}: {output_data.columns}")
+                    err_str = (
+                        f"{root_cfg.RAISE_WARN()}{field} missing from output_df on "
+                        f"{data_id}: {output_data.columns}"
+                    )
                     logger.error(err_str)
                     raise Exception(err_str)
 

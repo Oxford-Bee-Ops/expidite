@@ -1,4 +1,3 @@
-
 from expidite_rpi.core.device_config_objects import DeviceCfg, WifiClient
 from expidite_rpi.core.dp_tree import DPtree
 from expidite_rpi.example.my_processor_example import EXAMPLE_FILE_PROCESSOR_CFG, ExampleProcessor
@@ -52,11 +51,12 @@ from expidite_rpi.example.my_sensor_example import (
 
 # Pre-configure the devices with awareness of wifi APs
 WIFI_CLIENTS: list[WifiClient] = [
-        WifiClient("bee-ops", 100, "abcdabcd"),
-        WifiClient("bee-ops-zone", 85, "abcdabcd"),
-        WifiClient("bee-ops-zone1", 80, "abcdabcd"),
-        WifiClient("bee-ops-zone2", 70, "abcdabcd"),
-    ]
+    WifiClient("bee-ops", 100, "abcdabcd"),
+    WifiClient("bee-ops-zone", 85, "abcdabcd"),
+    WifiClient("bee-ops-zone1", 80, "abcdabcd"),
+    WifiClient("bee-ops-zone2", 70, "abcdabcd"),
+]
+
 
 def create_example_device() -> list[DPtree]:
     """Create a standard camera device."""
@@ -65,6 +65,7 @@ def create_example_device() -> list[DPtree]:
     my_tree = DPtree(my_sensor)
     my_tree.connect((my_sensor, EXAMPLE_FILE_STREAM_INDEX), my_dp)
     return [my_tree]
+
 
 ###############################################################################
 # Define per-device configuration for the fleet of devices

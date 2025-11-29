@@ -19,18 +19,19 @@ except (ImportError, NotImplementedError):
 
 logger = root_cfg.setup_logger("expidite")
 
-LTR390_SENSOR_INDEX = 83 # LTR390 i2c address, 0x53 (83)
+LTR390_SENSOR_INDEX = 83  # LTR390 i2c address, 0x53 (83)
 LTR390_SENSOR_TYPE_ID = "LTR390"
 LTR390_FIELDS = ["ambient_light", "uv", "gain"]
 LTR390_STREAM_INDEX = 0
 LTR390_STREAM: Stream = Stream(
-            description="Ambient light and UV data from LTR390",
-            type_id=LTR390_SENSOR_TYPE_ID,
-            index=LTR390_STREAM_INDEX,
-            format=api.FORMAT.LOG,
-            fields=LTR390_FIELDS,
-            cloud_container="expidite-journals",
-        )
+    description="Ambient light and UV data from LTR390",
+    type_id=LTR390_SENSOR_TYPE_ID,
+    index=LTR390_STREAM_INDEX,
+    format=api.FORMAT.LOG,
+    fields=LTR390_FIELDS,
+    cloud_container="expidite-journals",
+)
+
 
 @dataclass
 class LTR390SensorCfg(SensorCfg):
@@ -39,13 +40,15 @@ class LTR390SensorCfg(SensorCfg):
     ############################################################
     pass
 
+
 DEFAULT_LTR390_SENSOR_CFG = LTR390SensorCfg(
     sensor_type=api.SENSOR_TYPE.I2C,
     sensor_index=LTR390_SENSOR_INDEX,
     sensor_model="LTR390",
     description="LTR390 UV & light sensor",
-    outputs=[LTR390_STREAM]
+    outputs=[LTR390_STREAM],
 )
+
 
 class LTR390(Sensor):
     # Init
@@ -56,7 +59,7 @@ class LTR390(Sensor):
     def run(self) -> None:
         i2c = board.I2C()
         sensor = adafruit_ltr390.LTR390(i2c)
-        current_gain = 4 # This is the index for 18x gain
+        current_gain = 4  # This is the index for 18x gain
         sensor.gain = current_gain
         print(sensor.gain)
 
@@ -86,9 +89,11 @@ class LTR390(Sensor):
 
                 self.log(
                     stream_index=LTR390_STREAM_INDEX,
-                    sensor_data={"ambient_light": ("%.1f" % sensor.light),
-                                 "uv": ("%.1f" % sensor.uvs),
-                                 "gain": sensor.gain},
+                    sensor_data={
+                        "ambient_light": ("%.1f" % sensor.light),
+                        "uv": ("%.1f" % sensor.uvs),
+                        "gain": sensor.gain,
+                    },
                 )
 
             except Exception as e:
@@ -98,8 +103,5 @@ class LTR390(Sensor):
                     wait_period = root_cfg.my_device.review_mode_frequency
                 else:
                     wait_period = root_cfg.my_device.env_sensor_frequency
-                logger.debug(f"LTR390 sensor {self.sensor_index} sleeping for "
-                            f"{wait_period} seconds")
+                logger.debug(f"LTR390 sensor {self.sensor_index} sleeping for {wait_period} seconds")
                 self.stop_requested.wait(wait_period)
-
-

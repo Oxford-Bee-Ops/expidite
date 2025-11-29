@@ -27,8 +27,10 @@ from expidite_rpi.utils.journal_pool import JournalPool
 
 logger = root_cfg.setup_logger("expidite")
 
+
 class OrchestratorStatus(Enum):
     """Enum for the status of the orchestrator"""
+
     STOPPED = 0
     STARTING = 1
     RUNNING = 2
@@ -40,13 +42,12 @@ class OrchestratorStatus(Enum):
     @staticmethod
     def running(status: "OrchestratorStatus") -> bool:
         """Check if the orchestrator is starting"""
-        return (status == OrchestratorStatus.STARTING or
-                status == OrchestratorStatus.RUNNING)
+        return status == OrchestratorStatus.STARTING or status == OrchestratorStatus.RUNNING
 
     def stopped(status: "OrchestratorStatus") -> bool:
         """Check if the orchestrator is stopped"""
-        return (status == OrchestratorStatus.STOPPED or
-                status == OrchestratorStatus.STOPPING)
+        return status == OrchestratorStatus.STOPPED or status == OrchestratorStatus.STOPPING
+
 
 class EdgeOrchestrator:
     """The EdgeOrchestrator manages the state of the sensors and their associated Datastreams.
@@ -62,7 +63,7 @@ class EdgeOrchestrator:
 
     root_cfg.set_mode(root_cfg.Mode.EDGE)
 
-    def __new__(cls, *args, **kwargs) -> "EdgeOrchestrator": # type: ignore
+    def __new__(cls, *args, **kwargs) -> "EdgeOrchestrator":  # type: ignore
         if not cls._instance:
             cls._instance = super(EdgeOrchestrator, cls).__new__(cls, *args, **kwargs)
         return cls._instance
@@ -112,8 +113,6 @@ class EdgeOrchestrator:
             # log their performance data
             DPnode._selftracker = self.selftracker
 
-
-
     def status(self) -> dict[str, str]:
         """Return a key-value status describing the state of the EdgeOrchestrator"""
         # Check that all threads are alive
@@ -142,8 +141,9 @@ class EdgeOrchestrator:
     def load_config(self) -> None:
         """Load the sensor and data processor config into the EdgeOrchestrator by calling
         the DeviceCfg.dp_trees_create_method()."""
-        self.dp_trees = self._safe_call_create_method(root_cfg.my_device.dp_trees_create_method,
-                                                      root_cfg.my_device.dp_trees_create_kwargs)
+        self.dp_trees = self._safe_call_create_method(
+            root_cfg.my_device.dp_trees_create_method, root_cfg.my_device.dp_trees_create_kwargs
+        )
         for dptree in self.dp_trees:
             sensor = dptree.sensor
             if sensor in self._sensorThreads:
@@ -154,8 +154,9 @@ class EdgeOrchestrator:
             self._dpworkers.append(DPworker(dptree))
 
     @staticmethod
-    def _safe_call_create_method(create_method: Optional[Callable],
-                                 create_kwargs: Optional[dict] = None) -> list[DPtree]:
+    def _safe_call_create_method(
+        create_method: Optional[Callable], create_kwargs: Optional[dict] = None
+    ) -> list[DPtree]:
         """Call the create method and return the DPtree object.
         Raises ValueError if the create method does not successfully create any DPtree objects."""
         if create_method is None:
@@ -163,17 +164,21 @@ class EdgeOrchestrator:
             raise ValueError(f"create_method not defined for {root_cfg.my_device_id}")
 
         logger.info(
-            f"Creating DP trees for {root_cfg.my_device_id} using {create_method} and {create_kwargs}")
+            f"Creating DP trees for {root_cfg.my_device_id} using {create_method} and {create_kwargs}"
+        )
         dp_trees: list[DPtree] = create_method(**(create_kwargs or {}))
 
         if not dp_trees:
-            logger.error(f"{root_cfg.RAISE_WARN()}No sensors created by {root_cfg.my_device_id} "
-                            f"{create_method}")
+            logger.error(
+                f"{root_cfg.RAISE_WARN()}No sensors created by {root_cfg.my_device_id} {create_method}"
+            )
             raise ValueError(f"No sensors created by {create_method}")
 
         if not isinstance(dp_trees, list):
-            logger.error(f"{root_cfg.RAISE_WARN()}create_method must return a list; "  # type: ignore[unreachable]
-                         f"created {type(dp_trees)}")
+            logger.error(  # type: ignore[unreachable]
+                f"{root_cfg.RAISE_WARN()}create_method must return a list; "
+                f"created {type(dp_trees)}"
+            )
             raise ValueError("create_method must return a list of DPtree objects")
 
         return dp_trees
@@ -193,7 +198,6 @@ class EdgeOrchestrator:
         # Instead, we set the RESTART flag, and the main() method will check for them.
         root_cfg.RESTART_EXPIDITE_FLAG.touch()
 
-
     def _get_sensor(self, sensor_type: api.SENSOR_TYPE, sensor_index: int) -> Optional[Sensor | None]:
         """Private method to get a sensor by type & index"""
         logger.debug(f"_get_sensor {sensor_type} {sensor_index} from {self._sensorThreads}")
@@ -201,7 +205,6 @@ class EdgeOrchestrator:
             if (sensor.config.sensor_type == sensor_type) and (sensor.sensor_index == sensor_index):
                 return sensor
         return None
-
 
     #########################################################################################################
     #
@@ -212,7 +215,6 @@ class EdgeOrchestrator:
         """Start all Sensor & DPworker threads"""
 
         with EdgeOrchestrator._status_lock:
-
             if self._status != OrchestratorStatus.STOPPED:
                 logger.warning(f"EdgeOrchestrator is already running; {self}; {self._status}")
                 logger.info(self.status())
@@ -225,7 +227,6 @@ class EdgeOrchestrator:
             root_cfg.RESTART_EXPIDITE_FLAG.unlink(missing_ok=True)
 
             logger.info(f"Starting EdgeOrchestrator {self!r}")
-
 
         # Start the device manager if we're on RPi
         if root_cfg.running_on_rpi:
@@ -251,7 +252,6 @@ class EdgeOrchestrator:
         with EdgeOrchestrator._status_lock:
             self._status = OrchestratorStatus.RUNNING
 
-
     @staticmethod
     def start_all_with_watchdog() -> None:
         """This function starts the orchestrator and maintains it with a watchdog.
@@ -264,7 +264,6 @@ class EdgeOrchestrator:
         # Block for long enough for the main thread to be scheduled
         # So we avoid race conditions with subsequent calls to stop_all()
         sleep(1)
-
 
     def stop_all(self, restart: Optional[bool] = False) -> None:
         """Stop all Sensor, Datastream and observability threads
@@ -346,12 +345,10 @@ class EdgeOrchestrator:
             self._status = OrchestratorStatus.STOPPED
             logger.info("Stopped all sensors and datastreams")
 
-
     def is_stop_requested(self) -> bool:
         """Check if a stop has been manually requested by the user.
         This function is polled by the main thread every second to check if the user has requested a stop."""
         return root_cfg.STOP_EXPIDITE_FLAG.exists()
-
 
     @staticmethod
     def watchdog_file_alive() -> bool:
@@ -365,10 +362,10 @@ class EdgeOrchestrator:
         if not root_cfg.EXPIDITE_IS_RUNNING_FLAG.exists():
             return False
 
-        if (root_cfg.STOP_EXPIDITE_FLAG.exists() and
-            (root_cfg.STOP_EXPIDITE_FLAG.stat().st_mtime >
-             root_cfg.EXPIDITE_IS_RUNNING_FLAG.stat().st_mtime)):
-                return False
+        if root_cfg.STOP_EXPIDITE_FLAG.exists() and (
+            root_cfg.STOP_EXPIDITE_FLAG.stat().st_mtime > root_cfg.EXPIDITE_IS_RUNNING_FLAG.stat().st_mtime
+        ):
+            return False
 
         time_threshold = api.utc_now() - timedelta(seconds=2 * root_cfg.WATCHDOG_FREQUENCY)
         if root_cfg.EXPIDITE_IS_RUNNING_FLAG.stat().st_mtime < time_threshold.timestamp():
@@ -377,7 +374,6 @@ class EdgeOrchestrator:
         # If we get here, the file exists, was touched within the last 2x _FREQUENCY seconds,
         # and the timestamp is > than the timestamp on the STOP_EXPIDITE_FLAG file.
         return True
-
 
     def save_FAIR_record(self) -> None:
         """Save a FAIR record describing this Device, its Sensor and associated data processing.
@@ -388,7 +384,7 @@ class EdgeOrchestrator:
         # Custom representer for Enum
         def enum_representer(dumper: Dumper, data: Enum) -> yaml.Node:
             """Represent an Enum as a plain string in YAML"""
-            return dumper.represent_scalar('tag:yaml.org,2002:str', str(data.value))
+            return dumper.represent_scalar("tag:yaml.org,2002:str", str(data.value))
 
         # Create a custom Dumper class
         class CustomDumper(Dumper):
@@ -435,8 +431,9 @@ class EdgeOrchestrator:
         # We filter to those  devices in the inventory that use the same datastore rather than including
         # all devices in the fleet.
         fleet_macs = list(root_cfg.INVENTORY.keys())
-        fleet_macs = [mac for mac in fleet_macs
-                      if root_cfg.INVENTORY[mac].datastore == root_cfg.my_device.datastore]
+        fleet_macs = [
+            mac for mac in fleet_macs if root_cfg.INVENTORY[mac].datastore == root_cfg.my_device.datastore
+        ]
         fleet_names = [root_cfg.INVENTORY[mac].name for mac in fleet_macs]
         fleet_dict = {mac: name for mac, name in zip(fleet_macs, fleet_names)}
         wrap["fleet"] = fleet_dict
@@ -448,20 +445,22 @@ class EdgeOrchestrator:
         Path(fair_fname).parent.mkdir(parents=True, exist_ok=True)
         with open(fair_fname, "w") as f:
             yaml.dump(wrap, f, Dumper=CustomDumper)
-        cc.upload_to_container(root_cfg.my_device.cc_for_fair,
-                                [fair_fname],
-                                delete_src=True,
-                                storage_tier=api.StorageTier.COOL)
+        cc.upload_to_container(
+            root_cfg.my_device.cc_for_fair, [fair_fname], delete_src=True, storage_tier=api.StorageTier.COOL
+        )
 
         # Also save to the "latest" container.  This is used by the dashboard so that it can get the latest
         # data without having to sort through an ever-growing list of files.
         fair_latest_fname = root_cfg.EDGE_UPLOAD_DIR / f"V3_{root_cfg.my_device_id}.yaml"
         with open(fair_latest_fname, "w") as f:
             yaml.dump(wrap, f, Dumper=CustomDumper)
-        cc.upload_to_container(root_cfg.my_device.cc_for_fair_latest,
-                                [fair_latest_fname],
-                                delete_src=True,
-                                storage_tier=api.StorageTier.COOL)
+        cc.upload_to_container(
+            root_cfg.my_device.cc_for_fair_latest,
+            [fair_latest_fname],
+            delete_src=True,
+            storage_tier=api.StorageTier.COOL,
+        )
+
 
 #############################################################################################################
 # Orchestrator main loop
@@ -474,8 +473,7 @@ def main() -> None:
         logger.info(root_cfg.my_device.display())
 
         orchestrator = EdgeOrchestrator.get_instance()
-        if (orchestrator.watchdog_file_alive() or
-            OrchestratorStatus.running(orchestrator._status)):
+        if orchestrator.watchdog_file_alive() or OrchestratorStatus.running(orchestrator._status):
             logger.warning("RpiCore is already running; exiting")
             return
 
@@ -488,8 +486,9 @@ def main() -> None:
         while not orchestrator.is_stop_requested():
             if root_cfg.RESTART_EXPIDITE_FLAG.exists():
                 # Restart the re-load and re-start the EdgeOrchestrator if it fails.
-                logger.error(f"{root_cfg.RAISE_WARN()}Orchestrator failed; restarting; "
-                             f"{orchestrator._status}")
+                logger.error(
+                    f"{root_cfg.RAISE_WARN()}Orchestrator failed; restarting; {orchestrator._status}"
+                )
                 orchestrator.stop_all()
                 orchestrator.load_config()
                 orchestrator.start_all()

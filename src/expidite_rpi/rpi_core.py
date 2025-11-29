@@ -22,22 +22,21 @@ class RpiCore:
     """
     RpiCore provides the public interface to the rpi_core module.
     """
+
     # We make the location of the keys file a public variable so that users can reference
     # it in their own code.
     KEYS_FILE: Path = root_cfg.KEYS_FILE
 
-
     def load_configuration(self) -> list[DeviceCfg] | None:
-        """ Load the configuration specified in the system.cfg file found in $HOME/.rpi.
+        """Load the configuration specified in the system.cfg file found in $HOME/.rpi.
         The output can be passed to test_configuration() or configure().
         """
         return root_cfg.load_configuration()
 
-
-    def test_configuration(self,
-                           fleet_config: list[DeviceCfg],
-                           device_id: Optional[str] = None) -> tuple[bool, list[str]]:
-        """ Validates that the configuration in fleet_config is valid.
+    def test_configuration(
+        self, fleet_config: list[DeviceCfg], device_id: Optional[str] = None
+    ) -> tuple[bool, list[str]]:
+        """Validates that the configuration in fleet_config is valid.
 
         Parameters:
         - fleet_config: The configuration to be validated.
@@ -60,8 +59,9 @@ class RpiCore:
                     continue
                 # Check the device configuration is valid
                 logger.debug(f"Validating device {device.device_id} configuration.")
-                dp_trees = EdgeOrchestrator._safe_call_create_method(device.dp_trees_create_method,
-                                                                     device.dp_trees_create_kwargs)
+                dp_trees = EdgeOrchestrator._safe_call_create_method(
+                    device.dp_trees_create_method, device.dp_trees_create_kwargs
+                )
                 is_valid, errors = config_validator.validate_trees(dp_trees)
                 if not is_valid:
                     errors.append(f"Invalid configuration for device {device.device_id}: {errors}")
@@ -70,7 +70,6 @@ class RpiCore:
             errors.append(str(e))
 
         return (is_valid, errors)
-
 
     def configure(self, fleet_config: list[DeviceCfg]) -> None:
         """
@@ -103,7 +102,6 @@ class RpiCore:
         # Load the configuration
         root_cfg.set_inventory(fleet_config)
 
-
     def start(self) -> None:
         """
         Start the rpi_core to begin data collection.
@@ -119,7 +117,6 @@ class RpiCore:
         # Start the orchestrator, which will start the sensors
         # This will run the sensors in the current process, so it will exit when the process exits.
         EdgeOrchestrator.start_all_with_watchdog()
-
 
     def stop(self) -> None:
         """
@@ -147,7 +144,7 @@ class RpiCore:
         # Display the orchestrator status
         orchestrator = EdgeOrchestrator.get_instance()
         if orchestrator is not None:
-            display_message += (f"\n\nRpiCore running: {orchestrator.watchdog_file_alive()}\n")
+            display_message += f"\n\nRpiCore running: {orchestrator.watchdog_file_alive()}\n"
 
             if verbose:
                 status = orchestrator.status()
@@ -183,7 +180,7 @@ class RpiCore:
 
         return display_message
 
-    def _is_running(self)-> bool:
+    def _is_running(self) -> bool:
         """Check if an instance of RpiCore is running."""
         return EdgeOrchestrator.watchdog_file_alive()
 

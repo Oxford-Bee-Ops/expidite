@@ -46,9 +46,9 @@ class TestReviewModeExercise:
         # Reset testing mode
         root_cfg.ST_MODE = root_cfg.SOFTWARE_TEST_MODE.LIVE
 
-    @patch('expidite_rpi.utils.utils.run_cmd')
-    @patch('expidite_rpi.core.file_naming.get_temporary_filename')
-    @patch.object(RpicamSensor, 'save_recording')
+    @patch("expidite_rpi.utils.utils.run_cmd")
+    @patch("expidite_rpi.core.file_naming.get_temporary_filename")
+    @patch.object(RpicamSensor, "save_recording")
     def test_review_mode_output_direct_call(
         self, mock_save_recording, mock_get_filename, mock_run_cmd
     ) -> None:
@@ -69,7 +69,7 @@ class TestReviewModeExercise:
         mock_save_recording.assert_called_once_with(
             RPICAM_REVIEW_MODE_STREAM_INDEX,
             test_file,
-            start_time=mock_save_recording.call_args[1]['start_time']
+            start_time=mock_save_recording.call_args[1]["start_time"],
         )
 
         # Verify the command contains the review mode command
@@ -77,12 +77,13 @@ class TestReviewModeExercise:
         assert "rpicam-still" in called_command
         assert str(test_file) in called_command
 
-    @patch('expidite_rpi.core.configuration.REVIEW_MODE_FLAG')
-    @patch('expidite_rpi.utils.utils.run_cmd')
-    @patch('expidite_rpi.core.file_naming.get_temporary_filename')
-    @patch.object(RpicamSensor, 'save_recording')
-    def test_sensor_run_in_review_mode(self, mock_save_recording, mock_get_filename,
-                                       mock_run_cmd, mock_review_flag) -> None:
+    @patch("expidite_rpi.core.configuration.REVIEW_MODE_FLAG")
+    @patch("expidite_rpi.utils.utils.run_cmd")
+    @patch("expidite_rpi.core.file_naming.get_temporary_filename")
+    @patch.object(RpicamSensor, "save_recording")
+    def test_sensor_run_in_review_mode(
+        self, mock_save_recording, mock_get_filename, mock_run_cmd, mock_review_flag
+    ) -> None:
         """Test the main sensor run() loop with review mode activated."""
         # Arrange
         mock_review_flag.exists.return_value = True
@@ -95,13 +96,14 @@ class TestReviewModeExercise:
 
         # Mock continue_recording to run only a few iterations
         call_count = 0
+
         def mock_continue_recording() -> bool:
             nonlocal call_count
             call_count += 1
             return call_count <= 3  # Run 3 iterations then stop
 
-        with patch.object(sensor, 'continue_recording', side_effect=mock_continue_recording):
-            with patch.object(sensor.stop_requested, 'wait') as mock_wait:
+        with patch.object(sensor, "continue_recording", side_effect=mock_continue_recording):
+            with patch.object(sensor.stop_requested, "wait") as mock_wait:
                 # Act
                 sensor.run()
 
@@ -116,13 +118,13 @@ class TestReviewModeExercise:
         # Should have waited between iterations
         assert mock_wait.call_count == 3
 
-    @patch.object(RpicamSensor, 'in_review_mode')
-    @patch('expidite_rpi.utils.utils.run_cmd')
-    @patch('expidite_rpi.core.file_naming.get_temporary_filename')
-    @patch.object(RpicamSensor, 'save_recording')
-    def test_sensor_toggles_between_normal_and_review_mode(self, mock_save_recording,
-                                                          mock_get_filename, mock_run_cmd,
-                                                          mock_in_review_mode) -> None:
+    @patch.object(RpicamSensor, "in_review_mode")
+    @patch("expidite_rpi.utils.utils.run_cmd")
+    @patch("expidite_rpi.core.file_naming.get_temporary_filename")
+    @patch.object(RpicamSensor, "save_recording")
+    def test_sensor_toggles_between_normal_and_review_mode(
+        self, mock_save_recording, mock_get_filename, mock_run_cmd, mock_in_review_mode
+    ) -> None:
         """Test sensor behavior when toggling between normal and review modes."""
         # Arrange
         test_file = self.temp_dir / "test_file.mp4"
@@ -146,13 +148,14 @@ class TestReviewModeExercise:
         mock_in_review_mode.side_effect = mock_review_mode
 
         call_count = 0
+
         def mock_continue_recording() -> bool:
             nonlocal call_count
             call_count += 1
             return call_count <= 4  # Run 4 iterations
 
-        with patch.object(sensor, 'continue_recording', side_effect=mock_continue_recording):
-            with patch.object(sensor.stop_requested, 'wait'):
+        with patch.object(sensor, "continue_recording", side_effect=mock_continue_recording):
+            with patch.object(sensor.stop_requested, "wait"):
                 # Act
                 sensor.run()
 
@@ -164,7 +167,7 @@ class TestReviewModeExercise:
         expected_indices = [0, 1, 1, 0]  # Normal, Review, Review, Normal
         assert stream_indices_used == expected_indices
 
-    @patch('expidite_rpi.utils.utils.run_cmd')
+    @patch("expidite_rpi.utils.utils.run_cmd")
     def test_review_mode_command_construction(self, mock_run_cmd) -> None:
         """Test that review mode constructs the correct rpicam-still command."""
         # Arrange
@@ -176,13 +179,13 @@ class TestReviewModeExercise:
             sensor_model="HighResCamera",
             description="High resolution camera",
             outputs=DEFAULT_RPICAM_SENSOR_CFG.outputs,
-            review_mode_cmd=custom_review_cmd
+            review_mode_cmd=custom_review_cmd,
         )
 
         sensor = RpicamSensor(config)
 
-        with patch('expidite_rpi.core.file_naming.get_temporary_filename') as mock_get_filename:
-            with patch.object(sensor, 'save_recording'):
+        with patch("expidite_rpi.core.file_naming.get_temporary_filename") as mock_get_filename:
+            with patch.object(sensor, "save_recording"):
                 test_file = self.temp_dir / "custom_review.jpg"
                 mock_get_filename.return_value = test_file
                 mock_run_cmd.return_value = 0
@@ -238,5 +241,6 @@ if __name__ == "__main__":
     except Exception as e:
         print(f"\n❌ Test failed: {e}")
         import traceback
+
         traceback.print_exc()
         sys.exit(1)

@@ -25,13 +25,16 @@ from expidite_rpi.core.device_config_objects import DeviceCfg
 
 logger = root_cfg.setup_logger("expidite")
 
+
 @dataclass
 class RpiTestRecording:
     cmd_prefix: str
     recordings: list[Path]
 
+
 class RpiEmulator:
     """The test harness enables thorough testing of the sensor code without RPi hardware."""
+
     _instance = None
     _is_available = Event()
     ONE_OR_MORE = -1
@@ -67,7 +70,7 @@ class RpiEmulator:
         cc = CloudConnector.get_instance(root_cfg.CLOUD_TYPE)
         assert isinstance(cc, LocalCloudConnector)
         self.cc: LocalCloudConnector = cc
-        self.local_cloud = self.cc.get_local_cloud() # Newly created local cloud
+        self.local_cloud = self.cc.get_local_cloud()  # Newly created local cloud
 
         # Mock system timers so tests run faster
         root_cfg.DP_FREQUENCY = 1
@@ -85,7 +88,7 @@ class RpiEmulator:
     def __exit__(self, exc_type, exc_value, traceback) -> None:  # type: ignore[no-untyped-def]
         """Exit the context manager."""
         logger.info("Exiting RpiEmulator context.")
-        #self.cc.clear_local_cloud()
+        # self.cc.clear_local_cloud()
         RpiEmulator._is_available.set()
 
     def mock_timers(self, inventory: list[DeviceCfg]) -> list[DeviceCfg]:
@@ -105,14 +108,14 @@ class RpiEmulator:
         Call this function to specify which recording should be returned in which conditions."""
         for recording in recordings:
             if not isinstance(recording, RpiTestRecording):
-                raise ValueError("recordings must be a list of ScTestRecording objects; got: "
-                                 f"{type(recording)}")
+                raise ValueError(
+                    f"recordings must be a list of ScTestRecording objects; got: {type(recording)}"
+                )
             # Check the recording exists
             for rec in recording.recordings:
                 if not rec.exists():
                     raise ValueError(f"Recording {rec} does not exist")
         self.recordings = recordings
-
 
     def set_recording_cap(self, cap: int, type_id: Optional[str] = None) -> None:
         """Set the maximum number of recordings to be saved.
@@ -121,7 +124,6 @@ class RpiEmulator:
             self.recording_cap_dict[type_id] = cap
         else:
             self.recording_cap = cap
-
 
     def recordings_cap_hit(self, type_id: str) -> bool:
         """Check if the recording cap has been hit for the given type_id."""
@@ -133,16 +135,14 @@ class RpiEmulator:
             raise ValueError("The recording cap is not set for that type_id. You'll be waiting forever!")
         return self.recordings_saved.get(type_id, 0) >= cap
 
-
     @staticmethod
     def recordings_still_to_process() -> bool:
         """Check if there are recordings remaining to process."""
         # Look for any files remaining in the processing directory
-        for file in  root_cfg.EDGE_PROCESSING_DIR.glob("*"):
+        for file in root_cfg.EDGE_PROCESSING_DIR.glob("*"):
             if file.is_file():
                 return True
         return False
-
 
     @staticmethod
     def fix_recording_device_id(fname: Path) -> Path:
@@ -164,10 +164,9 @@ class RpiEmulator:
 
         return new_fname
 
-    def assert_records(self,
-                       container: str,
-                       expected_files: dict[str, int],
-                       expected_rows: Optional[dict[str, int]] = None) -> None:
+    def assert_records(
+        self, container: str, expected_files: dict[str, int], expected_rows: Optional[dict[str, int]] = None
+    ) -> None:
         """Assert that the expected number of files exist.
 
         Parameters:
@@ -190,24 +189,22 @@ class RpiEmulator:
         for file_prefix, count in expected_files.items():
             if not file_prefix.endswith("*"):
                 file_prefix = file_prefix + "*"
-            files = list((self.local_cloud /container).glob(file_prefix))
+            files = list((self.local_cloud / container).glob(file_prefix))
             if count == self.ONE_OR_MORE:
                 # Check that at least one file exists with the prefix
                 assert len(files) > 0, (
-                    f"Expected at least one file with prefix {file_prefix}, "
-                    f"but found no files."
+                    f"Expected at least one file with prefix {file_prefix}, but found no files."
                 )
             else:
                 # Check that the exact number of files exists with the prefix
-                 # We use len(files) == count to check for exact match
-                 # This is because we may have multiple recordings of the same type
+                # We use len(files) == count to check for exact match
+                # This is because we may have multiple recordings of the same type
                 assert len(files) == count, (
-                    f"Expected {count} files with prefix {file_prefix}, "
-                    f"but found {len(files)} files."
+                    f"Expected {count} files with prefix {file_prefix}, but found {len(files)} files."
                 )
         if expected_rows is not None:
             for file_prefix, count in expected_rows.items():
-                files = list((self.local_cloud /container).glob(file_prefix))
+                files = list((self.local_cloud / container).glob(file_prefix))
                 for file in files:
                     # Check the number of data rows in the file
                     with open(file) as f:
@@ -217,13 +214,10 @@ class RpiEmulator:
                         # Assume the first line is the header
                         lines = lines[1:]
                         assert len(lines) == count, (
-                            f"Expected {count} rows in file {file}, "
-                            f"but found {len(lines)} rows."
+                            f"Expected {count} rows in file {file}, but found {len(lines)} rows."
                         )
 
-    def get_journal_as_df(self,
-                          container: str,
-                          file_prefix: str) -> pd.DataFrame:
+    def get_journal_as_df(self, container: str, file_prefix: str) -> pd.DataFrame:
         """Get the journal specified by the container & file_prefix and return as a pandas DataFrame
         for further custom validation."""
 
@@ -241,8 +235,7 @@ class RpiEmulator:
         if len(files) == 0:
             raise FileNotFoundError(f"No files found with prefix {file_prefix}")
         if len(files) > 1:
-            logger.warning(f"Multiple files found with prefix {file_prefix}. "
-                           f"Using the first one: {files[0]}")
+            logger.warning(f"Multiple files found with prefix {file_prefix}. Using the first one: {files[0]}")
         file = files[0]
 
         # Read the file into a pandas DataFrame
@@ -250,10 +243,8 @@ class RpiEmulator:
 
         return df
 
-
     @staticmethod
-    def record_system_test_run(test_name: str,
-                               test_input: dict) -> None:
+    def record_system_test_run(test_name: str, test_input: dict) -> None:
         """Record the system test run to the cloud."""
         # The keys.env cloud_storage_account will be set to the system test account
         # We record this test run to an st journal in the storage account
@@ -264,10 +255,8 @@ class RpiEmulator:
 
         cc = CloudConnector.get_instance(root_cfg.CloudType.AZURE)
         cc.append_to_cloud(
-            dst_container=root_cfg.my_device.cc_for_system_test,
-            src_file=fname,
-            delete_src=True)
-
+            dst_container=root_cfg.my_device.cc_for_system_test, src_file=fname, delete_src=True
+        )
 
     ##################################################################################################
     # Internal implementation functions
@@ -305,19 +294,20 @@ class RpiEmulator:
             self.recordings_saved[type_id] = previous_recordings + 1
             return True
         else:
-            logger.debug(f"Recording cap exceeded for {type_id}. "
-                         f"Global cap: {self.recording_cap}, "
-                         f"Type cap: {self.recording_cap_dict.get(type_id, -1)}, "
-                         f"Previous recordings: {previous_recordings}")
+            logger.debug(
+                f"Recording cap exceeded for {type_id}. "
+                f"Global cap: {self.recording_cap}, "
+                f"Type cap: {self.recording_cap_dict.get(type_id, -1)}, "
+                f"Previous recordings: {previous_recordings}"
+            )
             return False
-
 
     #################################################################################################
     # Sensor command emulation
     #################################################################################################
-    def run_cmd_test_stub(self, cmd: str,
-                          ignore_errors: bool=False,
-                          grep_strs: Optional[list[str]]=None) -> str:
+    def run_cmd_test_stub(
+        self, cmd: str, ignore_errors: bool = False, grep_strs: Optional[list[str]] = None
+    ) -> str:
         """For testing purposes, we emulate certain basic Linux sensor commands so that we can run more
         realistic test scenarios on Windows.
 
@@ -351,9 +341,9 @@ class RpiEmulator:
             return self.emulate_arecord(cmd, ignore_errors, grep_strs)
         return "Command not run on windows: " + cmd
 
-    def emulate_rpicam_vid(self, cmd: str,
-                           ignore_errors: bool=False,
-                           grep_strs: Optional[list[str]]=None) -> str:
+    def emulate_rpicam_vid(
+        self, cmd: str, ignore_errors: bool = False, grep_strs: Optional[list[str]] = None
+    ) -> str:
         # Emulate the rpicam-vid command
         # We expect commands like:
         #  "rpicam-vid --framerate 4 --width 640 --height 480 -o FILENAME -t 180000 -v 0"
@@ -397,8 +387,7 @@ class RpiEmulator:
             parts = match_cmd.split("--camera")
             match_cmd = parts[0] + " SENSOR_INDEX" + parts[1][2:]
         recordings = self._match_recording(cmd)
-        logger.debug(f"Found match command {recordings is not None} "
-                    f"for match command: {match_cmd}")
+        logger.debug(f"Found match command {recordings is not None} for match command: {match_cmd}")
 
         if recordings:
             # We have a recording so save that with the appropriate filename
@@ -433,9 +422,9 @@ class RpiEmulator:
         time.sleep(duration)
         return f"rpicam-vid command emulated successfully, created {filename}"
 
-    def emulate_arecord(self, cmd: str,
-                        ignore_errors: bool=False,
-                        grep_strs: Optional[list[str]]=None) -> str:
+    def emulate_arecord(
+        self, cmd: str, ignore_errors: bool = False, grep_strs: Optional[list[str]] = None
+    ) -> str:
         # Emulate the arecord command
         # We expect commands like:
         #   f"arecord -D hw:{dev_index!s} -r {samp_rate!s} -c {chans!s}"
@@ -452,8 +441,7 @@ class RpiEmulator:
         # See if we have a matching cmd in the recordings list
         # We need to replace the filename with FILENAME
         recordings = self._match_recording(cmd)
-        logger.debug(f"Found match command {recordings is not None} "
-                    f"for match command: {cmd}")
+        logger.debug(f"Found match command {recordings is not None} for match command: {cmd}")
 
         if recordings:
             # We have a recording so save that with the appropriate filename

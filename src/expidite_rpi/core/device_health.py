@@ -16,10 +16,13 @@ from expidite_rpi.utils import utils
 
 if root_cfg.running_on_rpi:
     from systemd import journal  # type: ignore
-    def get_logs(since: Optional[datetime] = None,
-                 min_priority: Optional[int] = None,
-                 grep_str: Optional[list[str]] = None,
-                 max_logs: int = 1000) -> list[dict[str, Any]]:
+
+    def get_logs(
+        since: Optional[datetime] = None,
+        min_priority: Optional[int] = None,
+        grep_str: Optional[list[str]] = None,
+        max_logs: int = 1000,
+    ) -> list[dict[str, Any]]:
         """
         Fetch logs from the system journal.
 
@@ -32,7 +35,7 @@ if root_cfg.running_on_rpi:
         Returns:
             list[dict[str, Any]]: A list of log entries.
         """
-        logs:list[dict] = []
+        logs: list[dict] = []
         try:
             reader = journal.Reader()
         except Exception as e:
@@ -50,11 +53,8 @@ if root_cfg.running_on_rpi:
         for entry in reader:
             priority = int(entry.get("PRIORITY", 9))
             message = entry.get("MESSAGE", "")
-            if ((min_priority is None or
-                 priority <= min_priority or
-                 api.RAISE_WARN_TAG in message) and
-                (grep_str is None or
-                 all(s in message for s in grep_str))
+            if (min_priority is None or priority <= min_priority or api.RAISE_WARN_TAG in message) and (
+                grep_str is None or all(s in message for s in grep_str)
             ):
                 time_logged: datetime = entry.get("__REALTIME_TIMESTAMP")
                 log_entry = {
@@ -71,6 +71,7 @@ if root_cfg.running_on_rpi:
         logger.info(f"Fetched {len(logs)} logs from the journal.")
 
         return logs
+
 
 logger = root_cfg.setup_logger("expidite")
 
@@ -117,20 +118,25 @@ DEVICE_HEALTH_CFG = SensorCfg(
     sensor_model="DeviceHealth",
     description="Internal device health",
     outputs=[
-        Stream("Health heartbeat stream",
-               api.HEART_DS_TYPE_ID,
-               HEART_STREAM_INDEX,
-               format=api.FORMAT.LOG,
-               fields=HEART_FIELDS,
-               cloud_container=root_cfg.my_device.cc_for_system_records),
-        Stream("Warning log stream",
-               api.WARNING_DS_TYPE_ID,
-               WARNING_STREAM_INDEX,
-               format=api.FORMAT.LOG,
-               fields=WARNING_FIELDS,
-               cloud_container=root_cfg.my_device.cc_for_system_records),
+        Stream(
+            "Health heartbeat stream",
+            api.HEART_DS_TYPE_ID,
+            HEART_STREAM_INDEX,
+            format=api.FORMAT.LOG,
+            fields=HEART_FIELDS,
+            cloud_container=root_cfg.my_device.cc_for_system_records,
+        ),
+        Stream(
+            "Warning log stream",
+            api.WARNING_DS_TYPE_ID,
+            WARNING_STREAM_INDEX,
+            format=api.FORMAT.LOG,
+            fields=WARNING_FIELDS,
+            cloud_container=root_cfg.my_device.cc_for_system_records,
+        ),
     ],
 )
+
 
 class DeviceHealth(Sensor):
     """Monitors device health and provides data as a RpiCore datastream.
@@ -198,7 +204,6 @@ class DeviceHealth(Sensor):
                 elif log["priority"] <= 3:
                     self.log(WARNING_STREAM_INDEX, log)
 
-
     ############################################################################################################
     # Diagnostics utility functions
     ############################################################################################################
@@ -220,7 +225,7 @@ class DeviceHealth(Sensor):
             ssid = ""
             signal_strength = ""
             if root_cfg.running_on_rpi:
-                cpu_temp = str(psutil.sensors_temperatures()["cpu_thermal"][0].current) # type: ignore
+                cpu_temp = str(psutil.sensors_temperatures()["cpu_thermal"][0].current)  # type: ignore
 
                 # Get the connected SSID
                 ssid, signal_strength = DeviceHealth.get_wifi_ssid_and_signal()
@@ -255,11 +260,9 @@ class DeviceHealth(Sensor):
                 # And convert the process list to a simple comma-seperated string with no {} or ' or "
                 # characters
                 if root_cfg.system_cfg:
-                    process_set = (
-                        utils.check_running_processes(
-                            search_string=f"{root_cfg.system_cfg.my_start_script}").union(
-                                utils.check_running_processes(search_string="python "))
-                    )
+                    process_set = utils.check_running_processes(
+                        search_string=f"{root_cfg.system_cfg.my_start_script}"
+                    ).union(utils.check_running_processes(search_string="python "))
                     process_list_str = str(process_set).replace("{", "").replace("}", "")
                     process_list_str = process_list_str.replace("'", "").replace('"', "").strip()
                 else:
@@ -291,10 +294,12 @@ class DeviceHealth(Sensor):
                 ping_failure_count_run: int = 0
             else:
                 ping_failure_count_run = self.device_manager.ping_failure_count_run
-                fail_count = max(self.device_manager.ping_failure_count_all -
-                                 self.last_ping_failure_count_all, 0)
-                success_count = max(self.device_manager.ping_success_count_all -
-                                    self.last_ping_success_count_all, 0)
+                fail_count = max(
+                    self.device_manager.ping_failure_count_all - self.last_ping_failure_count_all, 0
+                )
+                success_count = max(
+                    self.device_manager.ping_success_count_all - self.last_ping_success_count_all, 0
+                )
                 packet_loss = fail_count / (fail_count + success_count + 1)
                 # Reset our local counts
                 self.last_ping_failure_count_all = self.device_manager.ping_failure_count_all
@@ -333,9 +338,7 @@ class DeviceHealth(Sensor):
                 "disk_bytes_written_in_period": str(bytes_written),
                 "io_bytes_sent": str(bytes_sent),
                 "expidite_mount_size": str(sc_mount_size),
-                "expidite_mount_percent": str(
-                    psutil.disk_usage(str(root_cfg.ROOT_WORKING_DIR)).percent
-                ),
+                "expidite_mount_percent": str(psutil.disk_usage(str(root_cfg.ROOT_WORKING_DIR)).percent),
                 "packet_loss": str(packet_loss),
                 "current_ping_fail_run": str(ping_failure_count_run),
                 "cpu_temperature": str(cpu_temp),  # type: ignore
@@ -355,7 +358,7 @@ class DeviceHealth(Sensor):
 
     # Function to get diagnostics on the top 3 memory-using processes
     @staticmethod
-    def log_top_memory_processes(num_processes: int=5) -> None:
+    def log_top_memory_processes(num_processes: int = 5) -> None:
         # Create a list of all processes with their memory usage
         # It's possible for processes to disappear between the time we get the list and the time we log it
         # so we need to be careful about this
@@ -390,8 +393,9 @@ class DeviceHealth(Sensor):
         """
         if root_cfg.running_on_rpi:
             try:
-                output = utils.run_cmd(cmd="nmcli -g SSID,IN-USE,SIGNAL device wifi | grep '*'",
-                                       ignore_errors=True)
+                output = utils.run_cmd(
+                    cmd="nmcli -g SSID,IN-USE,SIGNAL device wifi | grep '*'", ignore_errors=True
+                )
                 # The return output contains a string like "SSID:*:95".  We need to strip out the ":*"
                 # and return just the SSID and the signal strength
                 if output:
@@ -411,8 +415,9 @@ class DeviceHealth(Sensor):
                 return ("Not connected", "-1")
         elif root_cfg.running_on_windows:
             try:
-                output = subprocess.check_output(["netsh", "wlan", "show", "interfaces"],
-                                                 universal_newlines=True)
+                output = subprocess.check_output(
+                    ["netsh", "wlan", "show", "interfaces"], universal_newlines=True
+                )
                 for line in output.split("\n"):
                     if "SSID" in line and "BSSID" not in line:
                         return (line.split(":")[1].strip(), "-1")

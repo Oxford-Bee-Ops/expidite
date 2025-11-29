@@ -150,7 +150,6 @@ class Sensor(Thread, DPnode, ABC):
                     root_cfg.SENSOR_TRIGGER_FLAG.unlink(missing_ok=True)
             self.stop_requested.wait(1)
 
-
     # Sensors should sub-class this method to implement on-demand, triggered, sensing.
     def sensing_triggered(self, duration: int) -> None:
         """The sensing_triggered method is where the sensor does its work of sensing and logging data

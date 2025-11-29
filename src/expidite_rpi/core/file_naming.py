@@ -9,8 +9,10 @@ from expidite_rpi.core import configuration as root_cfg
 
 logger = root_cfg.setup_logger("expidite")
 
+
 class DATA_ID(NamedTuple):
     """Datastream ID is composed of {datastream_type_id}_{device_id}_{sensor_id}"""
+
     type_id: str
     device_id: str
     sensor_index: int
@@ -20,10 +22,7 @@ class DATA_ID(NamedTuple):
         return f"{self.type_id}_{self.device_id}_{self.sensor_index:02d}_{self.stream_index:02d}"
 
 
-def create_data_id(device_id: str,
-                   sensor_index: int,
-                   type_id: str,
-                   stream_index: int) -> str:
+def create_data_id(device_id: str, sensor_index: int, type_id: str, stream_index: int) -> str:
     """Returns a standard, universally unique, identifier for the Datastream"""
     return f"{type_id}_{device_id}_{sensor_index:02d}_{stream_index:02d}"
 
@@ -164,7 +163,7 @@ def get_record_filename(
     end_time: Optional[datetime] = None,
     frame_number: Optional[int] = None,
     arbitrary_index: Optional[int] = None,
-)->Path:
+) -> Path:
     """Generate the filename for the recording file.
 
     datastream_id is composed of {datastream_type_id}_{device_id}_{sensor_id}
@@ -229,14 +228,13 @@ def get_cloud_journal_filename(type_id: str, day: datetime) -> Path:
     else:
         processing_dir = root_cfg.ETL_PROCESSING_DIR
 
-    return processing_dir.joinpath(
-            f"V3_{type_id}_{root_cfg.my_device_id}_{day.strftime('%Y%m%d')}.csv"
-        )
+    return processing_dir.joinpath(f"V3_{type_id}_{root_cfg.my_device_id}_{day.strftime('%Y%m%d')}.csv")
 
 
 def get_journal_filename(type_id: str) -> Path:
     """Filenaming for live journals that are in use; they get renamed with a timestamp when closed."""
     return root_cfg.EDGE_STAGING_DIR.joinpath(f"V3_{type_id}_{root_cfg.my_device_id}.csv")
+
 
 def parse_journal_filename(fname: Path | str) -> dict:
     """Parse a journal filename to extract its components.
@@ -286,6 +284,7 @@ def parse_journal_filename(fname: Path | str) -> dict:
     logger.debug(f"Parsed journal fname {fname} to {fields_dict}")
     return fields_dict
 
+
 def get_temporary_filename(format: api.FORMAT) -> Path:
     """Generate a temporary filename in the TMP_DIR with the specified suffix."""
     suffix = format.value
@@ -312,10 +311,7 @@ def get_log_filename() -> Path:
 
 def get_FAIR_filename(suffix: str) -> Path:
     """Generate a filename for a fair file."""
-    return (
-        root_cfg.EDGE_UPLOAD_DIR /
-        f"V3_{root_cfg.my_device_id}_{api.utc_to_fname_str()}.{suffix}"
-    )
+    return root_cfg.EDGE_UPLOAD_DIR / f"V3_{root_cfg.my_device_id}_{api.utc_to_fname_str()}.{suffix}"
 
 
 def get_system_test_filename(st_type: str) -> Path:
@@ -323,13 +319,13 @@ def get_system_test_filename(st_type: str) -> Path:
     t = api.utc_now()
     return root_cfg.EDGE_UPLOAD_DIR / f"V3_{root_cfg.my_device_id}_{st_type}_{t.strftime('%Y%m%d')}.csv"
 
+
 def get_diags_filename() -> Path:
     """Generate a filename for a diags bundle file in the diags directory."""
     return root_cfg.DIAGS_DIR / f"V3_DIAGS_{root_cfg.my_device_id}_{api.utc_to_fname_str()}.log.gz"
 
-def get_review_mode_filename(
-    data_id: str,
-    suffix: api.FORMAT) -> Path:
+
+def get_review_mode_filename(data_id: str, suffix: api.FORMAT) -> Path:
     """Generate a filename for a review mode file.
     These are special in not containing timestamps because the intention is that they overwrite
     each other."""

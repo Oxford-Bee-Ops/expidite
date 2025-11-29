@@ -18,13 +18,14 @@ logger = root_cfg.setup_logger("expidite")
 AUDIO_TYPE_ID = "AUDIO"
 AUDIO_SENSOR_STREAM_INDEX = 0
 AUDIO_SENSOR_STREAM = Stream(
-            description="On-demand audio recording.",
-            type_id=AUDIO_TYPE_ID,
-            index=AUDIO_SENSOR_STREAM_INDEX,
-            format=api.FORMAT.WAV,
-            cloud_container="expidite-od",
-            sample_probability="1.0",
-        )
+    description="On-demand audio recording.",
+    type_id=AUDIO_TYPE_ID,
+    index=AUDIO_SENSOR_STREAM_INDEX,
+    format=api.FORMAT.WAV,
+    cloud_container="expidite-od",
+    sample_probability="1.0",
+)
+
 
 @dataclass
 class AudioSensorCfg(SensorCfg):
@@ -37,6 +38,7 @@ class AudioSensorCfg(SensorCfg):
     # FILENAME: The filename to use for the audio recording.
     arecord_cmd: str = "arecord -D HW_INDEX -r 44100 -c 1 -f S16_LE -t wav -d DURATION FILENAME"
 
+
 DEFAULT_AUDIO_SENSOR_CFG = AudioSensorCfg(
     sensor_type=api.SENSOR_TYPE.USB,
     sensor_index=1,
@@ -45,11 +47,11 @@ DEFAULT_AUDIO_SENSOR_CFG = AudioSensorCfg(
     outputs=[AUDIO_SENSOR_STREAM],
 )
 
+
 ############################################################################################################
 # The AudioSensor class is used to manage the audio recording
 ############################################################################################################
 class AudioSensor(Sensor):
-
     # Constructor for the AudioSensor class
     def __init__(self, config: AudioSensorCfg) -> None:
         super().__init__(config)
@@ -61,22 +63,17 @@ class AudioSensor(Sensor):
         assert self.config.arecord_cmd.startswith("arecord "), (
             f"arecord_cmd must start with 'arecord ': {self.config.arecord_cmd}"
         )
-        assert "HW_INDEX" in self.config.arecord_cmd, (
-            "arecord_cmd must contain the HW_INDEX placeholder"
-        )
-        assert "FILENAME" in self.config.arecord_cmd, (
-            "arecord_cmd must contain the FILENAME placeholder"
-        )
-        assert "DURATION" in self.config.arecord_cmd, (
-            "arecord_cmd must contain the DURATION placeholder"
-        )
+        assert "HW_INDEX" in self.config.arecord_cmd, "arecord_cmd must contain the HW_INDEX placeholder"
+        assert "FILENAME" in self.config.arecord_cmd, "arecord_cmd must contain the FILENAME placeholder"
+        assert "DURATION" in self.config.arecord_cmd, "arecord_cmd must contain the DURATION placeholder"
 
         # Validate that the required streams exist in the configuration
         try:
             self.get_stream(AUDIO_SENSOR_STREAM_INDEX)  # Main audio stream
         except ValueError as e:
-            raise ValueError(f"AudioSensor requires a main audio stream at index "
-                             f"{AUDIO_SENSOR_STREAM_INDEX}: {e}")
+            raise ValueError(
+                f"AudioSensor requires a main audio stream at index {AUDIO_SENSOR_STREAM_INDEX}: {e}"
+            )
 
     ############################################################################################################
     # Function that records audio on demand.
@@ -109,13 +106,13 @@ class AudioSensor(Sensor):
             outcome = utils.run_cmd(arecord_cmd)
             logger.info(f"Audio recording completed: {outcome}")
 
-            final_output_filename = self.save_recording(stream_index=AUDIO_SENSOR_STREAM_INDEX,
-                                                        temporary_file=wav_output_filename,
-                                                        start_time=start_time,
-                                                        end_time=api.utc_now())
-
-            logger.info(
-                f"Saved audio of {duration!s}s to {final_output_filename}; "
+            final_output_filename = self.save_recording(
+                stream_index=AUDIO_SENSOR_STREAM_INDEX,
+                temporary_file=wav_output_filename,
+                start_time=start_time,
+                end_time=api.utc_now(),
             )
+
+            logger.info(f"Saved audio of {duration!s}s to {final_output_filename}; ")
         except Exception as e:
             logger.error(f"{root_cfg.RAISE_WARN()}Error in AudioSensor: {e}", exc_info=True)

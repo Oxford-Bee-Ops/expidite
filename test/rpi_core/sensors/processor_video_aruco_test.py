@@ -17,15 +17,15 @@ class Test_video_aruco_processor:
     @pytest.mark.unittest
     def test_aruco_processor_basic(self) -> None:
         logger.info("Run test_aruco_processor_basic test")
-        #file = (
+        # file = (
         #    root_cfg.CODE_DIR / "rpi_core"
         #    / "test"
         #    / "sensors"
         #    / "resources"
         #    / "5fps_4X4 5Mm 30Cm 20250107 154846.mp4"
-        #)
+        # )
 
         # Run the processor
         # @@@@ need a test harness for processors
-        #processor = processor_video_aruco.VideoArucoProcessor()
-        #processor.process_video_file(source_file=file)
+        # processor = processor_video_aruco.VideoArucoProcessor()
+        # processor.process_video_file(source_file=file)

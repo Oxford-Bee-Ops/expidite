@@ -1,0 +1,31 @@
+# Contributing to ExPiDITE
+To ensure a smooth process and maintain code quality, please follow these guidelines.
+
+## Development Environment Setup
+All commands below assume you are in the root directory of the project and have an active virtual environment.
+
+Clone the Repository:
+- git clone https://github.com/Oxford-Bee-Ops/expidite
+
+Create and activate the virtual environment (Linux/macOS)
+- `cd expidite`
+- `python3 -m venv .venv `
+- `source .venv/bin/activate`
+
+Create the environment (Windows)
+- `cd expidite`
+- `python -m venv .venv`
+- `.venv\Scripts\Activate.ps1`
+
+Install Dependencies
+- `pip install -e ".[dev]"`
+
+## Quality Checks
+
+Before you commit your changes, you must run the following quality checks to ensure your code meets project standards.
+
+1. `ruff format` Ruff is used to ensure consistent code styling.
+2. `ruff check` Linting and Static Analysis (Ruff Check)This command runs all static checks configured in pyproject.toml. This command should return no errors.
+3. `mypy` Type Checking. Mypy verifies all type hints for correctness and completeness. This command should return no errors.
+4. `pytest` Unit Tests. Run the full test suite to ensure your changes did not break existing functionality. All tests must pass.
+5. `codespell` (Optional) Spelling Check to catch common spelling errors. This is highly encouraged.

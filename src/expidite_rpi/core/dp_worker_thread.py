@@ -20,6 +20,7 @@ class DPworker(Thread):
     """A DPworker is the thread that processes data through a DPtree.
     Note: the Sensor has a separate thread.
     """
+
     _scorp_dp: DPnode
 
     def __init__(
@@ -47,7 +48,6 @@ class DPworker(Thread):
         # This should be set by calling the start() method, and not set during initialization.
         self.dpe_start_time: Optional[datetime] = None
 
-
     #########################################################################################################
     #
     # Public methods called by the Sensor or DataProcessor to log or save data
@@ -67,7 +67,6 @@ class DPworker(Thread):
     def get_sensor_cfg(self) -> Optional[SensorCfg]:
         """Return the SensorCfg object for this Datastream"""
         return self.dp_tree.sensor.config
-
 
     #########################################################################################################
     #
@@ -105,8 +104,7 @@ class DPworker(Thread):
             else:
                 assert False, "ETL mode not implemented yet"
         except Exception as e:
-            logger.error(f"{root_cfg.RAISE_WARN()}Fatal error running {self!r}: {e!s}",
-                         exc_info=True)
+            logger.error(f"{root_cfg.RAISE_WARN()}Fatal error running {self!r}: {e!s}", exc_info=True)
             # @@@ Should we add recovery code? eg call stop_all?
 
     def edge_run(self) -> None:
@@ -157,8 +155,10 @@ class DPworker(Thread):
                                     try:
                                         f.unlink()
                                     except Exception as e:
-                                        logger.error(f"{root_cfg.RAISE_WARN()}Failed to unlink {f} {e!s}",
-                                                     exc_info=True)
+                                        logger.error(
+                                            f"{root_cfg.RAISE_WARN()}Failed to unlink {f} {e!s}",
+                                            exc_info=True,
+                                        )
                                 else:
                                     logger.error(f"{root_cfg.RAISE_WARN()}File does not exist after DP {f}")
 

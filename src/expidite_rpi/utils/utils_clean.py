@@ -13,7 +13,7 @@ from pydantic_settings import BaseSettings
 
 
 def create_root_working_dir(path: Path) -> None:
-    """ Create the root working directory if it doesn't exist.
+    """Create the root working directory if it doesn't exist.
     This requires root privileges on Linux.
 
     Args:
@@ -21,7 +21,7 @@ def create_root_working_dir(path: Path) -> None:
 
     Raises:
         subprocess.CalledProcessError: If the directory creation fails.
-     """
+    """
     if not path.exists():
         try:
             # Get the current user and group
@@ -34,10 +34,11 @@ def create_root_working_dir(path: Path) -> None:
             print(f"Failed to create directory {path}: {e}")
             raise e
 
+
 ############################################################
 # Dataclass display utility
 ############################################################
-def display_dataclass(obj: Any, indent: int=0) -> str:
+def display_dataclass(obj: Any, indent: int = 0) -> str:
     """
     Recursively display the contents of a dataclass hierarchy.
 

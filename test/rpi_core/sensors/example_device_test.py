@@ -26,8 +26,8 @@ INVENTORY: list[DeviceCfg] = [
     ),
 ]
 
-class Test_example_device:
 
+class Test_example_device:
     @pytest.mark.unittest
     def test_example_device(self) -> None:
         logger.info("Running test_example_device")
@@ -55,12 +55,9 @@ class Test_example_device:
             # but the originals all get deleted after processing by the example processor.
             # The example processor takes the jpg files and saves:
             # - a df stream with "pixel_count" (EXAMPLE_DF_DS_TYPE_ID).
-            th.assert_records("expidite-fair",
-                            {"V3_*": 1})
-            th.assert_records("expidite-journals",
-                            {"V3_DUMML*": 1, "V3_DUMMD*": 1})
-            th.assert_records("expidite-upload",
-                            {"V3_DUMMF*": 3})
+            th.assert_records("expidite-fair", {"V3_*": 1})
+            th.assert_records("expidite-journals", {"V3_DUMML*": 1, "V3_DUMMD*": 1})
+            th.assert_records("expidite-upload", {"V3_DUMMF*": 3})
             df = th.get_journal_as_df("expidite-journals", "V3_DUMMD*")
             assert df is not None, "Expected df to be not None"
             for field in api.ALL_RECORD_ID_FIELDS:
@@ -75,19 +72,19 @@ class Test_example_device:
 
             df_log = th.get_journal_as_df("expidite-journals", "V3_DUMML*")
             assert df_log is not None, "Expected df_log to be not None"
-            assert df_log["temperature"].max() == len(df_log), \
+            assert df_log["temperature"].max() == len(df_log), (
                 f"value_ticker {df_log['temperature'].max()} = len(df_log) {len(df_log)}"
+            )
 
             score_df = th.get_journal_as_df("expidite-system-records", "V3_SCORE*")
             grouped_df = score_df.groupby("observed_type_id").agg({"count": "sum"}).reset_index()
             assert len(grouped_df) > 0, "No records found in the score datastream"
             # Select the row with the observed_type_id of EXAMPLE_DF_DS_TYPE_ID and get the count
-            d_count = (grouped_df.loc[grouped_df["observed_type_id"] ==
-                                      EXAMPLE_DF_TYPE_ID, "count"].values[0])
-            f_count = (grouped_df.loc[grouped_df["observed_type_id"] ==
-                                      EXAMPLE_FILE_TYPE_ID, "count"].values[0])
-            l_count = (grouped_df.loc[grouped_df["observed_type_id"] ==
-                                      EXAMPLE_LOG_TYPE_ID, "count"].values[0])
+            d_count = grouped_df.loc[grouped_df["observed_type_id"] == EXAMPLE_DF_TYPE_ID, "count"].values[0]
+            f_count = grouped_df.loc[grouped_df["observed_type_id"] == EXAMPLE_FILE_TYPE_ID, "count"].values[
+                0
+            ]
+            l_count = grouped_df.loc[grouped_df["observed_type_id"] == EXAMPLE_LOG_TYPE_ID, "count"].values[0]
             assert d_count == 3, "Expected 1 df record"
             assert f_count == 3, "Expected 1 file record"
             assert l_count == len(df_log), f"Expected SCORE log count {l_count} to equal rows {len(df_log)}"

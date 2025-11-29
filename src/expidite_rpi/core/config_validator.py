@@ -12,8 +12,10 @@ from expidite_rpi.core.sensor import SensorCfg
 
 logger = root_cfg.setup_logger("expidite")
 
+
 class ValidationRule(ABC):
-    """ Base class for validation rules. Extend this class to implement specific rules. """
+    """Base class for validation rules. Extend this class to implement specific rules."""
+
     @abstractmethod
     def validate(self, dpnode: DPnode) -> tuple[bool, str]:
         """
@@ -28,9 +30,11 @@ class ValidationRule(ABC):
         """
         raise NotImplementedError("Subclasses must implement the validate method.")
 
+
 ###########################################################################################################
 # Start with the device-level validation rules.
 ###########################################################################################################
+
 
 # Rule 1: check that the outputs list is not empty
 class Rule1_outputs_not_empty(ValidationRule):
@@ -38,22 +42,25 @@ class Rule1_outputs_not_empty(ValidationRule):
         outputs: list = dpnode.get_config().outputs
         if outputs is None or len(outputs) == 0:
             return False, (
-                f"Outputs list is empty in {dpnode}: "
-                "all DPtree nodes must have at least one output.")
+                f"Outputs list is empty in {dpnode}: all DPtree nodes must have at least one output."
+            )
 
         for stream in outputs:
             if not isinstance(stream, Stream):
                 return False, (
                     f"Outputs list contains non-Stream object in {dpnode}: "
-                    "all DPtree nodes must have at least one output of type Stream.")
+                    "all DPtree nodes must have at least one output of type Stream."
+                )
             # The stream_index must match the location in the outputs list
             if stream.index != outputs.index(stream):
                 return False, (
                     f"The Stream with index {stream.index} is not at that position in the outputs array. "
                     f"Make sure that Streams are declared in the right order, starting with index 0. "
-                    f"{dpnode}")
+                    f"{dpnode}"
+                )
 
         return True, ""
+
 
 # Rule 2: check that the sensor model is set for all datastreams
 class Rule2_sensor_type_model_set(ValidationRule):
@@ -61,14 +68,11 @@ class Rule2_sensor_type_model_set(ValidationRule):
         config = dpnode.get_config()
         if isinstance(config, SensorCfg):
             if config.sensor_type is None or config.sensor_type == api.SENSOR_TYPE.NOT_SET:
-                return False, (
-                    f"Sensor type not set in {config.description}"
-                )
+                return False, (f"Sensor type not set in {config.description}")
             if config.sensor_model is None or config.sensor_model == root_cfg.FAILED_TO_LOAD:
-                return False, (
-                    f"Sensor model not set in {config.sensor_type} {config}"
-                )
+                return False, (f"Sensor model not set in {config.sensor_type} {config}")
         return True, ""
+
 
 # Rule 3: no _ in any stream type_id
 class Rule3_no_underscore_in_type_id(ValidationRule):
@@ -83,6 +87,7 @@ class Rule3_no_underscore_in_type_id(ValidationRule):
                     )
         return True, ""
 
+
 # Rule4: check that cloud_container is set on all datastreams other than type log / df / csv
 class Rule4_cloud_container_specified(ValidationRule):
     def validate(self, dpnode: DPnode) -> tuple[bool, str]:
@@ -90,17 +95,19 @@ class Rule4_cloud_container_specified(ValidationRule):
         if outputs:
             for stream in outputs:
                 if stream.format not in api.DATA_FORMATS:
-                    if (stream.cloud_container is None or
-                        len(stream.cloud_container) < 2 or
-                        stream.cloud_container == root_cfg.FAILED_TO_LOAD):
-                        return False, (
-                            f"cloud_container not set in {dpnode}"
-                        )
+                    if (
+                        stream.cloud_container is None
+                        or len(stream.cloud_container) < 2
+                        or stream.cloud_container == root_cfg.FAILED_TO_LOAD
+                    ):
+                        return False, (f"cloud_container not set in {dpnode}")
         return True, ""
+
 
 # Rule5: check that all cloud_containers exist in the blobstore using cloud_connector.container_exists()
 # If they don't exist, create them.
 # No longer required as the cloud connector will create them on upload.
+
 
 # Rule 6: any datastream of type log, csv or df must have output fields set
 class Rule6_csv_output_fields(ValidationRule):
@@ -110,10 +117,9 @@ class Rule6_csv_output_fields(ValidationRule):
             for stream in outputs:
                 if stream.format in api.DATA_FORMATS:
                     if stream.fields is None or len(stream.fields) == 0:
-                        return False, (
-                            f"output fields not set in {dpnode} for {stream.type_id}"
-                        )
+                        return False, (f"output fields not set in {dpnode} for {stream.type_id}")
         return True, ""
+
 
 # Rule 7: don't declare field names that are in use for record_id fields
 class Rule7_reserved_fieldnames(ValidationRule):
@@ -139,6 +145,7 @@ RULE_SET: list[ValidationRule] = [
     Rule6_csv_output_fields(),
     Rule7_reserved_fieldnames(),
 ]
+
 
 def validate_trees(dptrees: list[DPtree]) -> tuple[bool, list[str]]:
     """
@@ -196,9 +203,6 @@ def validate_trees(dptrees: list[DPtree]) -> tuple[bool, list[str]]:
                             errors.append(error_message)
                 except Exception as e:
                     is_valid = False
-                    errors.append(
-                        f"Error validating rule {rule.__class__.__name__}: {e!s}"
-                    )
+                    errors.append(f"Error validating rule {rule.__class__.__name__}: {e!s}")
 
     return is_valid, errors
-

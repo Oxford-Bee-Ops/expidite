@@ -19,25 +19,26 @@ logger = root_cfg.setup_logger("expidite")
 RPICAM_DATA_TYPE_ID = "RPICAM"
 RPICAM_STREAM_INDEX: int = 0
 RPICAM_STREAM: Stream = Stream(
-            description="Basic continuous video recording.",
-            type_id=RPICAM_DATA_TYPE_ID,
-            index=RPICAM_STREAM_INDEX,
-            format=api.FORMAT.MP4,
-            cloud_container="expidite-upload",
-            sample_probability="0.0",
-        )
+    description="Basic continuous video recording.",
+    type_id=RPICAM_DATA_TYPE_ID,
+    index=RPICAM_STREAM_INDEX,
+    format=api.FORMAT.MP4,
+    cloud_container="expidite-upload",
+    sample_probability="0.0",
+)
 RPICAM_REVIEW_MODE_DATA_TYPE_ID = "RPICAMRM"
 RPICAM_REVIEW_MODE_STREAM_INDEX: int = 1
 RPICAM_REVIEW_MODE_STREAM: Stream = Stream(
-            description="Review mode image stream.",
-            type_id=RPICAM_REVIEW_MODE_DATA_TYPE_ID,
-            index=RPICAM_REVIEW_MODE_STREAM_INDEX,
-            format=api.FORMAT.JPG,
-            cloud_container="expidite-review-mode",
-            sample_probability="1.0",
-            file_naming=api.FILE_NAMING.REVIEW_MODE,
-            storage_tier=api.StorageTier.HOT,
-        )
+    description="Review mode image stream.",
+    type_id=RPICAM_REVIEW_MODE_DATA_TYPE_ID,
+    index=RPICAM_REVIEW_MODE_STREAM_INDEX,
+    format=api.FORMAT.JPG,
+    cloud_container="expidite-review-mode",
+    sample_probability="1.0",
+    file_naming=api.FILE_NAMING.REVIEW_MODE,
+    storage_tier=api.StorageTier.HOT,
+)
+
 
 @dataclass
 class RpicamSensorCfg(SensorCfg):
@@ -52,6 +53,7 @@ class RpicamSensorCfg(SensorCfg):
     rpicam_cmd: str = "rpicam-vid --framerate 15 --width 640 --height 480 -o FILENAME -t 5000"
     review_mode_cmd: str = "rpicam-still --width 640 --height 480 -o FILENAME"
 
+
 DEFAULT_RPICAM_SENSOR_CFG = RpicamSensorCfg(
     sensor_type=api.SENSOR_TYPE.CAMERA,
     sensor_index=0,
@@ -59,6 +61,7 @@ DEFAULT_RPICAM_SENSOR_CFG = RpicamSensorCfg(
     description="Video sensor that uses rpicam-vid",
     outputs=[RPICAM_STREAM, RPICAM_REVIEW_MODE_STREAM],
 )
+
 
 class RpicamSensor(Sensor):
     def __init__(self, config: RpicamSensorCfg) -> None:
@@ -68,15 +71,11 @@ class RpicamSensor(Sensor):
         self.recording_format = self.get_stream(RPICAM_STREAM_INDEX).format
         self.rpicam_cmd = self.config.rpicam_cmd
 
-        assert self.rpicam_cmd, (
-            f"rpicam_cmd must be set in the sensor configuration: {self.rpicam_cmd}"
-        )
+        assert self.rpicam_cmd, f"rpicam_cmd must be set in the sensor configuration: {self.rpicam_cmd}"
         assert self.rpicam_cmd.startswith("rpicam-vid "), (
             f"rpicam_cmd must start with 'rpicam-vid ': {self.rpicam_cmd}"
         )
-        assert "FILENAME" in self.rpicam_cmd, (
-            f"FILENAME placeholder missing in rpicam_cmd: {self.rpicam_cmd}"
-        )
+        assert "FILENAME" in self.rpicam_cmd, f"FILENAME placeholder missing in rpicam_cmd: {self.rpicam_cmd}"
         assert "FILENAME " in self.rpicam_cmd, (
             f"FILENAME placeholder should be specified without any suffix rpicam_cmd: {self.rpicam_cmd}"
         )
@@ -85,15 +84,14 @@ class RpicamSensor(Sensor):
         try:
             self.get_stream(RPICAM_STREAM_INDEX)  # Main video stream
         except ValueError as e:
-            raise ValueError(f"RpicamSensor requires a main video stream at index "
-                             f"{RPICAM_STREAM_INDEX}: {e}")
+            raise ValueError(f"RpicamSensor requires a main video stream at index {RPICAM_STREAM_INDEX}: {e}")
 
         try:
             self.get_stream(RPICAM_REVIEW_MODE_STREAM_INDEX)  # Review mode stream
         except ValueError as e:
-            raise ValueError(f"RpicamSensor requires a review mode stream at index "
-                             f"{RPICAM_REVIEW_MODE_STREAM_INDEX}: {e}")
-
+            raise ValueError(
+                f"RpicamSensor requires a review mode stream at index {RPICAM_REVIEW_MODE_STREAM_INDEX}: {e}"
+            )
 
     def review_mode_output(self) -> None:
         """Output an image to show the user what the camera is viewing.
@@ -107,16 +105,12 @@ class RpicamSensor(Sensor):
             # Run recording process
             utils.run_cmd(config.review_mode_cmd.replace("FILENAME", str(filename)))
             logger.info("Review mode image captured")
-            self.save_recording(
-                RPICAM_REVIEW_MODE_STREAM_INDEX,
-                filename,
-                start_time=api.utc_now()
-            )
+            self.save_recording(RPICAM_REVIEW_MODE_STREAM_INDEX, filename, start_time=api.utc_now())
 
         except Exception as e:
-            logger.error(f"{root_cfg.RAISE_WARN()}Error in RpicamSensor review_mode_output: {e}",
-                         exc_info=True)
-
+            logger.error(
+                f"{root_cfg.RAISE_WARN()}Error in RpicamSensor review_mode_output: {e}", exc_info=True
+            )
 
     def run(self) -> None:
         """Main loop for the RpicamSensor - runs continuously unless paused."""
@@ -155,10 +149,9 @@ class RpicamSensor(Sensor):
                 logger.info(f"Video recording completed with rc={rc}")
 
                 # Save the video file to the datastream
-                self.save_recording(RPICAM_STREAM_INDEX,
-                                    filename,
-                                    start_time=start_time,
-                                    end_time=api.utc_now())
+                self.save_recording(
+                    RPICAM_STREAM_INDEX, filename, start_time=start_time, end_time=api.utc_now()
+                )
 
                 exception_count = 0  # Reset exception count on success
 

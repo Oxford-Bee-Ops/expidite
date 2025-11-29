@@ -45,6 +45,7 @@ DIAGNOSTIC_COMMANDS = [
     ("LED_STATUS_FILE", f"cat {root_cfg.LED_STATUS_FILE}"),
 ]
 
+
 ##############################################################################################################
 # The sole purpose of this class is to write a diagnostics bundle to disk, containing as much information as
 # possible to help understand how/why the device got into a bad state, such as lost connectivity or out of
@@ -115,7 +116,8 @@ class DiagnosticsBundle:
 
             # Import here to avoid circular dependency.
             from expidite_rpi.core.device_health import DeviceHealth
-            health = DeviceHealth().get_health(check_memory_usage = False)
+
+            health = DeviceHealth().get_health(check_memory_usage=False)
             if health:
                 f.write("\nDevice health\n")
                 for key, value in health.items():
@@ -135,7 +137,7 @@ class DiagnosticsBundle:
                 shell=True,
                 capture_output=True,
                 text=True,
-                timeout=15, # Timeout in seconds, in case any command hangs.
+                timeout=15,  # Timeout in seconds, in case any command hangs.
             )
             return result.stdout.strip(), result.stderr.strip(), result.returncode
         except subprocess.TimeoutExpired:

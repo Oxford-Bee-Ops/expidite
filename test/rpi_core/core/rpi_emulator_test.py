@@ -7,6 +7,7 @@ from expidite_rpi.utils import rpi_emulator
 
 logger = root_cfg.setup_logger("expidite", logging.DEBUG)
 
+
 class Test_rpi_emulator:
     @pytest.mark.unittest
     def test_rpi_emulator(self) -> None:
@@ -20,4 +21,3 @@ class Test_rpi_emulator:
 
             result = th.ok_to_save_recording("test")
             assert result is False, "Expected ok_to_save_recording to return False"
-

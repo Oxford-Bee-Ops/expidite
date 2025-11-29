@@ -18,13 +18,14 @@ logger = root_cfg.setup_logger("expidite")
 VIDEO_OD_DATA_TYPE_ID = "VIDEOOD"
 VIDEO_OD_STREAM_INDEX: int = 0
 VIDEO_OD_STREAM: Stream = Stream(
-            description="Video recording on demand, triggered via the BCLI.",
-            type_id=VIDEO_OD_DATA_TYPE_ID,
-            index=VIDEO_OD_STREAM_INDEX,
-            format=api.FORMAT.MP4,
-            cloud_container="expidite-od",
-            sample_probability="1.0",
-        )
+    description="Video recording on demand, triggered via the BCLI.",
+    type_id=VIDEO_OD_DATA_TYPE_ID,
+    index=VIDEO_OD_STREAM_INDEX,
+    format=api.FORMAT.MP4,
+    cloud_container="expidite-od",
+    sample_probability="1.0",
+)
+
 
 @dataclass
 class VideoOnDemandSensorCfg(SensorCfg):
@@ -37,8 +38,10 @@ class VideoOnDemandSensorCfg(SensorCfg):
     # The recording duration after -t should be substituted with DURATION in seconds.
     # Example: "rpicam-vid --framerate 5 --width 640 --height 640 -o FILENAME -t DURATION"
     # Lens position set for focusing at 30cm (where it's best to focus slightly closer at 0.25m)
-    video_od_cmd: str = ("rpicam-vid --lens-position 4 --framerate 10 "
-                         "--width 1080 --height 1080 -o FILENAME -t DURATION")
+    video_od_cmd: str = (
+        "rpicam-vid --lens-position 4 --framerate 10 --width 1080 --height 1080 -o FILENAME -t DURATION"
+    )
+
 
 DEFAULT_VIDEO_OD_SENSOR_CFG = VideoOnDemandSensorCfg(
     sensor_type=api.SENSOR_TYPE.CAMERA,
@@ -48,6 +51,7 @@ DEFAULT_VIDEO_OD_SENSOR_CFG = VideoOnDemandSensorCfg(
     outputs=[VIDEO_OD_STREAM],
 )
 
+
 class VideoOnDemandSensor(Sensor):
     def __init__(self, config: VideoOnDemandSensorCfg) -> None:
         """Constructor for the VideoOnDemandSensor class"""
@@ -56,9 +60,7 @@ class VideoOnDemandSensor(Sensor):
         self.recording_format = self.get_stream(VIDEO_OD_STREAM_INDEX).format
         self.video_od_cmd = self.config.video_od_cmd
 
-        assert self.video_od_cmd, (
-            f"video_od_cmd must be set in the sensor configuration: {self.video_od_cmd}"
-        )
+        assert self.video_od_cmd, f"video_od_cmd must be set in the sensor configuration: {self.video_od_cmd}"
         assert self.video_od_cmd.startswith("rpicam-vid "), (
             f"video_od_cmd must start with 'rpicam-vid ': {self.video_od_cmd}"
         )
@@ -73,8 +75,9 @@ class VideoOnDemandSensor(Sensor):
         try:
             self.get_stream(VIDEO_OD_STREAM_INDEX)  # Main video stream
         except ValueError as e:
-            raise ValueError(f"VideoOnDemandSensor requires a main video stream at index "
-                             f"{VIDEO_OD_STREAM_INDEX}: {e}")
+            raise ValueError(
+                f"VideoOnDemandSensor requires a main video stream at index {VIDEO_OD_STREAM_INDEX}: {e}"
+            )
 
     def sensing_triggered(self, duration: int) -> None:
         """Invoked by Sensor super-class when sensing is triggered."""
@@ -103,10 +106,9 @@ class VideoOnDemandSensor(Sensor):
             logger.info(f"Video recording completed with rc={rc}")
 
             # Save the video file to the datastream
-            self.save_recording(VIDEO_OD_STREAM_INDEX,
-                                filename,
-                                start_time=start_time,
-                                end_time=api.utc_now())
+            self.save_recording(
+                VIDEO_OD_STREAM_INDEX, filename, start_time=start_time, end_time=api.utc_now()
+            )
 
         except Exception as e:
             logger.error(f"{root_cfg.RAISE_WARN()}Error in VideoOnDemandSensor: {e}", exc_info=True)

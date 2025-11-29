@@ -24,14 +24,14 @@ class _CloudJournalManager:
     def __init__(self, cloud_container: str) -> None:
         super().__init__()
         self._journals: dict[CloudJournal, Queue] = {}
-        self._journals_dict_lock = Lock() # grab this lock when modifying the _journals dict
+        self._journals_dict_lock = Lock()  # grab this lock when modifying the _journals dict
         self.cloud_container = cloud_container
         self._stop_requested = Event()
         self._sync_timer = Timer(root_cfg.JOURNAL_SYNC_FREQUENCY, self.sync_run)
         self._sync_timer.start()
 
     @staticmethod
-    def get(cloud_container: str)-> "_CloudJournalManager":
+    def get(cloud_container: str) -> "_CloudJournalManager":
         """Get the singleton worker thread"""
 
         if _CloudJournalManager._instance is None:
@@ -96,8 +96,7 @@ class _CloudJournalManager:
                 assert isinstance(journal, CloudJournal)
                 assert isinstance(jqueue, Queue)
                 # Add the items in the queue to a local file that we can then append to the cloud file
-                lj = Journal(journal.local_fname,
-                            reqd_columns=journal.reqd_columns)
+                lj = Journal(journal.local_fname, reqd_columns=journal.reqd_columns)
                 empty = True
                 while not jqueue.empty():
                     data_list_dict: list[dict] = jqueue.get()
@@ -109,10 +108,12 @@ class _CloudJournalManager:
                     lj.save()
 
                     # Append the contents of lj to the cloud blob
-                    cc.append_to_cloud(journal.cloud_container,
-                                        journal.local_fname,
-                                        delete_src=True,
-                                        col_order=journal.reqd_columns)
+                    cc.append_to_cloud(
+                        journal.cloud_container,
+                        journal.local_fname,
+                        delete_src=True,
+                        col_order=journal.reqd_columns,
+                    )
 
             time_diff = (api.utc_now() - start_time).total_seconds()
             logger.debug(f"Completed flush_all started at {start_time} after {time_diff} seconds")
@@ -158,9 +159,7 @@ class CloudJournal:
             # We get the instance locally rather than storing it in self because it avoids issues
             # when we change between cloud types during testing.
             cc = CloudConnector.get_instance(root_cfg.CLOUD_TYPE)
-            cc.download_from_container(
-                self.cloud_container, self.cloud_filename, self.local_fname
-            )
+            cc.download_from_container(self.cloud_container, self.cloud_filename, self.local_fname)
             file_as_df = pd.read_csv(self.local_fname)
             self._data = file_as_df.to_dict(orient="records")
             return self._data
@@ -191,7 +190,7 @@ class CloudJournal:
     #
     # Normally this is returned as a copy, but for performance on read-only operations,
     # the copy can be disabled
-    def get_data(self, copy:bool=True) -> list[dict]:
+    def get_data(self, copy: bool = True) -> list[dict]:
         if copy:
             return self._data.copy()
         else:
@@ -201,7 +200,7 @@ class CloudJournal:
     #
     # Order the columns by providing a list of column names.
     # Doesn't need to include all columns names; any columns not in the list will be appended
-    def as_df(self, column_order: Optional[list[str]]=None) -> pd.DataFrame:
+    def as_df(self, column_order: Optional[list[str]] = None) -> pd.DataFrame:
         df = pd.DataFrame(self._data)
         if column_order is not None:
             df = df[column_order + [col for col in df.columns if col not in column_order]]

@@ -5,6 +5,7 @@ from expidite_rpi.core import device_manager
 
 logger = root_cfg.setup_logger("expidite")
 
+
 class Test_device_manager:
     @pytest.mark.unittest
     def test_device_manager(self) -> None:

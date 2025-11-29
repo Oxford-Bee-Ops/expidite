@@ -19,8 +19,8 @@ INVENTORY: list[DeviceCfg] = [
     ),
 ]
 
-class Test_BMP280_device:
 
+class Test_BMP280_device:
     @pytest.mark.unittest
     def test_BMP280_device(self) -> None:
         logger.info("Running test_BMP280_device")
@@ -39,7 +39,5 @@ class Test_BMP280_device:
             sleep(2)
             sc.stop()
             sleep(2)
-            th.assert_records("expidite-fair",
-                            {"V3_*": 1})
-            th.assert_records("expidite-journals",
-                            {"V3_BMP280*": 1})
+            th.assert_records("expidite-fair", {"V3_*": 1})
+            th.assert_records("expidite-journals", {"V3_BMP280*": 1})
