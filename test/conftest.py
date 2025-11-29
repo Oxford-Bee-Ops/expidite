@@ -8,6 +8,32 @@ from expidite_rpi.core.cloud_connector import CloudConnector
 # Set up logger for test execution
 test_logger = root_cfg.setup_logger("expidite")
 
+# Simple ANSI color codes
+GREEN = "\033[92m"
+RED = "\033[91m"
+YELLOW = "\033[93m"
+RESET = "\033[0m"
+
+def pytest_terminal_summary(terminalreporter, exitstatus, config):
+    tr = terminalreporter
+    tr.write_sep("=", "Test Results Summary")
+    reports = tr.getreports("passed") + tr.getreports("failed") + tr.getreports("skipped")
+
+    for rep in reports:
+        duration = getattr(rep, "duration", None)
+        outcome = rep.outcome.upper()
+
+        if outcome == "PASSED":
+            outcome_colored = f"{GREEN}{outcome}{RESET}"
+        elif outcome == "FAILED":
+            outcome_colored = f"{RED}{outcome}{RESET}"
+        elif outcome == "SKIPPED":
+            outcome_colored = f"{YELLOW}{outcome}{RESET}"
+        else:
+            outcome_colored = outcome
+
+        test_name = rep.nodeid.split("::")[-1]
+        tr.write_line(f"{test_name} - {outcome_colored} - {duration:.3f}s")
 
 @pytest.fixture(autouse=True)
 def log_test_lifecycle(request):
