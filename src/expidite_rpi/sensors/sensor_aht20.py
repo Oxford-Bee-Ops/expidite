@@ -49,10 +49,6 @@ class AHT20(Sensor):
                 temperature = aht20.get_temperature()
                 humidity = aht20.get_humidity()
 
-                if temperature is None or humidity is None:
-                    logger.error(f"{root_cfg.RAISE_WARN()}Error in AHT20 sensor run: No data")
-                    continue
-
                 self.log(
                     stream_index=AHT20_STREAM_INDEX,
                     sensor_data={"temperature": ("%.1f" % temperature),

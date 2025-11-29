@@ -159,9 +159,6 @@ class DeviceManager:
         # This is done so that the device has out-of-the-box awareness of the wifi clients
         # We use the nmcli command to get the list of wifi clients
         self.wifi_clients = root_cfg.my_device.wifi_clients
-        if self.wifi_clients is None:
-            logger.info("No wifi clients in the device configuration")
-            return
 
         # Use nmcli to configure the client wifi connection if it doesn't already exist
         existing_connections = (

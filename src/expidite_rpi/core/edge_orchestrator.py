@@ -172,7 +172,7 @@ class EdgeOrchestrator:
             raise ValueError(f"No sensors created by {create_method}")
 
         if not isinstance(dp_trees, list):
-            logger.error(f"{root_cfg.RAISE_WARN()}create_method must return a list; "
+            logger.error(f"{root_cfg.RAISE_WARN()}create_method must return a list; "  # type: ignore[unreachable]
                          f"created {type(dp_trees)}")
             raise ValueError("create_method must return a list of DPtree objects")
 

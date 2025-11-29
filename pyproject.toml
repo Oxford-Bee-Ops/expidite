@@ -107,6 +107,7 @@ disallow_untyped_calls = true # Prevent calls to functions without type annotati
 ignore_missing_imports = true # Suppress error messages about imports that cannot be resolved.
 strict_equality = true # Prohibit equality checks, identity checks, and container checks between non-overlapping types.
 warn_return_any = true # Prevent returning a value with type Any from a function declared with a non-Any return type.
+warn_unreachable = true # Prevent code inferred to be unreachable or redundant.
 
 # TODO: Fix these modules to comply, then remove this section.
 [[tool.mypy.overrides]]

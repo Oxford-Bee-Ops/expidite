@@ -141,8 +141,6 @@ class CloudJournal:
         - reqd_columns: A list of column names to save to the CSV file in the order specified.
             If None, the order of the columns in the csv is undefined.
         """
-        if isinstance(local_fname, str):
-            local_fname = Path(local_fname)
         assert local_fname.is_absolute()
         assert reqd_columns is not None
         assert len(reqd_columns) > 0

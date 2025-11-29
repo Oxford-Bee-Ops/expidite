@@ -46,10 +46,6 @@ if root_cfg.running_on_rpi:
             else:
                 raise ValueError("The 'since' argument must be a datetime object.")
 
-        # Handle str not list[str]
-        if grep_str and isinstance(grep_str, str):
-            grep_str = [grep_str]
-
         # Iterate through the logs
         for entry in reader:
             priority = int(entry.get("PRIORITY", 9))

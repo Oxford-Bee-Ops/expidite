@@ -115,9 +115,6 @@ class CloudConnector:
         """
         upload_container = self._validate_container(dst_container)
 
-        if not isinstance(src_files, list):
-            src_files = [src_files]
-
         for file in src_files:
             if file.exists():
                 blob_client = upload_container.get_blob_client(file.name)
@@ -138,10 +135,6 @@ class CloudConnector:
         self, src_container: str, src_file: str, dst_file: Path
     ) -> None:
         """Downloads the src_datafile to a local dst_file Path."""
-
-        if dst_file is None or not isinstance(dst_file, Path):
-            return
-
         download_container = self._validate_container(src_container)
 
         blob_client = download_container.get_blob_client(src_file)
@@ -450,12 +443,9 @@ class CloudConnector:
     def _validate_container(self, container: str) -> ContainerClient:
         """Validate a container string or ContainerClient and return a ContainerClient instance.
         Create the container if it does not already exist."""
-        if isinstance(container, str):
-            container_client = ContainerClient.from_connection_string(
-                conn_str=self._get_connection_string(), container_name=container
-            )
-        else:
-            container_client = container
+        container_client = ContainerClient.from_connection_string(
+            conn_str=self._get_connection_string(), container_name=container
+        )
 
         # Only do an external check if we haven't already validated this container
         if container_client.container_name not in self._validated_containers:
@@ -585,10 +575,6 @@ class LocalCloudConnector(CloudConnector):
         self, src_container: str, src_file: str, dst_file: Path
     ) -> None:
         """Downloads the src_file to a local dst_file Path."""
-
-        if dst_file is None or not isinstance(dst_file, Path):
-            return
-
         if not dst_file.parent.exists():
             dst_file.parent.mkdir(parents=True, exist_ok=True)
 
@@ -867,9 +853,6 @@ class AsyncCloudConnector(CloudConnector):
         """
         Async version of upload_to_container using a queue and thread pool for parallel uploads.
         """
-        if not isinstance(src_files, list):
-            src_files = [src_files]
-
         verified_files = []
         for file in src_files:
             if not file.exists():
@@ -902,8 +885,6 @@ class AsyncCloudConnector(CloudConnector):
         Async version of append_to_cloud.
         """
         logger.debug(f"AsyncCC.append_to_cloud() with delete_src={delete_src} for {src_file}")
-        if isinstance(src_file, str):
-            src_file = Path(src_file)
 
         if not src_file.exists():
             logger.error(f"{root_cfg.RAISE_WARN()}Upload failed because file {src_file} does not exist")

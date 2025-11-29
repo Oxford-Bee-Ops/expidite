@@ -89,10 +89,6 @@ class SHT31(Sensor):
             try:
                 temperature, humidity = self.read_data()
 
-                if temperature is None or humidity is None:
-                    logger.error(f"{root_cfg.RAISE_WARN()}Error in SHT31 sensor run: No data")
-                    continue
-
                 self.log(
                     stream_index=SHT31_STREAM_INDEX,
                     sensor_data={"temperature": ("%.1f" % temperature),

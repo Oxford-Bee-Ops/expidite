@@ -78,7 +78,6 @@ class AHT20:
         # Get the full status byte
         with SMBus(self.BusNum) as i2c_bus:
             return i2c_bus.read_i2c_block_data(AHT20_I2CADDR, 0x0, 1)[0]
-        return True
 
     def get_status_calibrated(self):
         # Get the calibrated bit
