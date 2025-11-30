@@ -115,6 +115,8 @@ def inventory() -> list[DeviceCfg]:
     """
     try:
         inventory = root_cfg.load_configuration()
+        if inventory is None:
+            raise RuntimeError("Failed to load inventory from configuration")
         return inventory
     except Exception as e:
         raise RuntimeError(f"Failed to load inventory from configuration: {e}")

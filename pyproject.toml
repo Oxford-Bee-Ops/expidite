@@ -111,7 +111,10 @@ warn_unreachable = true # Prevent code inferred to be unreachable or redundant.
 
 # TODO: Fix these modules to comply, then remove this section.
 [[tool.mypy.overrides]]
-module = ["test.*"]
+module = [
+    "test.conftest",
+    "test.rpi_core.core.review_mode_test",
+]
 disallow_untyped_defs = false
 [[tool.mypy.overrides]]
 module = ["expidite_rpi.sensors.drivers.*"]
