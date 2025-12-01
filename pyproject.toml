@@ -86,7 +86,7 @@ select = [
 ]
 # These rules are desirable to enforce - ignore them temporarily until we can fix the existing violations.
 ignore = [
-    "ANN001", "ANN002", "ANN003", "ANN401",
+    "ANN002", "ANN003", "ANN401",
     "PERF401",
     "RET504", "RET505", "RET507", "RET508",
     "SIM102", "SIM103", "SIM105", "SIM108", "SIM110", "SIM117", "SIM118", "SIM201",
@@ -95,9 +95,12 @@ ignore = [
 ]
 # These files had exceptions prior to rules being enforced.  Ignore temporarily until we can fix.
 [tool.ruff.lint.per-file-ignores]
-"src/expidite_rpi/sensors/drivers/*" = ["ANN201"]
-"src/expidite_rpi/utils/audio_transforms.py" = ["ANN201"]
-"test/conftest.py" = ["ANN201"]
+"src/expidite_rpi/sensors/drivers/*" = ["ANN001", "ANN201"]
+"src/expidite_rpi/sensors/processor_video_aruco.py" = ["ANN001"]
+"src/expidite_rpi/utils/audio_transforms.py" = ["ANN001", "ANN201"]
+"src/expidite_rpi/utils/rpi_emulator.py" = ["ANN001"]
+"test/conftest.py" = ["ANN001", "ANN201"]
+"test/rpi_core/core/review_mode_test.py" = ["ANN001"]
 
 fixable = ["ALL"]
 
