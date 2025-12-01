@@ -75,6 +75,7 @@ select = [
     "I",   # isort
     "RUF", # ruff-specific rules
     "ANN", # flake8-annotations
+    "ISC", # flake8-implicit-str-concat
     "PERF", # flake8-performance
     "PIE", # flake8-pie
     "RET", # flake8-return
