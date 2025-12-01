@@ -97,7 +97,6 @@ ignore = [
 [tool.ruff.lint.per-file-ignores]
 "src/expidite_rpi/sensors/drivers/*" = ["ANN001", "ANN201"]
 "src/expidite_rpi/sensors/processor_video_aruco.py" = ["ANN001"]
-"src/expidite_rpi/utils/audio_transforms.py" = ["ANN001", "ANN201"]
 "src/expidite_rpi/utils/rpi_emulator.py" = ["ANN001"]
 "test/conftest.py" = ["ANN001", "ANN201"]
 "test/rpi_core/core/review_mode_test.py" = ["ANN001"]
