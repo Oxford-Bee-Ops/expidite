@@ -7,7 +7,7 @@ from collections.abc import Generator
 from contextlib import contextmanager
 from dataclasses import fields, is_dataclass
 from pathlib import Path
-from typing import Any, Union
+from typing import Any
 
 from pydantic_settings import BaseSettings
 
@@ -94,7 +94,7 @@ def display_dataclass(obj: Any, indent: int = 0) -> str:
     return result
 
 
-def save_settings_to_env(settings: BaseSettings, file_path: Union[str, Path]) -> None:
+def save_settings_to_env(settings: BaseSettings, file_path: str | Path) -> None:
     """
     Save a Pydantic BaseSettings object to a .env file.
 
