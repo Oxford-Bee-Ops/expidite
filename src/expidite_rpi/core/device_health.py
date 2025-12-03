@@ -392,35 +392,42 @@ class DeviceHealth(Sensor):
             The SSID as a string, or "Not connected" if no SSID is found.
         """
         if root_cfg.running_on_rpi:
-            try:
-                output = utils.run_cmd(
-                    cmd="nmcli -g SSID,IN-USE,SIGNAL device wifi | grep '*'", ignore_errors=True
-                )
-                # The return output contains a string like "SSID:*:95".  We need to strip out the ":*"
-                # and return just the SSID and the signal strength
-                if output:
-                    parts = output.split(":")
-                    if len(parts) >= 3:
-                        ssid = parts[0]
-                        signal_strength = str(int(parts[2]))
-                        return (ssid, signal_strength)
-                    logger.warning(f"Unexpected nmcli output format: {output}")
-                    return ("Not connected", "0")
-                logger.warning("No nmcli output")
+            return DeviceHealth.get_wifi_ssid_and_signal_on_rpi()
+
+        if root_cfg.running_on_windows:
+            return DeviceHealth.get_wifi_ssid_and_signal_on_windows()
+
+        return ("Unsupported platform", "-1")
+
+    @staticmethod
+    def get_wifi_ssid_and_signal_on_rpi() -> tuple[str, str]:
+        try:
+            output = utils.run_cmd(
+                cmd="nmcli -g SSID,IN-USE,SIGNAL device wifi | grep '*'", ignore_errors=True
+            )
+            # The return output contains a string like "SSID:*:95".  We need to strip out the ":*"
+            # and return just the SSID and the signal strength
+            if output:
+                parts = output.split(":")
+                if len(parts) >= 3:
+                    ssid = parts[0]
+                    signal_strength = str(int(parts[2]))
+                    return (ssid, signal_strength)
+                logger.warning(f"Unexpected nmcli output format: {output}")
                 return ("Not connected", "0")
-            except Exception as e:
-                logger.warning(f"Failed to get SSID: {e}")
-                return ("Not connected", "-1")
-        elif root_cfg.running_on_windows:
-            try:
-                output = subprocess.check_output(
-                    ["netsh", "wlan", "show", "interfaces"], universal_newlines=True
-                )
-                for line in output.split("\n"):
-                    if "SSID" in line and "BSSID" not in line:
-                        return (line.split(":")[1].strip(), "-1")
-                return ("Not connected", "0")
-            except subprocess.CalledProcessError:
-                return ("Not connected", "-1")
-        else:
-            return ("Unsupported platform", "-1")
+            logger.warning("No nmcli output")
+            return ("Not connected", "0")
+        except Exception as e:
+            logger.warning(f"Failed to get SSID: {e}")
+            return ("Not connected", "-1")
+
+    @staticmethod
+    def get_wifi_ssid_and_signal_on_windows() -> tuple[str, str]:
+        try:
+            output = subprocess.check_output(["netsh", "wlan", "show", "interfaces"], universal_newlines=True)
+            for line in output.split("\n"):
+                if "SSID" in line and "BSSID" not in line:
+                    return (line.split(":")[1].strip(), "-1")
+            return ("Not connected", "0")
+        except subprocess.CalledProcessError:
+            return ("Not connected", "-1")
