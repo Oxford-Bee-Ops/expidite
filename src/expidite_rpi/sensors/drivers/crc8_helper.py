@@ -69,9 +69,7 @@ def AHT20_crc8_check(all_data_int):
     In python's int64.
     """
     mod_value = AHT20_crc8_calculate(all_data_int[:-1])
-    if mod_value == all_data_int[-1]:
-        return True
-    return False
+    return mod_value == all_data_int[-1]
 
 
 def CRC8_check(all_data_int, init_value=0x00):
@@ -80,9 +78,7 @@ def CRC8_check(all_data_int, init_value=0x00):
     for data in all_data_int[1:-1]:
         DATA_FOR_CHECK = (DATA_FOR_CHECK << 8) | data
     remainder = mod2_division_8bits(DATA_FOR_CHECK, divider, len(all_data_int) - 1, init_value)
-    if remainder == all_data_int[-1]:
-        return True
-    return False
+    return remainder == all_data_int[-1]
 
 
 if __name__ == "__main__":

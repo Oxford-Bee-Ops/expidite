@@ -465,9 +465,7 @@ def check_inventory_loaded() -> bool:
     This is used in testing to check if the inventory has been loaded.
     """
     # If we have not loaded the inventory yet, it will still be set to the DUMMY_DEVICE
-    if (my_device is None) or len(INVENTORY) > 0:
-        return False
-    return True
+    return my_device is not None and len(INVENTORY) == 0
 
 
 def update_my_device_id(new_device_id: str) -> None:

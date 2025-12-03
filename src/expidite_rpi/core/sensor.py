@@ -69,9 +69,7 @@ class Sensor(Thread, DPnode, ABC):
         while utils.failing_to_keep_up():
             self.stop_requested.wait(root_cfg.my_device.max_recording_timer)
 
-        if self.stop_requested.is_set():
-            return False
-        return True
+        return not self.stop_requested.is_set()
 
     def in_review_mode(self) -> bool:
         """Returns true if the system is in review mode.

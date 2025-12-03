@@ -367,7 +367,7 @@ class EdgeOrchestrator:
             return False
 
         time_threshold = api.utc_now() - timedelta(seconds=2 * root_cfg.WATCHDOG_FREQUENCY)
-        if root_cfg.EXPIDITE_IS_RUNNING_FLAG.stat().st_mtime < time_threshold.timestamp():
+        if root_cfg.EXPIDITE_IS_RUNNING_FLAG.stat().st_mtime < time_threshold.timestamp():  # noqa: SIM103
             return False
 
         # If we get here, the file exists, was touched within the last 2x _FREQUENCY seconds,
