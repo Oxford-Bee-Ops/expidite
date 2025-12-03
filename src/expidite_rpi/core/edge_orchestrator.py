@@ -42,11 +42,11 @@ class OrchestratorStatus(Enum):
     @staticmethod
     def running(status: "OrchestratorStatus") -> bool:
         """Check if the orchestrator is starting"""
-        return status == OrchestratorStatus.STARTING or status == OrchestratorStatus.RUNNING
+        return status in [OrchestratorStatus.STARTING, OrchestratorStatus.RUNNING]
 
     def stopped(status: "OrchestratorStatus") -> bool:
         """Check if the orchestrator is stopped"""
-        return status == OrchestratorStatus.STOPPED or status == OrchestratorStatus.STOPPING
+        return status in [OrchestratorStatus.STOPPED, OrchestratorStatus.STOPPING]
 
 
 class EdgeOrchestrator:
