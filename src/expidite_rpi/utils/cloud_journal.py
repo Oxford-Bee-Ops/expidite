@@ -1,7 +1,6 @@
 from pathlib import Path
 from queue import Queue
 from threading import Event, Lock, Timer
-from typing import Optional
 
 import pandas as pd
 
@@ -128,7 +127,7 @@ class CloudJournal:
     The CloudJournal is a thick API for the CloudJournalManager which does the work.
     """
 
-    def __init__(self, local_fname: Path, cloud_container: str, reqd_columns: Optional[list[str]]) -> None:
+    def __init__(self, local_fname: Path, cloud_container: str, reqd_columns: list[str] | None) -> None:
         """Creates a CloudJournal instance uniquely identified by the local fname Path and the
         remote CloudContainer which contains the master data.
 
@@ -199,7 +198,7 @@ class CloudJournal:
     #
     # Order the columns by providing a list of column names.
     # Doesn't need to include all columns names; any columns not in the list will be appended
-    def as_df(self, column_order: Optional[list[str]] = None) -> pd.DataFrame:
+    def as_df(self, column_order: list[str] | None = None) -> pd.DataFrame:
         df = pd.DataFrame(self._data)
         if column_order is not None:
             df = df[column_order + [col for col in df.columns if col not in column_order]]

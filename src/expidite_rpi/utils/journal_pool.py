@@ -3,7 +3,6 @@ from __future__ import annotations
 from abc import ABC, abstractmethod
 from datetime import datetime
 from threading import RLock
-from typing import Optional
 
 import pandas as pd
 
@@ -31,7 +30,7 @@ class JournalPool(ABC):
     appropriate CJ.
     """
 
-    _instance: Optional[JournalPool] = None
+    _instance: JournalPool | None = None
 
     @staticmethod
     def get(mode: Mode) -> JournalPool:
@@ -42,7 +41,7 @@ class JournalPool(ABC):
         return JournalPool._instance
 
     @abstractmethod
-    def add_rows(self, stream: Stream, data: list[dict], timestamp: Optional[datetime] = None) -> None:
+    def add_rows(self, stream: Stream, data: list[dict], timestamp: datetime | None = None) -> None:
         """Add data rows as a list of dictionaries
 
         The fields in each dictionary must match the DPtreeNodeCfg reqd_fields."""
@@ -50,9 +49,7 @@ class JournalPool(ABC):
         assert False, "Abstract method needs to be implemented"
 
     @abstractmethod
-    def add_rows_from_df(
-        self, stream: Stream, data: pd.DataFrame, timestamp: Optional[datetime] = None
-    ) -> None:
+    def add_rows_from_df(self, stream: Stream, data: pd.DataFrame, timestamp: datetime | None = None) -> None:
         """Add data in the form of a Pandas DataFrame to the Journal, which will auto-sync to the cloud
 
         All data MUST relate to the same DAY as timestamp."""
@@ -82,7 +79,7 @@ class CloudJournalPool(JournalPool):
         self._cj_pool: dict[str, CloudJournal] = {}
         self.jlock = RLock()
 
-    def add_rows(self, stream: Stream, data: list[dict], timestamp: Optional[datetime] = None) -> None:
+    def add_rows(self, stream: Stream, data: list[dict], timestamp: datetime | None = None) -> None:
         """Add data to the appropriate CloudJournal, which will auto-sync to the cloud
 
         All data MUST relate to the same DAY as timestamp."""
@@ -94,9 +91,7 @@ class CloudJournalPool(JournalPool):
             cj.add_rows(data)
         logger.debug(f"Unlock: added rows for stream {stream.type_id}")
 
-    def add_rows_from_df(
-        self, stream: Stream, data: pd.DataFrame, timestamp: Optional[datetime] = None
-    ) -> None:
+    def add_rows_from_df(self, stream: Stream, data: pd.DataFrame, timestamp: datetime | None = None) -> None:
         """Add data to the appropriate CloudJournal, which will auto-sync to the cloud
 
         All data MUST relate to the same DAY as timestamp."""
@@ -162,16 +157,14 @@ class LocalJournalPool(JournalPool):
         self._jpool: dict[str, Journal] = {}
         self.jlock = RLock()
 
-    def add_rows(self, stream: Stream, data: list[dict], timestamp: Optional[datetime] = None) -> None:
+    def add_rows(self, stream: Stream, data: list[dict], timestamp: datetime | None = None) -> None:
         """Add data to the appropriate Journal, which will auto-upload to the cloud"""
 
         with self.jlock:
             j = self._get_journal(stream)
             j.add_rows(data)
 
-    def add_rows_from_df(
-        self, stream: Stream, data: pd.DataFrame, timestamp: Optional[datetime] = None
-    ) -> None:
+    def add_rows_from_df(self, stream: Stream, data: pd.DataFrame, timestamp: datetime | None = None) -> None:
         """Add data to the appropriate Journal, which will auto-sync to the cloud"""
 
         with self.jlock:

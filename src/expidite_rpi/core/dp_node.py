@@ -4,7 +4,6 @@ from dataclasses import asdict, dataclass
 from datetime import datetime
 from pathlib import Path
 from random import random
-from typing import Optional
 from zoneinfo import ZoneInfo
 
 import pandas as pd
@@ -46,7 +45,7 @@ class DPnode:
         """
         self._dpnode_config: DPtreeNodeCfg = config
         self.sensor_index: int = sensor_index
-        self.cc: Optional[CloudConnector] = None
+        self.cc: CloudConnector | None = None
 
         self._dpnode_children: dict[int, DPnode] = {}  # Dictionary mapping output streams to child nodes.
 
@@ -58,7 +57,7 @@ class DPnode:
         self._stats_lock = threading.Lock()
 
         # Create the Journals that we will use to store this DPtree's output.
-        self.journal_pool: Optional[JournalPool] = None
+        self.journal_pool: JournalPool | None = None
 
     def is_leaf(self, stream_index: int) -> bool:
         """Check if this node is a leaf node (i.e., it has no children).
@@ -195,8 +194,8 @@ class DPnode:
         stream_index: int,
         temporary_file: Path,
         start_time: datetime,
-        end_time: Optional[datetime] = None,
-        override_sampling: Optional[api.OVERRIDE] = api.OVERRIDE.AUTO,
+        end_time: datetime | None = None,
+        override_sampling: api.OVERRIDE | None = api.OVERRIDE.AUTO,
     ) -> Path:
         """Called by a Sensor or DataProcessor to save a recording file to the appropriate datastore.
         This should only be used by Sensors or **primary** datastreams.
@@ -245,10 +244,10 @@ class DPnode:
         stream_index: int,
         temporary_file: Path,
         start_time: datetime,
-        end_time: Optional[datetime] = None,
-        offset_index: Optional[int] = None,
-        secondary_offset_index: Optional[int] = None,
-        override_sampling: Optional[api.OVERRIDE] = api.OVERRIDE.AUTO,
+        end_time: datetime | None = None,
+        offset_index: int | None = None,
+        secondary_offset_index: int | None = None,
+        override_sampling: api.OVERRIDE | None = api.OVERRIDE.AUTO,
     ) -> Path:
         """Called by DataProcessors to save sub-sample recording files to the appropriate datastore.
         Note: save_sub_recording() will *rename* (ie delete) the supplied temporary_file
@@ -388,10 +387,10 @@ class DPnode:
         dst_dir: Path,
         start_time: datetime,
         suffix: api.FORMAT,
-        end_time: Optional[datetime] = None,
-        offset_index: Optional[int] = None,
-        secondary_offset_index: Optional[int] = None,
-        override_sampling: Optional[api.OVERRIDE] = api.OVERRIDE.AUTO,
+        end_time: datetime | None = None,
+        offset_index: int | None = None,
+        secondary_offset_index: int | None = None,
+        override_sampling: api.OVERRIDE | None = api.OVERRIDE.AUTO,
     ) -> Path:
         """Private method that handles saving of recordings from Datastreams or DataProcessors.
 

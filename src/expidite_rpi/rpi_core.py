@@ -1,5 +1,4 @@
 from pathlib import Path
-from typing import Optional
 
 from expidite_rpi.core import config_validator
 from expidite_rpi.core import configuration as root_cfg
@@ -27,7 +26,7 @@ class RpiCore:
     # it in their own code.
     KEYS_FILE: Path = root_cfg.KEYS_FILE
 
-    def __init__(self, inventory: Optional[list[DeviceCfg]] = None) -> None:
+    def __init__(self, inventory: list[DeviceCfg] | None = None) -> None:
         if inventory:
             self.configure(inventory)
 
@@ -38,7 +37,7 @@ class RpiCore:
         return root_cfg.load_configuration()
 
     def test_configuration(
-        self, fleet_config: list[DeviceCfg], device_id: Optional[str] = None
+        self, fleet_config: list[DeviceCfg], device_id: str | None = None
     ) -> tuple[bool, list[str]]:
         """Validates that the configuration in fleet_config is valid.
 

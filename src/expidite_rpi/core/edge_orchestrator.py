@@ -8,7 +8,6 @@ from datetime import timedelta
 from enum import Enum
 from pathlib import Path
 from time import sleep
-from typing import Optional
 
 import yaml
 from yaml import Dumper
@@ -154,7 +153,7 @@ class EdgeOrchestrator:
 
     @staticmethod
     def _safe_call_create_method(
-        create_method: Optional[Callable], create_kwargs: Optional[dict] = None
+        create_method: Callable | None, create_kwargs: dict | None = None
     ) -> list[DPtree]:
         """Call the create method and return the DPtree object.
         Raises ValueError if the create method does not successfully create any DPtree objects."""
@@ -196,7 +195,7 @@ class EdgeOrchestrator:
         # Instead, we set the RESTART flag, and the main() method will check for them.
         root_cfg.RESTART_EXPIDITE_FLAG.touch()
 
-    def _get_sensor(self, sensor_type: api.SENSOR_TYPE, sensor_index: int) -> Optional[Sensor | None]:
+    def _get_sensor(self, sensor_type: api.SENSOR_TYPE, sensor_index: int) -> Sensor | None:
         """Private method to get a sensor by type & index"""
         logger.debug(f"_get_sensor {sensor_type} {sensor_index} from {self._sensorThreads}")
         for sensor in self._sensorThreads:
@@ -263,7 +262,7 @@ class EdgeOrchestrator:
         # So we avoid race conditions with subsequent calls to stop_all()
         sleep(1)
 
-    def stop_all(self, restart: Optional[bool] = False) -> None:
+    def stop_all(self, restart: bool | None = False) -> None:
         """Stop all Sensor, Datastream and observability threads
 
         Blocks until all threads have exited"""

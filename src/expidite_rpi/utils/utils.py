@@ -12,7 +12,6 @@ import zipfile
 from datetime import datetime
 from pathlib import Path
 from threading import Timer
-from typing import Optional
 from zoneinfo import ZoneInfo
 
 import pandas as pd
@@ -73,8 +72,8 @@ def failing_to_keep_up() -> bool:
 def is_sampling_period(
     sample_probability: float,
     period_len: int,
-    timestamp: Optional[dt.datetime] = None,
-    sampling_window: Optional[tuple[str, str]] = None,
+    timestamp: dt.datetime | None = None,
+    sampling_window: tuple[str, str] | None = None,
 ) -> bool:
     """Used to synchronise sampling between sensors, the function returns True/False based
     on the time, periodicity of sampling and probability requested.
@@ -141,7 +140,7 @@ def is_sampling_period(
 ############################################################
 # Run a system command and return the output, or throw an exception on bad return code
 ############################################################
-def run_cmd(cmd: str, ignore_errors: bool = False, grep_strs: Optional[list[str]] = None) -> str:
+def run_cmd(cmd: str, ignore_errors: bool = False, grep_strs: list[str] | None = None) -> str:
     """Run a system command and return the output, or throw an exception on bad return code.
 
     Parameters:

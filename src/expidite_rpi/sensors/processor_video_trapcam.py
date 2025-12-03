@@ -1,7 +1,6 @@
 from dataclasses import dataclass
 from datetime import timedelta
 from pathlib import Path
-from typing import Optional
 
 import cv2
 import pandas as pd
@@ -94,7 +93,7 @@ class TrapcamDp(DataProcessor):
 
         samples_saved = 0
         sum_sample_duration = 0
-        output_stream: Optional[cv2.VideoWriter | None] = None
+        output_stream: cv2.VideoWriter | None = None
         current_frame = -1
         sample_first_frame = 0
         sample_last_movement_frame = 0

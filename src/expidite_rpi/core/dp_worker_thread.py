@@ -3,7 +3,6 @@ from __future__ import annotations
 from datetime import datetime
 from pathlib import Path
 from threading import Event, Thread
-from typing import Optional
 
 import pandas as pd
 
@@ -46,7 +45,7 @@ class DPworker(Thread):
 
         # start_time is a datetime object that describes the time the DPworker was started.
         # This should be set by calling the start() method, and not set during initialization.
-        self.dpe_start_time: Optional[datetime] = None
+        self.dpe_start_time: datetime | None = None
 
     #########################################################################################################
     #
@@ -64,7 +63,7 @@ class DPworker(Thread):
         for node in self.dp_tree._nodes.values():
             node.log_sample_data(sample_period_start_time)
 
-    def get_sensor_cfg(self) -> Optional[SensorCfg]:
+    def get_sensor_cfg(self) -> SensorCfg | None:
         """Return the SensorCfg object for this Datastream"""
         return self.dp_tree.sensor.config
 
@@ -177,7 +176,7 @@ class DPworker(Thread):
             if sleep_time > 0:
                 self._stop_requested.wait(sleep_time)
 
-    def _get_stream_files(self, stream: Stream) -> Optional[list[Path]]:
+    def _get_stream_files(self, stream: Stream) -> list[Path] | None:
         """Find any files that match the requested Datastream (type, device_id & sensor_index)"""
         if root_cfg.get_mode() == Mode.EDGE:
             src = root_cfg.EDGE_PROCESSING_DIR
@@ -194,7 +193,7 @@ class DPworker(Thread):
         logger.debug(f"_get_ds_files returning {len(files)} files for {data_id}")
         return files
 
-    def _get_csv_as_df(self, stream: Stream) -> Optional[pd.DataFrame]:
+    def _get_csv_as_df(self, stream: Stream) -> pd.DataFrame | None:
         """Get the first CSV file that matches this Datastream's DatastreamType as a DataFrame"""
         if root_cfg.get_mode() == Mode.EDGE:
             src = root_cfg.EDGE_PROCESSING_DIR

@@ -5,7 +5,6 @@
 ########################################################################################
 import os
 from pathlib import Path
-from typing import Optional
 
 import pandas as pd
 
@@ -17,9 +16,9 @@ class Journal:
 
     def __init__(
         self,
-        fname: Optional[Path | str] = None,
+        fname: Path | str | None = None,
         cached: bool = True,
-        reqd_columns: Optional[list[str]] = None,
+        reqd_columns: list[str] | None = None,
     ) -> None:
         """Constructor for the Journal class.
 
@@ -87,7 +86,7 @@ class Journal:
             self._data = pd.concat([self._data, *dfs])
 
     # Save the journal to a CSV file
-    def save(self, fname: Optional[Path] = None) -> Path:
+    def save(self, fname: Path | None = None) -> Path:
         if self._data.empty:
             return self.fname
 
@@ -154,7 +153,7 @@ class Journal:
     #
     # Order the columns by providing a list of column names.
     # Doesn't need to include all columns names; any columns not in the list will be appended
-    def as_df(self, column_order: Optional[list[str]] = None) -> pd.DataFrame:
+    def as_df(self, column_order: list[str] | None = None) -> pd.DataFrame:
         if column_order is None:
             return self._data
         return self._data[column_order]

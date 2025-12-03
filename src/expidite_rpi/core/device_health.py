@@ -2,7 +2,7 @@ import os
 import socket
 import subprocess
 from datetime import datetime
-from typing import Any, Optional
+from typing import Any
 
 import psutil
 
@@ -18,9 +18,9 @@ if root_cfg.running_on_rpi:
     from systemd import journal  # type: ignore
 
     def get_logs(
-        since: Optional[datetime] = None,
-        min_priority: Optional[int] = None,
-        grep_str: Optional[list[str]] = None,
+        since: datetime | None = None,
+        min_priority: int | None = None,
+        grep_str: list[str] | None = None,
         max_logs: int = 1000,
     ) -> list[dict[str, Any]]:
         """
@@ -146,7 +146,7 @@ class DeviceHealth(Sensor):
       them, and sends them up to cloud storage.
     """
 
-    def __init__(self, device_manager: Optional[DeviceManager] = None) -> None:
+    def __init__(self, device_manager: DeviceManager | None = None) -> None:
         super().__init__(DEVICE_HEALTH_CFG)
         ###############################
         # Telemetry tracking

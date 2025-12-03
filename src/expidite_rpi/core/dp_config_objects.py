@@ -1,5 +1,4 @@
 from dataclasses import dataclass
-from typing import Optional
 
 from expidite_rpi.core import api, file_naming
 from expidite_rpi.core import configuration as root_cfg
@@ -22,20 +21,20 @@ class Stream:
     # The type of data being produced by this output stream.
     format: api.FORMAT
     # The human-readable name of the output stream.
-    fields: Optional[list[str]] = None
+    fields: list[str] | None = None
     # The cloud storage container to which the data is archived.
     # This is required for all types uploading files, other than output.format="DF".
     # "DF" data is uploaded to the DeviceCfg.cc_for_journals container.
-    cloud_container: Optional[str] = None
+    cloud_container: str | None = None
 
     # Some sources support saving of recordings to the archive.
     # This string is interpreted by the Sensor or DataProcessor to determine the frequency of
     # raw data sampling. The format of this string is specific to the Sensor or DataProcessor.
     # The default implementation interprets this string as a float sampling probability (0.0-1.0)
-    sample_probability: Optional[str | float] = None
+    sample_probability: str | float | None = None
 
     # What format of file_naming to use for files produced by this stream.
-    file_naming: Optional[api.FILE_NAMING] = api.FILE_NAMING.DEFAULT
+    file_naming: api.FILE_NAMING | None = api.FILE_NAMING.DEFAULT
 
     # Storage tier for the data in the cloud storage system.
     # If you're using Azure for storage, see Azure documentation for details:

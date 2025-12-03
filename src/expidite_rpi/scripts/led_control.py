@@ -27,7 +27,6 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from threading import Event, Thread
 from types import FrameType
-from typing import Optional
 
 LED_STATUS_FILE = Path("/expidite") / "tmp" / "tmp_flags" / "LED_STATUS"
 LOCK_FILE: Path = Path("/var/lock/led_control.lock")
@@ -37,7 +36,7 @@ LOCK_FILE: Path = Path("/var/lock/led_control.lock")
 class Pin:
     gpio_pin: str
     blink_stop: Event = field(default_factory=Event)
-    blink_thread: Optional[Thread] = None
+    blink_thread: Thread | None = None
 
 
 GREEN_PIN = Pin(gpio_pin=os.environ.get("LED_GPIO_PIN", "16"))
@@ -111,7 +110,7 @@ def reset_status() -> None:
     set_low(RED_PIN)
 
 
-def parse_status(text: str) -> tuple[str, str, Optional[float]]:
+def parse_status(text: str) -> tuple[str, str, float | None]:
     """The text is always a colour (green|red) followed by a status (on|off|blink:N), with an optional
     blink rate.
     For example:

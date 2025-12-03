@@ -3,7 +3,6 @@
 # - LED indicator status
 import os
 from time import sleep
-from typing import Optional
 
 from expidite_rpi.core import api
 from expidite_rpi.core import configuration as root_cfg
@@ -36,9 +35,9 @@ class DeviceManager:
         self.ping_success_count_all = 0
         self.ping_failure_count_run = 0
         self.ping_success_count_run = 0
-        self.led_timer: Optional[utils.RepeatTimer] = None
-        self.wifi_timer: Optional[utils.RepeatTimer] = None
-        self.diagnostics_upload_timer: Optional[utils.RepeatTimer] = None
+        self.led_timer: utils.RepeatTimer | None = None
+        self.wifi_timer: utils.RepeatTimer | None = None
+        self.diagnostics_upload_timer: utils.RepeatTimer | None = None
 
     def start(self) -> None:
         """Start the DeviceManager threads."""

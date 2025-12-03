@@ -1,7 +1,7 @@
 from datetime import datetime
 from pathlib import Path
 from random import random
-from typing import NamedTuple, Optional
+from typing import NamedTuple
 from zoneinfo import ZoneInfo
 
 from expidite_rpi.core import api
@@ -161,9 +161,9 @@ def get_record_filename(
     data_id: str,
     suffix: api.FORMAT,
     start_time: datetime,
-    end_time: Optional[datetime] = None,
-    frame_number: Optional[int] = None,
-    arbitrary_index: Optional[int] = None,
+    end_time: datetime | None = None,
+    frame_number: int | None = None,
+    arbitrary_index: int | None = None,
 ) -> Path:
     """Generate the filename for the recording file.
 

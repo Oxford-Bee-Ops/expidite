@@ -143,9 +143,9 @@ class CloudConnector:
         self,
         src_container: str,
         dst_dir: Path,
-        folder_prefix_len: Optional[int] = None,
-        files: Optional[list[str]] = None,
-        overwrite: Optional[bool] = True,
+        folder_prefix_len: int | None = None,
+        files: list[str] | None = None,
+        overwrite: bool | None = True,
     ) -> None:
         """Download all the files in the src_datastore to the dst_dir
 
@@ -232,7 +232,7 @@ class CloudConnector:
             )
 
     def append_to_cloud(
-        self, dst_container: str, src_file: Path, delete_src: bool, col_order: Optional[list[str]] = None
+        self, dst_container: str, src_file: Path, delete_src: bool, col_order: list[str] | None = None
     ) -> bool:
         """Append a block of CSV data to an existing CSV file in the cloud
 
@@ -289,7 +289,7 @@ class CloudConnector:
         dst_container: str,
         dst_file: str,
         lines_to_append: list[str],
-        col_order: Optional[list[str]] = None,
+        col_order: list[str] | None = None,
     ) -> bool:
         try:
             target_container = self._validate_container(dst_container)
@@ -371,9 +371,9 @@ class CloudConnector:
     def list_cloud_files(
         self,
         container: str,
-        prefix: Optional[str] = None,
-        suffix: Optional[str] = None,
-        more_recent_than: Optional[datetime] = None,
+        prefix: str | None = None,
+        suffix: str | None = None,
+        more_recent_than: datetime | None = None,
     ) -> list[str]:
         """Similar to the Path.glob() method but against a cloud datastore.
 
@@ -588,9 +588,9 @@ class LocalCloudConnector(CloudConnector):
         self,
         src_container: str,
         dst_dir: Path,
-        folder_prefix_len: Optional[int] = None,
-        files: Optional[list[str]] = None,
-        overwrite: Optional[bool] = True,
+        folder_prefix_len: int | None = None,
+        files: list[str] | None = None,
+        overwrite: bool | None = True,
     ) -> None:
         """Download all the files in the src_datastore to the dst_dir
 
@@ -653,7 +653,7 @@ class LocalCloudConnector(CloudConnector):
             )
 
     def append_to_cloud(
-        self, dst_container: str, src_file: Path, delete_src: bool, col_order: Optional[list[str]] = None
+        self, dst_container: str, src_file: Path, delete_src: bool, col_order: list[str] | None = None
     ) -> bool:
         """Append a block of CSV data to an existing CSV file in the cloud
 
@@ -736,9 +736,9 @@ class LocalCloudConnector(CloudConnector):
     def list_cloud_files(
         self,
         container: str,
-        prefix: Optional[str] = None,
-        suffix: Optional[str] = None,
-        more_recent_than: Optional[datetime] = None,
+        prefix: str | None = None,
+        suffix: str | None = None,
+        more_recent_than: datetime | None = None,
     ) -> list[str]:
         """Similar to the Path.glob() method but against a cloud datastore.
 
@@ -808,7 +808,7 @@ class AsyncAppend:
     delete_src: bool
     data: list[str]
     iteration: int = 0
-    col_order: Optional[list[str]] = None
+    col_order: list[str] | None = None
 
 
 class AsyncCloudConnector(CloudConnector):
@@ -874,7 +874,7 @@ class AsyncCloudConnector(CloudConnector):
             self._upload_queue.put(AsyncUpload(dst_container, src_files, delete_src, storage_tier))
 
     def append_to_cloud(
-        self, dst_container: str, src_file: Path, delete_src: bool, col_order: Optional[list[str]] = None
+        self, dst_container: str, src_file: Path, delete_src: bool, col_order: list[str] | None = None
     ) -> bool:
         """
         Async version of append_to_cloud.

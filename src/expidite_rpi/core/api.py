@@ -5,7 +5,6 @@
 ####################################################################################################
 from datetime import datetime
 from enum import Enum, StrEnum
-from typing import Optional
 from zoneinfo import ZoneInfo
 
 from azure.storage.blob import StandardBlobTier
@@ -174,7 +173,7 @@ def utc_now() -> datetime:
     return datetime.now(ZoneInfo("UTC"))
 
 
-def utc_to_iso_str(t: Optional[datetime | float] = None) -> str:
+def utc_to_iso_str(t: datetime | float | None = None) -> str:
     """Return the current time in UTC as a formatted string."""
     if t is None:
         t = utc_now()
@@ -183,7 +182,7 @@ def utc_to_iso_str(t: Optional[datetime | float] = None) -> str:
     return t.isoformat(timespec="milliseconds")
 
 
-def utc_to_fname_str(t: Optional[datetime | float] = None) -> str:
+def utc_to_fname_str(t: datetime | float | None = None) -> str:
     """Return the current time in UTC as a string formatted for use in filenames."""
     if t is None:
         t = utc_now()
