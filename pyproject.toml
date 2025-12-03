@@ -84,21 +84,20 @@ select = [
     "PL", # pylint
     "UP", # pyupgrade
 ]
+# We have deliberately chosen to ignore these rules.
 ignore = [
-    # These rules are desirable to enforce - ignore them temporarily until we can fix the existing violations.
-    "ANN002", # We should fix these.
-    "ANN003", # We should fix these.
-    "ANN401", # We should fix these.
-    "PERF401", # TODO
-    "PLW2901", # We should fix these.
-    # We have chosen to ignore these rules.
-    "PLC0415",  # We want this in some places.
+    "ANN002", # Nice to fix.
+    "ANN003", # Nice to fix.
+    "ANN401", # Nice to fix.
+    "PERF401", # We should fix these (more readable and more performant).
+    "PLC0415", # We want this in some places.
     "PLR0912", # Too many branches in a function - nice to fix but a lot of effort.
     "PLR0913", # Too many arguments in a function - nice to fix but a lot of effort.
     "PLR0915", # Too many statements in a function - nice to fix but a lot of effort.
-    "PLR2004",  # Little benefit in defining constants in many cases.
-    "PLW0603",  # We want to use `global` in a few places.
-    "SIM102",  # Doesn't always improve readability.
+    "PLR2004", # Little benefit in defining constants in many cases.
+    "PLW0603", # We want to use `global` in a few places.
+    "PLW2901", # We should fix these.
+    "SIM102", # Doesn't always improve readability.
     "SIM108", # Ternary operator - could fix but not always more readable.
 ]
 # These files had exceptions prior to rules being enforced.  Ignore temporarily until we can fix.
