@@ -131,8 +131,9 @@ ignore_missing_imports = true # Suppress error messages about imports that canno
 strict_equality = true # Prohibit equality checks, identity checks, and container checks between non-overlapping types.
 warn_return_any = true # Prevent returning a value with type Any from a function declared with a non-Any return type.
 warn_unreachable = true # Prevent code inferred to be unreachable or redundant.
+disallow_any_generics = true # Prevent use of generic types that do not specify explicit type parameters.
 
-# TODO: Fix these modules to comply, then remove this section.
+# These files/modules had exceptions prior to rules being enforced. Ignore temporarily until we can fix them.
 [[tool.mypy.overrides]]
 module = [
     "test.conftest",
@@ -145,3 +146,24 @@ disallow_untyped_defs = false
 disallow_untyped_calls = false
 strict_equality = false
 warn_return_any = false
+[[tool.mypy.overrides]]
+module = [
+    "expidite_rpi.sensors.drivers.adafruit_adxl34x",
+    "expidite_rpi.core.device_config_objects",
+    "expidite_rpi.utils.journal",
+    "expidite_rpi.core.file_naming",
+    "expidite_rpi.core.cloud_connector",
+    "expidite_rpi.utils.rpi_emulator",
+    "expidite_rpi.utils.cloud_journal",
+    "expidite_rpi.utils.utils",
+    "expidite_rpi.utils.journal_pool",
+    "expidite_rpi.core.dp_node",
+    "expidite_rpi.sensors.processor_video_aruco",
+    "expidite_rpi.example.my_processor_example",
+    "expidite_rpi.core.dp_tree",
+    "expidite_rpi.core.device_health",
+    "expidite_rpi.core.config_validator",
+    "expidite_rpi.core.edge_orchestrator",
+    "expidite_rpi.bcli",
+]
+disallow_any_generics = false
