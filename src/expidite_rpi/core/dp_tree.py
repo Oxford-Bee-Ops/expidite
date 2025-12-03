@@ -96,10 +96,9 @@ class DPtree:
                     "The first connect() call must provide a Sensor object for the 'from' field."
                 )
             self.sensor = src_node
-        else:
-            # The source should already exist in the tree.
-            if src_node not in self._nodes.values():
-                raise ValueError(f"Source node {src_node} is not yet connected; connect it first")
+        # The source should already exist in the tree.
+        elif src_node not in self._nodes.values():
+            raise ValueError(f"Source node {src_node} is not yet connected; connect it first")
 
         data_id = stream.get_data_id(self.sensor.sensor_index)
         if data_id in self._nodes:

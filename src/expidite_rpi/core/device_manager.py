@@ -198,11 +198,10 @@ class DeviceManager:
             if self.currentState != self.S_WIFI_UP:
                 self.currentState = self.S_WIFI_UP
                 self.set_last_state_change_time()
-        else:
-            # Wifi failed
-            if self.currentState != self.S_WIFI_FAILED:
-                self.currentState = self.S_WIFI_FAILED
-                self.set_last_state_change_time()
+        # Wifi failed
+        elif self.currentState != self.S_WIFI_FAILED:
+            self.currentState = self.S_WIFI_FAILED
+            self.set_last_state_change_time()
 
     def set_ap_status(self, device_status: str) -> None:
         self.currentAPState = device_status

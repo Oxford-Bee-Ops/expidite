@@ -153,42 +153,41 @@ class TrapcamDp(DataProcessor):
                     # Already recording; update the last movement frame ID
                     sample_last_movement_frame = current_frame
                     output_stream.write(frame)
-            else:
-                # No movement detected...
-                if output_stream:
-                    # ...but we are currently saving video
-                    if (current_frame - sample_last_movement_frame) < frames_to_record:
-                        # ...and we're still within the recording window
-                        output_stream.write(frame)
-                    else:
-                        # No movement for a while, stop saving video
-                        output_stream.release()
-                        output_stream = None
-                        sample_start_time = start_time + timedelta(seconds=(sample_first_frame / fps))
-                        sample_end_time = start_time + timedelta(seconds=(current_frame / fps))
+            # No movement detected...
+            elif output_stream:
+                # ...but we are currently saving video
+                if (current_frame - sample_last_movement_frame) < frames_to_record:
+                    # ...and we're still within the recording window
+                    output_stream.write(frame)
+                else:
+                    # No movement for a while, stop saving video
+                    output_stream.release()
+                    output_stream = None
+                    sample_start_time = start_time + timedelta(seconds=(sample_first_frame / fps))
+                    sample_end_time = start_time + timedelta(seconds=(current_frame / fps))
 
-                        # Check if we have enough frames to save
-                        sample_duration = (sample_end_time - sample_start_time).total_seconds()
-                        if (sample_last_movement_frame - sample_first_frame) > discard_threshold:
-                            # Save the video segment to the derived datastream
-                            logger.info(
-                                f"Saving video of {sample_duration}s starting {sample_start_time} to {self}"
-                            )
-                            self.save_recording(
-                                stream_index=TRAPCAM_STREAM_INDEX,
-                                temporary_file=temp_filename,
-                                start_time=sample_start_time,
-                                end_time=sample_end_time,
-                            )
-                            samples_saved += 1
-                            sum_sample_duration += sample_duration
-                        else:
-                            # Discard the video segment
-                            logger.info(
-                                f"Discarding {(sample_last_movement_frame - sample_first_frame)}"
-                                f" frames of movement as noise"
-                            )
-                            temp_filename.unlink(missing_ok=True)
+                    # Check if we have enough frames to save
+                    sample_duration = (sample_end_time - sample_start_time).total_seconds()
+                    if (sample_last_movement_frame - sample_first_frame) > discard_threshold:
+                        # Save the video segment to the derived datastream
+                        logger.info(
+                            f"Saving video of {sample_duration}s starting {sample_start_time} to {self}"
+                        )
+                        self.save_recording(
+                            stream_index=TRAPCAM_STREAM_INDEX,
+                            temporary_file=temp_filename,
+                            start_time=sample_start_time,
+                            end_time=sample_end_time,
+                        )
+                        samples_saved += 1
+                        sum_sample_duration += sample_duration
+                    else:
+                        # Discard the video segment
+                        logger.info(
+                            f"Discarding {(sample_last_movement_frame - sample_first_frame)}"
+                            f" frames of movement as noise"
+                        )
+                        temp_filename.unlink(missing_ok=True)
 
         logger.info(f"Saved {samples_saved} samples ({sum_sample_duration}s) from video: {video_path}")
         cap.release()

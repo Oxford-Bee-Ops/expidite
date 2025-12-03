@@ -282,11 +282,10 @@ class DPnode:
                 save_dir = root_cfg.EDGE_UPLOAD_DIR
             else:
                 save_dir = root_cfg.EDGE_PROCESSING_DIR
+        elif self.is_leaf(stream_index):
+            save_dir = root_cfg.ETL_PROCESSING_DIR
         else:
-            if self.is_leaf(stream_index):
-                save_dir = root_cfg.ETL_PROCESSING_DIR
-            else:
-                save_dir = root_cfg.ETL_ARCHIVE_DIR
+            save_dir = root_cfg.ETL_ARCHIVE_DIR
 
         # Logged in _save_recording()
         return self._save_recording(
