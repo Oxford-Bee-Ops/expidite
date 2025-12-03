@@ -18,6 +18,7 @@ The status is set as follows:
     - red:blink (2.0 slow) indicates Wifi failed
 """
 
+import contextlib
 import os
 import signal
 import subprocess
@@ -209,10 +210,9 @@ def main() -> None:
         stop_blink(RED_PIN)
         # leave red LED on on exit
         set_high(RED_PIN)
-        try:
+
+        with contextlib.suppress(Exception):
             LOCK_FILE.unlink()
-        except Exception:
-            pass
 
 
 if __name__ == "__main__":

@@ -91,8 +91,6 @@ ignore = [
     "ANN401", # We should fix these.
     "PERF401", # TODO
     "PLW2901", # We should fix these.
-    "SIM105", # TODO
-    "SIM108", # TODO
     # We have chosen to ignore these rules.
     "PLC0415",  # We want this in some places.
     "PLR0912", # Too many branches in a function - nice to fix but a lot of effort.
@@ -101,6 +99,7 @@ ignore = [
     "PLR2004",  # Little benefit in defining constants in many cases.
     "PLW0603",  # We want to use `global` in a few places.
     "SIM102",  # Doesn't always improve readability.
+    "SIM108", # Ternary operator - could fix but not always more readable.
 ]
 # These files had exceptions prior to rules being enforced.  Ignore temporarily until we can fix.
 [tool.ruff.lint.per-file-ignores]
