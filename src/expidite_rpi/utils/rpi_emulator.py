@@ -139,10 +139,7 @@ class RpiEmulator:
     def recordings_still_to_process() -> bool:
         """Check if there are recordings remaining to process."""
         # Look for any files remaining in the processing directory
-        for file in root_cfg.EDGE_PROCESSING_DIR.glob("*"):
-            if file.is_file():
-                return True
-        return False
+        return any(file.is_file() for file in root_cfg.EDGE_PROCESSING_DIR.glob("*"))
 
     @staticmethod
     def fix_recording_device_id(fname: Path) -> Path:
