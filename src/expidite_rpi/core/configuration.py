@@ -381,8 +381,7 @@ def _load_system_cfg() -> Optional[SystemCfg | None]:
     try:
         # Use the Keys class to load the configuration
         logger.info(f"Loading {SYSTEM_CFG_FILE}...")
-        cfg = SystemCfg(_env_file=SYSTEM_CFG_FILE, _env_file_encoding="utf-8")  # type: ignore
-        return cfg
+        return SystemCfg(_env_file=SYSTEM_CFG_FILE, _env_file_encoding="utf-8")  # type: ignore
     except Exception as e:
         print("#################################################################")
         print(f"Failed to load {SYSTEM_CFG_FILE}: {e}")

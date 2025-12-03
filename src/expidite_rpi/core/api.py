@@ -200,8 +200,7 @@ def utc_from_str(t: str) -> datetime:
 
     naive_dt = datetime.strptime(t, STRFTIME)
     # Convert to UTC timezone
-    utc_dt = naive_dt.replace(tzinfo=ZoneInfo("UTC"))
-    return utc_dt
+    return naive_dt.replace(tzinfo=ZoneInfo("UTC"))
 
 
 def str_to_iso(t: str) -> str:

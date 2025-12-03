@@ -228,7 +228,8 @@ class DPnode:
         else:
             assert False, "save_recording() should not be called in ETL mode"
 
-        new_fname = self._save_recording(
+        # Logged in _save_recording()
+        return self._save_recording(
             stream_index=stream_index,
             src_file=temporary_file,
             dst_dir=save_dir,
@@ -237,9 +238,6 @@ class DPnode:
             end_time=end_time,
             override_sampling=override_sampling,
         )
-        # Logged in _save_recording()
-
-        return new_fname
 
     def save_sub_recording(
         self,
@@ -289,7 +287,8 @@ class DPnode:
             else:
                 save_dir = root_cfg.ETL_ARCHIVE_DIR
 
-        new_fname = self._save_recording(
+        # Logged in _save_recording()
+        return self._save_recording(
             stream_index=stream_index,
             src_file=temporary_file,
             dst_dir=save_dir,
@@ -300,9 +299,6 @@ class DPnode:
             secondary_offset_index=secondary_offset_index,
             override_sampling=override_sampling,
         )
-        # Logged in _save_recording()
-
-        return new_fname
 
     def log_sample_data(self, sample_period_start_time: datetime) -> None:
         """Provide the count & duration of data samples recorded (environmental, media, etc)

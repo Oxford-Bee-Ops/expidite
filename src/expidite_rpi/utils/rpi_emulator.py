@@ -161,9 +161,7 @@ class RpiEmulator:
 
         # Replace the device ID with the current device ID
         parts[2] = current_device_id
-        new_fname = fname.parent / "_".join(parts)
-
-        return new_fname
+        return fname.parent / "_".join(parts)
 
     def assert_records(
         self, container: str, expected_files: dict[str, int], expected_rows: Optional[dict[str, int]] = None
@@ -240,9 +238,7 @@ class RpiEmulator:
         file = files[0]
 
         # Read the file into a pandas DataFrame
-        df = pd.read_csv(file, skip_blank_lines=True)
-
-        return df
+        return pd.read_csv(file, skip_blank_lines=True)
 
     @staticmethod
     def record_system_test_run(test_name: str, test_input: dict) -> None:

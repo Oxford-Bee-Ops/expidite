@@ -57,13 +57,9 @@ def AHT20_crc8_calculate(all_data_int):
     # Preprocess all the data and CRCCode from AHT20
     data_from_AHT20 = 0x00
     # Preprocessing the first data (status)
-    # print(bin(data_from_AHT20))
     for i_data in range(len(all_data_int)):
         data_from_AHT20 = (data_from_AHT20 << 8) | all_data_int[i_data]
-    # print(bin(data_from_AHT20))
-    mod_value = mod2_division_8bits(data_from_AHT20, CRC_DEVIDE_NUMBER, len(all_data_int), init_value)
-    # print(mod_value)
-    return mod_value
+    return mod2_division_8bits(data_from_AHT20, CRC_DEVIDE_NUMBER, len(all_data_int), init_value)
 
 
 def AHT20_crc8_check(all_data_int):

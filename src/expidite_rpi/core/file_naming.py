@@ -204,9 +204,7 @@ def get_record_filename(
     assert isinstance(dst_dir, Path)
     if not dst_dir.exists():
         dst_dir.mkdir(parents=True, exist_ok=True)
-    full_fname = dst_dir / fname
-
-    return full_fname
+    return dst_dir / fname
 
 
 def increment_filename(fname: Path) -> Path:
@@ -288,8 +286,7 @@ def parse_journal_filename(fname: Path | str) -> dict:
 def get_temporary_filename(format: api.FORMAT) -> Path:
     """Generate a temporary filename in the TMP_DIR with the specified suffix."""
     suffix = format.value
-    tmp_fname = root_cfg.TMP_DIR.joinpath(f"tmp_{api.utc_to_fname_str()}_{random():.4g}.{suffix}")
-    return tmp_fname
+    return root_cfg.TMP_DIR.joinpath(f"tmp_{api.utc_to_fname_str()}_{random():.4g}.{suffix}")
 
 
 def get_temporary_dir() -> Path:

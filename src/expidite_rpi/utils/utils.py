@@ -357,9 +357,7 @@ def list_files_older_than(search_string: Path, age_in_seconds: float) -> list[Pa
             old_files.append(file)
 
     # Remove directories from the list
-    old_files = [x for x in old_files if not x.is_dir()]
-
-    return old_files
+    return [x for x in old_files if not x.is_dir()]
 
 
 def list_all_large_dirs(path: str, recursion: int = 0) -> int:

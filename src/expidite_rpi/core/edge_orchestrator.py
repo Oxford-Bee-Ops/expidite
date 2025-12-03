@@ -129,14 +129,13 @@ class EdgeOrchestrator:
             else:
                 dps_alive += 1
 
-        status = {
+        return {
             "RpiCore running": str(self.watchdog_file_alive()),
             "Sensor threads": str(self._sensorThreads),
             "Sensor threads alive": str(sensors_alive),
             "DPtrees": str(self._dpworkers),
             "DPtrees alive": str(dps_alive),
         }
-        return status
 
     def load_config(self) -> None:
         """Load the sensor and data processor config into the EdgeOrchestrator by calling

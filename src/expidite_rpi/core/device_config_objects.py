@@ -32,8 +32,7 @@ class Configuration:
             self.update_field(field_name, value)
 
     def display(self) -> str:
-        display_str = utils_clean.display_dataclass(self)
-        return display_str
+        return utils_clean.display_dataclass(self)
 
     def get_field(self, field_name: str) -> Any:
         return getattr(self, field_name)
