@@ -122,6 +122,7 @@ convention = "google"
 [tool.mypy]
 python_version = "3.11"
 files = "**/*.py"
+pretty = true
 
 # Override defaults to be more strict.
 check_untyped_defs = true # Type-check the interior of functions without type annotations.
