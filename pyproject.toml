@@ -90,7 +90,7 @@ ignore = [
     "PERF401",
     "SIM102", "SIM105", "SIM108", "SIM110", "SIM117", "SIM118", "SIM201",
     "PLC0415", "PLR0911", "PLR0912", "PLR0913", "PLR0915",
-    "PLW0602", "PLW0603", "PLW1510", "PLW2901",
+    "PLW0603", "PLW1510", "PLW2901",
     "UP007", "UP008", "UP031", "UP045",
     # We have chosen to ignore these rules.
     "PLR2004",  # Little benefit in defining constants in many cases.

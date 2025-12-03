@@ -442,8 +442,6 @@ def set_inventory(inventory: list[DeviceCfg]) -> dict[str, DeviceCfg]:
     """Reload the inventory from the config file.
     It is assumed that the config has already been validated by RpiCore.configure().
     """
-    global INVENTORY
-    global system_cfg
     global my_device
 
     for device in inventory:
