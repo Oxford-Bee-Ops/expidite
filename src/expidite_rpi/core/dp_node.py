@@ -314,10 +314,10 @@ class DPnode:
             # Grab the data and release the lock.
             # Don't call selftracker.log inside the lock, as it may take a while to complete.
             score_stats: list[tuple[str, DPnodeStat]] = list(self._dpnode_score_stats.items())
-            for type_id in self._dpnode_score_stats.keys():
+            for type_id in self._dpnode_score_stats:
                 self._dpnode_score_stats[type_id] = DPnodeStat()
             scorp_stats: list[tuple[str, DPnodeStat]] = list(self._dpnode_score_stats.items())
-            for type_id in self._dpnode_scorp_stats.keys():
+            for type_id in self._dpnode_scorp_stats:
                 self._dpnode_scorp_stats[type_id] = DPnodeStat()
 
         # Log SCORE data
