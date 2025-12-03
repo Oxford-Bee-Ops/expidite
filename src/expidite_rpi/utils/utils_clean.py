@@ -74,7 +74,8 @@ def display_dataclass(obj: Any, indent: int = 0) -> str:
         if value is None:
             # Skip empty fields
             continue
-        elif is_dataclass(value):
+
+        if is_dataclass(value):
             # Recursively display nested dataclass
             result += f"{fb(indent)}{field.name}::\n{display_dataclass(value, indent + 1)}{nlb(indent)}\n"
         elif isinstance(value, list) and all(isinstance(item, str | float | int) for item in value):

@@ -140,7 +140,8 @@ class DPnode:
         for field in stream.fields:
             if field in api.REQD_RECORD_ID_FIELDS:
                 continue
-            elif field in sensor_data:
+
+            if field in sensor_data:
                 log_data[field] = sensor_data[field]
             else:
                 raise Exception(
