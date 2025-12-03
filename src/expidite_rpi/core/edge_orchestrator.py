@@ -239,7 +239,7 @@ class EdgeOrchestrator:
         # Only once we've started the datastreams, do we start the Sensor threads
         # otherwise we get a "Datastream not started" error.
         # If the device is being used for re-processing, we don't start the sensors
-        if root_cfg.system_cfg and not root_cfg.system_cfg.reprocessor == "Yes":
+        if root_cfg.system_cfg and root_cfg.system_cfg.reprocessor != "Yes":
             for sensor in self._sensorThreads:
                 sensor.start()
 
@@ -275,7 +275,7 @@ class EdgeOrchestrator:
                 logger.info(self.status())
                 return
 
-            if not self._status == OrchestratorStatus.RUNNING:
+            if self._status != OrchestratorStatus.RUNNING:
                 logger.info(f"EdgeOrchestrator not running when stop called; {self}")
                 logger.info(self.status())
                 return
@@ -300,7 +300,7 @@ class EdgeOrchestrator:
             self.device_manager.stop()
 
         # Stop all the sensor threads
-        if root_cfg.system_cfg and not root_cfg.system_cfg.reprocessor == "Yes":
+        if root_cfg.system_cfg and root_cfg.system_cfg.reprocessor != "Yes":
             for sensor in self._sensorThreads:
                 sensor.stop()
 

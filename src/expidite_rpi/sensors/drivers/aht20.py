@@ -55,9 +55,9 @@ class AHT20:
         self.cmd_soft_reset()
 
         # Check for calibration, if not done then do and wait 10 ms
-        if not self.get_status_calibrated == 1:
+        if self.get_status_calibrated != 1:
             self.cmd_initialize()
-            while not self.get_status_calibrated() == 1:
+            while self.get_status_calibrated() != 1:
                 time.sleep(0.01)
 
     def cmd_soft_reset(self):

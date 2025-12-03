@@ -95,7 +95,6 @@ ignore = [
     "SIM108", # TODO
     "SIM110", # TODO
     "SIM118", # TODO
-    "SIM201", # TODO
     # We have chosen to ignore these rules.
     "PLC0415",  # We want this in some places.
     "PLR0912", # Too many branches in a function - nice to fix but a lot of effort.
