@@ -86,23 +86,35 @@ select = [
 ]
 ignore = [
     # These rules are desirable to enforce - ignore them temporarily until we can fix the existing violations.
-    "ANN002", "ANN003", "ANN401",
-    "PERF401",
-    "SIM105", "SIM108", "SIM110", "SIM118", "SIM201",
-    "PLW0603", "PLW2901",
-    "UP031",
+    "ANN002", # We should fix these.
+    "ANN003", # We should fix these.
+    "ANN401", # We should fix these.
+    "PERF401", # TODO
+    "PLW2901", # We should fix these.
+    "SIM105", # TODO
+    "SIM108", # TODO
+    "SIM110", # TODO
+    "SIM118", # TODO
+    "SIM201", # TODO
     # We have chosen to ignore these rules.
     "PLC0415",  # We want this in some places.
     "PLR0912", # Too many branches in a function - nice to fix but a lot of effort.
     "PLR0913", # Too many arguments in a function - nice to fix but a lot of effort.
     "PLR0915", # Too many statements in a function - nice to fix but a lot of effort.
     "PLR2004",  # Little benefit in defining constants in many cases.
+    "PLW0603",  # We want to use `global` in a few places.
     "SIM102",  # Doesn't always improve readability.
 ]
 # These files had exceptions prior to rules being enforced.  Ignore temporarily until we can fix.
 [tool.ruff.lint.per-file-ignores]
 "src/expidite_rpi/sensors/drivers/*" = ["ANN001", "ANN201"]
 "src/expidite_rpi/sensors/processor_video_aruco.py" = ["ANN001"]
+"src/expidite_rpi/sensors/sensor_adxl34x.py" = ["UP031"]
+"src/expidite_rpi/sensors/sensor_aht20.py" = ["UP031"]
+"src/expidite_rpi/sensors/sensor_bmp280.py" = ["UP031"]
+"src/expidite_rpi/sensors/sensor_ltr390.py" = ["UP031"]
+"src/expidite_rpi/sensors/sensor_sht31.py" = ["UP031"]
+"src/expidite_rpi/sensors/sensor_sht40.py" = ["UP031"]
 "src/expidite_rpi/utils/rpi_emulator.py" = ["ANN001"]
 "test/conftest.py" = ["ANN001", "ANN201"]
 "test/rpi_core/core/review_mode_test.py" = ["ANN001"]
