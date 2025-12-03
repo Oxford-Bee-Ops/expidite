@@ -145,7 +145,8 @@ def get_file_datetime(fname: Path | str) -> datetime:
     if (de_count < 3) or (de_count == 4):
         logger.warning(f"{root_cfg.RAISE_WARN()}Invalid filename format: {fname}")
         return datetime.min
-    elif de_count == 3:
+
+    if de_count == 3:
         # We have a journal name of the form V3_EXITTRACKER_2ccf6791818a_20250522.csv
         start_time = datetime.strptime(fields[-1], "%Y%m%d").replace(tzinfo=ZoneInfo("UTC"))
     else:

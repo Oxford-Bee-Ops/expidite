@@ -148,8 +148,7 @@ class Journal:
     def get_data(self, copy: bool = True) -> list[dict]:
         if copy:
             return self._data.to_dict(orient="records")
-        else:
-            return self._data.to_dict(orient="records")
+        return self._data.to_dict(orient="records")
 
     # Access the data list as a dataframe
     #
@@ -158,8 +157,7 @@ class Journal:
     def as_df(self, column_order: Optional[list[str]] = None) -> pd.DataFrame:
         if column_order is None:
             return self._data
-        else:
-            return self._data[column_order]
+        return self._data[column_order]
 
     def cap_journal_size(self, size: int) -> None:
         # Cap the journal size to the specified size

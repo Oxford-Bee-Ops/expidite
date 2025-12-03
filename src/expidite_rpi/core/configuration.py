@@ -76,13 +76,12 @@ def get_mac_address(interface_name: str) -> str:
     if not running_on_rpi:
         # get_mac_address is only supported on rpi; we dummy this out elsewhere
         return DUMMY_MAC
-    else:
-        addrs = psutil.net_if_addrs()
-        if interface_name in addrs:
-            for addr in addrs[interface_name]:
-                if addr.family == psutil.AF_LINK:
-                    return str(addr.address)
-        return ""
+    addrs = psutil.net_if_addrs()
+    if interface_name in addrs:
+        for addr in addrs[interface_name]:
+            if addr.family == psutil.AF_LINK:
+                return str(addr.address)
+    return ""
 
 
 my_mac = get_mac_address("wlan0")
@@ -468,8 +467,7 @@ def check_inventory_loaded() -> bool:
     # If we have not loaded the inventory yet, it will still be set to the DUMMY_DEVICE
     if (my_device is None) or len(INVENTORY) > 0:
         return False
-    else:
-        return True
+    return True
 
 
 def update_my_device_id(new_device_id: str) -> None:

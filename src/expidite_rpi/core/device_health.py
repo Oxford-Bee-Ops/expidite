@@ -404,12 +404,10 @@ class DeviceHealth(Sensor):
                         ssid = parts[0]
                         signal_strength = str(int(parts[2]))
                         return (ssid, signal_strength)
-                    else:
-                        logger.warning(f"Unexpected nmcli output format: {output}")
-                        return ("Not connected", "0")
-                else:
-                    logger.warning("No nmcli output")
+                    logger.warning(f"Unexpected nmcli output format: {output}")
                     return ("Not connected", "0")
+                logger.warning("No nmcli output")
+                return ("Not connected", "0")
             except Exception as e:
                 logger.warning(f"Failed to get SSID: {e}")
                 return ("Not connected", "-1")

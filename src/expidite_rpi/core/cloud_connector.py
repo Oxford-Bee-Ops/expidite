@@ -55,7 +55,7 @@ class CloudConnector:
                 CloudConnector._instance = AsyncCloudConnector()
             return CloudConnector._instance
 
-        elif type == CloudType.LOCAL_EMULATOR:
+        if type == CloudType.LOCAL_EMULATOR:
             if CloudConnector._instance is None:
                 CloudConnector._instance = LocalCloudConnector()
             elif not isinstance(CloudConnector._instance, LocalCloudConnector):
@@ -66,7 +66,7 @@ class CloudConnector:
                 CloudConnector._instance = LocalCloudConnector()
             return CloudConnector._instance
 
-        elif type == CloudType.SYNC_AZURE:
+        if type == CloudType.SYNC_AZURE:
             if CloudConnector._instance is None:
                 CloudConnector._instance = SyncCloudConnector()
             elif not isinstance(CloudConnector._instance, SyncCloudConnector):
@@ -77,8 +77,7 @@ class CloudConnector:
                 CloudConnector._instance = SyncCloudConnector()
             return CloudConnector._instance
 
-        else:
-            raise ValueError(f"Unsupported cloud type: {type}")
+        raise ValueError(f"Unsupported cloud type: {type}")
 
     def set_keys(self, keys_file: Path) -> None:
         """Sets the cloud storage key for the CloudConnector from a file"""
@@ -417,8 +416,7 @@ class CloudConnector:
             last_modified = blob_client.get_blob_properties().last_modified
             # The Azure timezone is UTC but it's not explicitly set; set it
             return last_modified.replace(tzinfo=UTC)
-        else:
-            return datetime.min.replace(tzinfo=UTC)
+        return datetime.min.replace(tzinfo=UTC)
 
     def shutdown(self) -> None:
         """Shutdown the CloudConnector instance"""
@@ -485,13 +483,13 @@ class CloudConnector:
                     f"{blob_client.blob_name}: {local_headers}, {cloud_headers}"
                 )
                 return False
-            else:
-                # All is good; headers match
-                logger.debug(f"Headers match for {blob_client.blob_name}: {local_headers}")
-                return True
-        else:
-            logger.warning(f"{root_cfg.RAISE_WARN()}Remote file {blob_client.blob_name} has no headers")
-            return False
+
+            # All is good; headers match
+            logger.debug(f"Headers match for {blob_client.blob_name}: {local_headers}")
+            return True
+
+        logger.warning(f"{root_cfg.RAISE_WARN()}Remote file {blob_client.blob_name} has no headers")
+        return False
 
 
 #########################################################################################################
@@ -780,9 +778,8 @@ class LocalCloudConnector(CloudConnector):
             last_modified = blob_client.stat().st_mtime
             # The Azure timezone is UTC but it's not explicitly set; set it
             return datetime.fromtimestamp(last_modified, tz=UTC)
-        else:
-            logger.warning(f"Blob {blob_name} does not exist in container {container}")
-            return datetime.min.replace(tzinfo=UTC)
+        logger.warning(f"Blob {blob_name} does not exist in container {container}")
+        return datetime.min.replace(tzinfo=UTC)
 
 
 #####################################################################################################

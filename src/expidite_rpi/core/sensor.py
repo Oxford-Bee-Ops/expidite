@@ -71,8 +71,7 @@ class Sensor(Thread, DPnode, ABC):
 
         if self.stop_requested.is_set():
             return False
-        else:
-            return True
+        return True
 
     def in_review_mode(self) -> bool:
         """Returns true if the system is in review mode.

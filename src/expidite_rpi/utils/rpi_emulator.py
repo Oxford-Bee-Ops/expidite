@@ -290,14 +290,13 @@ class RpiEmulator:
         if pass_check:
             self.recordings_saved[type_id] = previous_recordings + 1
             return True
-        else:
-            logger.debug(
-                f"Recording cap exceeded for {type_id}. "
-                f"Global cap: {self.recording_cap}, "
-                f"Type cap: {self.recording_cap_dict.get(type_id, -1)}, "
-                f"Previous recordings: {previous_recordings}"
-            )
-            return False
+        logger.debug(
+            f"Recording cap exceeded for {type_id}. "
+            f"Global cap: {self.recording_cap}, "
+            f"Type cap: {self.recording_cap_dict.get(type_id, -1)}, "
+            f"Previous recordings: {previous_recordings}"
+        )
+        return False
 
     #################################################################################################
     # Sensor command emulation
@@ -331,11 +330,12 @@ class RpiEmulator:
         if cmd.startswith("rpicam-vid"):
             return self.emulate_rpicam_vid(cmd, ignore_errors, grep_strs)
 
-        elif cmd.startswith("arecord"):
+        if cmd.startswith("arecord"):
             # Emulate the arecord command
             # This is a simple emulation that just returns a success code and a message.
             # In a real scenario, we would run the command and return the output.
             return self.emulate_arecord(cmd, ignore_errors, grep_strs)
+
         return "Command not run on windows: " + cmd
 
     def emulate_rpicam_vid(

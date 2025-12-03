@@ -275,7 +275,8 @@ class EdgeOrchestrator:
                 logger.info(f"EdgeOrchestrator already stopping when stop called; {self}")
                 logger.info(self.status())
                 return
-            elif not self._status == OrchestratorStatus.RUNNING:
+
+            if not self._status == OrchestratorStatus.RUNNING:
                 logger.info(f"EdgeOrchestrator not running when stop called; {self}")
                 logger.info(self.status())
                 return

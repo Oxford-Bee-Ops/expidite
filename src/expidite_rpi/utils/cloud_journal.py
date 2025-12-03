@@ -193,8 +193,7 @@ class CloudJournal:
     def get_data(self, copy: bool = True) -> list[dict]:
         if copy:
             return self._data.copy()
-        else:
-            return self._data
+        return self._data
 
     # Access the data list as a dataframe
     #

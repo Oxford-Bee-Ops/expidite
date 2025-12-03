@@ -71,8 +71,7 @@ def AHT20_crc8_check(all_data_int):
     mod_value = AHT20_crc8_calculate(all_data_int[:-1])
     if mod_value == all_data_int[-1]:
         return True
-    else:
-        return False
+    return False
 
 
 def CRC8_check(all_data_int, init_value=0x00):
@@ -83,8 +82,7 @@ def CRC8_check(all_data_int, init_value=0x00):
     remainder = mod2_division_8bits(DATA_FOR_CHECK, divider, len(all_data_int) - 1, init_value)
     if remainder == all_data_int[-1]:
         return True
-    else:
-        return False
+    return False
 
 
 if __name__ == "__main__":
