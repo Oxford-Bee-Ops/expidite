@@ -126,13 +126,14 @@ pretty = true
 
 # Override defaults to be more strict.
 check_untyped_defs = true # Type-check the interior of functions without type annotations.
+disallow_any_generics = true # Prevent use of generic types that do not specify explicit type parameters.
 disallow_untyped_defs = true # Prevent functions with missing or incomplete type annotations.
 disallow_untyped_calls = true # Prevent calls to functions without type annotations from functions with them.
 ignore_missing_imports = true # Suppress error messages about imports that cannot be resolved.
 strict_equality = true # Prohibit equality checks, identity checks, and container checks between non-overlapping types.
 warn_return_any = true # Prevent returning a value with type Any from a function declared with a non-Any return type.
 warn_unreachable = true # Prevent code inferred to be unreachable or redundant.
-disallow_any_generics = true # Prevent use of generic types that do not specify explicit type parameters.
+warn_unused_ignores = true # Prevent unneeded # type: ignore comments.
 
 # These files/modules had exceptions prior to rules being enforced. Ignore temporarily until we can fix them.
 [[tool.mypy.overrides]]
@@ -168,3 +169,14 @@ module = [
     "expidite_rpi.bcli",
 ]
 disallow_any_generics = false
+[[tool.mypy.overrides]]
+module = [
+    "expidite_rpi.sensors.drivers.ltr390",
+    "expidite_rpi.sensors.drivers.adafruit_adxl34x",
+    "expidite_rpi.core.configuration",
+    "expidite_rpi.utils.utils",
+    "expidite_rpi.core.device_health",
+    "expidite_rpi.sensors.sensor_ltr390",
+    "expidite_rpi.sensors.sensor_bmp280",
+]
+warn_unused_ignores = false
