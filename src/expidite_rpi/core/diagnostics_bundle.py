@@ -138,6 +138,7 @@ class DiagnosticsBundle:
                 capture_output=True,
                 text=True,
                 timeout=15,  # Timeout in seconds, in case any command hangs.
+                check=False,
             )
             return result.stdout.strip(), result.stderr.strip(), result.returncode
         except subprocess.TimeoutExpired:
