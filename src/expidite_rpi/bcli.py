@@ -358,6 +358,7 @@ class InteractiveMenu:
         logs = device_health.get_logs(
             since=since_time, min_priority=6, grep_str=[api.TELEM_TAG, "Save log: "]
         )
+        log_dict_str = ""
         try:
             for log in logs:
                 # Nicely format sensor logs
@@ -380,7 +381,7 @@ class InteractiveMenu:
                 click.echo("No sensor output logs found.")
             click.echo(f"\n{dash_line}\n")
         except Exception as e:
-            logger.error(f"Error parsing log dictionary: {e}")
+            logger.error(f"Error parsing log dictionary: {e}; {log_dict_str}")
 
     def display_score_logs(self) -> None:
         """View the SCORE logs."""
