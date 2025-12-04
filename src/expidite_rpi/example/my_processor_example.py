@@ -48,7 +48,7 @@ class ExampleProcessor(DataProcessor):
 
         output_data: list[dict] = []
         if len(input_data) > 0:
-            for f in input_data:
+            for _ in input_data:
                 # Generate output to the primary datastream
                 output_data.append({"pixel_count": 25})
 

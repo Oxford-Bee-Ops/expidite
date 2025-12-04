@@ -84,14 +84,16 @@ class RpicamSensor(Sensor):
         try:
             self.get_stream(RPICAM_STREAM_INDEX)  # Main video stream
         except ValueError as e:
-            raise ValueError(f"RpicamSensor requires a main video stream at index {RPICAM_STREAM_INDEX}: {e}")
+            raise ValueError(
+                f"RpicamSensor requires a main video stream at index {RPICAM_STREAM_INDEX}: {e}"
+            ) from e
 
         try:
             self.get_stream(RPICAM_REVIEW_MODE_STREAM_INDEX)  # Review mode stream
         except ValueError as e:
             raise ValueError(
                 f"RpicamSensor requires a review mode stream at index {RPICAM_REVIEW_MODE_STREAM_INDEX}: {e}"
-            )
+            ) from e
 
     def review_mode_output(self) -> None:
         """Output an image to show the user what the camera is viewing.

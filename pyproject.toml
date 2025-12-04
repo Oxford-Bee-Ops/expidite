@@ -75,6 +75,7 @@ select = [
     "I",   # isort
     "RUF", # ruff-specific rules
     "ANN", # flake8-annotations
+    "B", # flake8-bugbear
     "ISC", # flake8-implicit-str-concat
     "PERF", # flake8-performance
     "PIE", # flake8-pie
@@ -102,8 +103,10 @@ ignore = [
 ]
 # These files had exceptions prior to rules being enforced.  Ignore temporarily until we can fix.
 [tool.ruff.lint.per-file-ignores]
+"src/expidite_rpi/core/cloud_connector.py" = ["B012"]
+"src/expidite_rpi/core/edge_orchestrator.py" = ["B905"]
 "src/expidite_rpi/sensors/drivers/*" = ["ANN001", "ANN201"]
-"src/expidite_rpi/sensors/processor_video_aruco.py" = ["ANN001"]
+"src/expidite_rpi/sensors/processor_video_aruco.py" = ["ANN001", "B905"]
 "src/expidite_rpi/sensors/sensor_adxl34x.py" = ["UP031"]
 "src/expidite_rpi/sensors/sensor_aht20.py" = ["UP031"]
 "src/expidite_rpi/sensors/sensor_bmp280.py" = ["UP031"]

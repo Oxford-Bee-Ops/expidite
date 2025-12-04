@@ -226,7 +226,7 @@ class DPnode:
             else:
                 save_dir = root_cfg.EDGE_PROCESSING_DIR
         else:
-            assert False, "save_recording() should not be called in ETL mode"
+            raise AssertionError("save_recording() should not be called in ETL mode")
 
         # Logged in _save_recording()
         return self._save_recording(
@@ -364,7 +364,7 @@ class DPnode:
         except ValueError:
             raise ValueError(
                 f"Invalid sample probability: {sample_probability}; expected a value between 0.0 and 1.0"
-            )
+            ) from None
 
         return random() < prob
 
@@ -553,7 +553,7 @@ class DPnode:
                 elif field == api.RECORD_ID.STREAM_INDEX.value:
                     output_data[field] = stream.index
                 else:
-                    assert False, f"Unknown RECORD_ID field {field}"
+                    raise AssertionError(f"Unknown RECORD_ID field {field}")
         # Check the values in the RECORD_ID are not nan or empty
         for field in api.REQD_RECORD_ID_FIELDS:
             if not output_data[field].notna().all():

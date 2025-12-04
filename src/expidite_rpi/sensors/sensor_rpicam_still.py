@@ -86,7 +86,7 @@ class RpicamStillSensor(Sensor):
         except ValueError as e:
             raise ValueError(
                 f"RpicamStillSensor requires a main image stream at index {RPICAM_STILL_STREAM_INDEX}: {e}"
-            )
+            ) from e
 
         try:
             self.get_stream(RPICAM_STILL_REVIEW_MODE_STREAM_INDEX)  # Review mode stream
@@ -94,7 +94,7 @@ class RpicamStillSensor(Sensor):
             raise ValueError(
                 f"RpicamStillSensor requires a review mode stream at index "
                 f"{RPICAM_STILL_REVIEW_MODE_STREAM_INDEX}: {e}"
-            )
+            ) from e
 
     def run(self) -> None:
         """Main loop for the RpicamStillSensor - runs continuously unless paused."""

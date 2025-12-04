@@ -32,7 +32,7 @@ def mod2_division_8bits(a, b, number_of_bytes, init_value):
     # Processing a
     a = a << 8
     # Preprocessing head_of_a
-    for i in range(number_of_bytes):
+    for _ in range(number_of_bytes):
         head_of_a = head_of_a << 8
         b = b << 8
         init_value = init_value << 8

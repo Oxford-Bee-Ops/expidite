@@ -736,7 +736,7 @@ class InteractiveMenu:
             edge_orch = EdgeOrchestrator.get_instance()
             edge_orch.load_config()
             if edge_orch is not None:
-                for i, dptree in enumerate(edge_orch.dp_trees):
+                for _i, dptree in enumerate(edge_orch.dp_trees):
                     sensor_cfg = dptree.sensor.config
                     sensors.setdefault(sensor_cfg.sensor_type.value, []).append(sensor_cfg.sensor_index)
             if sensors:

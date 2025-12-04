@@ -374,7 +374,7 @@ class DeviceHealth(Sensor):
 
         # Format the information for the top processes
         log_string = f"Memory at {psutil.virtual_memory().percent}%; top processes: "
-        for rss, info in top_processes:
+        for _, info in top_processes:
             # Combine the command line arguments into a single string, but drop any words starting with "-"
             if root_cfg.running_on_rpi:
                 cmd_line = " ".join([arg for arg in info["cmdline"] if not arg.startswith("-")])
