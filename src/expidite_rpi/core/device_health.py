@@ -2,7 +2,7 @@ import os
 import socket
 import subprocess
 from datetime import datetime
-from typing import Any, Optional
+from typing import Any
 
 import psutil
 
@@ -18,9 +18,9 @@ if root_cfg.running_on_rpi:
     from systemd import journal  # type: ignore
 
     def get_logs(
-        since: Optional[datetime] = None,
-        min_priority: Optional[int] = None,
-        grep_str: Optional[list[str]] = None,
+        since: datetime | None = None,
+        min_priority: int | None = None,
+        grep_str: list[str] | None = None,
         max_logs: int = 1000,
     ) -> list[dict[str, Any]]:
         """
@@ -146,7 +146,7 @@ class DeviceHealth(Sensor):
       them, and sends them up to cloud storage.
     """
 
-    def __init__(self, device_manager: Optional[DeviceManager] = None) -> None:
+    def __init__(self, device_manager: DeviceManager | None = None) -> None:
         super().__init__(DEVICE_HEALTH_CFG)
         ###############################
         # Telemetry tracking
@@ -374,7 +374,7 @@ class DeviceHealth(Sensor):
 
         # Format the information for the top processes
         log_string = f"Memory at {psutil.virtual_memory().percent}%; top processes: "
-        for rss, info in top_processes:
+        for _, info in top_processes:
             # Combine the command line arguments into a single string, but drop any words starting with "-"
             if root_cfg.running_on_rpi:
                 cmd_line = " ".join([arg for arg in info["cmdline"] if not arg.startswith("-")])
@@ -392,37 +392,42 @@ class DeviceHealth(Sensor):
             The SSID as a string, or "Not connected" if no SSID is found.
         """
         if root_cfg.running_on_rpi:
-            try:
-                output = utils.run_cmd(
-                    cmd="nmcli -g SSID,IN-USE,SIGNAL device wifi | grep '*'", ignore_errors=True
-                )
-                # The return output contains a string like "SSID:*:95".  We need to strip out the ":*"
-                # and return just the SSID and the signal strength
-                if output:
-                    parts = output.split(":")
-                    if len(parts) >= 3:
-                        ssid = parts[0]
-                        signal_strength = str(int(parts[2]))
-                        return (ssid, signal_strength)
-                    else:
-                        logger.warning(f"Unexpected nmcli output format: {output}")
-                        return ("Not connected", "0")
-                else:
-                    logger.warning("No nmcli output")
-                    return ("Not connected", "0")
-            except Exception as e:
-                logger.warning(f"Failed to get SSID: {e}")
-                return ("Not connected", "-1")
-        elif root_cfg.running_on_windows:
-            try:
-                output = subprocess.check_output(
-                    ["netsh", "wlan", "show", "interfaces"], universal_newlines=True
-                )
-                for line in output.split("\n"):
-                    if "SSID" in line and "BSSID" not in line:
-                        return (line.split(":")[1].strip(), "-1")
+            return DeviceHealth.get_wifi_ssid_and_signal_on_rpi()
+
+        if root_cfg.running_on_windows:
+            return DeviceHealth.get_wifi_ssid_and_signal_on_windows()
+
+        return ("Unsupported platform", "-1")
+
+    @staticmethod
+    def get_wifi_ssid_and_signal_on_rpi() -> tuple[str, str]:
+        try:
+            output = utils.run_cmd(
+                cmd="nmcli -g SSID,IN-USE,SIGNAL device wifi | grep '*'", ignore_errors=True
+            )
+            # The return output contains a string like "SSID:*:95".  We need to strip out the ":*"
+            # and return just the SSID and the signal strength
+            if output:
+                parts = output.split(":")
+                if len(parts) >= 3:
+                    ssid = parts[0]
+                    signal_strength = str(int(parts[2]))
+                    return (ssid, signal_strength)
+                logger.warning(f"Unexpected nmcli output format: {output}")
                 return ("Not connected", "0")
-            except subprocess.CalledProcessError:
-                return ("Not connected", "-1")
-        else:
-            return ("Unsupported platform", "-1")
+            logger.warning("No nmcli output")
+            return ("Not connected", "0")
+        except Exception as e:
+            logger.warning(f"Failed to get SSID: {e}")
+            return ("Not connected", "-1")
+
+    @staticmethod
+    def get_wifi_ssid_and_signal_on_windows() -> tuple[str, str]:
+        try:
+            output = subprocess.check_output(["netsh", "wlan", "show", "interfaces"], universal_newlines=True)
+            for line in output.split("\n"):
+                if "SSID" in line and "BSSID" not in line:
+                    return (line.split(":")[1].strip(), "-1")
+            return ("Not connected", "0")
+        except subprocess.CalledProcessError:
+            return ("Not connected", "-1")

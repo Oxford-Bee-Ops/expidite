@@ -1,6 +1,6 @@
 from collections.abc import Callable
 from dataclasses import dataclass, field
-from typing import Any, Optional
+from typing import Any
 
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
@@ -32,8 +32,7 @@ class Configuration:
             self.update_field(field_name, value)
 
     def display(self) -> str:
-        display_str = utils_clean.display_dataclass(self)
-        return display_str
+        return utils_clean.display_dataclass(self)
 
     def get_field(self, field_name: str) -> Any:
         return getattr(self, field_name)
@@ -60,8 +59,8 @@ class DeviceCfg(Configuration):
     # This field holds a function reference that when called return the instantiated DPtree objects
     # for this device.
     # This method can take optional arguments defined in dp_trees_create_kwargs.
-    dp_trees_create_method: Optional[Callable] = None
-    dp_trees_create_kwargs: Optional[dict] = None
+    dp_trees_create_method: Callable | None = None
+    dp_trees_create_kwargs: dict | None = None
 
     name: str = "default"
     device_id: str = "unknown"

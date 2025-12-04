@@ -73,7 +73,7 @@ class AudioSensor(Sensor):
         except ValueError as e:
             raise ValueError(
                 f"AudioSensor requires a main audio stream at index {AUDIO_SENSOR_STREAM_INDEX}: {e}"
-            )
+            ) from e
 
     ############################################################################################################
     # Function that records audio on demand.

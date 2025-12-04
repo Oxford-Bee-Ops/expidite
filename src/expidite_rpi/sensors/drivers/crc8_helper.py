@@ -32,7 +32,7 @@ def mod2_division_8bits(a, b, number_of_bytes, init_value):
     # Processing a
     a = a << 8
     # Preprocessing head_of_a
-    for i in range(number_of_bytes):
+    for _ in range(number_of_bytes):
         head_of_a = head_of_a << 8
         b = b << 8
         init_value = init_value << 8
@@ -57,13 +57,9 @@ def AHT20_crc8_calculate(all_data_int):
     # Preprocess all the data and CRCCode from AHT20
     data_from_AHT20 = 0x00
     # Preprocessing the first data (status)
-    # print(bin(data_from_AHT20))
     for i_data in range(len(all_data_int)):
         data_from_AHT20 = (data_from_AHT20 << 8) | all_data_int[i_data]
-    # print(bin(data_from_AHT20))
-    mod_value = mod2_division_8bits(data_from_AHT20, CRC_DEVIDE_NUMBER, len(all_data_int), init_value)
-    # print(mod_value)
-    return mod_value
+    return mod2_division_8bits(data_from_AHT20, CRC_DEVIDE_NUMBER, len(all_data_int), init_value)
 
 
 def AHT20_crc8_check(all_data_int):
@@ -73,10 +69,7 @@ def AHT20_crc8_check(all_data_int):
     In python's int64.
     """
     mod_value = AHT20_crc8_calculate(all_data_int[:-1])
-    if mod_value == all_data_int[-1]:
-        return True
-    else:
-        return False
+    return mod_value == all_data_int[-1]
 
 
 def CRC8_check(all_data_int, init_value=0x00):
@@ -85,10 +78,7 @@ def CRC8_check(all_data_int, init_value=0x00):
     for data in all_data_int[1:-1]:
         DATA_FOR_CHECK = (DATA_FOR_CHECK << 8) | data
     remainder = mod2_division_8bits(DATA_FOR_CHECK, divider, len(all_data_int) - 1, init_value)
-    if remainder == all_data_int[-1]:
-        return True
-    else:
-        return False
+    return remainder == all_data_int[-1]
 
 
 if __name__ == "__main__":

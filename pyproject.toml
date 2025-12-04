@@ -75,22 +75,48 @@ select = [
     "I",   # isort
     "RUF", # ruff-specific rules
     "ANN", # flake8-annotations
+    "B", # flake8-bugbear
+    "ISC", # flake8-implicit-str-concat
     "PERF", # flake8-performance
     "PIE", # flake8-pie
     "RET", # flake8-return
     "SIM", # flake8-simplify
+    "PD", # pandas-vet
     "PL", # pylint
     "UP", # pyupgrade
 ]
-# These rules are desirable to enforce - ignore them temporarily until we can fix the existing violations.
+# We have deliberately chosen to ignore these rules.
 ignore = [
-    "ANN001", "ANN002", "ANN003", "ANN201", "ANN401",
-    "PERF401",
-    "RET504", "RET505", "RET507", "RET508",
-    "SIM102", "SIM103", "SIM105", "SIM108", "SIM110", "SIM117", "SIM118", "SIM201",
-    "PLC0415", "PLR0911", "PLR0912", "PLR0913", "PLR0915", "PLR1714", "PLR2004", "PLR5501", "PLW0602", "PLW0603", "PLW1510", "PLW2901",
-    "UP007", "UP008", "UP031", "UP045",
+    "ANN002", # Nice to fix.
+    "ANN003", # Nice to fix.
+    "ANN401", # Nice to fix.
+    "PERF401", # We should fix these (more readable and more performant).
+    "PLC0415", # We want this in some places.
+    "PLR0912", # Too many branches in a function - nice to fix but a lot of effort.
+    "PLR0913", # Too many arguments in a function - nice to fix but a lot of effort.
+    "PLR0915", # Too many statements in a function - nice to fix but a lot of effort.
+    "PLR2004", # Little benefit in defining constants in many cases.
+    "PLW0603", # We want to use `global` in a few places.
+    "PLW2901", # We should fix these.
+    "SIM102", # Doesn't always improve readability.
+    "SIM108", # Ternary operator - could fix but not always more readable.
 ]
+# These files had exceptions prior to rules being enforced.  Ignore temporarily until we can fix.
+[tool.ruff.lint.per-file-ignores]
+"src/expidite_rpi/core/cloud_connector.py" = ["B012"]
+"src/expidite_rpi/core/edge_orchestrator.py" = ["B905"]
+"src/expidite_rpi/sensors/drivers/*" = ["ANN001", "ANN201"]
+"src/expidite_rpi/sensors/processor_video_aruco.py" = ["ANN001", "B905"]
+"src/expidite_rpi/sensors/sensor_adxl34x.py" = ["UP031"]
+"src/expidite_rpi/sensors/sensor_aht20.py" = ["UP031"]
+"src/expidite_rpi/sensors/sensor_bmp280.py" = ["UP031"]
+"src/expidite_rpi/sensors/sensor_ltr390.py" = ["UP031"]
+"src/expidite_rpi/sensors/sensor_sht31.py" = ["UP031"]
+"src/expidite_rpi/sensors/sensor_sht40.py" = ["UP031"]
+"src/expidite_rpi/utils/rpi_emulator.py" = ["ANN001"]
+"test/conftest.py" = ["ANN001", "ANN201"]
+"test/rpi_core/core/review_mode_test.py" = ["ANN001"]
+
 fixable = ["ALL"]
 
 [tool.ruff.lint.pydocstyle]
@@ -99,17 +125,20 @@ convention = "google"
 [tool.mypy]
 python_version = "3.11"
 files = "**/*.py"
+pretty = true
 
 # Override defaults to be more strict.
 check_untyped_defs = true # Type-check the interior of functions without type annotations.
+disallow_any_generics = true # Prevent use of generic types that do not specify explicit type parameters.
 disallow_untyped_defs = true # Prevent functions with missing or incomplete type annotations.
 disallow_untyped_calls = true # Prevent calls to functions without type annotations from functions with them.
 ignore_missing_imports = true # Suppress error messages about imports that cannot be resolved.
 strict_equality = true # Prohibit equality checks, identity checks, and container checks between non-overlapping types.
 warn_return_any = true # Prevent returning a value with type Any from a function declared with a non-Any return type.
 warn_unreachable = true # Prevent code inferred to be unreachable or redundant.
+warn_unused_ignores = true # Prevent unneeded # type: ignore comments.
 
-# TODO: Fix these modules to comply, then remove this section.
+# These files/modules had exceptions prior to rules being enforced. Ignore temporarily until we can fix them.
 [[tool.mypy.overrides]]
 module = [
     "test.conftest",
@@ -122,3 +151,35 @@ disallow_untyped_defs = false
 disallow_untyped_calls = false
 strict_equality = false
 warn_return_any = false
+[[tool.mypy.overrides]]
+module = [
+    "expidite_rpi.sensors.drivers.adafruit_adxl34x",
+    "expidite_rpi.core.device_config_objects",
+    "expidite_rpi.utils.journal",
+    "expidite_rpi.core.file_naming",
+    "expidite_rpi.core.cloud_connector",
+    "expidite_rpi.utils.rpi_emulator",
+    "expidite_rpi.utils.cloud_journal",
+    "expidite_rpi.utils.utils",
+    "expidite_rpi.utils.journal_pool",
+    "expidite_rpi.core.dp_node",
+    "expidite_rpi.sensors.processor_video_aruco",
+    "expidite_rpi.example.my_processor_example",
+    "expidite_rpi.core.dp_tree",
+    "expidite_rpi.core.device_health",
+    "expidite_rpi.core.config_validator",
+    "expidite_rpi.core.edge_orchestrator",
+    "expidite_rpi.bcli",
+]
+disallow_any_generics = false
+[[tool.mypy.overrides]]
+module = [
+    "expidite_rpi.sensors.drivers.ltr390",
+    "expidite_rpi.sensors.drivers.adafruit_adxl34x",
+    "expidite_rpi.core.configuration",
+    "expidite_rpi.utils.utils",
+    "expidite_rpi.core.device_health",
+    "expidite_rpi.sensors.sensor_ltr390",
+    "expidite_rpi.sensors.sensor_bmp280",
+]
+warn_unused_ignores = false

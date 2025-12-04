@@ -5,7 +5,6 @@ import sys
 import tempfile
 from enum import Enum
 from pathlib import Path
-from typing import Optional
 
 import psutil
 
@@ -76,13 +75,12 @@ def get_mac_address(interface_name: str) -> str:
     if not running_on_rpi:
         # get_mac_address is only supported on rpi; we dummy this out elsewhere
         return DUMMY_MAC
-    else:
-        addrs = psutil.net_if_addrs()
-        if interface_name in addrs:
-            for addr in addrs[interface_name]:
-                if addr.family == psutil.AF_LINK:
-                    return str(addr.address)
-        return ""
+    addrs = psutil.net_if_addrs()
+    if interface_name in addrs:
+        for addr in addrs[interface_name]:
+            if addr.family == psutil.AF_LINK:
+                return str(addr.address)
+    return ""
 
 
 my_mac = get_mac_address("wlan0")
@@ -240,7 +238,7 @@ ST_MODE: SOFTWARE_TEST_MODE = SOFTWARE_TEST_MODE.LIVE
 # There is update code at the end of this file that sets the level once we've loaded config.
 ############################################################################################################
 TEST_LOG = LOG_DIR.joinpath("test.log")
-_DEFAULT_LOG: Optional[Path] = None
+_DEFAULT_LOG: Path | None = None
 _LOG_LEVEL = logging.INFO
 
 
@@ -252,9 +250,7 @@ def set_log_level(level: int) -> None:
     module_logger.debug("Debug logging enabled for expidite")
 
 
-def setup_logger(
-    name: str, level: Optional[int] = None, filename: Optional[str | Path] = None
-) -> logging.Logger:
+def setup_logger(name: str, level: int | None = None, filename: str | Path | None = None) -> logging.Logger:
     global _DEFAULT_LOG
     if level is not None:
         set_log_level(level)
@@ -324,7 +320,7 @@ logger = setup_logger("expidite")
 ################################################################################################
 # Load the keys.env file
 ################################################################################################
-def _load_keys() -> Optional[Keys | None]:
+def _load_keys() -> Keys | None:
     if not KEYS_FILE.exists():
         print("#################################################################")
         print(f"# Keys file {KEYS_FILE} does not exist")
@@ -370,7 +366,7 @@ def check_keys() -> tuple[bool, str]:
 ############################################################################################
 # Load system.cfg configuration
 ############################################################################################
-def _load_system_cfg() -> Optional[SystemCfg | None]:
+def _load_system_cfg() -> SystemCfg | None:
     if not SYSTEM_CFG_FILE.exists():
         print("#################################################################")
         print(f"# {SYSTEM_CFG_FILE} does not exist")
@@ -381,8 +377,7 @@ def _load_system_cfg() -> Optional[SystemCfg | None]:
     try:
         # Use the Keys class to load the configuration
         logger.info(f"Loading {SYSTEM_CFG_FILE}...")
-        cfg = SystemCfg(_env_file=SYSTEM_CFG_FILE, _env_file_encoding="utf-8")  # type: ignore
-        return cfg
+        return SystemCfg(_env_file=SYSTEM_CFG_FILE, _env_file_encoding="utf-8")  # type: ignore
     except Exception as e:
         print("#################################################################")
         print(f"Failed to load {SYSTEM_CFG_FILE}: {e}")
@@ -423,7 +418,7 @@ INVENTORY: dict[str, DeviceCfg] = {}
 my_device: DeviceCfg = DUMMY_DEVICE
 
 
-def load_configuration() -> Optional[list[DeviceCfg] | None]:
+def load_configuration() -> list[DeviceCfg] | None:
     """Load the inventory using the my_fleet_config value defined in SystemCfg class."""
     inventory: list[DeviceCfg] = []
     if system_cfg and system_cfg.my_fleet_config and system_cfg.my_fleet_config != FAILED_TO_LOAD:
@@ -444,8 +439,6 @@ def set_inventory(inventory: list[DeviceCfg]) -> dict[str, DeviceCfg]:
     """Reload the inventory from the config file.
     It is assumed that the config has already been validated by RpiCore.configure().
     """
-    global INVENTORY
-    global system_cfg
     global my_device
 
     for device in inventory:
@@ -467,10 +460,7 @@ def check_inventory_loaded() -> bool:
     This is used in testing to check if the inventory has been loaded.
     """
     # If we have not loaded the inventory yet, it will still be set to the DUMMY_DEVICE
-    if (my_device is None) or len(INVENTORY) > 0:
-        return False
-    else:
-        return True
+    return my_device is not None and len(INVENTORY) == 0
 
 
 def update_my_device_id(new_device_id: str) -> None:
@@ -482,7 +472,7 @@ def update_my_device_id(new_device_id: str) -> None:
         my_device = INVENTORY[my_device_id]
 
 
-def display_config(device_id: Optional[str] = None) -> str:
+def display_config(device_id: str | None = None) -> str:
     if device_id is None:
         device_id = my_device_id
 

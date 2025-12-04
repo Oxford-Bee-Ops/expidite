@@ -115,27 +115,27 @@ def check_keys_env() -> bool:
     success, error = root_cfg.check_keys()
     if success:
         return True
-    else:
-        # Help the user setup keys
-        click.echo(f"{dash_line}")
-        click.echo(f"# {error}")
-        click.echo("# ")
-        click.echo(f"# Create a file called {root_cfg.KEYS_FILE} in {root_cfg.CFG_DIR}.")
-        click.echo("# Add a key called 'cloud_storage_key'.")
-        click.echo("# The value should be the Shared Access Signature for your Azure storage account.")
-        click.echo("# You'll find this in portal.azure.com > Storage accounts > Security + networking.")
-        click.echo("# ")
-        click.echo("# The final line will look like:")
-        click.echo(
-            '# cloud_storage_key="DefaultEndpointsProtocol=https;AccountName=mystorageprod;'
-            "AccountKey=UnZzSivXKjXl0NffCODRGqNDFGCwSBHDG1UcaIeGOdzo2zfFs45GXTB9JjFfD/"
-            'ZDuaLH8m3tf6+ASt2HoD+w==;EndpointSuffix=core.windows.net;"'
-        )
-        click.echo("# ")
-        click.echo("# Press any key to continue once you have done so")
-        click.echo("# ")
-        click.echo(f"{dash_line}")
-        return False
+
+    # Help the user setup keys
+    click.echo(f"{dash_line}")
+    click.echo(f"# {error}")
+    click.echo("# ")
+    click.echo(f"# Create a file called {root_cfg.KEYS_FILE} in {root_cfg.CFG_DIR}.")
+    click.echo("# Add a key called 'cloud_storage_key'.")
+    click.echo("# The value should be the Shared Access Signature for your Azure storage account.")
+    click.echo("# You'll find this in portal.azure.com > Storage accounts > Security + networking.")
+    click.echo("# ")
+    click.echo("# The final line will look like:")
+    click.echo(
+        '# cloud_storage_key="DefaultEndpointsProtocol=https;AccountName=mystorageprod;'
+        "AccountKey=UnZzSivXKjXl0NffCODRGqNDFGCwSBHDG1UcaIeGOdzo2zfFs45GXTB9JjFfD/"
+        'ZDuaLH8m3tf6+ASt2HoD+w==;EndpointSuffix=core.windows.net;"'
+    )
+    click.echo("# ")
+    click.echo("# Press any key to continue once you have done so")
+    click.echo("# ")
+    click.echo(f"{dash_line}")
+    return False
 
 
 def check_device_in_inventory() -> None:
@@ -737,7 +737,7 @@ class InteractiveMenu:
             edge_orch = EdgeOrchestrator.get_instance()
             edge_orch.load_config()
             if edge_orch is not None:
-                for i, dptree in enumerate(edge_orch.dp_trees):
+                for _i, dptree in enumerate(edge_orch.dp_trees):
                     sensor_cfg = dptree.sensor.config
                     sensors.setdefault(sensor_cfg.sensor_type.value, []).append(sensor_cfg.sensor_index)
             if sensors:

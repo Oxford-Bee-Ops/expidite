@@ -12,7 +12,6 @@ import zipfile
 from datetime import datetime
 from pathlib import Path
 from threading import Timer
-from typing import Optional
 from zoneinfo import ZoneInfo
 
 import pandas as pd
@@ -57,8 +56,7 @@ def failing_to_keep_up() -> bool:
     now = api.utc_now()
     if (now - last_space_check).seconds < 30:
         return last_check_outcome
-    else:
-        last_space_check = now
+    last_space_check = now
 
     if root_cfg.running_on_rpi and (
         psutil.disk_usage(str(root_cfg.ROOT_WORKING_DIR)).percent > high_memory_usage_threshold
@@ -74,8 +72,8 @@ def failing_to_keep_up() -> bool:
 def is_sampling_period(
     sample_probability: float,
     period_len: int,
-    timestamp: Optional[dt.datetime] = None,
-    sampling_window: Optional[tuple[str, str]] = None,
+    timestamp: dt.datetime | None = None,
+    sampling_window: tuple[str, str] | None = None,
 ) -> bool:
     """Used to synchronise sampling between sensors, the function returns True/False based
     on the time, periodicity of sampling and probability requested.
@@ -142,7 +140,7 @@ def is_sampling_period(
 ############################################################
 # Run a system command and return the output, or throw an exception on bad return code
 ############################################################
-def run_cmd(cmd: str, ignore_errors: bool = False, grep_strs: Optional[list[str]] = None) -> str:
+def run_cmd(cmd: str, ignore_errors: bool = False, grep_strs: list[str] | None = None) -> str:
     """Run a system command and return the output, or throw an exception on bad return code.
 
     Parameters:
@@ -183,8 +181,7 @@ def run_cmd(cmd: str, ignore_errors: bool = False, grep_strs: Optional[list[str]
             if ignore_errors:
                 logger.info("Ignoring failure running command: " + cmd + " Err output: " + str(err))
                 return ""
-            else:
-                raise Exception(f"{root_cfg.RAISE_WARN()}Error running command: {cmd}, Error: {err!s}")
+            raise Exception(f"{root_cfg.RAISE_WARN()}Error running command: {cmd}, Error: {err!s}")
 
         # Return lines that contain all of the entries in grep_strs
         output = out.decode("utf-8").strip()
@@ -198,8 +195,7 @@ def run_cmd(cmd: str, ignore_errors: bool = False, grep_strs: Optional[list[str]
         logger.error(f"{root_cfg.RAISE_WARN()}Command not found: {cmd}; {e}", exc_info=True)
         if ignore_errors:
             return ""
-        else:
-            raise e
+        raise e
 
 
 # Get entries from the journalctl log
@@ -357,9 +353,7 @@ def list_files_older_than(search_string: Path, age_in_seconds: float) -> list[Pa
             old_files.append(file)
 
     # Remove directories from the list
-    old_files = [x for x in old_files if not x.is_dir()]
-
-    return old_files
+    return [x for x in old_files if not x.is_dir()]
 
 
 def list_all_large_dirs(path: str, recursion: int = 0) -> int:

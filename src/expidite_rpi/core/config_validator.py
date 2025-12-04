@@ -185,9 +185,9 @@ def validate_trees(dptrees: list[DPtree]) -> tuple[bool, list[str]]:
                 f" Each sensor_type+index must be unique as they represent physical interfaces."
             )
             break
-        else:
-            # Add the sensor type and index to the map
-            sensor_index_map[sensor_type_index] = dptree
+
+        # Add the sensor type and index to the map
+        sensor_index_map[sensor_type_index] = dptree
 
     ######################################################################################################
     # Run within-tree validation rules

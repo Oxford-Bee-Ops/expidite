@@ -7,7 +7,7 @@ from collections.abc import Generator
 from contextlib import contextmanager
 from dataclasses import fields, is_dataclass
 from pathlib import Path
-from typing import Any, Union
+from typing import Any
 
 from pydantic_settings import BaseSettings
 
@@ -74,7 +74,8 @@ def display_dataclass(obj: Any, indent: int = 0) -> str:
         if value is None:
             # Skip empty fields
             continue
-        elif is_dataclass(value):
+
+        if is_dataclass(value):
             # Recursively display nested dataclass
             result += f"{fb(indent)}{field.name}::\n{display_dataclass(value, indent + 1)}{nlb(indent)}\n"
         elif isinstance(value, list) and all(isinstance(item, str | float | int) for item in value):
@@ -93,7 +94,7 @@ def display_dataclass(obj: Any, indent: int = 0) -> str:
     return result
 
 
-def save_settings_to_env(settings: BaseSettings, file_path: Union[str, Path]) -> None:
+def save_settings_to_env(settings: BaseSettings, file_path: str | Path) -> None:
     """
     Save a Pydantic BaseSettings object to a .env file.
 

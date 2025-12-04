@@ -1,7 +1,7 @@
 from datetime import datetime
 from pathlib import Path
 from random import random
-from typing import NamedTuple, Optional
+from typing import NamedTuple
 from zoneinfo import ZoneInfo
 
 from expidite_rpi.core import api
@@ -145,7 +145,8 @@ def get_file_datetime(fname: Path | str) -> datetime:
     if (de_count < 3) or (de_count == 4):
         logger.warning(f"{root_cfg.RAISE_WARN()}Invalid filename format: {fname}")
         return datetime.min
-    elif de_count == 3:
+
+    if de_count == 3:
         # We have a journal name of the form V3_EXITTRACKER_2ccf6791818a_20250522.csv
         start_time = datetime.strptime(fields[-1], "%Y%m%d").replace(tzinfo=ZoneInfo("UTC"))
     else:
@@ -160,9 +161,9 @@ def get_record_filename(
     data_id: str,
     suffix: api.FORMAT,
     start_time: datetime,
-    end_time: Optional[datetime] = None,
-    frame_number: Optional[int] = None,
-    arbitrary_index: Optional[int] = None,
+    end_time: datetime | None = None,
+    frame_number: int | None = None,
+    arbitrary_index: int | None = None,
 ) -> Path:
     """Generate the filename for the recording file.
 
@@ -204,9 +205,7 @@ def get_record_filename(
     assert isinstance(dst_dir, Path)
     if not dst_dir.exists():
         dst_dir.mkdir(parents=True, exist_ok=True)
-    full_fname = dst_dir / fname
-
-    return full_fname
+    return dst_dir / fname
 
 
 def increment_filename(fname: Path) -> Path:
@@ -288,8 +287,7 @@ def parse_journal_filename(fname: Path | str) -> dict:
 def get_temporary_filename(format: api.FORMAT) -> Path:
     """Generate a temporary filename in the TMP_DIR with the specified suffix."""
     suffix = format.value
-    tmp_fname = root_cfg.TMP_DIR.joinpath(f"tmp_{api.utc_to_fname_str()}_{random():.4g}.{suffix}")
-    return tmp_fname
+    return root_cfg.TMP_DIR.joinpath(f"tmp_{api.utc_to_fname_str()}_{random():.4g}.{suffix}")
 
 
 def get_temporary_dir() -> Path:

@@ -38,6 +38,6 @@ class CloudUtilities:
             combined_dataframe = pd.concat(df_list, ignore_index=True)
             shutil.rmtree(tmp_dir, ignore_errors=True)
             return combined_dataframe
-        else:
-            logger.warning(f"No CSV files found in {tmp_dir}.")
-            return pd.DataFrame()
+
+        logger.warning(f"No CSV files found in {tmp_dir}.")
+        return pd.DataFrame()

@@ -12,7 +12,6 @@ import time
 from dataclasses import dataclass
 from pathlib import Path
 from threading import Event
-from typing import Optional
 
 import cv2
 import numpy as np
@@ -118,7 +117,7 @@ class RpiEmulator:
                     raise ValueError(f"Recording {rec} does not exist")
         self.recordings = recordings
 
-    def set_recording_cap(self, cap: int, type_id: Optional[str] = None) -> None:
+    def set_recording_cap(self, cap: int, type_id: str | None = None) -> None:
         """Set the maximum number of recordings to be saved.
         If a type_id is provided, set the cap for that type only."""
         if type_id is not None:
@@ -140,10 +139,7 @@ class RpiEmulator:
     def recordings_still_to_process() -> bool:
         """Check if there are recordings remaining to process."""
         # Look for any files remaining in the processing directory
-        for file in root_cfg.EDGE_PROCESSING_DIR.glob("*"):
-            if file.is_file():
-                return True
-        return False
+        return any(file.is_file() for file in root_cfg.EDGE_PROCESSING_DIR.glob("*"))
 
     @staticmethod
     def fix_recording_device_id(fname: Path) -> Path:
@@ -161,12 +157,10 @@ class RpiEmulator:
 
         # Replace the device ID with the current device ID
         parts[2] = current_device_id
-        new_fname = fname.parent / "_".join(parts)
-
-        return new_fname
+        return fname.parent / "_".join(parts)
 
     def assert_records(
-        self, container: str, expected_files: dict[str, int], expected_rows: Optional[dict[str, int]] = None
+        self, container: str, expected_files: dict[str, int], expected_rows: dict[str, int] | None = None
     ) -> None:
         """Assert that the expected number of files exist.
 
@@ -240,9 +234,7 @@ class RpiEmulator:
         file = files[0]
 
         # Read the file into a pandas DataFrame
-        df = pd.read_csv(file, skip_blank_lines=True)
-
-        return df
+        return pd.read_csv(file, skip_blank_lines=True)
 
     @staticmethod
     def record_system_test_run(test_name: str, test_input: dict) -> None:
@@ -262,7 +254,7 @@ class RpiEmulator:
     ##################################################################################################
     # Internal implementation functions
     ##################################################################################################
-    def _match_recording(self, cmd: str) -> Optional[list[Path]]:
+    def _match_recording(self, cmd: str) -> list[Path] | None:
         """Check if the command matches any of the recordings.
 
         Parameters:
@@ -294,20 +286,19 @@ class RpiEmulator:
         if pass_check:
             self.recordings_saved[type_id] = previous_recordings + 1
             return True
-        else:
-            logger.debug(
-                f"Recording cap exceeded for {type_id}. "
-                f"Global cap: {self.recording_cap}, "
-                f"Type cap: {self.recording_cap_dict.get(type_id, -1)}, "
-                f"Previous recordings: {previous_recordings}"
-            )
-            return False
+        logger.debug(
+            f"Recording cap exceeded for {type_id}. "
+            f"Global cap: {self.recording_cap}, "
+            f"Type cap: {self.recording_cap_dict.get(type_id, -1)}, "
+            f"Previous recordings: {previous_recordings}"
+        )
+        return False
 
     #################################################################################################
     # Sensor command emulation
     #################################################################################################
     def run_cmd_test_stub(
-        self, cmd: str, ignore_errors: bool = False, grep_strs: Optional[list[str]] = None
+        self, cmd: str, ignore_errors: bool = False, grep_strs: list[str] | None = None
     ) -> str:
         """For testing purposes, we emulate certain basic Linux sensor commands so that we can run more
         realistic test scenarios on Windows.
@@ -335,15 +326,16 @@ class RpiEmulator:
         if cmd.startswith("rpicam-vid"):
             return self.emulate_rpicam_vid(cmd, ignore_errors, grep_strs)
 
-        elif cmd.startswith("arecord"):
+        if cmd.startswith("arecord"):
             # Emulate the arecord command
             # This is a simple emulation that just returns a success code and a message.
             # In a real scenario, we would run the command and return the output.
             return self.emulate_arecord(cmd, ignore_errors, grep_strs)
+
         return "Command not run on windows: " + cmd
 
     def emulate_rpicam_vid(
-        self, cmd: str, ignore_errors: bool = False, grep_strs: Optional[list[str]] = None
+        self, cmd: str, ignore_errors: bool = False, grep_strs: list[str] | None = None
     ) -> str:
         # Emulate the rpicam-vid command
         # We expect commands like:
@@ -424,7 +416,7 @@ class RpiEmulator:
         return f"rpicam-vid command emulated successfully, created {filename}"
 
     def emulate_arecord(
-        self, cmd: str, ignore_errors: bool = False, grep_strs: Optional[list[str]] = None
+        self, cmd: str, ignore_errors: bool = False, grep_strs: list[str] | None = None
     ) -> str:
         # Emulate the arecord command
         # We expect commands like:

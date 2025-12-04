@@ -123,5 +123,4 @@ class ADXL34X(Sensor):
             data.append(accelerometer.acceleration)
 
         # Convert the list of tuples [int, int, int] to a DataFrame
-        df = pd.DataFrame(data, columns=["aX", "aY", "aZ"])
-        return df
+        return pd.DataFrame(data, columns=["aX", "aY", "aZ"])

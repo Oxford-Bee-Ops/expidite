@@ -4,7 +4,6 @@ from dataclasses import asdict, dataclass
 from datetime import datetime
 from pathlib import Path
 from random import random
-from typing import Optional
 from zoneinfo import ZoneInfo
 
 import pandas as pd
@@ -46,7 +45,7 @@ class DPnode:
         """
         self._dpnode_config: DPtreeNodeCfg = config
         self.sensor_index: int = sensor_index
-        self.cc: Optional[CloudConnector] = None
+        self.cc: CloudConnector | None = None
 
         self._dpnode_children: dict[int, DPnode] = {}  # Dictionary mapping output streams to child nodes.
 
@@ -58,7 +57,7 @@ class DPnode:
         self._stats_lock = threading.Lock()
 
         # Create the Journals that we will use to store this DPtree's output.
-        self.journal_pool: Optional[JournalPool] = None
+        self.journal_pool: JournalPool | None = None
 
     def is_leaf(self, stream_index: int) -> bool:
         """Check if this node is a leaf node (i.e., it has no children).
@@ -140,7 +139,8 @@ class DPnode:
         for field in stream.fields:
             if field in api.REQD_RECORD_ID_FIELDS:
                 continue
-            elif field in sensor_data:
+
+            if field in sensor_data:
                 log_data[field] = sensor_data[field]
             else:
                 raise Exception(
@@ -194,8 +194,8 @@ class DPnode:
         stream_index: int,
         temporary_file: Path,
         start_time: datetime,
-        end_time: Optional[datetime] = None,
-        override_sampling: Optional[api.OVERRIDE] = api.OVERRIDE.AUTO,
+        end_time: datetime | None = None,
+        override_sampling: api.OVERRIDE | None = api.OVERRIDE.AUTO,
     ) -> Path:
         """Called by a Sensor or DataProcessor to save a recording file to the appropriate datastore.
         This should only be used by Sensors or **primary** datastreams.
@@ -226,9 +226,10 @@ class DPnode:
             else:
                 save_dir = root_cfg.EDGE_PROCESSING_DIR
         else:
-            assert False, "save_recording() should not be called in ETL mode"
+            raise AssertionError("save_recording() should not be called in ETL mode")
 
-        new_fname = self._save_recording(
+        # Logged in _save_recording()
+        return self._save_recording(
             stream_index=stream_index,
             src_file=temporary_file,
             dst_dir=save_dir,
@@ -237,19 +238,16 @@ class DPnode:
             end_time=end_time,
             override_sampling=override_sampling,
         )
-        # Logged in _save_recording()
-
-        return new_fname
 
     def save_sub_recording(
         self,
         stream_index: int,
         temporary_file: Path,
         start_time: datetime,
-        end_time: Optional[datetime] = None,
-        offset_index: Optional[int] = None,
-        secondary_offset_index: Optional[int] = None,
-        override_sampling: Optional[api.OVERRIDE] = api.OVERRIDE.AUTO,
+        end_time: datetime | None = None,
+        offset_index: int | None = None,
+        secondary_offset_index: int | None = None,
+        override_sampling: api.OVERRIDE | None = api.OVERRIDE.AUTO,
     ) -> Path:
         """Called by DataProcessors to save sub-sample recording files to the appropriate datastore.
         Note: save_sub_recording() will *rename* (ie delete) the supplied temporary_file
@@ -283,13 +281,13 @@ class DPnode:
                 save_dir = root_cfg.EDGE_UPLOAD_DIR
             else:
                 save_dir = root_cfg.EDGE_PROCESSING_DIR
+        elif self.is_leaf(stream_index):
+            save_dir = root_cfg.ETL_PROCESSING_DIR
         else:
-            if self.is_leaf(stream_index):
-                save_dir = root_cfg.ETL_PROCESSING_DIR
-            else:
-                save_dir = root_cfg.ETL_ARCHIVE_DIR
+            save_dir = root_cfg.ETL_ARCHIVE_DIR
 
-        new_fname = self._save_recording(
+        # Logged in _save_recording()
+        return self._save_recording(
             stream_index=stream_index,
             src_file=temporary_file,
             dst_dir=save_dir,
@@ -300,9 +298,6 @@ class DPnode:
             secondary_offset_index=secondary_offset_index,
             override_sampling=override_sampling,
         )
-        # Logged in _save_recording()
-
-        return new_fname
 
     def log_sample_data(self, sample_period_start_time: datetime) -> None:
         """Provide the count & duration of data samples recorded (environmental, media, etc)
@@ -319,10 +314,10 @@ class DPnode:
             # Grab the data and release the lock.
             # Don't call selftracker.log inside the lock, as it may take a while to complete.
             score_stats: list[tuple[str, DPnodeStat]] = list(self._dpnode_score_stats.items())
-            for type_id in self._dpnode_score_stats.keys():
+            for type_id in self._dpnode_score_stats:
                 self._dpnode_score_stats[type_id] = DPnodeStat()
             scorp_stats: list[tuple[str, DPnodeStat]] = list(self._dpnode_score_stats.items())
-            for type_id in self._dpnode_scorp_stats.keys():
+            for type_id in self._dpnode_scorp_stats:
                 self._dpnode_scorp_stats[type_id] = DPnodeStat()
 
         # Log SCORE data
@@ -369,7 +364,7 @@ class DPnode:
         except ValueError:
             raise ValueError(
                 f"Invalid sample probability: {sample_probability}; expected a value between 0.0 and 1.0"
-            )
+            ) from None
 
         return random() < prob
 
@@ -392,10 +387,10 @@ class DPnode:
         dst_dir: Path,
         start_time: datetime,
         suffix: api.FORMAT,
-        end_time: Optional[datetime] = None,
-        offset_index: Optional[int] = None,
-        secondary_offset_index: Optional[int] = None,
-        override_sampling: Optional[api.OVERRIDE] = api.OVERRIDE.AUTO,
+        end_time: datetime | None = None,
+        offset_index: int | None = None,
+        secondary_offset_index: int | None = None,
+        override_sampling: api.OVERRIDE | None = api.OVERRIDE.AUTO,
     ) -> Path:
         """Private method that handles saving of recordings from Datastreams or DataProcessors.
 
@@ -558,7 +553,7 @@ class DPnode:
                 elif field == api.RECORD_ID.STREAM_INDEX.value:
                     output_data[field] = stream.index
                 else:
-                    assert False, f"Unknown RECORD_ID field {field}"
+                    raise AssertionError(f"Unknown RECORD_ID field {field}")
         # Check the values in the RECORD_ID are not nan or empty
         for field in api.REQD_RECORD_ID_FIELDS:
             if not output_data[field].notna().all():

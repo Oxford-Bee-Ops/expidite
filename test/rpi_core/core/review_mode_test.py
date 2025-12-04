@@ -102,10 +102,12 @@ class TestReviewModeExercise:
             call_count += 1
             return call_count <= 3  # Run 3 iterations then stop
 
-        with patch.object(sensor, "continue_recording", side_effect=mock_continue_recording):
-            with patch.object(sensor.stop_requested, "wait") as mock_wait:
-                # Act
-                sensor.run()
+        with (
+            patch.object(sensor, "continue_recording", side_effect=mock_continue_recording),
+            patch.object(sensor.stop_requested, "wait") as mock_wait,
+        ):
+            # Act
+            sensor.run()
 
         # Assert
         # Should have called review_mode_output 3 times (once per iteration)
@@ -154,10 +156,12 @@ class TestReviewModeExercise:
             call_count += 1
             return call_count <= 4  # Run 4 iterations
 
-        with patch.object(sensor, "continue_recording", side_effect=mock_continue_recording):
-            with patch.object(sensor.stop_requested, "wait"):
-                # Act
-                sensor.run()
+        with (
+            patch.object(sensor, "continue_recording", side_effect=mock_continue_recording),
+            patch.object(sensor.stop_requested, "wait"),
+        ):
+            # Act
+            sensor.run()
 
         # Assert
         assert mock_save_recording.call_count == 4
@@ -184,14 +188,16 @@ class TestReviewModeExercise:
 
         sensor = RpicamSensor(config)
 
-        with patch("expidite_rpi.core.file_naming.get_temporary_filename") as mock_get_filename:
-            with patch.object(sensor, "save_recording"):
-                test_file = self.temp_dir / "custom_review.jpg"
-                mock_get_filename.return_value = test_file
-                mock_run_cmd.return_value = 0
+        with (
+            patch("expidite_rpi.core.file_naming.get_temporary_filename") as mock_get_filename,
+            patch.object(sensor, "save_recording"),
+        ):
+            test_file = self.temp_dir / "custom_review.jpg"
+            mock_get_filename.return_value = test_file
+            mock_run_cmd.return_value = 0
 
-                # Act
-                sensor.review_mode_output()
+            # Act
+            sensor.review_mode_output()
 
         # Assert
         called_command = mock_run_cmd.call_args[0][0]

@@ -69,10 +69,7 @@ class Sensor(Thread, DPnode, ABC):
         while utils.failing_to_keep_up():
             self.stop_requested.wait(root_cfg.my_device.max_recording_timer)
 
-        if self.stop_requested.is_set():
-            return False
-        else:
-            return True
+        return not self.stop_requested.is_set()
 
     def in_review_mode(self) -> bool:
         """Returns true if the system is in review mode.
@@ -155,4 +152,4 @@ class Sensor(Thread, DPnode, ABC):
         """The sensing_triggered method is where the sensor does its work of sensing and logging data
         in response to an external trigger, typically being invoked via the BCLI."""
 
-        assert False, "Sub-classes must override this method"
+        raise AssertionError("Sub-classes must override this method")

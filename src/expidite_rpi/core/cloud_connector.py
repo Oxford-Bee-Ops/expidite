@@ -55,7 +55,7 @@ class CloudConnector:
                 CloudConnector._instance = AsyncCloudConnector()
             return CloudConnector._instance
 
-        elif type == CloudType.LOCAL_EMULATOR:
+        if type == CloudType.LOCAL_EMULATOR:
             if CloudConnector._instance is None:
                 CloudConnector._instance = LocalCloudConnector()
             elif not isinstance(CloudConnector._instance, LocalCloudConnector):
@@ -66,7 +66,7 @@ class CloudConnector:
                 CloudConnector._instance = LocalCloudConnector()
             return CloudConnector._instance
 
-        elif type == CloudType.SYNC_AZURE:
+        if type == CloudType.SYNC_AZURE:
             if CloudConnector._instance is None:
                 CloudConnector._instance = SyncCloudConnector()
             elif not isinstance(CloudConnector._instance, SyncCloudConnector):
@@ -77,8 +77,7 @@ class CloudConnector:
                 CloudConnector._instance = SyncCloudConnector()
             return CloudConnector._instance
 
-        else:
-            raise ValueError(f"Unsupported cloud type: {type}")
+        raise ValueError(f"Unsupported cloud type: {type}")
 
     def set_keys(self, keys_file: Path) -> None:
         """Sets the cloud storage key for the CloudConnector from a file"""
@@ -144,9 +143,9 @@ class CloudConnector:
         self,
         src_container: str,
         dst_dir: Path,
-        folder_prefix_len: Optional[int] = None,
-        files: Optional[list[str]] = None,
-        overwrite: Optional[bool] = True,
+        folder_prefix_len: int | None = None,
+        files: list[str] | None = None,
+        overwrite: bool | None = True,
     ) -> None:
         """Download all the files in the src_datastore to the dst_dir
 
@@ -233,7 +232,7 @@ class CloudConnector:
             )
 
     def append_to_cloud(
-        self, dst_container: str, src_file: Path, delete_src: bool, col_order: Optional[list[str]] = None
+        self, dst_container: str, src_file: Path, delete_src: bool, col_order: list[str] | None = None
     ) -> bool:
         """Append a block of CSV data to an existing CSV file in the cloud
 
@@ -290,7 +289,7 @@ class CloudConnector:
         dst_container: str,
         dst_file: str,
         lines_to_append: list[str],
-        col_order: Optional[list[str]] = None,
+        col_order: list[str] | None = None,
     ) -> bool:
         try:
             target_container = self._validate_container(dst_container)
@@ -372,9 +371,9 @@ class CloudConnector:
     def list_cloud_files(
         self,
         container: str,
-        prefix: Optional[str] = None,
-        suffix: Optional[str] = None,
-        more_recent_than: Optional[datetime] = None,
+        prefix: str | None = None,
+        suffix: str | None = None,
+        more_recent_than: datetime | None = None,
     ) -> list[str]:
         """Similar to the Path.glob() method but against a cloud datastore.
 
@@ -417,8 +416,7 @@ class CloudConnector:
             last_modified = blob_client.get_blob_properties().last_modified
             # The Azure timezone is UTC but it's not explicitly set; set it
             return last_modified.replace(tzinfo=UTC)
-        else:
-            return datetime.min.replace(tzinfo=UTC)
+        return datetime.min.replace(tzinfo=UTC)
 
     def shutdown(self) -> None:
         """Shutdown the CloudConnector instance"""
@@ -485,13 +483,13 @@ class CloudConnector:
                     f"{blob_client.blob_name}: {local_headers}, {cloud_headers}"
                 )
                 return False
-            else:
-                # All is good; headers match
-                logger.debug(f"Headers match for {blob_client.blob_name}: {local_headers}")
-                return True
-        else:
-            logger.warning(f"{root_cfg.RAISE_WARN()}Remote file {blob_client.blob_name} has no headers")
-            return False
+
+            # All is good; headers match
+            logger.debug(f"Headers match for {blob_client.blob_name}: {local_headers}")
+            return True
+
+        logger.warning(f"{root_cfg.RAISE_WARN()}Remote file {blob_client.blob_name} has no headers")
+        return False
 
 
 #########################################################################################################
@@ -590,9 +588,9 @@ class LocalCloudConnector(CloudConnector):
         self,
         src_container: str,
         dst_dir: Path,
-        folder_prefix_len: Optional[int] = None,
-        files: Optional[list[str]] = None,
-        overwrite: Optional[bool] = True,
+        folder_prefix_len: int | None = None,
+        files: list[str] | None = None,
+        overwrite: bool | None = True,
     ) -> None:
         """Download all the files in the src_datastore to the dst_dir
 
@@ -655,7 +653,7 @@ class LocalCloudConnector(CloudConnector):
             )
 
     def append_to_cloud(
-        self, dst_container: str, src_file: Path, delete_src: bool, col_order: Optional[list[str]] = None
+        self, dst_container: str, src_file: Path, delete_src: bool, col_order: list[str] | None = None
     ) -> bool:
         """Append a block of CSV data to an existing CSV file in the cloud
 
@@ -738,9 +736,9 @@ class LocalCloudConnector(CloudConnector):
     def list_cloud_files(
         self,
         container: str,
-        prefix: Optional[str] = None,
-        suffix: Optional[str] = None,
-        more_recent_than: Optional[datetime] = None,
+        prefix: str | None = None,
+        suffix: str | None = None,
+        more_recent_than: datetime | None = None,
     ) -> list[str]:
         """Similar to the Path.glob() method but against a cloud datastore.
 
@@ -780,9 +778,8 @@ class LocalCloudConnector(CloudConnector):
             last_modified = blob_client.stat().st_mtime
             # The Azure timezone is UTC but it's not explicitly set; set it
             return datetime.fromtimestamp(last_modified, tz=UTC)
-        else:
-            logger.warning(f"Blob {blob_name} does not exist in container {container}")
-            return datetime.min.replace(tzinfo=UTC)
+        logger.warning(f"Blob {blob_name} does not exist in container {container}")
+        return datetime.min.replace(tzinfo=UTC)
 
 
 #####################################################################################################
@@ -811,7 +808,7 @@ class AsyncAppend:
     delete_src: bool
     data: list[str]
     iteration: int = 0
-    col_order: Optional[list[str]] = None
+    col_order: list[str] | None = None
 
 
 class AsyncCloudConnector(CloudConnector):
@@ -877,7 +874,7 @@ class AsyncCloudConnector(CloudConnector):
             self._upload_queue.put(AsyncUpload(dst_container, src_files, delete_src, storage_tier))
 
     def append_to_cloud(
-        self, dst_container: str, src_file: Path, delete_src: bool, col_order: Optional[list[str]] = None
+        self, dst_container: str, src_file: Path, delete_src: bool, col_order: list[str] | None = None
     ) -> bool:
         """
         Async version of append_to_cloud.

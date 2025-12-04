@@ -14,7 +14,6 @@
 #
 ###################################################################################################
 from dataclasses import replace
-from typing import Optional
 
 from expidite_rpi.core import configuration as root_cfg
 from expidite_rpi.core.dp_tree import DPtree
@@ -127,7 +126,7 @@ def create_continuous_video_4fps_device() -> list[DPtree]:
 # The original continuous video recording is deleted after being passed to the trap cam DP;
 # we could opt to save raw samples if we wanted to.
 ###################################################################################################
-def create_trapcam_device(sensor_index: Optional[int] = 0) -> list[DPtree]:
+def create_trapcam_device(sensor_index: int | None = 0) -> list[DPtree]:
     """Create a standard camera device."""
 
     if sensor_index is None:

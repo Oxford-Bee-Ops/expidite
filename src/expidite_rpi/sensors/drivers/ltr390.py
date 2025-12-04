@@ -2,7 +2,7 @@
 from collections.abc import Iterable
 from struct import pack_into, unpack_from
 from time import sleep
-from typing import ClassVar, Optional
+from typing import ClassVar
 
 from adafruit_bus_device import i2c_device  # type: ignore
 from adafruit_register.i2c_bit import ROBit, RWBit  # type: ignore
@@ -135,7 +135,7 @@ class CV:
     @classmethod
     def add_values(
         cls,
-        value_tuples: Iterable[tuple[str, int, str, Optional[float], int, Optional[float]]],
+        value_tuples: Iterable[tuple[str, int, str, float | None, int, float | None]],
     ) -> None:
         """Add CV values to the class"""
         cls.string = {}
@@ -335,7 +335,7 @@ class LTR390Driver:  # pylint:disable=too-many-instance-attributes
         if self._id_reg != 0xB2:
             raise RuntimeError("Unable to find LTR390; check your wiring")
 
-        self._mode_cache: Optional[bool] = None
+        self._mode_cache: bool | None = None
         self.initialize()
 
     def initialize(self) -> None:

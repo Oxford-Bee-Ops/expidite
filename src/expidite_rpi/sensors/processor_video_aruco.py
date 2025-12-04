@@ -219,8 +219,7 @@ class VideoArucoProcessor(DataProcessor):
         )
 
         # Return the data as a dataframe
-        df = pd.DataFrame(all_markers_full_info)
-        return df
+        return pd.DataFrame(all_markers_full_info)
 
     def _get_aruco_markers_in_frame(  # type: ignore[no-untyped-def]
         self, detector: cv2.aruco.ArucoDetector, frame, frame_num: int
