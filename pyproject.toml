@@ -91,7 +91,7 @@ ignore = [
     "ANN002", # Nice to fix.
     "ANN003", # Nice to fix.
     "ANN401", # Nice to fix.
-    "EM101", # Want to fix.
+    "EM101", # Deliberately ignore - no benefit.
     "PERF401", # We should fix these (more readable and more performant).
     "PLC0415", # We want this in some places.
     "PLR0912", # Too many branches in a function - nice to fix but a lot of effort.
