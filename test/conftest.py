@@ -119,7 +119,8 @@ def inventory() -> list[DeviceCfg]:
             raise RuntimeError("Failed to load inventory from configuration")
         return inventory
     except Exception as e:
-        raise RuntimeError(f"Failed to load inventory from configuration: {e}") from e
+        msg = f"Failed to load inventory from configuration: {e}"
+        raise RuntimeError(msg) from e
 
 
 @pytest.fixture

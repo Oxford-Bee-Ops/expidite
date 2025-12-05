@@ -74,9 +74,8 @@ class TrapcamDp(DataProcessor):
         cap = cv2.VideoCapture(str(video_path))
         if not cap.isOpened():
             exists = video_path.exists()
-            raise ValueError(
-                f"Unable to open video file (exists={exists}): {video_path}; opencv installation issue?"
-            )
+            msg = f"Unable to open video file (exists={exists}): {video_path}; opencv installation issue?"
+            raise ValueError(msg)
 
         fname_details = file_naming.parse_record_filename(video_path)
         start_time = fname_details[api.RECORD_ID.TIMESTAMP.value]
@@ -89,7 +88,8 @@ class TrapcamDp(DataProcessor):
         elif suffix == "mp4":
             fourcc = cv2.VideoWriter.fourcc(*"mp4v")
         else:
-            raise ValueError(f"Unsupported video format: {suffix}")
+            msg = f"Unsupported video format: {suffix}"
+            raise ValueError(msg)
 
         samples_saved = 0
         sum_sample_duration = 0

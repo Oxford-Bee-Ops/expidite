@@ -107,14 +107,11 @@ class RpiEmulator:
 
         Call this function to specify which recording should be returned in which conditions."""
         for recording in recordings:
-            if not isinstance(recording, RpiTestRecording):
-                raise ValueError(
-                    f"recordings must be a list of ScTestRecording objects; got: {type(recording)}"
-                )
             # Check the recording exists
             for rec in recording.recordings:
                 if not rec.exists():
-                    raise ValueError(f"Recording {rec} does not exist")
+                    msg = f"Recording {rec} does not exist"
+                    raise ValueError(msg)
         self.recordings = recordings
 
     def set_recording_cap(self, cap: int, type_id: str | None = None) -> None:
@@ -153,7 +150,8 @@ class RpiEmulator:
         # The device id is always the 3rd part of the filename
         parts = fname.name.split("_")
         if len(parts) < 3:
-            raise ValueError(f"Filename {fname} does not have enough parts to contain a device ID.")
+            msg = f"Filename {fname} does not have enough parts to contain a device ID."
+            raise ValueError(msg)
 
         # Replace the device ID with the current device ID
         parts[2] = current_device_id
@@ -228,7 +226,8 @@ class RpiEmulator:
 
         # Just return the first file found
         if len(files) == 0:
-            raise FileNotFoundError(f"No files found with prefix {file_prefix}")
+            msg = f"No files found with prefix {file_prefix}"
+            raise FileNotFoundError(msg)
         if len(files) > 1:
             logger.warning(f"Multiple files found with prefix {file_prefix}. Using the first one: {files[0]}")
         file = files[0]
@@ -446,7 +445,8 @@ class RpiEmulator:
         else:
             logger.error(f"Recording not found for command: {cmd}")
             if not ignore_errors:
-                raise FileNotFoundError(f"Recording not found for command: {cmd}")
+                msg = f"Recording not found for command: {cmd}"
+                raise FileNotFoundError(msg)
 
         # Sleep for the duration of the video to simulate recording time.
         time.sleep(duration)

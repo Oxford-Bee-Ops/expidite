@@ -147,7 +147,8 @@ class EdgeOrchestrator:
             if sensor in self._sensorThreads:
                 logger.error(f"{root_cfg.RAISE_WARN()}Sensor already added: {sensor!r}")
                 logger.info(self.status())
-                raise ValueError(f"Sensor already added: {sensor!r}")
+                msg = f"Sensor already added: {sensor!r}"
+                raise ValueError(msg)
             self._sensorThreads.append(sensor)
             self._dpworkers.append(DPworker(dptree))
 
@@ -158,8 +159,9 @@ class EdgeOrchestrator:
         """Call the create method and return the DPtree object.
         Raises ValueError if the create method does not successfully create any DPtree objects."""
         if create_method is None:
-            logger.error(f"{root_cfg.RAISE_WARN()}create_method not defined for {root_cfg.my_device_id}")
-            raise ValueError(f"create_method not defined for {root_cfg.my_device_id}")
+            msg = f"create_method not defined for {root_cfg.my_device_id}"
+            logger.error(f"{root_cfg.RAISE_WARN()}{msg}")
+            raise ValueError(msg)
 
         logger.info(
             f"Creating DP trees for {root_cfg.my_device_id} using {create_method} and {create_kwargs}"
@@ -170,7 +172,8 @@ class EdgeOrchestrator:
             logger.error(
                 f"{root_cfg.RAISE_WARN()}No sensors created by {root_cfg.my_device_id} {create_method}"
             )
-            raise ValueError(f"No sensors created by {create_method}")
+            msg = f"No sensors created by {create_method}"
+            raise ValueError(msg)
 
         if not isinstance(dp_trees, list):
             logger.error(  # type: ignore[unreachable]

@@ -71,9 +71,8 @@ class AudioSensor(Sensor):
         try:
             self.get_stream(AUDIO_SENSOR_STREAM_INDEX)  # Main audio stream
         except ValueError as e:
-            raise ValueError(
-                f"AudioSensor requires a main audio stream at index {AUDIO_SENSOR_STREAM_INDEX}: {e}"
-            ) from e
+            msg = f"AudioSensor requires a main audio stream at index {AUDIO_SENSOR_STREAM_INDEX}: {e}"
+            raise ValueError(msg) from e
 
     ############################################################################################################
     # Function that records audio on demand.

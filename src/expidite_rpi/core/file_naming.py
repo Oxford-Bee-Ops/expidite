@@ -104,7 +104,8 @@ def parse_record_filename(fname: Path | str) -> dict:
     # Re-expand the device_id (field 0) to include the underscores after each 2 characters
     device_id = fields[2]
     if len(device_id) != 12:
-        raise ValueError(f"Error parsing filename device_id:{fname}")
+        msg = f"Error parsing filename device_id:{fname}"
+        raise ValueError(msg)
     sensor_id = int(fields[3])
     stream_index = int(fields[4])
     # Convert the start_time and end_time to datetime objects
@@ -216,7 +217,8 @@ def increment_filename(fname: Path) -> Path:
         new_fname = fname.with_name(f"{fname.stem}__{count}{fname.suffix}")
         count += 1
         if count > 100:
-            raise Exception(f"Error incrementing filename {fname}, count > 100")
+            msg = f"Error incrementing filename {fname}, count > 100"
+            raise Exception(msg)
     return new_fname
 
 
@@ -268,7 +270,8 @@ def parse_journal_filename(fname: Path | str) -> dict:
     datastream_type_id = fields[1]
     device_id = fields[2]
     if len(device_id) != 12:
-        raise ValueError(f"Error parsing journal filename device_id:{fname}")
+        msg = f"Error parsing journal filename device_id:{fname}"
+        raise ValueError(msg)
     timestamp = None
     if len(fields) > 3:
         timestamp = datetime.strptime(fields[3], "%Y%m%d").replace(tzinfo=ZoneInfo("UTC"))

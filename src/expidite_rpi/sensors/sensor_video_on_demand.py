@@ -75,9 +75,8 @@ class VideoOnDemandSensor(Sensor):
         try:
             self.get_stream(VIDEO_OD_STREAM_INDEX)  # Main video stream
         except ValueError as e:
-            raise ValueError(
-                f"VideoOnDemandSensor requires a main video stream at index {VIDEO_OD_STREAM_INDEX}: {e}"
-            ) from e
+            msg = f"VideoOnDemandSensor requires a main video stream at index {VIDEO_OD_STREAM_INDEX}: {e}"
+            raise ValueError(msg) from e
 
     def sensing_triggered(self, duration: int) -> None:
         """Invoked by Sensor super-class when sensing is triggered."""

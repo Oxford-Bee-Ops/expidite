@@ -86,8 +86,6 @@ class DPtree:
         src_node, stream_index = source
 
         stream = src_node.get_stream(stream_index)
-        if stream is None:
-            raise ValueError(f"Node has no output stream at stream_index {stream_index}, {src_node}.")
 
         if not self.sensor:
             # New tree
@@ -98,11 +96,13 @@ class DPtree:
             self.sensor = src_node
         # The source should already exist in the tree.
         elif src_node not in self._nodes.values():
-            raise ValueError(f"Source node {src_node} is not yet connected; connect it first")
+            msg = f"Source node {src_node} is not yet connected; connect it first"
+            raise ValueError(msg)
 
         data_id = stream.get_data_id(self.sensor.sensor_index)
         if data_id in self._nodes:
-            raise ValueError(f"Stream {data_id} is already connected.")
+            msg = f"Stream {data_id} is already connected."
+            raise ValueError(msg)
 
         # Add the sink node to our list of known nodes.
         self._nodes[data_id] = sink

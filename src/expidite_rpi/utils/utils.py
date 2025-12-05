@@ -181,7 +181,8 @@ def run_cmd(cmd: str, ignore_errors: bool = False, grep_strs: list[str] | None =
             if ignore_errors:
                 logger.info("Ignoring failure running command: " + cmd + " Err output: " + str(err))
                 return ""
-            raise Exception(f"{root_cfg.RAISE_WARN()}Error running command: {cmd}, Error: {err!s}")
+            msg = f"{root_cfg.RAISE_WARN()}Error running command: {cmd}, Error: {err!s}"
+            raise Exception(msg)
 
         # Return lines that contain all of the entries in grep_strs
         output = out.decode("utf-8").strip()

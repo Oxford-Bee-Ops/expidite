@@ -86,10 +86,9 @@ class DPnode:
             ValueError: If the stream index is out of range for this node's configuration.
         """
         outputs = self._dpnode_config.outputs
-        if outputs is None:
-            raise ValueError(f"Outputs are not defined for {self._dpnode_config}.")
         if len(outputs) <= stream_index:
-            raise ValueError(f"Stream index {stream_index} is out of range for {self._dpnode_config}.")
+            msg = f"Stream index {stream_index} is out of range for {self._dpnode_config}."
+            raise ValueError(msg)
         return outputs[stream_index]
 
     def get_data_id(self, stream_index: int) -> str:
@@ -143,11 +142,12 @@ class DPnode:
             if field in sensor_data:
                 log_data[field] = sensor_data[field]
             else:
-                raise Exception(
+                msg = (
                     f"Field {field} missing from data logged to {data_id}; "
                     f"Expected:{stream.fields}; "
                     f"Received the following fields:{sensor_data.keys()}"
                 )
+                raise Exception(msg)
 
         # Add the Datastream indices (datastream_type_id, device_id, sensor_id) and a
         # timestamp to the log_data
@@ -358,13 +358,13 @@ class DPnode:
         try:
             prob = float(sample_probability)
             if prob < 0.0 or prob > 1.0:
-                raise ValueError(
+                msg = (
                     f"Invalid sample probability: {sample_probability}; expected a value between 0.0 and 1.0"
                 )
+                raise ValueError(msg)
         except ValueError:
-            raise ValueError(
-                f"Invalid sample probability: {sample_probability}; expected a value between 0.0 and 1.0"
-            ) from None
+            msg = f"Invalid sample probability: {sample_probability}; expected a value between 0.0 and 1.0"
+            raise ValueError(msg) from None
 
         return random() < prob
 
@@ -414,12 +414,14 @@ class DPnode:
 
         # Check that the file is present and not empty
         if not src_file.exists():
-            raise FileNotFoundError(f"File {src_file} not found.")
+            msg = f"File {src_file} not found."
+            raise FileNotFoundError(msg)
 
         # Check that the file is of the correct format.
         # This should match the suffix provided.
         if not src_file.suffix.endswith(suffix.value):
-            raise ValueError(f"File format {src_file.suffix} does not match expected suffix {suffix}.")
+            msg = f"File format {src_file.suffix} does not match expected suffix {suffix}."
+            raise ValueError(msg)
 
         # Check that the start_time and end_time are valid
         if not isinstance(start_time, datetime):
@@ -444,17 +446,17 @@ class DPnode:
 
         if end_time is not None:
             if start_time > end_time:
-                raise ValueError(f"Start_time ({start_time}) must be before end_time ({end_time}).")
+                msg = f"Start_time ({start_time}) must be before end_time ({end_time})."
+                raise ValueError(msg)
 
         # Generate the filename for the recording
         if stream.file_naming is None or stream.file_naming == api.FILE_NAMING.DEFAULT:
             new_fname: Path = file_naming.get_record_filename(
                 dst_dir, data_id, suffix, start_time, end_time, offset_index, secondary_offset_index
             )
-        elif stream.file_naming == api.FILE_NAMING.REVIEW_MODE:
-            new_fname = file_naming.get_review_mode_filename(data_id, suffix)
         else:
-            raise ValueError(f"Unknown file_naming {stream.file_naming} for stream {data_id}")
+            # stream.file_naming == api.FILE_NAMING.REVIEW_MODE:
+            new_fname = file_naming.get_review_mode_filename(data_id, suffix)
 
         # If we're in test mode, we may cap the number of recordings we save.
         if root_cfg.ST_MODE == root_cfg.SOFTWARE_TEST_MODE.TESTING:
@@ -553,7 +555,8 @@ class DPnode:
                 elif field == api.RECORD_ID.STREAM_INDEX.value:
                     output_data[field] = stream.index
                 else:
-                    raise AssertionError(f"Unknown RECORD_ID field {field}")
+                    msg = f"Unknown RECORD_ID field {field}"
+                    raise AssertionError(msg)
         # Check the values in the RECORD_ID are not nan or empty
         for field in api.REQD_RECORD_ID_FIELDS:
             if not output_data[field].notna().all():
