@@ -851,9 +851,7 @@ class AsyncCloudConnector(CloudConnector):
         delete_src: bool,
         storage_tier: api.StorageTier = api.StorageTier.HOT,
     ) -> None:
-        """
-        Async version of upload_to_container using a queue and thread pool for parallel uploads.
-        """
+        """Async version of upload_to_container using a queue and thread pool for parallel uploads."""
         verified_files = []
         for file in src_files:
             if not file.exists():
@@ -879,9 +877,7 @@ class AsyncCloudConnector(CloudConnector):
     def append_to_cloud(
         self, dst_container: str, src_file: Path, delete_src: bool, col_order: list[str] | None = None
     ) -> bool:
-        """
-        Async version of append_to_cloud.
-        """
+        """Async version of append_to_cloud."""
         logger.debug(f"AsyncCC.append_to_cloud() with delete_src={delete_src} for {src_file}")
 
         if not src_file.exists():

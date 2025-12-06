@@ -284,9 +284,7 @@ class ADXL345:
         self._enabled_interrupts["motion"] = True
 
     def disable_motion_detection(self) -> None:
-        """
-        Disable motion detection
-        """
+        """Disable motion detection"""
         active_interrupts = self._read_register_unpacked(_REG_INT_ENABLE)
         active_interrupts &= ~_INT_ACT
         self._write_register_byte(_REG_INT_ENABLE, active_interrupts)
@@ -461,6 +459,4 @@ class ADXL345:
 
 
 class ADXL343(ADXL345):
-    """
-    Stub class for the ADXL343 3-axis accelerometer
-    """
+    """Stub class for the ADXL343 3-axis accelerometer"""

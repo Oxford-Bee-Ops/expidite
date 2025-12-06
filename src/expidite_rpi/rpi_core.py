@@ -18,9 +18,7 @@ logger = root_cfg.setup_logger("expidite")
 
 
 class RpiCore:
-    """
-    RpiCore provides the public interface to the rpi_core module.
-    """
+    """RpiCore provides the public interface to the rpi_core module."""
 
     # We make the location of the keys file a public variable so that users can reference
     # it in their own code.

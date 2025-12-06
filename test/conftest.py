@@ -74,9 +74,7 @@ def log_test_lifecycle(request):
 
 @pytest.hookimpl(tryfirst=True, hookwrapper=True)
 def pytest_runtest_makereport(item, call):
-    """
-    Hook to capture test results for the log_test_lifecycle fixture.
-    """
+    """Hook to capture test results for the log_test_lifecycle fixture."""
     outcome = yield
     rep = outcome.get_result()
     setattr(item, f"rep_{rep.when}", rep)

@@ -52,9 +52,7 @@ class DPtree:
     """
 
     def __init__(self, sensor: Sensor) -> None:
-        """
-        Initializes a DPtree with a Sensor instance that forms the root of the tree.
-        """
+        """Initializes a DPtree with a Sensor instance that forms the root of the tree."""
         # The sensor is the root node of the tree.
         self.sensor: Sensor = sensor
 
