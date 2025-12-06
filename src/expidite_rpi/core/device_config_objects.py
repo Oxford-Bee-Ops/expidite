@@ -7,7 +7,7 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 from expidite_rpi.core import api
 from expidite_rpi.utils import utils_clean
 
-############################################################################################
+##############################################################################################################
 #
 # Configuration classes
 #
@@ -16,7 +16,7 @@ from expidite_rpi.utils import utils_clean
 # - sc_config.env (class reference for the fleet config)
 #
 # The system loads its main config from the fleet_config_py defined in the sc_config.env.
-############################################################################################
+##############################################################################################################
 FAILED_TO_LOAD = "Not set"
 
 
@@ -38,9 +38,9 @@ class Configuration:
         return getattr(self, field_name)
 
 
-############################################################################################
+##############################################################################################################
 # Wifi configuration
-############################################################################################
+##############################################################################################################
 @dataclass
 class WifiClient:
     ssid: str
@@ -48,9 +48,9 @@ class WifiClient:
     pw: str
 
 
-############################################################################################
+##############################################################################################################
 # Configuration for a device
-############################################################################################
+##############################################################################################################
 @dataclass
 class DeviceCfg(Configuration):
     """Configuration for a device"""
@@ -126,9 +126,9 @@ class DeviceCfg(Configuration):
     tests_to_run: list[str] = field(default_factory=list)
 
 
-############################################################################################
+##############################################################################################################
 # Define the two .env files that hold the keys and the RpiCore configuration class ref
-############################################################################################
+##############################################################################################################
 class Keys(BaseSettings):
     """Class to hold the keys for the system"""
 
@@ -152,9 +152,9 @@ class Keys(BaseSettings):
 class SystemCfg(BaseSettings):
     """Class to hold the keys for the system"""
 
-    ############################################################
+    ##########################################################################################################
     # Mandatory custom settings
-    ############################################################
+    ##########################################################################################################
     # The URL for the Git repo with the user's config and custom sensor code.
     my_git_repo_url: str = FAILED_TO_LOAD
     # The name of the branch in the Git repo to use.
@@ -172,9 +172,9 @@ class SystemCfg(BaseSettings):
     # For SYSTEM_TEST installations, this is called at a scheduled time or via bcli.
     my_start_script: str = FAILED_TO_LOAD
 
-    ############################################################
+    ##########################################################################################################
     # Default-able settings
-    ############################################################
+    ##########################################################################################################
     # Install type is one of api.INSTALL_TYPE:
     #   - api.INSTALL_TYPE.RPI_SENSOR for a normal sensor installation
     #   - api.INSTALL_TYPE.SYSTEM_TEST to use the device as a system test device
@@ -202,9 +202,9 @@ class SystemCfg(BaseSettings):
     # Manage the LED status indicator
     manage_leds: str = "Yes"
 
-    ###########################################################
+    ##########################################################################################################
     # System test and re-processor settings
-    ###########################################################
+    ##########################################################################################################
     # Use local cloud storage for testing if set to "Yes"
     use_local_cloud: str = "No"
     # Local cloud is appended on to the root_working_dir (/expidite)

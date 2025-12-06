@@ -12,11 +12,11 @@ from expidite_rpi.core import api
 from expidite_rpi.core.device_config_objects import FAILED_TO_LOAD, DeviceCfg, Keys, SystemCfg
 from expidite_rpi.utils import utils_clean
 
-############################################################################################
+##############################################################################################################
 # System timers
 #
 # Collected here for easy review and mocking in tests
-############################################################################################
+##############################################################################################################
 # Frequency in seconds on which the DP worker thread is run
 DP_FREQUENCY: float = 60
 # Frequency in seconds on which the Journal sync thread is run
@@ -34,11 +34,11 @@ WATCHDOG_FREQUENCY: float = 1
 #   - max_recording_timer
 
 
-############################################################################################
+##############################################################################################################
 #
 # Platform discovery
 #
-############################################################################################
+##############################################################################################################
 def _get_pi_model() -> str:
     try:
         with open("/proc/device-tree/model") as model_file:
@@ -88,11 +88,11 @@ assert len(my_mac) > 0, f"Failed to get MAC address for wlan0 on {platform.platf
 my_device_id = my_mac.replace(":", "")
 
 
-############################################################################################
+##############################################################################################################
 #
 # Platform-dependent directory structure
 #
-############################################################################################
+##############################################################################################################
 if running_on_windows:
     # Set paths for development mode where we're running everything locally on a laptop
     HOME_DIR: Path = Path.home()
@@ -134,12 +134,12 @@ FLAGS_DIR: Path = CFG_DIR / "flags"  # For persistent flags
 TMP_FLAGS_DIR: Path = TMP_DIR / "tmp_flags"  # For transient flags
 
 
-###########################################################################################
+##############################################################################################################
 # RpiCore uses 3 directories on the edge device:
 # - EDGE_PROCESSING_DIR for recordings that need to be processed
 # - EDGE_STAGING_DIR for open journal files that are storing data output by processing
 # - EDGE_UPLOAD_DIR for files that are ready for upload, including closed journals
-###########################################################################################
+##############################################################################################################
 EDGE_PROCESSING_DIR = ROOT_WORKING_DIR / "processing"  # Awaiting DP processing
 EDGE_STAGING_DIR = ROOT_WORKING_DIR / "staging"  # Journals awaiting flush
 EDGE_UPLOAD_DIR = ROOT_WORKING_DIR / "upload"  # Any file awaiting upload
@@ -169,10 +169,10 @@ EXPIDITE_VERSION_FILE: Path = CFG_DIR / "expidite_code_version"
 USER_CODE_VERSION_FILE: Path = CFG_DIR / "user_code_version"
 
 
-############################################################################################
+##############################################################################################################
 # Mode of operation
 # Set by the EdgeOrchestrator or the ETL orchestrator
-############################################################################################
+##############################################################################################################
 class Mode(Enum):
     EDGE = "edge"
     ETL = "etl"
@@ -190,10 +190,10 @@ def set_mode(mode: Mode) -> None:
     _mode = mode
 
 
-############################################################
+##############################################################################################################
 # PERSISTENT FLAGS
 # Set in FLAGS_DIR in persistent storage
-############################################################
+##############################################################################################################
 # Used by the CLI and RpiCore.py to start / stop RpiCore
 STOP_EXPIDITE_FLAG = FLAGS_DIR / "STOP_EXPIDITE_FLAG"
 RESTART_EXPIDITE_FLAG = FLAGS_DIR / "RESTART_EXPIDITE_FLAG"
@@ -203,10 +203,10 @@ RESTART_EXPIDITE_FLAG = FLAGS_DIR / "RESTART_EXPIDITE_FLAG"
 # ~10min env timer to expire.
 REVIEW_MODE_FLAG = FLAGS_DIR / "IN_REVIEW_MODE_FLAG"
 
-#############################################################################################
+##############################################################################################################
 # TRANSIENT FLAGS
 # Set in TMP_FLAGS_DIR and lost on reboot
-#############################################################################################
+##############################################################################################################
 # Used by EdgeOrchestrator to check if RpiCore is running
 EXPIDITE_IS_RUNNING_FLAG = TMP_FLAGS_DIR / "EXPIDITE_IS_RUNNING_FLAG"
 # Used to control the LED status indicator
@@ -216,9 +216,9 @@ LED_STATUS_FILE = TMP_FLAGS_DIR / "LED_STATUS"
 SENSOR_TRIGGER_FLAG = TMP_FLAGS_DIR / "SENSOR_TRIGGER_FLAG"
 
 
-############################################################################################
+##############################################################################################################
 # Software testing flag
-############################################################################################
+##############################################################################################################
 class SOFTWARE_TEST_MODE(Enum):
     """Test modes for the RpiCore"""
 
@@ -228,7 +228,7 @@ class SOFTWARE_TEST_MODE(Enum):
 
 ST_MODE: SOFTWARE_TEST_MODE = SOFTWARE_TEST_MODE.LIVE
 
-############################################################################################################
+##############################################################################################################
 # Set up logging
 #
 # The logging level is a combination of:
@@ -236,7 +236,7 @@ ST_MODE: SOFTWARE_TEST_MODE = SOFTWARE_TEST_MODE.LIVE
 #  - the value requested by the calling module (default is INFO)
 #
 # There is update code at the end of this file that sets the level once we've loaded config.
-############################################################################################################
+##############################################################################################################
 TEST_LOG = LOG_DIR.joinpath("test.log")
 _DEFAULT_LOG: Path | None = None
 _LOG_LEVEL = logging.INFO
@@ -317,9 +317,9 @@ def RAISE_WARN() -> str:
 logger = setup_logger("expidite")
 
 
-################################################################################################
+##############################################################################################################
 # Load the keys.env file
-################################################################################################
+##############################################################################################################
 def _load_keys() -> Keys | None:
     if not KEYS_FILE.exists():
         print("#################################################################")
@@ -363,9 +363,9 @@ def check_keys() -> tuple[bool, str]:
     return success, error
 
 
-############################################################################################
+##############################################################################################################
 # Load system.cfg configuration
-############################################################################################
+##############################################################################################################
 def _load_system_cfg() -> SystemCfg | None:
     if not SYSTEM_CFG_FILE.exists():
         print("#################################################################")
@@ -389,9 +389,9 @@ def _load_system_cfg() -> SystemCfg | None:
 system_cfg = _load_system_cfg()
 
 
-############################################################################################
+##############################################################################################################
 # Cloud configuration
-############################################################################################
+##############################################################################################################
 class CloudType(Enum):
     """Enum for the supported cloud types"""
 
@@ -405,9 +405,9 @@ if system_cfg and system_cfg.use_local_cloud.lower() == "yes":
     CLOUD_TYPE = CloudType.LOCAL_EMULATOR
 
 
-#############################################################################################
+##############################################################################################################
 # Store the provided inventory
-#############################################################################################
+##############################################################################################################
 DUMMY_DEVICE = DeviceCfg(
     name="DUMMY",
     device_id=my_device_id,

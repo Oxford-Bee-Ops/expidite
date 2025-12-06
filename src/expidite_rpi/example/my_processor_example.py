@@ -25,7 +25,7 @@ EXAMPLE_FILE_PROCESSOR_CFG = DataProcessorCfg(
 )
 
 
-#############################################################################################################
+##############################################################################################################
 # Define the DataProcessor for the ExampleSensor
 #
 # The DataProcessor is responsible for processing the data from the Datastream.
@@ -34,7 +34,7 @@ EXAMPLE_FILE_PROCESSOR_CFG = DataProcessorCfg(
 # This data processor:
 # - processes files into DataFrames (primary Datastream)
 # - creates data that it records into a derived Datastream
-#############################################################################################################
+##############################################################################################################
 class ExampleProcessor(DataProcessor):
     def process_data(self, input_data: pd.DataFrame | list[Path]) -> None:
         """This implementation of the process_data method is used in testing:

@@ -1,8 +1,8 @@
-####################################################################################################
+##############################################################################################################
 # Class: VideoArucoProcessor
 #
 # This class performs event detection to identify ARUCO markers in videos.
-####################################################################################################
+##############################################################################################################
 from array import array
 from dataclasses import dataclass, field
 from pathlib import Path
@@ -74,9 +74,9 @@ ARUCO_MARKED_UP_VIDEOS_STREAM: Stream = Stream(
 
 @dataclass
 class ArucoProcessorCfg(DataProcessorCfg):
-    ########################################################################
+    ##########################################################################################################
     # Add custom fields
-    ########################################################################
+    ##########################################################################################################
     aruco_dict_name: str = "DICT_4X4_50"
     save_marked_up_video: bool = True  # Save the marked up video
 
@@ -105,10 +105,10 @@ class VideoArucoProcessor(DataProcessor):
 
         for f in files:
             try:
-                #############################################################################################
+                ##############################################################################################
                 # Step 1: identify & output potential ARUCO markers
                 # This also saves a marked up version of the video to a derived datastream
-                #############################################################################################
+                ##############################################################################################
                 result = self.process_video_file(f, save_marked_up_video, aruco_dict_name=aruco_dict_name)
                 if result is not None:
                     results.append(result)

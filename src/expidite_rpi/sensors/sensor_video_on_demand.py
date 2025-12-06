@@ -1,10 +1,10 @@
-####################################################################################################
+##############################################################################################################
 # Sensor class that provides on-demand video recording.
 # This is a direct map onto Raspberry Pi's rpicam-vid.
 #
 # The user specifies the rpicam-vid command line, except for the file name, which is set by RpiCore.
 #
-####################################################################################################
+##############################################################################################################
 from dataclasses import dataclass
 
 from expidite_rpi.core import api, file_naming
@@ -29,9 +29,9 @@ VIDEO_OD_STREAM: Stream = Stream(
 
 @dataclass
 class VideoOnDemandSensorCfg(SensorCfg):
-    ############################################################
+    ##########################################################################################################
     # Add custom fields
-    ############################################################
+    ##########################################################################################################
     # Defines the rpicam-vid command to use to record video.
     # This should be as specified in the rpicam-vid documentation.
     # The filename should be substituted with FILENAME.

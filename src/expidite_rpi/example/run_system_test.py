@@ -1,10 +1,10 @@
-###############################################################################
+##############################################################################################################
 # @@@ Add a readme reference to docs explaining the structure of system test.
 #
 # The run_system_test script is invoked by either crontab or bcli.
 # It is intended to enable nightly test runs on known samples with associated ground truth.
 # This builds on top of standard pytest functionality.
-#################################################################################
+##############################################################################################################
 import pytest
 
 from expidite_rpi import api

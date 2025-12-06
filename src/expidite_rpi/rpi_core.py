@@ -8,13 +8,13 @@ from expidite_rpi.core.edge_orchestrator import EdgeOrchestrator
 
 logger = root_cfg.setup_logger("expidite")
 
-####################################################################################################
+##############################################################################################################
 # RpiCore provides the public interface to the rpi_core module.
 # It is the entry point for users to configure and start the rpi.
 # Since the RpiCore may already be running (for example from boot in crontab), we can't assume
 # that this is the only instance of RpiCore on this device.
 # Therefore, all actions need to be taken indirectly via file flags or system calls.
-####################################################################################################
+##############################################################################################################
 
 
 class RpiCore:

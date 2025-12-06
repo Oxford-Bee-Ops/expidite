@@ -11,11 +11,11 @@ EXAMPLE_FILE_TYPE_ID = "DUMMF"
 EXAMPLE_FILE_STREAM_INDEX = 0
 EXAMPLE_LOG_STREAM_INDEX = 1
 
-#############################################################################################################
+##############################################################################################################
 # Define the SensorCfg object for the ExampleSensor
 #
 # We've added a_custom_field to demonstrate passing custom configuration to a concrete subclass of Sensor.
-#############################################################################################################
+##############################################################################################################
 EXAMPLE_SENSOR_CFG = SensorCfg(
     # The type of sensor.
     sensor_type=api.SENSOR_TYPE.I2C,
@@ -46,11 +46,11 @@ EXAMPLE_SENSOR_CFG = SensorCfg(
 )
 
 
-#############################################################################################################
+##############################################################################################################
 # Define the ExampleSensor as a concrete implementation of the Sensor class
 #
 # A concrete Sensor class must implement the run() method.
-#############################################################################################################
+##############################################################################################################
 class ExampleSensor(Sensor):
     def __init__(self, config: SensorCfg) -> None:
         super().__init__(config)

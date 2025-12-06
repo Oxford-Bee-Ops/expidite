@@ -1,9 +1,9 @@
-####################################################################################################
+##############################################################################################################
 # Sensor classes
 #  - EdgeOrchestrator: Manages the state of the sensor threads
 #  - SensorConfig: Dataclass for sensor configuration, specified in sensor_cac.py
 #  - Sensor: Super class for all sensor classes
-####################################################################################################
+##############################################################################################################
 from abc import ABC
 from datetime import datetime, timedelta
 from threading import Event, Thread
@@ -16,9 +16,9 @@ from expidite_rpi.utils import utils
 logger = root_cfg.setup_logger("expidite")
 
 
-#############################################################################################################
+##############################################################################################################
 # Super class that implements a thread to read the sensor data
-#############################################################################################################
+##############################################################################################################
 class Sensor(Thread, DPnode, ABC):
     # Create a class variable to track the review_mode status
     review_mode: bool = False

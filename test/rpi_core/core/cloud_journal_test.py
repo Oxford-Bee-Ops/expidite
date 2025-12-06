@@ -11,11 +11,11 @@ logger = root_cfg.setup_logger("expidite")
 root_cfg.ST_MODE = root_cfg.SOFTWARE_TEST_MODE.TESTING
 
 
-####################################################################################################
+##############################################################################################################
 # Test CloudJournal & Journal
 #
 # The CloudJournal is a Journal that automatically uploads to the cloud.
-####################################################################################################
+##############################################################################################################
 class Test_CloudJournal:
     @pytest.mark.unittest
     def test_CloudJournal(self) -> None:
@@ -69,10 +69,10 @@ class Test_CloudJournal:
         # This will fail if pandas can't parse the file
         cj.download()
 
-        ###########################################################################
+        ######################################################################################################
         # Repeat after having changed the reqd_columns
         # We'll only ever encounter this when we change the coded definition
-        ###########################################################################
+        ######################################################################################################
         # Because CC only checks for mismatched columns when it is first writing to a new file,
         # we need to delete it's cache of known files
         cc._validated_append_files = set()

@@ -1,9 +1,9 @@
-####################################################################################################
+##############################################################################################################
 # Sensor class that provides a direct map onto Raspberry Pi's rpicam-still.
 #
 # The user specifies the rpicam-still command line, except for the file name, which is set by RpiCore.
 #
-####################################################################################################
+##############################################################################################################
 from dataclasses import dataclass
 from typing import cast
 
@@ -41,9 +41,9 @@ RPICAM_STILL_REVIEW_MODE_STREAM: Stream = Stream(
 
 @dataclass
 class RpicamStillSensorCfg(SensorCfg):
-    ############################################################
+    ##########################################################################################################
     # Add custom fields
-    ############################################################
+    ##########################################################################################################
     # Defines the rpicam-still command to use to record video.
     # This should be as specified in the rpicam-still documentation.
     # The filename should be substituted with FILENAME.

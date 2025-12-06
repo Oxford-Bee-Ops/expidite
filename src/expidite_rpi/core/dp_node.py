@@ -120,11 +120,11 @@ class DPnode:
             cfg_export["children"][child_index] = child.export()
         return cfg_export
 
-    #########################################################################################################
+    ##########################################################################################################
     #
     # Public methods called by Sensor or DataProcessor to log data or save recordings.
     #
-    #########################################################################################################
+    ##########################################################################################################
     def log(self, stream_index: int, sensor_data: dict) -> None:
         """Called by Sensor/DataProcessor to log a single 'row' of Sensor-generated data."""
         stream = self.get_stream(stream_index)
@@ -366,11 +366,11 @@ class DPnode:
 
         return random() < prob
 
-    #########################################################################################################
+    ##########################################################################################################
     #
     # Private methods in support of Sensors
     #
-    #########################################################################################################
+    ##########################################################################################################
     def _scorp_stat(self, stream_index: int, duration: float) -> None:
         """Record the duration of a DataProcessor cycle in the SCORP stream."""
         stream = self.get_stream(stream_index)
@@ -524,11 +524,11 @@ class DPnode:
 
         return new_fname
 
-    #########################################################################################################
+    ##########################################################################################################
     #
     # Private methods used in support of DataProcessors
     #
-    #########################################################################################################
+    ##########################################################################################################
     def _validate_output(self, output_data: pd.DataFrame, stream: Stream) -> pd.DataFrame:
         if output_data is None or output_data.empty:
             return output_data

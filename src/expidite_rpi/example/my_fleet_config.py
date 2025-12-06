@@ -7,7 +7,7 @@ from expidite_rpi.example.my_sensor_example import (
     ExampleSensor,
 )
 
-###############################################################################
+##############################################################################################################
 # RpiCore config model
 #
 # At the top level, we are defining configuration for a fleet of devices.
@@ -47,7 +47,7 @@ from expidite_rpi.example.my_sensor_example import (
 #             -> edge_processors: list[DataProcessorCfg]
 #             -> cloud_processors: list[DataProcessorCfg]
 #
-###############################################################################
+##############################################################################################################
 
 # Pre-configure the devices with awareness of wifi APs
 WIFI_CLIENTS: list[WifiClient] = [
@@ -67,9 +67,9 @@ def create_example_device() -> list[DPtree]:
     return [my_tree]
 
 
-###############################################################################
+##############################################################################################################
 # Define per-device configuration for the fleet of devices
-###############################################################################
+##############################################################################################################
 INVENTORY: list[DeviceCfg] = [
     DeviceCfg(  # This is the DUMMY MAC address for windows
         name="DUMMY",

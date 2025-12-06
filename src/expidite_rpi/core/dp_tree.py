@@ -14,7 +14,7 @@ class Edge(NamedTuple):
     stream: Stream
 
 
-###############################################################################################
+##############################################################################################################
 # DPtree represents the flow of data from the sensor to the cloud.
 # - the root node is the sensor
 # - the internal nodes are DataProcessors that process the data in some way
@@ -37,7 +37,7 @@ class Edge(NamedTuple):
 #
 # The DPtree is built in a top-down fashion, starting from the root node and working down to the leaf nodes.
 # The DPtree creates DPtreeNode objects for each node in the tree.
-#################################################################################################
+##############################################################################################################
 class DPtree:
     """Represents a tree structure for data processing nodes.
     The tree consists of a root node (Sensor) and various child nodes (DataProcessors).

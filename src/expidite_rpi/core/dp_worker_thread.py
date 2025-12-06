@@ -47,11 +47,11 @@ class DPworker(Thread):
         # This should be set by calling the start() method, and not set during initialization.
         self.dpe_start_time: datetime | None = None
 
-    #########################################################################################################
+    ##########################################################################################################
     #
     # Public methods called by the Sensor or DataProcessor to log or save data
     #
-    #########################################################################################################
+    ##########################################################################################################
 
     def log_sample_data(self, sample_period_start_time: datetime) -> None:
         """Provide the count & duration of data samples recorded (environmental, media, etc)
@@ -67,11 +67,11 @@ class DPworker(Thread):
         """Return the SensorCfg object for this Datastream"""
         return self.dp_tree.sensor.config
 
-    #########################################################################################################
+    ##########################################################################################################
     #
     # DPworker worker thread methods
     #
-    #########################################################################################################
+    ##########################################################################################################
 
     def start(self) -> None:
         """Start the Datastream worker thread.
@@ -122,13 +122,13 @@ class DPworker(Thread):
                     dp: DataProcessor = edge.sink
                     stream = edge.stream
 
-                    #########################################################################################
+                    ##########################################################################################
                     # Invoke the DataProcessor
                     #
                     # Standard chaining involves passing a Dataframe along the DP chain.
                     # The first DP may be invoked with recording files (jpg, h264, wav, etc) or a CSV
                     # as defined in the dp_config
-                    #########################################################################################
+                    ##########################################################################################
                     if stream.format in api.DATA_FORMATS:
                         # Find and load CSVs as DFs
                         input_df = self._get_csv_as_df(stream)

@@ -1,10 +1,10 @@
-############################################################################################################
+##############################################################################################################
 # AudioSensor
 #
 # Called by RpiCore to record audio from USB microphones plugged into the Raspberry Pi.
 #
 # Only supports 1 microphone.
-############################################################################################################
+##############################################################################################################
 from dataclasses import dataclass
 
 from expidite_rpi.core import api, file_naming
@@ -29,9 +29,9 @@ AUDIO_SENSOR_STREAM = Stream(
 
 @dataclass
 class AudioSensorCfg(SensorCfg):
-    ############################################################
+    ##########################################################################################################
     # Custom fields
-    ############################################################
+    ##########################################################################################################
     # arecord command to call with the following placeholders:
     # HW_INDEX: dynamically replaced with the hardware index of the USB microphone to use.
     # DURATION: The duration of each audio recording in seconds.
@@ -48,9 +48,9 @@ DEFAULT_AUDIO_SENSOR_CFG = AudioSensorCfg(
 )
 
 
-############################################################################################################
+##############################################################################################################
 # The AudioSensor class is used to manage the audio recording
-############################################################################################################
+##############################################################################################################
 class AudioSensor(Sensor):
     # Constructor for the AudioSensor class
     def __init__(self, config: AudioSensorCfg) -> None:
@@ -74,9 +74,9 @@ class AudioSensor(Sensor):
             msg = f"AudioSensor requires a main audio stream at index {AUDIO_SENSOR_STREAM_INDEX}: {e}"
             raise ValueError(msg) from e
 
-    ############################################################################################################
+    ##########################################################################################################
     # Function that records audio on demand.
-    ############################################################################################################
+    ##########################################################################################################
     def sensing_triggered(self, duration: int) -> None:
         """Record audio for the specified duration in seconds."""
         if not root_cfg.running_on_rpi and root_cfg.ST_MODE != root_cfg.SOFTWARE_TEST_MODE.TESTING:

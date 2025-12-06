@@ -1,11 +1,11 @@
-###################################################################################################
+##############################################################################################################
 # The test harness enables thorough testing of the sensor code without RPi hardware.
 # It emulates / intercepts:
 # - the run_cmd function to enable injection of example recordings that then flow through the system
 # - the CloudConnnector to store results locally (this is done via the LocalCloudConnector)
 #
 # It provides utilities to interrogate the local output and check that the expected data is present.
-####################################################################################################
+##############################################################################################################
 import shlex
 import shutil
 import time
@@ -99,9 +99,9 @@ class RpiEmulator:
             device.max_recording_timer = 5
         return inventory
 
-    ##################################################################################################
+    ##########################################################################################################
     # Test harness functions
-    ##################################################################################################
+    ##########################################################################################################
     def set_recordings(self, recordings: list[RpiTestRecording]) -> None:
         """Set the recordings to be used for testing.
 
@@ -248,9 +248,9 @@ class RpiEmulator:
             dst_container=root_cfg.my_device.cc_for_system_test, src_file=fname, delete_src=True
         )
 
-    ##################################################################################################
+    ##########################################################################################################
     # Internal implementation functions
-    ##################################################################################################
+    ##########################################################################################################
     def _match_recording(self, cmd: str) -> list[Path] | None:
         """Check if the command matches any of the recordings.
 
@@ -289,9 +289,9 @@ class RpiEmulator:
         )
         return False
 
-    #################################################################################################
+    ##########################################################################################################
     # Sensor command emulation
-    #################################################################################################
+    ##########################################################################################################
     def run_cmd_test_stub(
         self, cmd: str, ignore_errors: bool = False, grep_strs: list[str] | None = None
     ) -> str:

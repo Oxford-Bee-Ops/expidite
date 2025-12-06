@@ -41,9 +41,9 @@ class DeviceManager:
 
     def start(self) -> None:
         """Start the DeviceManager threads."""
-        ###############################
+        ######################################################################################################
         # Wifi management
-        ###############################
+        ######################################################################################################
         self.ping_failure_count_all = 0
         self.ping_success_count_all = 0
         self.ping_failure_count_run = 0
@@ -61,9 +61,9 @@ class DeviceManager:
             self.wifi_timer.start()
             logger.info("DeviceManager Wifi timer started")
 
-        ###############################
+        ######################################################################################################
         # LED status management
-        ###############################
+        ######################################################################################################
         self.currentState = self.S_BOOTING
         self.currentAPState = self.S_AP_DOWN
         self.lastStateChangeTime = api.utc_now()
@@ -100,7 +100,7 @@ class DeviceManager:
             self.diagnostics_upload_timer.cancel()
             logger.info("Diagnostics Upload timer stopped")
 
-    #############################################################################################################
+    ##########################################################################################################
     # LED management functions
     #
     # LED stat FSM table
@@ -113,7 +113,7 @@ class DeviceManager:
     # Input[WifiDown]	|-	         |Wifi failed	|Wifi failed
     # *=blinking
     # **=slow blinking
-    #############################################################################################################
+    ##########################################################################################################
 
     # This function gets called every second.
     # Set the LEDs to ON or OFF as appropriate given the current device state.
@@ -152,9 +152,9 @@ class DeviceManager:
                 f"{root_cfg.RAISE_WARN()}set_led_status threw an exception: " + str(e), exc_info=True
             )
 
-    #############################################################################################################
+    ##########################################################################################################
     # Wifi management functions
-    ##############################################################################################################
+    ##########################################################################################################
     def inject_wifi_clients(self) -> None:
         # Inject the wifi clients via nmcli
         # This is done so that the device has out-of-the-box awareness of the wifi clients

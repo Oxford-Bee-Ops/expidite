@@ -1,9 +1,9 @@
-####################################################################################################
+##############################################################################################################
 # Sensor class that provides a direct map onto Raspberry Pi's rpicam-vid for continuous video recording.
 #
 # The user specifies the rpicam-vid command line, except for the file name, which is set by RpiCore.
 #
-####################################################################################################
+##############################################################################################################
 
 from dataclasses import dataclass
 from typing import cast
@@ -42,9 +42,9 @@ RPICAM_REVIEW_MODE_STREAM: Stream = Stream(
 
 @dataclass
 class RpicamSensorCfg(SensorCfg):
-    ############################################################
+    ##########################################################################################################
     # Add custom fields
-    ############################################################
+    ##########################################################################################################
     # Defines the rpicam-vid command to use to record video.
     # This should be as specified in the rpicam-vid documentation.
     # The filename should be substituted with FILENAME.

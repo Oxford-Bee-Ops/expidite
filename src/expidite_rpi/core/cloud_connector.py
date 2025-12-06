@@ -20,12 +20,12 @@ from expidite_rpi.core.configuration import CloudType
 logger = root_cfg.setup_logger("expidite")
 
 
-##########################################################################################################
+##############################################################################################################
 # Default implementation of the CloudConnector class and interface definition.
 #
 # This class is used to connect to the cloud storage provider (Azure Blob Storage) but does so
 # synchronously.
-##########################################################################################################
+##############################################################################################################
 class CloudConnector:
     _instance: Optional["CloudConnector"] = None
 
@@ -420,9 +420,9 @@ class CloudConnector:
         self._validated_containers.clear()
         CloudConnector._instance = None
 
-    ####################################################################################################
+    ##########################################################################################################
     # Private utility methods
-    ####################################################################################################
+    ##########################################################################################################
     def _download_file(self, src: BlobClient, dst_file: Path) -> str:
         """Download a single file"""
         if not dst_file.parent.exists():
@@ -486,12 +486,12 @@ class CloudConnector:
         return False
 
 
-#########################################################################################################
+##############################################################################################################
 # SyncCloudConnector class
 #
 # This class is simply the original CloudConnector with no subclassed methods.
 # But we need it to be able to use the CloudConnector.get_instance() method
-#########################################################################################################
+##############################################################################################################
 class SyncCloudConnector(CloudConnector):
     def __init__(self) -> None:
         logger.debug("Creating SyncCloudConnector instance")
@@ -503,12 +503,12 @@ class SyncCloudConnector(CloudConnector):
         super().shutdown()
 
 
-#########################################################################################################
+##############################################################################################################
 # LocalCloudConnector class
 #
 # This class is used to connect to the local cloud emulator.  It is a subclass of CloudConnector and
 # implements the same interface.  It is used for testing purposes only and should not be used in production.
-#########################################################################################################
+##############################################################################################################
 class LocalCloudConnector(CloudConnector):
     def __init__(self) -> None:
         logger.debug("Creating LocalCloudConnector instance")
@@ -768,12 +768,12 @@ class LocalCloudConnector(CloudConnector):
         return datetime.min.replace(tzinfo=UTC)
 
 
-#####################################################################################################
+##############################################################################################################
 # AsyncCloudConnector class
 # This class uses async methods to *UPLOAD* files to the cloud storage provider (Azure Blob Storage).
 # This improves resilience to transient network issues and reduces data loss.
 # Download / exists / list methods are *not* asynchronous and use the default CloudConnector.
-#####################################################################################################
+##############################################################################################################
 @dataclass
 class AsyncUpload:
     """Class to hold the action to be performed on the cloud"""
@@ -823,9 +823,9 @@ class AsyncCloudConnector(CloudConnector):
 
         super().shutdown()  # Call the parent shutdown method
 
-    #################################################################################################
+    ##########################################################################################################
     # Public methods
-    #################################################################################################
+    ##########################################################################################################
     def upload_to_container(
         self,
         dst_container: str,
@@ -883,9 +883,9 @@ class AsyncCloudConnector(CloudConnector):
 
         return True
 
-    ##################################################################################################
+    ##########################################################################################################
     # Private methods
-    ##################################################################################################
+    ##########################################################################################################
     def _async_upload(
         self,
         action: AsyncUpload,

@@ -1,6 +1,6 @@
-########################################################
+##############################################################################################################
 # Execute environment dependent setup
-########################################################
+##############################################################################################################
 import datetime as dt
 import hashlib
 import os
@@ -27,9 +27,9 @@ pd.options.mode.copy_on_write = True
 
 logger = root_cfg.setup_logger("expidite")
 
-############################################################################################################
+##############################################################################################################
 # OpenCV color constants (BGR format)
-############################################################################################################
+##############################################################################################################
 RED = (0, 0, 255)
 GREEN = (0, 255, 0)
 BLUE = (255, 0, 0)
@@ -40,9 +40,9 @@ CYAN = (255, 255, 0)
 MAGENTA = (255, 0, 255)
 
 
-############################################################
+##############################################################################################################
 # Functions used by sensors.
-############################################################
+##############################################################################################################
 
 last_space_check = dt.datetime(1970, 1, 1, tzinfo=ZoneInfo("UTC"))
 last_check_outcome = False
@@ -134,9 +134,9 @@ def is_sampling_period(
     return sample_this_period
 
 
-############################################################
+##############################################################################################################
 # Run a system command and return the output, or throw an exception on bad return code
-############################################################
+##############################################################################################################
 def run_cmd(cmd: str, ignore_errors: bool = False, grep_strs: list[str] | None = None) -> str:
     """Run a system command and return the output, or throw an exception on bad return code.
 
@@ -225,19 +225,19 @@ def save_journald_log_entries(output_file_name: Path, grep_str: str = "", since_
             log_file.write(f"{timestamp} {message}\n")
 
 
-############################################################
+##############################################################################################################
 # Timer class that repeats
-############################################################
+##############################################################################################################
 class RepeatTimer(Timer):
     def run(self) -> None:
         while not self.finished.wait(self.interval):
             self.function(*self.args, **self.kwargs)
 
 
-############################################################
+##############################################################################################################
 # Compute MD5 hash locally
 # Used to compare whether files are the same
-############################################################
+##############################################################################################################
 def compute_local_md5(file_path: str) -> str:
     if not os.path.exists(file_path):
         return ""
@@ -265,12 +265,12 @@ def get_current_user() -> str:
             return f"Error retrieving user: {e}"
 
 
-############################################################
+##############################################################################################################
 # Utility to determine if a process is already running
 #
 # Looks for process_name in the list of running processes
 # and confirms that the process ID is not the current process ID.
-############################################################
+##############################################################################################################
 def is_already_running(process_name: str) -> bool:
     if root_cfg.running_on_windows:
         logger.warning("is_already_running not supported on Windows")
@@ -290,7 +290,7 @@ def is_already_running(process_name: str) -> bool:
     return False
 
 
-############################################################
+##############################################################################################################
 # Utility to check what processes are running.
 #
 # All the interesting ones are python ones and we can match a module string
@@ -298,7 +298,7 @@ def is_already_running(process_name: str) -> bool:
 #
 # This function discards all lines and all parts of the line that don't match the module string
 # It builds up a set of the module strings, discarding duplicates
-###########################################################
+##############################################################################################################
 def check_running_processes(search_string: str = "core") -> set:
     if root_cfg.running_on_windows:
         logger.warning("check_running_processes not supported on Windows")
@@ -319,9 +319,9 @@ def check_running_processes(search_string: str = "core") -> set:
     return processes
 
 
-###########################################################
+##############################################################################################################
 # Utility to extract a zip file to a directory but flattening all hierarchies
-###########################################################
+##############################################################################################################
 def extract_zip_to_flat(zip_path: Path, dest_path: Path) -> None:
     with zipfile.ZipFile(zip_path, "r") as zip_ref:
         for member in zip_ref.namelist():
@@ -332,9 +332,9 @@ def extract_zip_to_flat(zip_path: Path, dest_path: Path) -> None:
                 shutil.copyfileobj(source, target)
 
 
-############################################################
+##############################################################################################################
 # List all files in a directory that match a search string and are older than the specified age
-############################################################
+##############################################################################################################
 def list_files_older_than(search_string: Path, age_in_seconds: float) -> list[Path]:
     now = time.time()
 
@@ -372,9 +372,9 @@ def list_all_large_dirs(path: str, recursion: int = 0) -> int:
     return total
 
 
-############################################################
+##############################################################################################################
 # Convert a file from H264 to MP4 format
-############################################################
+##############################################################################################################
 def convert_h264_to_mp4(src_file: Path, dst_file: Path) -> None:
     # Use ffmpeg to convert H264 to MP4 while maintaining image quality
     command = [

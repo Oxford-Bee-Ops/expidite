@@ -1,8 +1,8 @@
-####################################################################################################
+##############################################################################################################
 # Expidite API
 #
 # File define constants used on interfaces between components in the Expidite system.
-####################################################################################################
+##############################################################################################################
 from datetime import datetime
 from enum import Enum, StrEnum
 from zoneinfo import ZoneInfo
@@ -10,9 +10,9 @@ from zoneinfo import ZoneInfo
 from azure.storage.blob import StandardBlobTier
 
 
-############################################################
+##############################################################################################################
 # Data record ID fields
-############################################################
+##############################################################################################################
 class RECORD_ID(StrEnum):
     VERSION = "version_id"
     DATA_TYPE_ID = "data_type_id"
@@ -50,20 +50,20 @@ ALL_RECORD_ID_FIELDS = [
 ]
 
 
-############################################################
+##############################################################################################################
 # Sampling override options
-############################################################
+##############################################################################################################
 class OVERRIDE(StrEnum):
     AUTO = "auto"  # No override
     SAVE = "save"  # Override to save sample
     DISCARD = "discard"  # Override to discard sample
 
 
-############################################################
+##############################################################################################################
 # Installation types
 #
 # Used in DUA & BCLI
-############################################################
+##############################################################################################################
 class INSTALL_TYPE(Enum):
     RPI_SENSOR = "rpi_sensor"  # Sensor installation
     SYSTEM_TEST = "system_test"  # System test installation
@@ -71,12 +71,12 @@ class INSTALL_TYPE(Enum):
     NOT_SET = "NOT_SET"  # Invalid but used to declare the SensorCfg object
 
 
-#############################################################
+##############################################################################################################
 # Blob storage tiers
 #
 # See Azure documentation for details:
 # https://learn.microsoft.com/en-us/azure/storage/blobs/storage-blob-storage-tiers
-#############################################################
+##############################################################################################################
 class StorageTier(Enum):
     """Enum for the supported blob tiers"""
 
@@ -85,9 +85,9 @@ class StorageTier(Enum):
     COLD = StandardBlobTier.ARCHIVE
 
 
-############################################################
+##############################################################################################################
 # Sensor interface type
-############################################################
+##############################################################################################################
 class SENSOR_TYPE(Enum):
     I2C = "I2C"  # Environmental sensor (e.g., temperature, humidity, etc.)
     USB = "USB"  # Microphone sensor
@@ -96,9 +96,9 @@ class SENSOR_TYPE(Enum):
     NOT_SET = "NOT_SET"  # Invalid but used to declare the SensorCfg object
 
 
-############################################################
+##############################################################################################################
 # Datastream types
-############################################################
+##############################################################################################################
 class FORMAT(Enum):
     DF = "df"  # Dataframe; can be saved as CSV
     CSV = "csv"  # CSV text format
@@ -116,13 +116,13 @@ class FORMAT(Enum):
 DATA_FORMATS = [FORMAT.DF, FORMAT.CSV, FORMAT.LOG]
 
 
-############################################################
+##############################################################################################################
 # File naming convention to use on a Stream
 #
 # File naming conventions are defined in the core.file_naming module.
 # A stream can choose to use a specific file naming convention by setting
 # this field.
-############################################################
+##############################################################################################################
 class FILE_NAMING(Enum):
     """Enum for file naming conventions"""
 
@@ -132,15 +132,15 @@ class FILE_NAMING(Enum):
     REVIEW_MODE = "review_mode"
 
 
-############################################################
+##############################################################################################################
 # Tags used in logs sent from sensors to the ETL
-############################################################
+##############################################################################################################
 RAISE_WARN_TAG = "RAISE_WARNING#V1"
 TELEM_TAG = "TELEM#V1: "
 
-#############################################################
+##############################################################################################################
 # System Datastream types
-#############################################################
+##############################################################################################################
 HEART_DS_TYPE_ID = "HEART"
 WARNING_DS_TYPE_ID = "WARNING"
 SCORE_DS_TYPE_ID = "SCORE"
@@ -155,7 +155,7 @@ SYSTEM_DS_TYPES = [
 SCORP_STREAM_INDEX = 0
 SCORE_STREAM_INDEX = 1
 
-############################################################
+##############################################################################################################
 # Datetime formats used in the system
 #
 # All times are in UTC.
@@ -163,7 +163,7 @@ SCORE_STREAM_INDEX = 1
 # The format used for timestamps in the system is "%Y%m%dT%H%M%S%3f"
 # (but the %3f directive is not supported by datetime.strptime).
 # Nonetheless we only want milliseconds not microseconds in the filenames.
-############################################################
+##############################################################################################################
 STRFTIME = "%Y%m%dT%H%M%S%f"
 PADDED_TIME_LEN = len("20210101T010101000000")
 
