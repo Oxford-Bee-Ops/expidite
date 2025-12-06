@@ -87,6 +87,7 @@ select = [
     "UP", # pyupgrade
     # Docstring - only enfore a very limited subset.
     "D200",
+    "D417",
 ]
 # We have deliberately chosen to ignore these rules.
 ignore = [

@@ -42,6 +42,7 @@ class DPnode:
         Args:
             config: The configuration object for this node, which can be a Sensor, DataProcessor, or
                     Datastream.
+            sensor_index: The index of the sensor associated with this node.
         """
         self._dpnode_config: DPtreeNodeCfg = config
         self.sensor_index: int = sensor_index

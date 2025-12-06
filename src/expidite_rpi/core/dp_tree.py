@@ -76,10 +76,10 @@ class DPtree:
             dp_tree.connect(my_dp_cfg.out(2), my_dp2_cfg)
 
         Args:
-            output: A tuple where the first element is the source node configuration
+            source: A tuple where the first element is the source node configuration
                     (Sensor or DataProcessor), and the second element is an integer representing the
                     output stream identifier.
-            input: The destination node configuration, which must be a DataProcessor.
+            sink: The destination node configuration, which must be a DataProcessor.
         """
         src_node, stream_index = source
 

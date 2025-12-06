@@ -17,10 +17,8 @@ class CloudUtilities:
         combines them into a single DataFrame.
 
         Args:
-            cloud_connector (CloudConnector): An instance of CloudConnector to interact with cloud storage.
             container_name (str): The name of the cloud storage container.
-            prefix (str): The prefix to filter files in the container.
-            download_path (str): The local directory to save the downloaded files.
+            type_id (str): The prefix to filter files in the container.
 
         Returns:
             pd.DataFrame: A DataFrame containing the combined data from all downloaded CSV files.

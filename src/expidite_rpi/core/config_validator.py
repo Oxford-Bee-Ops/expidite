@@ -152,7 +152,7 @@ def validate_trees(dptrees: list[DPtree]) -> tuple[bool, list[str]]:
     Validate the configuration using all added rules.
 
     Args:
-        config (dict): The configuration to validate.
+        dptrees (list): The configuration to validate.
 
     Returns:
         tuple: (bool, list) where the boolean indicates overall success (True) or failure (False),
