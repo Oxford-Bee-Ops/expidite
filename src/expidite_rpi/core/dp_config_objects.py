@@ -69,18 +69,17 @@ class SensorCfg(DPtreeNodeCfg):
     Can be subclassed to add additional configuration parameters specific to the Sensor class.
 
     Parameters:
-    ----------
-    sensor_type: str
-        One of the sensor types defined in api.SensorType.
-        These represent physical interface types on the Raspberry Pi (eg I2C, USB, Camera).
+        sensor_type: str
+            One of the sensor types defined in api.SensorType.
+            These represent physical interface types on the Raspberry Pi (eg I2C, USB, Camera).
 
-    sensor_index: int
-        The index of the sensor - represents the physical interface index or comms port.
-        For example, the physical USB port index or the I2C signaling channel.
-        Must be unique in combination with the sensor_type.
+        sensor_index: int
+            The index of the sensor - represents the physical interface index or comms port.
+            For example, the physical USB port index or the I2C signaling channel.
+            Must be unique in combination with the sensor_type.
 
-    sensor_model: str
-        The device model of the sensor (eg AHT20, PiCameraModule2).
+        sensor_model: str
+            The device model of the sensor (eg AHT20, PiCameraModule2).
     """
 
     sensor_type: api.SENSOR_TYPE = api.SENSOR_TYPE.NOT_SET

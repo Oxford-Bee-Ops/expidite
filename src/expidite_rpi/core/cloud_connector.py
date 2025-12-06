@@ -104,11 +104,10 @@ class CloudConnector:
         """Upload a list of local files to an Azure container
         These will be regular block_blobs and not append_blobs; see append_to_cloud for append_blobs.
 
-        Parameters
-        ----------
-        dst_container: destination ContainerClient
-        src_files: list of files to upload to the container
-        delete_src: delete the local src_files instances after successful upload; defaults to True
+        Parameters:
+            dst_container: destination ContainerClient
+            src_files: list of files to upload to the container
+            delete_src: delete the local src_files instances after successful upload; defaults to True
 
         If the upload fails part way through, those files that were successfully uploaded will have
         been deleted (if delete_src=True), while any remaining files in src_files will not have been
@@ -151,14 +150,14 @@ class CloudConnector:
     ) -> None:
         """Download all the files in the src_datastore to the dst_dir
 
-        Parameters
-        ----------
-        src_datastore: source CloudDatastore
-        dst_dir: destination directory to download the files to
-        folder_prefix_len: Optional; first n characters of the file name to use as a subfolder
-        files: Optional; list of files to download from src_datastore; if None, all files in the container
-            will be downloaded; useful for chunking downloads
-        overwrite: Optional; if False, function will skip downloading files that already existing in dst_dir
+        Parameters:
+            src_datastore: source CloudDatastore
+            dst_dir: destination directory to download the files to
+            folder_prefix_len: Optional; first n characters of the file name to use as a subfolder
+            files: Optional; list of files to download from src_datastore; if None, all files in the container
+                will be downloaded; useful for chunking downloads
+            overwrite: Optional; if False, function will skip downloading files that already existing in
+                dst_dir
         """
         download_container = self._validate_container(src_container)
         original_dst_dir = dst_dir
@@ -210,12 +209,11 @@ class CloudConnector:
     ) -> None:
         """Move blobs between containers
 
-        Parameters
-        ----------
-        src_container: source container
-        dst_container: destination container
-        blob_names: list of blob names to move
-        delete_src: delete the source blobs after successful upload; defaults to False
+        Parameters:
+            src_container: source container
+            dst_container: destination container
+            blob_names: list of blob names to move
+            delete_src: delete the source blobs after successful upload; defaults to False
         """
         from_container = self._validate_container(src_container)
         to_container = self._validate_container(dst_container)
@@ -237,15 +235,13 @@ class CloudConnector:
     ) -> bool:
         """Append a block of CSV data to an existing CSV file in the cloud
 
-        Parameters
-        ----------
-        dst_container: destination container
-        src_file: source file Path
-        delete_src: delete the local src_file instance after successful upload
+        Parameters:
+            dst_container: destination container
+            src_file: source file Path
+            delete_src: delete the local src_file instance after successful upload
 
-        Return
-        ------
-        bool indicating whether data was successfully written to the blob
+        Returns:
+            bool indicating whether data was successfully written to the blob
 
         If the remote file doesn't already exist it will be created.
         If the remote file exists, the first line (headers) in the src_file will be dropped
@@ -377,12 +373,11 @@ class CloudConnector:
     ) -> list[str]:
         """Similar to the Path.glob() method but against a cloud datastore.
 
-        Parameters
-        ----------
-        - datastore: CloudDatastore defining the container to be searched
-        - prefix: prefix to match to files in the datastore container; does not support wildcards
-        - suffix: suffix to match to files in the datastore container
-        - more_recent_than: Optional; if specified, only files more recent than this date will be returned
+        Parameters:
+            - datastore: CloudDatastore defining the container to be searched
+            - prefix: prefix to match to files in the datastore container; does not support wildcards
+            - suffix: suffix to match to files in the datastore container
+            - more_recent_than: Optional; if specified, only files more recent than this date will be returned
 
         The current backend implementation is the Azure Blobstore which only supports prefix search
         and tag search.
@@ -554,11 +549,10 @@ class LocalCloudConnector(CloudConnector):
         """Upload a list of local files to an Azure container
         These will be regular block_blobs and not append_blobs; see append_to_cloud for append_blobs.
 
-        Parameters
-        ----------
-        dst_container: destination ContainerClient
-        src_files: list of files to upload to the container
-        delete_src: delete the local src_files instances after successful upload; defaults to True
+        Parameters:
+            dst_container: destination ContainerClient
+            src_files: list of files to upload to the container
+            delete_src: delete the local src_files instances after successful upload; defaults to True
 
         If the upload fails part way through, those files that were successfully uploaded will have
         been deleted (if delete_src=True), while any remaining files in src_files will not have been
@@ -593,13 +587,12 @@ class LocalCloudConnector(CloudConnector):
     ) -> None:
         """Download all the files in the src_datastore to the dst_dir
 
-        Parameters
-        ----------
-        src_datastore: source CloudDatastore
-        dst_dir: destination directory to download the files to
-        folder_prefix_len: Optional; first n characters of the file name to use as a subfolder
-        files: Optional; list of files to download from src_datastore; if None, all files in the container
-            will be downloaded; useful for chunking downloads
+        Parameters:
+            src_datastore: source CloudDatastore
+            dst_dir: destination directory to download the files to
+            folder_prefix_len: Optional; first n characters of the file name to use as a subfolder
+            files: Optional; list of files to download from src_datastore; if None, all files in the container
+                will be downloaded; useful for chunking downloads
         """
         download_container = self.local_cloud / src_container
 
@@ -631,12 +624,11 @@ class LocalCloudConnector(CloudConnector):
     ) -> None:
         """Move blobs between containers
 
-        Parameters
-        ----------
-        src_container: source container
-        dst_container: destination container
-        blob_names: list of blob names to move
-        delete_src: delete the source blobs after successful upload; defaults to False
+        Parameters:
+            src_container: source container
+            dst_container: destination container
+            blob_names: list of blob names to move
+            delete_src: delete the source blobs after successful upload; defaults to False
         """
         for blob_name in blob_names:
             shutil.copy(
@@ -655,15 +647,13 @@ class LocalCloudConnector(CloudConnector):
     ) -> bool:
         """Append a block of CSV data to an existing CSV file in the cloud
 
-        Parameters
-        ----------
-        dst_container: destination container
-        src_file: source file Path
-        delete_src: delete the local src_file instance after successful upload
+        Parameters:
+            dst_container: destination container
+            src_file: source file Path
+            delete_src: delete the local src_file instance after successful upload
 
-        Return
-        ------
-        bool indicating whether data was successfully written to the blob
+        Returns:
+            bool indicating whether data was successfully written to the blob
 
         If the remote file doesn't already exist it will be created.
         If the remote file does exist, the first line (headers) in the src_file will be dropped
@@ -739,12 +729,11 @@ class LocalCloudConnector(CloudConnector):
     ) -> list[str]:
         """Similar to the Path.glob() method but against a cloud datastore.
 
-        Parameters
-        ----------
-        - datastore: CloudDatastore defining the container to be searched
-        - prefix: prefix to match to files in the datastore container; does not support wildcards
-        - suffix: suffix to match to files in the datastore container
-        - more_recent_than: Optional; if specified, only files more recent than this date will be returned
+        Parameters:
+            - datastore: CloudDatastore defining the container to be searched
+            - prefix: prefix to match to files in the datastore container; does not support wildcards
+            - suffix: suffix to match to files in the datastore container
+            - more_recent_than: Optional; if specified, only files more recent than this date will be returned
 
         The current backend implementation is the Azure Blobstore which only supports prefix search
         and tag search.

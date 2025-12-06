@@ -40,12 +40,13 @@ class RpiCore:
         """Validates that the configuration in fleet_config is valid.
 
         Parameters:
-        - fleet_config: The configuration to be validated.
-        - device_id: The device config to validate. If None, all config is validated.
+            - fleet_config: The configuration to be validated.
+            - device_id: The device config to validate. If None, all config is validated.
 
         Returns:
-        - A tuple containing a boolean indicating if the configuration is valid and a list of error messages.
-        - If the configuration is valid, the list of error messages will be empty.
+            - A tuple containing a boolean indicating if the configuration is valid and a list of error
+                messages.
+            - If the configuration is valid, the list of error messages will be empty.
         """
         is_valid = True
         errors: list[str] = []
@@ -133,8 +134,8 @@ class RpiCore:
         """
         Get the current status of the RpiCore.
 
-        Return:
-        - A string describing the status of the RpiCore.
+        Returns:
+            A string describing the status of the RpiCore.
         """
         display_message = "\n"
 
@@ -171,8 +172,8 @@ class RpiCore:
         """
         Display the current configuration of the RpiCore.
 
-        Return:
-        - A string message containing the configuration of the RpiCore.
+        Returns:
+            A string message containing the configuration of the RpiCore.
         """
         display_message = f"\nConfiguration:\n{root_cfg.my_device.display()}"
 

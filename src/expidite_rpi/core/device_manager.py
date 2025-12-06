@@ -140,10 +140,9 @@ class DeviceManager:
     def set_led_status(self, colour: str, status: str) -> None:
         """Update the LED status file which is read by the led_control script.
 
-        Parameters
-        ----------
-        - colour: "red" or "green"
-        - status: "on", "off", or "blink"
+        Parameters:
+            - colour: "red" or "green"
+            - status: "on", "off", or "blink"
         """
         try:
             with open(root_cfg.LED_STATUS_FILE, "w") as f:

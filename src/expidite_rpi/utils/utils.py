@@ -94,21 +94,19 @@ def is_sampling_period(
     will get the same answer for a given sampling period.
 
     Parameters:
-    ----------
-    sample_probability: float
-        The probability of sampling in a given period.  This is a float between 0 and 1.
-    period_len: int
-        The length of the sampling period in seconds.  This should be a factor of 86400.
-    timestamp: datetime
-        The timestamp to check for sampling. api.utc_now() if not specified.
-    sampling_window: tuple(datetime, datetime)
-        The start and end of the sampling window.  If the timestamp is outside this window, return False.
-        Useful for sensors that only sample during daylight hours.
+        sample_probability: float
+            The probability of sampling in a given period.  This is a float between 0 and 1.
+        period_len: int
+            The length of the sampling period in seconds.  This should be a factor of 86400.
+        timestamp: datetime
+            The timestamp to check for sampling. api.utc_now() if not specified.
+        sampling_window: tuple(datetime, datetime)
+            The start and end of the sampling window.  If the timestamp is outside this window, return False.
+            Useful for sensors that only sample during daylight hours.
 
     Returns:
-    --------
-    bool
-        True if the sensor should sample at this time, False otherwise.
+        bool
+            True if the sensor should sample at this time, False otherwise.
     """
     if timestamp is None:
         timestamp = api.utc_now()
@@ -143,25 +141,22 @@ def run_cmd(cmd: str, ignore_errors: bool = False, grep_strs: list[str] | None =
     """Run a system command and return the output, or throw an exception on bad return code.
 
     Parameters:
-    ----------
-    cmd: str
-        The command to run.  This should be a string that can be passed to the shell.
-    ignore_errors: bool
-        If True, ignore errors and return an empty string.  If False, raise an exception on error.
-    grep_strs: list[str]
-        A list of strings to grep for in the output.  If None, return the full output.
-        If not None, return only the lines that contain all of the strings in the list.
+        cmd: str
+            The command to run.  This should be a string that can be passed to the shell.
+        ignore_errors: bool
+            If True, ignore errors and return an empty string.  If False, raise an exception on error.
+        grep_strs: list[str]
+            A list of strings to grep for in the output.  If None, return the full output.
+            If not None, return only the lines that contain all of the strings in the list.
 
     Returns:
-    -------
-    str
-        The output of the command.  If ignore_errors is True, return an empty string on error.
-        If grep_strs is not None, return only the lines that contain all of the strings in the list.
+        str
+            The output of the command.  If ignore_errors is True, return an empty string on error.
+            If grep_strs is not None, return only the lines that contain all of the strings in the list.
 
     Raises:
-    ------
-    Exception
-        If the command fails and ignore_errors is False, raise an exception with the error message.
+        Exception
+            If the command fails and ignore_errors is False, raise an exception with the error message.
 
     """
     # In test mode, we stub out commands so that we can run more realistic test scenarios.

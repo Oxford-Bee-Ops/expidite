@@ -208,14 +208,13 @@ class DPnode:
         Datastream.parse_filename().
         Do not use to save dataframes - see Datastream.save_data().
 
-        Parameters
-        ----------
-        temporary_file: Path
-            The path to the file that should be saved.
-        start_time: datetime
-            The time that the recording started.
-        end_time:datetime
-            The time that the recording ended.
+        Parameters:
+            temporary_file: Path
+                The path to the file that should be saved.
+            start_time: datetime
+                The time that the recording started.
+            end_time:datetime
+                The time that the recording ended.
         """
         # If on EDGE, files are either saved to the root_cfg.EDGE_PROCESSING_DIR if there are DPs registered,
         # or to the root_cfg.EDGE_UPLOAD_DIR if not.
@@ -257,20 +256,19 @@ class DPnode:
         Datastream.parse_filename().
         Do not use to save dataframes - see Datastream.save_data().
 
-        Parameters
-        ----------
-        data_processor: DataProcessor
-            The DataProcessor object that is saving the file.
-        temporary_file: Path
-            The path to the file that should be saved.
-        start_time: datetime
-            The time that the recording started.
-        end_time:datetime
-            The time that the recording ended.
-        offset_index: optional int
-            Typically a frame number in the recording, if applicable.
-        secondary_offset_index: optional int
-            An index that can be used to differentiate between multiple subsamples from a given frame.
+        Parameters:
+            data_processor: DataProcessor
+                The DataProcessor object that is saving the file.
+            temporary_file: Path
+                The path to the file that should be saved.
+            start_time: datetime
+                The time that the recording started.
+            end_time:datetime
+                The time that the recording ended.
+            offset_index: optional int
+                Typically a frame number in the recording, if applicable.
+            secondary_offset_index: optional int
+                An index that can be used to differentiate between multiple subsamples from a given frame.
         """
         suffix = self.get_stream(stream_index).format
 
@@ -394,20 +392,19 @@ class DPnode:
     ) -> Path:
         """Private method that handles saving of recordings from Datastreams or DataProcessors.
 
-        Parameters
-        ----------
-        temporary_file: Path
-            The path to the file that should be saved.
-        start_time: datetime
-            The time that the recording started.
-        suffix: str
-            The file extension of the recording.
-        end_time:datetime
-            The time that the recording ended.
-        offset_index: optional int
-            Typically a frame number in the recording, if applicable.
-        secondary_offset_index: optional int
-            An index that can be used to differentiate between multiple subsamples from a given frame.
+        Parameters:
+            temporary_file: Path
+                The path to the file that should be saved.
+            start_time: datetime
+                The time that the recording started.
+            suffix: str
+                The file extension of the recording.
+            end_time:datetime
+                The time that the recording ended.
+            offset_index: optional int
+                Typically a frame number in the recording, if applicable.
+            secondary_offset_index: optional int
+                An index that can be used to differentiate between multiple subsamples from a given frame.
         """
         stream = self.get_stream(stream_index)
         data_id = stream.get_data_id(self.sensor_index)

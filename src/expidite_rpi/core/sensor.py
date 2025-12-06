@@ -29,11 +29,10 @@ class Sensor(Thread, DPnode, ABC):
         """Initialise the Sensor superclass.
 
         Parameters:
-        ----------
-        sensor_index: int
-            The index of the sensor in the list of sensors.
-        sensor_config: SensorConfig
-            The configuration for the sensor.
+            sensor_index: int
+                The index of the sensor in the list of sensors.
+            sensor_config: SensorConfig
+                The configuration for the sensor.
         """
         Thread.__init__(self, name=self.__class__.__name__)
         DPnode.__init__(self, config, config.sensor_index)

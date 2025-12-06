@@ -163,16 +163,15 @@ class RpiEmulator:
         """Assert that the expected number of files exist.
 
         Parameters:
-        ----------
-        container: str
-            The name of the cloud storage container to check.
-        expected_files: dict[str, int]
-            A dictionary with the expected number of files for each file name prefix.
-            The keys are the prefixes of the file names.
-            The values are the expected number of files.
-        expected_rows: dict[str, int]
-            A dictionary with the expected number of data rows in each file with the given name prefix.
-            The value excludes the header row.
+            container: str
+                The name of the cloud storage container to check.
+            expected_files: dict[str, int]
+                A dictionary with the expected number of files for each file name prefix.
+                The keys are the prefixes of the file names.
+                The values are the expected number of files.
+            expected_rows: dict[str, int]
+                A dictionary with the expected number of data rows in each file with the given name prefix.
+                The value excludes the header row.
         """
         assert self.local_cloud is not None, (
             "Local cloud not set. Use RpiEmulator as a context manager to set it."
@@ -256,14 +255,12 @@ class RpiEmulator:
         """Check if the command matches any of the recordings.
 
         Parameters:
-        ----------
-        cmd: str
-            The command to run.  This should be a string that can be passed to the shell.
+            cmd: str
+                The command to run.  This should be a string that can be passed to the shell.
 
         Returns:
-        -------
-        Path | None
-            The path to the recording file if a match is found, None otherwise.
+            Path | None
+                The path to the recording file if a match is found, None otherwise.
         """
         for recording in self.recordings:
             if cmd.startswith(recording.cmd_prefix):
@@ -305,21 +302,18 @@ class RpiEmulator:
         - rpicam-vid
 
         Parameters:
-        ----------
-        cmd: str
-            The command to run.  This should be a string that can be passed to the shell.
-        ignore_errors: bool
-            If True, ignore errors and return an empty string.  If False, raise an exception on error.
-        grep_strs: list[str]
-            A list of strings to grep for in the output.  If None, return the full output.
-            If not None, return only the lines that contain all of the strings in the list.
+            cmd: str
+                The command to run.  This should be a string that can be passed to the shell.
+            ignore_errors: bool
+                If True, ignore errors and return an empty string.  If False, raise an exception on error.
+            grep_strs: list[str]
+                A list of strings to grep for in the output.  If None, return the full output.
+                If not None, return only the lines that contain all of the strings in the list.
 
         Returns:
-        -------
-        str
-            The output of the command.  If ignore_errors is True, return an empty string on error.
-            If grep_strs is not None, return only the lines that contain all of the strings in the list.
-
+            str
+                The output of the command.  If ignore_errors is True, return an empty string on error.
+                If grep_strs is not None, return only the lines that contain all of the strings in the list.
         """
         if cmd.startswith("rpicam-vid"):
             return self.emulate_rpicam_vid(cmd, ignore_errors, grep_strs)

@@ -61,10 +61,9 @@ class _CloudJournalManager:
     def add(self, journal: "CloudJournal", data: list[dict]) -> None:
         """Add data to the local data queue
 
-        Parameters
-        ----------
-        - journal: CloudJournal to which data should be added
-        - data: list[dict] of data to add
+        Parameters:
+            - journal: CloudJournal to which data should be added
+            - data: list[dict] of data to add
         """
         jqueue: Queue
         if journal not in self._journals:
@@ -131,12 +130,11 @@ class CloudJournal:
         Neither the local nor the cloud files need exist; they will be created as required,
         but the local and cloud directories must exist.
 
-        Parameters
-        ----------
-        - local_fname: The local file name to use for the journal. Must be an absolute path.
-        - cloud_container: The CloudContainer where the cloud file resides.
-        - reqd_columns: A list of column names to save to the CSV file in the order specified.
-            If None, the order of the columns in the csv is undefined.
+        Parameters:
+            - local_fname: The local file name to use for the journal. Must be an absolute path.
+            - cloud_container: The CloudContainer where the cloud file resides.
+            - reqd_columns: A list of column names to save to the CSV file in the order specified.
+                If None, the order of the columns in the csv is undefined.
         """
         assert local_fname.is_absolute()
         assert reqd_columns is not None
