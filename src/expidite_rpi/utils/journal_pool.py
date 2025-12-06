@@ -45,7 +45,6 @@ class JournalPool(ABC):
         """Add data rows as a list of dictionaries
 
         The fields in each dictionary must match the DPtreeNodeCfg reqd_fields."""
-
         raise AssertionError("Abstract method needs to be implemented")
 
     @abstractmethod
@@ -53,19 +52,16 @@ class JournalPool(ABC):
         """Add data in the form of a Pandas DataFrame to the Journal, which will auto-sync to the cloud
 
         All data MUST relate to the same DAY as timestamp."""
-
         raise AssertionError("Abstract method needs to be implemented")
 
     @abstractmethod
     def flush_journals(self) -> None:
         """Flush all journals to disk and onwards to archive"""
-
         raise AssertionError("Abstract method needs to be implemented")
 
     @abstractmethod
     def stop(self) -> None:
         """Stop the JournalPool, flush all data and exit any threads"""
-
         raise AssertionError("Abstract method needs to be implemented")
 
 
@@ -83,7 +79,6 @@ class CloudJournalPool(JournalPool):
         """Add data to the appropriate CloudJournal, which will auto-sync to the cloud
 
         All data MUST relate to the same DAY as timestamp."""
-
         assert timestamp is not None, "Timestamp must be provided for add_rows_from_df with CloudJournalPool"
         logger.debug(f"Lock: adding rows for stream {stream.type_id}")
         with self.jlock:
@@ -159,14 +154,12 @@ class LocalJournalPool(JournalPool):
 
     def add_rows(self, stream: Stream, data: list[dict], timestamp: datetime | None = None) -> None:
         """Add data to the appropriate Journal, which will auto-upload to the cloud"""
-
         with self.jlock:
             j = self._get_journal(stream)
             j.add_rows(data)
 
     def add_rows_from_df(self, stream: Stream, data: pd.DataFrame, timestamp: datetime | None = None) -> None:
         """Add data to the appropriate Journal, which will auto-sync to the cloud"""
-
         with self.jlock:
             j = self._get_journal(stream)
             j.add_rows_from_df(data)
@@ -174,7 +167,6 @@ class LocalJournalPool(JournalPool):
     def flush_journals(self) -> None:
         """Called by the EdgeOrchestrator.upload_to_container function to flush all journals to disk and
         onwards to archive"""
-
         logger.debug("Flushing all journals to disk")
 
         with self.jlock:
@@ -210,7 +202,6 @@ class LocalJournalPool(JournalPool):
 
     def _get_journal(self, stream: Stream) -> Journal:
         """Generate the Journal filename for a DPtreeNodeCfg."""
-
         fname = file_naming.get_journal_filename(stream.type_id)
         if fname.name not in self._jpool:
             reqd_cols: list[str] = api.ALL_RECORD_ID_FIELDS

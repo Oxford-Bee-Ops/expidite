@@ -213,7 +213,6 @@ class RpiEmulator:
     def get_journal_as_df(self, container: str, file_prefix: str) -> pd.DataFrame:
         """Get the journal specified by the container & file_prefix and return as a pandas DataFrame
         for further custom validation."""
-
         assert self.local_cloud is not None, (
             "Local cloud not set. Use RpiEmulator as a context manager to set it."
             "with RpiEmulator.get_instance() as scem: "

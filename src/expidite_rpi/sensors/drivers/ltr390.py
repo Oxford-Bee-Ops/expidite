@@ -341,7 +341,6 @@ class LTR390Driver:  # pylint:disable=too-many-instance-attributes
     def initialize(self) -> None:
         """Reset the sensor to it's initial unconfigured state and configure it with sensible
         defaults so it can be used"""
-
         self._reset()
         self._enable_bit = True
         if not self._enable_bit:

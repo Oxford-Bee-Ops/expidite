@@ -99,7 +99,6 @@ class RpicamSensor(Sensor):
         """Output an image to show the user what the camera is viewing.
         We write to the same filename every time to avoid filling up the disk and to make it
         easier for the dashboard to display the current camera view."""
-
         try:
             filename = file_naming.get_temporary_filename(api.FORMAT.JPG)
             config = cast(RpicamSensorCfg, self.config)

@@ -62,7 +62,6 @@ class DiagnosticsBundle:
     @staticmethod
     def collect(reason: str) -> None:
         """Collects and saves a diagnostics bundle to a time-stamped file."""
-
         if not root_cfg.running_on_rpi:
             return
 

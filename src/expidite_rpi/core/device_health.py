@@ -192,7 +192,6 @@ class DeviceHealth(Sensor):
         """Capture warning and error logs to the WARNING datastream.
         We get these from the system journal and log them to the WARNING datastream.
         We capture logs tagged with the RAISE_WARN_TAG and all logs with priority <=3 (Error)."""
-
         if root_cfg.running_on_rpi:
             logs = get_logs(since=self.last_ran, min_priority=4)
             self.last_ran = api.utc_now()

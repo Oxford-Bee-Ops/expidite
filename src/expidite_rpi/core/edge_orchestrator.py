@@ -213,7 +213,6 @@ class EdgeOrchestrator:
     #########################################################################################################
     def start_all(self) -> None:
         """Start all Sensor & DPworker threads"""
-
         with EdgeOrchestrator._status_lock:
             if self._status != OrchestratorStatus.STOPPED:
                 logger.warning(f"EdgeOrchestrator is already running; {self}; {self._status}")
@@ -257,7 +256,6 @@ class EdgeOrchestrator:
         """This function starts the orchestrator and maintains it with a watchdog.
         This is a non-blocking function that starts a new thread and returns.
         It calls the edge_orchestrator main() function."""
-
         logger.debug("Start orchestrator with watchdog")
         orchestrator_thread = threading.Thread(target=main, name="EdgeOrchestrator")
         orchestrator_thread.start()
@@ -269,7 +267,6 @@ class EdgeOrchestrator:
         """Stop all Sensor, Datastream and observability threads
 
         Blocks until all threads have exited"""
-
         logger.info(f"stop_all on {self!r} called by {threading.current_thread().name}")
 
         with EdgeOrchestrator._status_lock:

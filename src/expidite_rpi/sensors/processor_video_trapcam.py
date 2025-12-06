@@ -51,7 +51,6 @@ class TrapcamDp(DataProcessor):
         input_data: pd.DataFrame | list[Path],
     ) -> None:
         """Process a list of video files and resave video segments with movement."""
-
         assert isinstance(input_data, list), f"Expected list of files, got {type(input_data)}"
         files: list[Path] = input_data
         min_blob_size = self.config.min_blob_size
@@ -70,7 +69,6 @@ class TrapcamDp(DataProcessor):
     def process_video(self, video_path: Path, min_blob_size: int, max_blob_size: int) -> None:
         """Process a video file to detect movement and save segments with movement.
         We record for a minimum of 2 seconds after movement is detected."""
-
         cap = cv2.VideoCapture(str(video_path))
         if not cap.isOpened():
             exists = video_path.exists()

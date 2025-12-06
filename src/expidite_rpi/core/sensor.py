@@ -151,5 +151,4 @@ class Sensor(Thread, DPnode, ABC):
     def sensing_triggered(self, duration: int) -> None:
         """The sensing_triggered method is where the sensor does its work of sensing and logging data
         in response to an external trigger, typically being invoked via the BCLI."""
-
         raise AssertionError("Sub-classes must override this method")

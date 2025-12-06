@@ -58,7 +58,6 @@ class ExampleSensor(Sensor):
 
     def run(self) -> None:
         """The run method is called when the Sensor is started."""
-
         # Main sensor loop
         # All sensor implementations must check for stop_requested to allow the sensor to be stopped cleanly
         while self.continue_recording():

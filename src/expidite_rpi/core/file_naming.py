@@ -74,7 +74,6 @@ def parse_record_filename(fname: Path | str) -> dict:
         bapi.RECORD_ID.SECONDARY_OFFSET - if present
         bapi.RECORD_ID.INCREMENT        - always
     """
-
     logger.debug(f"Parsing filename: {fname}")
     if isinstance(fname, str):
         fname = Path(fname)

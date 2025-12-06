@@ -15,7 +15,6 @@ logger = root_cfg.setup_logger("expidite")
 
 def main() -> None:
     """Run expidite-rpi in System Test mode invoking the tests defined in DeviceCfg.tests_to_run."""
-
     # We expect:
     # - keys.env to have the system test storage account
     # - my_device to have tests_to_run defined

@@ -82,7 +82,6 @@ class CloudConnector:
 
     def set_keys(self, keys_file: Path) -> None:
         """Sets the cloud storage key for the CloudConnector from a file"""
-
         if not keys_file.exists():
             msg = f"Keys file {keys_file} does not exist"
             raise ValueError(msg)
@@ -161,7 +160,6 @@ class CloudConnector:
             will be downloaded; useful for chunking downloads
         overwrite: Optional; if False, function will skip downloading files that already existing in dst_dir
         """
-
         download_container = self._validate_container(src_container)
         original_dst_dir = dst_dir
 
@@ -261,7 +259,6 @@ class CloudConnector:
         match, we download the remote file, merge the data to create a coherent set of headers and push
         the aggregated data back to the remote file.
         """
-
         try:
             logger.debug(f"CloudConnector.append_to_cloud() with delete_src={delete_src} for {src_file}")
 
@@ -433,7 +430,6 @@ class CloudConnector:
     ####################################################################################################
     def _download_file(self, src: BlobClient, dst_file: Path) -> str:
         """Download a single file"""
-
         if not dst_file.parent.exists():
             dst_file.parent.mkdir(parents=True, exist_ok=True)
         with open(dst_file, "wb") as my_file:
@@ -605,7 +601,6 @@ class LocalCloudConnector(CloudConnector):
         files: Optional; list of files to download from src_datastore; if None, all files in the container
             will be downloaded; useful for chunking downloads
         """
-
         download_container = self.local_cloud / src_container
 
         if files is None:
@@ -675,7 +670,6 @@ class LocalCloudConnector(CloudConnector):
         so that we don't duplicate a header row.
         It the responsibility of the calling function to ensure that the columns & headers in the
         CSV data are consistent between local and remote files"""
-
         try:
             logger.debug(f"LocalCC.append_to_cloud() with delete_src={delete_src} for {src_file}")
 
@@ -827,7 +821,6 @@ class AsyncCloudConnector(CloudConnector):
     def shutdown(self) -> None:
         """Shutdown the worker pool.
         Will wait until scheduled uploads are complete before returning."""
-
         # Try to schedule any remaining uploads (waits up to 1sec for the queue to be processed)
         logger.debug("AsyncCloudConnector.shutdown() called")
         self.do_work(block=False)

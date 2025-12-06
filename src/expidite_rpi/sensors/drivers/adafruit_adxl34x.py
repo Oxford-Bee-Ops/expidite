@@ -241,7 +241,6 @@ class ADXL345:
 
 
         """
-
         interrupt_source_register = self._read_clear_interrupt_source()
 
         self._event_status.clear()
@@ -308,8 +307,7 @@ class ADXL345:
 
             accelerometer.enable_freefall_detection(time=30)
 
-       """
-
+        """
         active_interrupts = self._read_register_unpacked(_REG_INT_ENABLE)
 
         self._write_register_byte(_REG_INT_ENABLE, 0x0)  # disable interrupts for setup

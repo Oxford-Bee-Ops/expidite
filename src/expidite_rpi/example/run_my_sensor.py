@@ -17,7 +17,6 @@ logger = root_cfg.setup_logger("expidite")
 
 def main() -> None:
     """Run RpiCore as defined in the system.cfg file."""
-
     try:
         # Configure the RpiCore with the fleet configuration
         # This will load the configuration and check for errors

@@ -110,7 +110,6 @@ def is_sampling_period(
     bool
         True if the sensor should sample at this time, False otherwise.
     """
-
     if timestamp is None:
         timestamp = api.utc_now()
 

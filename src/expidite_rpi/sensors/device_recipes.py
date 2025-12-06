@@ -128,7 +128,6 @@ def create_continuous_video_4fps_device() -> list[DPtree]:
 ###################################################################################################
 def create_trapcam_device(sensor_index: int | None = 0) -> list[DPtree]:
     """Create a standard camera device."""
-
     if sensor_index is None:
         sensor_index = 0
 
@@ -163,7 +162,6 @@ def create_double_trapcam_device() -> list[DPtree]:
 ####################################################################################################
 def create_aruco_camera_device(sensor_index: int) -> list[DPtree]:
     """Create a device that spots aruco markers."""
-
     # Sensor
     cfg = DEFAULT_RPICAM_SENSOR_CFG
     cfg.sensor_index = sensor_index
@@ -189,7 +187,6 @@ def create_aruco_camera_device(sensor_index: int) -> list[DPtree]:
 def create_on_demand_audio_video_device() -> list[DPtree]:
     """Create a device that has both on-demand audio and video sensors.
     Recording is triggered via the BCLI sensing options."""
-
     # Audio Sensor
     audio_cfg = DEFAULT_AUDIO_SENSOR_CFG
     audio_cfg.sensor_index = 1

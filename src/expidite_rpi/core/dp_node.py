@@ -217,7 +217,6 @@ class DPnode:
         end_time:datetime
             The time that the recording ended.
         """
-
         # If on EDGE, files are either saved to the root_cfg.EDGE_PROCESSING_DIR if there are DPs registered,
         # or to the root_cfg.EDGE_UPLOAD_DIR if not.
         # On the ETL, files are saved to the root_cfg.ETL_PROCESSING_DIR

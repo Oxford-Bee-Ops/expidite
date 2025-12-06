@@ -85,9 +85,9 @@ select = [
     "PD", # pandas-vet
     "PL", # pylint
     "UP", # pyupgrade
-    # Docstring - only enfore a very limited subset.
-    "D200",
-    "D417",
+    # Docstring - only enfore a very limited subset which have value.
+    "D200", "D201", "D202",
+    "D412",
 ]
 # We have deliberately chosen to ignore these rules.
 ignore = [
