@@ -27,7 +27,7 @@ TEST_DATA = [
 
 
 def mod2_division_8bits(a, b, number_of_bytes, init_value):
-    "calculate mod2 division in 8 bits. a mod b. init_value is for crc8 init value."
+    """Calculate mod2 division in 8 bits. a mod b. init_value is for crc8 init value."""
     head_of_a = 0x80
     # Processing a
     a = a << 8
