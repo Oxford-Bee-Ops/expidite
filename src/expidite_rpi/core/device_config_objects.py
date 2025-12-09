@@ -24,17 +24,17 @@ FAILED_TO_LOAD = "Not set"
 class Configuration:
     """Utility super class"""
 
-    def update_field(self, field_name: str, value: Any) -> None:
+    def update_field(self, field_name: str, value: Any) -> None:  # noqa: ANN401
         setattr(self, field_name, value)
 
-    def update_fields(self, **kwargs: Any) -> None:
+    def update_fields(self, **kwargs: Any) -> None:  # noqa: ANN401
         for field_name, value in kwargs.items():
             self.update_field(field_name, value)
 
     def display(self) -> str:
         return utils_clean.display_dataclass(self)
 
-    def get_field(self, field_name: str) -> Any:
+    def get_field(self, field_name: str) -> Any:  # noqa: ANN401
         return getattr(self, field_name)
 
 

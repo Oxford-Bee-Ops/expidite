@@ -38,7 +38,7 @@ def create_root_working_dir(path: Path) -> None:
 ##############################################################################################################
 # Dataclass display utility
 ##############################################################################################################
-def display_dataclass(obj: Any, indent: int = 0) -> str:
+def display_dataclass(obj: Any, indent: int = 0) -> str:  # noqa: ANN401
     """
     Recursively display the contents of a dataclass hierarchy.
 
