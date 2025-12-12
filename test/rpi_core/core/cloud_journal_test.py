@@ -21,6 +21,7 @@ class Test_CloudJournal:
     def test_CloudJournal(self) -> None:
         logger.info("Run test_CloudJournal test")
 
+        root_cfg.CLOUD_TYPE = root_cfg.CloudType.AZURE
         cc = CloudConnector.get_instance(root_cfg.CloudType.AZURE)
         assert isinstance(cc, AsyncCloudConnector)
 
