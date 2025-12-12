@@ -563,9 +563,10 @@ class LocalCloudConnector(CloudConnector):
                 # Copy the file to the local cloud directory
                 dst_file = self.local_cloud / dst_container / file.name
                 dst_file.parent.mkdir(parents=True, exist_ok=True)
-                shutil.copy(file, dst_file)
                 if delete_src:
-                    file.unlink(missing_ok=True)
+                    shutil.move(file,  dst_file)
+                else:
+                    shutil.copy(file, dst_file)
 
     def download_from_container(self, src_container: str, src_file: str, dst_file: Path) -> None:
         """Downloads the src_file to a local dst_file Path."""
