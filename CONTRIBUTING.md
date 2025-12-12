@@ -28,4 +28,10 @@ Before you commit your changes, you must run the following quality checks to ens
 2. `ruff check` Linting and Static Analysis (Ruff Check)This command runs all static checks configured in pyproject.toml. This command should return no errors.
 3. `mypy` Type Checking. Mypy verifies all type hints for correctness and completeness. This command should return no errors.
 4. `pytest` Unit Tests. Run the full test suite to ensure your changes did not break existing functionality. All tests must pass.
-5. `codespell` (Optional) Spelling Check to catch common spelling errors. This is highly encouraged.
+
+### Optional checks
+
+These tools currently produce a lot of false positives, but you may find them useful.
+- `codespell` Spelling Check to catch common spelling errors. 
+- `deadcode .` Dead code detection to identify unused code segments. This currently produces a 
+  lot of output covering both false positives and genuinely unused code. 

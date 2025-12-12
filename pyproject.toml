@@ -46,6 +46,7 @@ dev = [
     "ruff == 0.14.8",
     "mypy == 1.19.0",
     "codespell == 2.4.1",
+    "deadcode == 2.4.1",
 ]
 
 [project.scripts]
@@ -190,3 +191,9 @@ module = [
     "expidite_rpi.sensors.sensor_bmp280",
 ]
 warn_unused_ignores = false
+
+# TODO: This tool generatea a lot of false positives - configuration is required to eliminate them.
+[tool.deadcode]
+exclude = [".venv"]
+min-confidence = 90
+fail-on-found = true
