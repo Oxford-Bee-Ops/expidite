@@ -47,6 +47,7 @@ dev = [
     "mypy == 1.19.0",
     "codespell == 2.4.1",
     "deadcode == 2.4.1",
+    "pyright == 1.1.407",
 ]
 
 [project.scripts]
@@ -58,6 +59,9 @@ where = ["src"]
 [tool.setuptools.data-files]
 "scripts" = ["src/expidite_rpi/scripts/*"]
 
+##############################################################################################################
+# ruff: static lint and style checker.
+##############################################################################################################
 [tool.ruff]
 line-length = 110
 indent-width = 4
@@ -130,6 +134,9 @@ fixable = ["ALL"]
 [tool.ruff.lint.pydocstyle]
 convention = "google"
 
+##############################################################################################################
+# mypy: static type checker
+##############################################################################################################
 [tool.mypy]
 python_version = "3.11"
 files = "**/*.py"
@@ -192,7 +199,40 @@ module = [
 ]
 warn_unused_ignores = false
 
-# TODO: This tool generatea a lot of false positives - configuration is required to eliminate them.
+##############################################################################################################
+# pyright: static type checker and bug detection.
+##############################################################################################################
+[tool.pyright]
+include = ["src", "test"]
+exclude = ["**/__pycache__"]
+pythonVersion = "3.11"
+typeCheckingMode = "strict"
+# TODO existing code fails all of these. We should either enable them and fix the errors, or comment them as
+# why we don't want them.
+reportPossiblyUnboundVariable = "none" # Definitely want this.
+reportUnnecessaryComparison = "none" # Definitely want this.
+reportSelfClsParameterName = "none" # Definitely want this.
+reportAttributeAccessIssue = "none"
+reportConstantRedefinition = "none"
+reportIncompatibleMethodOverride = "none"
+reportPrivateUsage = "none"
+reportMissingParameterType = "none"
+reportMissingTypeArgument = "none"
+reportMissingTypeStubs = "none"
+reportOptionalMemberAccess = "none"
+reportReturnType = "none"
+reportUnknownArgumentType = "none"
+reportUnknownLambdaType = "none"
+reportUnknownMemberType = "none"
+reportUnknownParameterType = "none"
+reportUnknownVariableType = "none"
+reportUnnecessaryCast = "none"
+reportUnnecessaryIsInstance = "none"
+
+##############################################################################################################
+# deadcode: unused code detection.
+# TODO: this tool generatea a lot of false positives - configuration is required to eliminate them.
+##############################################################################################################
 [tool.deadcode]
 exclude = [".venv"]
 min-confidence = 90

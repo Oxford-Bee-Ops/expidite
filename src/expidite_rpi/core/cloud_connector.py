@@ -564,7 +564,7 @@ class LocalCloudConnector(CloudConnector):
                 dst_file = self.local_cloud / dst_container / file.name
                 dst_file.parent.mkdir(parents=True, exist_ok=True)
                 if delete_src:
-                    shutil.move(file,  dst_file)
+                    shutil.move(file, dst_file)
                 else:
                     shutil.copy(file, dst_file)
 
