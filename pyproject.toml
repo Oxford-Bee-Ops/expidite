@@ -229,6 +229,42 @@ reportUnnecessaryCast = "none"
 reportUnnecessaryIsInstance = "none"
 
 ##############################################################################################################
+# ty: static type checker.
+##############################################################################################################
+[tool.ty.src]
+include = ["src", "tests"]
+[tool.ty.environment]
+python-version = "3.11"
+# These files/modules had exceptions prior to rules being enforced. Ignore temporarily until we can fix them.
+[[tool.ty.overrides]]
+include = ["src/expidite_rpi/bcli.py"]
+[tool.ty.overrides.rules]
+possibly-missing-attribute = "ignore"
+
+[[tool.ty.overrides]]
+include = ["src/expidite_rpi/core/api.py"]
+[tool.ty.overrides.rules]
+possibly-missing-attribute = "ignore"
+
+[[tool.ty.overrides]]
+include = ["src/expidite_rpi/sensors/drivers"]
+[tool.ty.overrides.rules]
+invalid-method-override = "ignore"
+invalid-return-type = "ignore"
+
+[[tool.ty.overrides]]
+include = ["src/expidite_rpi/sensors"]
+[tool.ty.overrides.rules]
+invalid-assignment = "ignore"
+possibly-missing-attribute = "ignore"
+
+[[tool.ty.overrides]]
+include = ["src/expidite_rpi/example/run_sensor_core.ipynb"]
+[tool.ty.overrides.rules]
+unresolved-import = "ignore"
+
+
+##############################################################################################################
 # deadcode: unused code detection.
 # TODO: this tool generatea a lot of false positives - configuration is required to eliminate them.
 ##############################################################################################################
