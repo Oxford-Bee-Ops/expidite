@@ -71,6 +71,15 @@ if root_cfg.running_on_rpi:
         logger.info(f"Fetched {len(logs)} logs from the journal.")
 
         return logs
+else:
+
+    def get_logs(
+        since: datetime | None = None,
+        min_priority: int | None = None,
+        grep_str: list[str] | None = None,
+        max_logs: int = 1000,
+    ) -> list[dict[str, Any]]:
+        return []
 
 
 logger = root_cfg.setup_logger("expidite")

@@ -173,22 +173,22 @@ def utc_now() -> datetime:
     return datetime.now(ZoneInfo("UTC"))
 
 
+def _to_datetime(t: datetime | float | None) -> datetime:
+    if isinstance(t, datetime):
+        return t
+    if isinstance(t, float):
+        return datetime.fromtimestamp(t, tz=ZoneInfo("UTC"))
+    return utc_now()
+
+
 def utc_to_iso_str(t: datetime | float | None = None) -> str:
     """Return the current time in UTC as a formatted string."""
-    if t is None:
-        t = utc_now()
-    elif isinstance(t, float):
-        t = datetime.fromtimestamp(t, tz=ZoneInfo("UTC"))
-    return t.isoformat(timespec="milliseconds")
+    return _to_datetime(t).isoformat(timespec="milliseconds")
 
 
 def utc_to_fname_str(t: datetime | float | None = None) -> str:
     """Return the current time in UTC as a string formatted for use in filenames."""
-    if t is None:
-        t = utc_now()
-    elif isinstance(t, float):
-        t = datetime.fromtimestamp(t, tz=ZoneInfo("UTC"))
-    timestamp = t.strftime(STRFTIME)
+    timestamp = _to_datetime(t).strftime(STRFTIME)
     return timestamp[:-3]
 
 

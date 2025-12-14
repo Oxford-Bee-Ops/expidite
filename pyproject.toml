@@ -237,32 +237,23 @@ include = ["src", "tests"]
 python-version = "3.11"
 # These files/modules had exceptions prior to rules being enforced. Ignore temporarily until we can fix them.
 [[tool.ty.overrides]]
-include = ["src/expidite_rpi/bcli.py"]
-[tool.ty.overrides.rules]
-possibly-missing-attribute = "ignore"
-
-[[tool.ty.overrides]]
-include = ["src/expidite_rpi/core/api.py"]
-[tool.ty.overrides.rules]
-possibly-missing-attribute = "ignore"
-
-[[tool.ty.overrides]]
 include = ["src/expidite_rpi/sensors/drivers"]
 [tool.ty.overrides.rules]
+invalid-assignment = "ignore"
 invalid-method-override = "ignore"
 invalid-return-type = "ignore"
+possibly-missing-attribute = "ignore"
 
-[[tool.ty.overrides]]
-include = ["src/expidite_rpi/sensors"]
+ [[tool.ty.overrides]]
+include = [
+    "src/expidite_rpi/sensors/processor_video_aruco.py",
+    "src/expidite_rpi/sensors/processor_video_trapcam.py",
+    "src/expidite_rpi/sensors/sensor_bmp280.py",
+    "src/expidite_rpi/sensors/sensor_ltr390.py"
+]
 [tool.ty.overrides.rules]
 invalid-assignment = "ignore"
 possibly-missing-attribute = "ignore"
-
-[[tool.ty.overrides]]
-include = ["src/expidite_rpi/example/run_sensor_core.ipynb"]
-[tool.ty.overrides.rules]
-unresolved-import = "ignore"
-
 
 ##############################################################################################################
 # deadcode: unused code detection.
