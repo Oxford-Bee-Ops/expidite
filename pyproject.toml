@@ -211,7 +211,6 @@ typeCheckingMode = "strict"
 # why we don't want them.
 reportPossiblyUnboundVariable = "none" # Definitely want this.
 reportUnnecessaryComparison = "none" # Definitely want this.
-reportSelfClsParameterName = "none" # Definitely want this.
 reportAttributeAccessIssue = "none"
 reportConstantRedefinition = "none"
 reportIncompatibleMethodOverride = "none"
