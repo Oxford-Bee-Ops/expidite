@@ -565,7 +565,7 @@ class DPnode:
 
         # Add name and tags fields
         output_data[api.RECORD_ID.NAME.value] = root_cfg.my_device.name
-        output_data[api.RECORD_ID.TAGS.value] = root_cfg.my_device.tags
+        output_data[api.RECORD_ID.TAGS.value] = root_cfg.my_device.tags  # type: ignore[assignment]
 
         # Warn about superfluous fields that will get dropped
         if stream.fields is not None and len(stream.fields) > 0:
