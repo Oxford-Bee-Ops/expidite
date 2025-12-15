@@ -420,7 +420,7 @@ class InteractiveMenu:
         # Drop any starting / or . characters
         # And convert the process list to a simple comma-seperated string with no {} or ' or "
         # characters
-        if root_cfg.system_cfg is None:
+        if not root_cfg.system_cfg.is_valid:
             click.echo("System.cfg is not set. Please check your installation.")
             return
         process_set = utils.check_running_processes(search_string=f"{root_cfg.system_cfg.my_start_script}")
@@ -451,7 +451,7 @@ class InteractiveMenu:
             click.echo("This command only works on Linux. Exiting...")
             return
         # Check if the scripts directory exists
-        if root_cfg.system_cfg is None:
+        if not root_cfg.system_cfg.is_valid:
             click.echo("System.cfg is not set. Please check your installation.")
             return
         scripts_dir = Path.home() / root_cfg.system_cfg.venv_dir / "scripts"
@@ -716,7 +716,7 @@ class InteractiveMenu:
 
         success = True
 
-        if root_cfg.system_cfg is None:
+        if not root_cfg.system_cfg.is_valid:
             click.echo("ERROR: System.cfg is not set. Please check your installation.")
             return
 
@@ -832,7 +832,7 @@ class InteractiveMenu:
         if not root_cfg.running_on_rpi:
             click.echo("This command only works on a Raspberry Pi")
             return
-        if root_cfg.system_cfg is None:
+        if not root_cfg.system_cfg.is_valid:
             click.echo("System.cfg is not set. Please check your installation.")
             return
         scripts_dir = Path.home() / root_cfg.system_cfg.venv_dir / "scripts"
@@ -847,7 +847,7 @@ class InteractiveMenu:
     def run_system_test(self) -> None:
         """Invokes my_start_script."""
         # Check this is a system_test installation
-        if root_cfg.system_cfg is None:
+        if not root_cfg.system_cfg.is_valid:
             click.echo("System.cfg is not set. Please check your installation.")
             return
         if root_cfg.system_cfg.install_type != api.INSTALL_TYPE.SYSTEM_TEST:

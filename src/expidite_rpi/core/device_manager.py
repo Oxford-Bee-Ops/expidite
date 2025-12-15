@@ -28,7 +28,7 @@ class DeviceManager:
     S_AP_IN_USE = "AP In Use"
 
     def __init__(self) -> None:
-        if root_cfg.system_cfg is None:
+        if not root_cfg.system_cfg.is_valid:
             logger.error(f"{root_cfg.RAISE_WARN()}DeviceManager: system_cfg is None; exiting")
             return
         self.ping_failure_count_all = 0
