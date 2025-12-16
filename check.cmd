@@ -1,4 +1,4 @@
-; Run all static analysis checks.
+:: Run all static analysis checks.
 ruff format
 ruff check
 uvx ty check
