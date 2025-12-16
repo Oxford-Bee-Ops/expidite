@@ -243,8 +243,7 @@ invalid-assignment = "ignore"
 invalid-method-override = "ignore"
 invalid-return-type = "ignore"
 possibly-missing-attribute = "ignore"
-
- [[tool.ty.overrides]]
+[[tool.ty.overrides]]
 include = [
     "src/expidite_rpi/sensors/processor_video_aruco.py",
     "src/expidite_rpi/sensors/processor_video_trapcam.py",
