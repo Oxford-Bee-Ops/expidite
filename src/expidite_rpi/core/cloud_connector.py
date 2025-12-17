@@ -136,9 +136,7 @@ class CloudConnector:
         download_container = self._validate_container(src_container)
 
         blob_client = download_container.get_blob_client(src_file)
-        with open(dst_file, "wb") as my_file:
-            download_stream = blob_client.download_blob()
-            my_file.write(download_stream.readall())
+        self._download_blob(blob_client, dst_file)
 
     def download_container(
         self,
@@ -169,9 +167,7 @@ class CloudConnector:
                     dst_dir = original_dst_dir.joinpath(blob.name[:folder_prefix_len])
                     if not dst_dir.exists():
                         dst_dir.mkdir(parents=True, exist_ok=True)
-                with open(dst_dir.joinpath(blob.name), "wb") as my_file:
-                    download_stream = blob_client.download_blob()
-                    my_file.write(download_stream.readall())
+                self._download_blob(blob_client, dst_dir.joinpath(blob.name))
         else:
             files_downloaded = 0
             # Create a pool of threads to download the files
@@ -423,13 +419,16 @@ class CloudConnector:
     ##########################################################################################################
     # Private utility methods
     ##########################################################################################################
-    def _download_file(self, src: BlobClient, dst_file: Path) -> str:
+    def _download_blob(self, blob_client: BlobClient, dst_file: Path) -> None:
+        with open(dst_file, "wb") as my_file:
+            download_stream = blob_client.download_blob()
+            my_file.write(download_stream.readall())  # type: ignore[invalid-argument-type]
+
+    def _download_file(self, blob_client: BlobClient, dst_file: Path) -> str:
         """Download a single file"""
         if not dst_file.parent.exists():
             dst_file.parent.mkdir(parents=True, exist_ok=True)
-        with open(dst_file, "wb") as my_file:
-            download_stream = src.download_blob()
-            my_file.write(download_stream.readall())
+        self._download_blob(blob_client, dst_file)
         return dst_file.name
 
     def _validate_container(self, container: str) -> ContainerClient:
@@ -468,7 +467,7 @@ class CloudConnector:
         if len(cloud_lines) >= 1:
             # We have headers from local and cloud files; check headers match
             local_reader = csv.reader([local_line])
-            cloud_reader = csv.reader([cloud_lines[0]])
+            cloud_reader = csv.reader([cloud_lines[0]])  # type: ignore
             local_headers = next(local_reader)
             cloud_headers = next(cloud_reader)
             if local_headers != cloud_headers:
