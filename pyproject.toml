@@ -21,7 +21,7 @@ dependencies = [
     "click == 8.3.1",
     "python-crontab == 3.3.0",
     "gitpython",
-    "gpiozero",
+    "gpiozero == 2.0.1",
     "numpy",
     'opencv-python; sys_platform == "win32"',
     "pandas == 2.3.3",
