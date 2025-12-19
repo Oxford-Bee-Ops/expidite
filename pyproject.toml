@@ -13,7 +13,7 @@ authors = [
   {name = "Stuart", email = "stuart@bee-ops.com"},
 ]
 dependencies = [
-    "adafruit-blinka",
+    "adafruit-blinka == 8.68.1",
     "adafruit-circuitpython-busdevice",
     "adafruit-circuitpython-bmp280",
     "adafruit-circuitpython-ltr390",
