@@ -97,7 +97,7 @@ class VideoArucoProcessor(DataProcessor):
     def process_data(self, input_data: pd.DataFrame | list[Path]) -> None:
         """Process a list of video files and identify ARUCO markers."""
         assert isinstance(input_data, list), f"Expected list of files, got {type(input_data)}"
-        files: list[Path] = input_data
+        files: list[Path] = input_data  # type: ignore[invalid-assignment]
         results: list[pd.DataFrame] = []
         config = self.config
         aruco_dict_name = config.aruco_dict_name

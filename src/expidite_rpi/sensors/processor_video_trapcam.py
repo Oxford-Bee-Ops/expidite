@@ -52,7 +52,7 @@ class TrapcamDp(DataProcessor):
     ) -> None:
         """Process a list of video files and resave video segments with movement."""
         assert isinstance(input_data, list), f"Expected list of files, got {type(input_data)}"
-        files: list[Path] = input_data
+        files: list[Path] = input_data  # type: ignore[invalid-assignment]
         min_blob_size = self.config.min_blob_size
         max_blob_size = self.config.max_blob_size
 

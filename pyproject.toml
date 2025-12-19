@@ -194,6 +194,8 @@ module = [
     "expidite_rpi.core.configuration",
     "expidite_rpi.utils.utils",
     "expidite_rpi.core.device_health",
+    "expidite_rpi.sensors.processor_video_aruco",
+    "expidite_rpi.sensors.processor_video_trapcam",
     "expidite_rpi.sensors.sensor_ltr390",
     "expidite_rpi.sensors.sensor_bmp280",
 ]
@@ -245,8 +247,6 @@ invalid-return-type = "ignore"
 possibly-missing-attribute = "ignore"
 [[tool.ty.overrides]]
 include = [
-    "src/expidite_rpi/sensors/processor_video_aruco.py",
-    "src/expidite_rpi/sensors/processor_video_trapcam.py",
     "src/expidite_rpi/sensors/sensor_bmp280.py",
     "src/expidite_rpi/sensors/sensor_ltr390.py"
 ]
