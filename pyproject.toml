@@ -18,7 +18,7 @@ dependencies = [
     "adafruit-circuitpython-bmp280",
     "adafruit-circuitpython-ltr390",
     "azure-storage-blob == 12.27.1",
-    "click",
+    "click == 8.3.1",
     "python-crontab == 3.3.0",
     "gitpython",
     "gpiozero",
