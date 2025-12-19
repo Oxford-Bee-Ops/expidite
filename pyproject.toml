@@ -17,7 +17,7 @@ dependencies = [
     "adafruit-circuitpython-busdevice",
     "adafruit-circuitpython-bmp280",
     "adafruit-circuitpython-ltr390",
-    "azure-storage-blob",
+    "azure-storage-blob == 12.27.1",
     "click",
     "python-crontab",
     "gitpython",
