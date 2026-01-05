@@ -32,7 +32,6 @@ dependencies = [
     "smbus2 == 0.6.0",
     "sensirion_i2c_sht4x == 1.1.0",
     'systemd-python == 235; sys_platform != "win32"',
-    "wheel",
 ]
 
 [project.optional-dependencies]
