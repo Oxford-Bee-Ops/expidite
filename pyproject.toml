@@ -13,11 +13,11 @@ authors = [
   {name = "Stuart", email = "stuart@bee-ops.com"},
 ]
 dependencies = [
-    "adafruit-blinka == 8.68.1",
+    "adafruit-blinka == 8.69.0",
     "adafruit-circuitpython-busdevice",
     "adafruit-circuitpython-bmp280",
     "adafruit-circuitpython-ltr390",
-    "adafruit-platformdetect == 3.85",
+    "adafruit-platformdetect == 3.86",
     "azure-storage-blob == 12.27.1",
     "click == 8.3.1",
     "python-crontab == 3.3.0",
@@ -26,7 +26,7 @@ dependencies = [
     "numpy",
     'opencv-python; sys_platform == "win32"',
     "pandas == 2.3.3",
-    "psutil == 7.1.3",
+    "psutil == 7.2.1",
     "pydantic-settings",
     "PyYAML == 6.0.3",
     "smbus2 == 0.6.0",
@@ -45,8 +45,8 @@ dev = [
     "pytest == 9.0.2",
     "pytest-socket == 0.7.0",
     "ruff == 0.14.10",
-    "ty == 0.0.5",
-    "types-psutil == 7.1.3.20251211",
+    "ty == 0.0.8",
+    "types-psutil == 7.2.1.20251231",
     "types-PyYAML == 6.0.12.20250915",
 ]
 
