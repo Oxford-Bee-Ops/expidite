@@ -1,6 +1,7 @@
 :: Run all static analysis checks.
+cls
 ruff format
-ruff check
+ruff check --fix
 ty check
 pyright
 mypy
