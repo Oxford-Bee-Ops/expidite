@@ -44,41 +44,39 @@ class CloudConnector:
     def get_instance(type: CloudType) -> "CloudConnector":
         """We use a factory pattern to offer up alternative types of CloudConnector for accessing
         different cloud storage providers and / or the local emulator."""
-        if type == CloudType.AZURE:
-            if CloudConnector._instance is None:
-                CloudConnector._instance = AsyncCloudConnector()
-            elif not isinstance(CloudConnector._instance, AsyncCloudConnector):
-                logger.warning(
-                    f"{root_cfg.RAISE_WARN()}Replacing CloudConnector instance with AsyncCloudConnector"
-                )
-                CloudConnector._instance.shutdown()
-                CloudConnector._instance = AsyncCloudConnector()
-            return CloudConnector._instance
+        match type:
+            case CloudType.AZURE:
+                if CloudConnector._instance is None:
+                    CloudConnector._instance = AsyncCloudConnector()
+                elif not isinstance(CloudConnector._instance, AsyncCloudConnector):
+                    logger.warning(
+                        f"{root_cfg.RAISE_WARN()}Replacing CloudConnector instance with AsyncCloudConnector"
+                    )
+                    CloudConnector._instance.shutdown()
+                    CloudConnector._instance = AsyncCloudConnector()
+                return CloudConnector._instance
 
-        if type == CloudType.LOCAL_EMULATOR:
-            if CloudConnector._instance is None:
-                CloudConnector._instance = LocalCloudConnector()
-            elif not isinstance(CloudConnector._instance, LocalCloudConnector):
-                logger.warning(
-                    f"{root_cfg.RAISE_WARN()}Replacing CloudConnector instance with LocalCloudConnector"
-                )
-                CloudConnector._instance.shutdown()
-                CloudConnector._instance = LocalCloudConnector()
-            return CloudConnector._instance
+            case CloudType.LOCAL_EMULATOR:
+                if CloudConnector._instance is None:
+                    CloudConnector._instance = LocalCloudConnector()
+                elif not isinstance(CloudConnector._instance, LocalCloudConnector):
+                    logger.warning(
+                        f"{root_cfg.RAISE_WARN()}Replacing CloudConnector instance with LocalCloudConnector"
+                    )
+                    CloudConnector._instance.shutdown()
+                    CloudConnector._instance = LocalCloudConnector()
+                return CloudConnector._instance
 
-        if type == CloudType.SYNC_AZURE:
-            if CloudConnector._instance is None:
-                CloudConnector._instance = SyncCloudConnector()
-            elif not isinstance(CloudConnector._instance, SyncCloudConnector):
-                logger.warning(
-                    f"{root_cfg.RAISE_WARN()}Replacing CloudConnector instance with SyncCloudConnector"
-                )
-                CloudConnector._instance.shutdown()
-                CloudConnector._instance = SyncCloudConnector()
-            return CloudConnector._instance
-
-        msg = f"Unsupported cloud type: {type}"  # type: ignore[unreachable]
-        raise ValueError(msg)
+            case CloudType.SYNC_AZURE:
+                if CloudConnector._instance is None:
+                    CloudConnector._instance = SyncCloudConnector()
+                elif not isinstance(CloudConnector._instance, SyncCloudConnector):
+                    logger.warning(
+                        f"{root_cfg.RAISE_WARN()}Replacing CloudConnector instance with SyncCloudConnector"
+                    )
+                    CloudConnector._instance.shutdown()
+                    CloudConnector._instance = SyncCloudConnector()
+                return CloudConnector._instance
 
     def set_keys(self, keys_file: Path) -> None:
         """Sets the cloud storage key for the CloudConnector from a file"""

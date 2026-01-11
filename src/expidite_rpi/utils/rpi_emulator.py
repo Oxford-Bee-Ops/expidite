@@ -12,6 +12,7 @@ import time
 from dataclasses import dataclass
 from pathlib import Path
 from threading import Event
+from types import TracebackType
 
 import cv2
 import numpy as np
@@ -85,7 +86,12 @@ class RpiEmulator:
 
         return self
 
-    def __exit__(self, exc_type, exc_value, traceback) -> None:  # type: ignore[no-untyped-def]
+    def __exit__(
+        self,
+        exc_type: type[BaseException] | None,
+        exc_value: BaseException | None,
+        traceback: TracebackType | None,
+    ) -> None:
         """Exit the context manager."""
         logger.info("Exiting RpiEmulator context.")
         # self.cc.clear_local_cloud()

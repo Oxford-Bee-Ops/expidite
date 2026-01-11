@@ -4,13 +4,13 @@ from struct import pack_into, unpack_from
 from time import sleep
 from typing import ClassVar
 
-from adafruit_bus_device import i2c_device  # type: ignore
-from adafruit_register.i2c_bit import ROBit, RWBit  # type: ignore
-from adafruit_register.i2c_bits import RWBits  # type: ignore
-from adafruit_register.i2c_struct import ROUnaryStruct, Struct  # type: ignore
+from adafruit_bus_device import i2c_device
+from adafruit_register.i2c_bit import ROBit, RWBit
+from adafruit_register.i2c_bits import RWBits
+from adafruit_register.i2c_struct import ROUnaryStruct, Struct
 
 try:
-    import board  # type: ignore
+    import board
 except (ImportError, NotImplementedError):
     # Running on non-CircuitPython environment (Windows/standard Python)
     board = None

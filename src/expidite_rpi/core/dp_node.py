@@ -33,7 +33,7 @@ class DPnode:
     """Base class for nodes in the DPtree. Sensor and DataProcessor inherit from this class."""
 
     # Special Datastream for recording sample count / duration from the data pipeline.
-    _selftracker: "DPnode"
+    _selftracker: "DPnode | None"
 
     def __init__(self, config: DPtreeNodeCfg, sensor_index: int) -> None:
         """
@@ -304,7 +304,7 @@ class DPnode:
         This is used by EdgeOrchestrator to periodically log observability data
         """
         if DPnode._selftracker is None:
-            logger.error(f"{root_cfg.RAISE_WARN}SelfTracker not set; cannot log sample data")  # type: ignore[unreachable]
+            logger.error(f"{root_cfg.RAISE_WARN}SelfTracker not set; cannot log sample data")
             return
 
         # Lock the dictionary to prevent concurrent access

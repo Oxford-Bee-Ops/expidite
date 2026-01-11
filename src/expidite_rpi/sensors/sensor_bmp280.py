@@ -9,7 +9,7 @@ from expidite_rpi.core.sensor import Sensor, SensorCfg
 
 try:
     # This is only needed for typing
-    import board  # type: ignore
+    import board
 except (ImportError, NotImplementedError):
     # Running on non-CircuitPython environment (Windows/standard Python)
     board = None

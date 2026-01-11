@@ -31,12 +31,12 @@ Implementation Notes
 
 from struct import unpack
 
-from adafruit_bus_device import i2c_device  # type: ignore
-from micropython import const  # type: ignore
+from adafruit_bus_device import i2c_device
+from micropython import const
 
 try:
     # This is only needed for typing
-    import board  # type: ignore
+    import board
 except (ImportError, NotImplementedError):
     # Running on non-CircuitPython environment (Windows/standard Python)
     board = None

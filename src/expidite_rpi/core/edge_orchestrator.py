@@ -63,11 +63,6 @@ class EdgeOrchestrator:
 
     root_cfg.set_mode(root_cfg.Mode.EDGE)
 
-    def __new__(cls, *args, **kwargs) -> "EdgeOrchestrator":  # type: ignore
-        if not cls._instance:
-            cls._instance = super().__new__(cls, *args, **kwargs)
-        return cls._instance
-
     def __init__(self) -> None:
         logger.info(f"Initialising EdgeOrchestrator {self!r}")
 
@@ -167,7 +162,7 @@ class EdgeOrchestrator:
         logger.info(
             f"Creating DP trees for {root_cfg.my_device_id} using {create_method} and {create_kwargs}"
         )
-        dp_trees: list[DPtree] = create_method(**(create_kwargs or {}))
+        dp_trees = create_method(**(create_kwargs or {}))
 
         if not dp_trees:
             logger.error(
@@ -177,9 +172,7 @@ class EdgeOrchestrator:
             raise ValueError(msg)
 
         if not isinstance(dp_trees, list):
-            logger.error(  # type: ignore[unreachable]
-                f"{root_cfg.RAISE_WARN()}create_method must return a list; created {type(dp_trees)}"
-            )
+            logger.error(f"{root_cfg.RAISE_WARN()}create_method must return a list; created {type(dp_trees)}")
             raise ValueError("create_method must return a list of DPtree objects")
 
         return dp_trees

@@ -349,7 +349,7 @@ class DeviceHealth(Sensor):
                 "expidite_mount_percent": str(psutil.disk_usage(str(root_cfg.ROOT_WORKING_DIR)).percent),
                 "packet_loss": str(packet_loss),
                 "current_ping_fail_run": str(ping_failure_count_run),
-                "cpu_temperature": str(cpu_temp),  # type: ignore
+                "cpu_temperature": str(cpu_temp),
                 "ssid": ssid,
                 "signal_strength": signal_strength,
                 "ip_address": str(ip_address),
