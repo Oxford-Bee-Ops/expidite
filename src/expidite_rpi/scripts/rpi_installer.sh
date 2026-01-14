@@ -501,45 +501,24 @@ install_user_code() {
         # and this can happen due to transient network issues causing github.com name resolution to fail.
         install_success="false"
         
-        if [ "$install_type" == "system_test" ]; then
-            # On system test installations, we want the test code as well, so we run pip install .[dev]
-            project_dir="$HOME/$venv_dir/src/$project_name"
-            if [ -d "$project_dir" ]; then
-                # Delete the .git directory to avoid issues with git clone
-                rm -rf "$project_dir"
-            fi
-            mkdir -p "$project_dir"
-            cd "$project_dir"
-            if git clone --depth 1 --branch "$my_git_branch" "$fixed_git_repo_url" "$project_dir"; then
-                if pip install .[dev]; then
-                    install_success="true"
-                else
-                    echo "Failed to install system test code"
-                fi
+        # Use appropriate URL scheme based on access method
+        if [ "$use_ssh" == "true" ]; then
+            # For SSH URLs, pip expects git+ssh:// format
+            # Convert git@github.com:owner/repo.git to ssh://git@github.com/owner/repo.git
+            ssh_url="${fixed_git_repo_url/github.com:/github.com/}"
+            pip_url="git+ssh://$ssh_url@$my_git_branch"
+            if pip install "$pip_url"; then
+                install_success="true"
             else
-                echo "Failed to clone repository for system test"
+                echo "Failed to install $pip_url"
             fi
-            cd "$HOME/.expidite" 
         else
-            # Use appropriate URL scheme based on access method
-            if [ "$use_ssh" == "true" ]; then
-                # For SSH URLs, pip expects git+ssh:// format
-                # Convert git@github.com:owner/repo.git to ssh://git@github.com/owner/repo.git
-                ssh_url="${fixed_git_repo_url/github.com:/github.com/}"
-                pip_url="git+ssh://$ssh_url@$my_git_branch"
-                if pip install "$pip_url"; then
-                    install_success="true"
-                else
-                    echo "Failed to install $pip_url"
-                fi
+            # For HTTPS URLs, pip expects git+ prefix
+            pip_url="git+$fixed_git_repo_url@$my_git_branch"
+            if pip install "$pip_url"; then
+                install_success="true"
             else
-                # For HTTPS URLs, pip expects git+ prefix
-                pip_url="git+$fixed_git_repo_url@$my_git_branch"
-                if pip install "$pip_url"; then
-                    install_success="true"
-                else
-                    echo "Failed to install $pip_url"
-                fi
+                echo "Failed to install $pip_url"
             fi
         fi
 
@@ -634,8 +613,8 @@ create_mount() {
         echo "Mounted on SSD; no further action reqd."
     else
         echo "Running on SD card. Mount the RAM disk."
-        # All rpi_sensors have a minimum RAM of 4GB, so /dev/shm/ defaults to 2GB
-        # We reduce this to 500M for rpi_sensor installations and assign 1.5GB to /expidite
+        # All devices have a minimum RAM of 4GB, so /dev/shm/ defaults to 2GB
+        # We reduce this to 500M and assign 1.5GB to /expidite
         mount_size="1200M"
         if grep -Eqs "$mountpoint.*$mount_size" /etc/fstab; then
             echo "The mount point already exists in fstab with the correct size."
@@ -758,8 +737,7 @@ alias_bcli() {
 # Autostart if requested in system.cfg
 ################################################
 auto_start_if_requested() {
-    # We make this conditional on both auto_start and this not being a system_test install
-    if [ "$auto_start" == "Yes" ] && [ "$install_type" != "system_test" ]; then
+    if [ "$auto_start" == "Yes" ]; then
         echo "Auto-starting Expidite RpiCore..."
         
         # Check the script is not already running
@@ -790,18 +768,6 @@ make_persistent() {
         echo "Script added to crontab to run on reboot and Saturday night at 2am."
         (crontab -l 2>/dev/null; echo "@reboot $rpi_installer_cmd") | crontab -
         (crontab -l 2>/dev/null; echo "0 2 * * 6 $rpi_cmd_os_update") | crontab -
-    fi
-
-    # If this is a system_test install, we add an additional line to crontab to run my_start_script
-    # every night at 4am
-    if [ "$install_type" == "system_test" ]; then
-        # Delete and re-add any lines containing $my_start_script from crontab
-        crontab -l | grep -v "$my_start_script" | crontab -        
-        echo "Script added to crontab to run $my_start_script every night at 4am."
-        # Activate the virtual environment and run the script
-        # We use nohup to run the script in the background and redirect output to logger
-        (crontab -l 2>/dev/null; \
-        echo "0 4 * * * $HOME/$venv_dir/bin/python -m $my_start_script 2>&1 | /usr/bin/logger -t EXPIDITE") | crontab -
     fi
 }
 
