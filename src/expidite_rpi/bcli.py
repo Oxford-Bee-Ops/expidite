@@ -658,31 +658,47 @@ class InteractiveMenu:
         # users either wrapping with quotes or not
         new_key = input()
         new_key = new_key.strip().strip('"').strip("'")
-
         # Check the key is not empty and contains "core.windows.net"
         if not new_key or "core.windows.net" not in new_key:
             click.echo("That doesn't look like a valid key. Please try again.")
             return
 
-        # Check the key is valid by trying to create a CloudConnector instance
+        # Read existing file and preserve all other lines.
+        existing_lines = []
+
+        if root_cfg.KEYS_FILE.exists():
+            with open(root_cfg.KEYS_FILE) as f:
+                for line in f:
+                    if line.strip().startswith("cloud_storage_key="):
+                        continue
+                    existing_lines.append(line)
+
+        # Check the key is valid by trying to create a CloudConnector instance.
         try:
             test_file = root_cfg.KEYS_FILE.with_suffix(".test")
             if test_file.exists():
                 test_file.unlink()
+
+            # Write the test file with all existing lines plus the new key.
             with open(test_file, "w") as f:
+                for line in existing_lines:
+                    f.write(line)
                 f.write(f'cloud_storage_key="{new_key}"\n')
+
             cc = CloudConnector.get_instance(root_cfg.CloudType.AZURE)
             cc.set_keys(keys_file=test_file)
             cc.list_cloud_files(root_cfg.my_device.cc_for_fair)
             click.echo("Storage key test passed.")
         except Exception as e:
             click.echo(f"Storage key test failed: {e}")
-            test_file.unlink()
+            if test_file.exists():
+                test_file.unlink()
             return
 
+        # Backup and replace.
         click.echo(f"Saving old file as {root_cfg.KEYS_FILE.with_suffix('.bak')}")
-        root_cfg.KEYS_FILE.rename(root_cfg.KEYS_FILE.with_suffix(".bak"))
-
+        if root_cfg.KEYS_FILE.exists():
+            root_cfg.KEYS_FILE.rename(root_cfg.KEYS_FILE.with_suffix(".bak"))
         click.echo(f"Updating the storage key in {root_cfg.KEYS_FILE}")
         test_file.rename(root_cfg.KEYS_FILE)
 
