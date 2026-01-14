@@ -1,5 +1,6 @@
 #!/bin/bash
 
+##############################################################################################################
 # RPI installer
 #
 # This script installs / updates Expidite's RpiCore code according to the ~/.expidite/system.cfg file.
@@ -28,8 +29,10 @@
 # - auto_start_if_requested to start RpiCore & DeviceManager automatically if requested in system.cfg
 # - make_persistent by adding this script to crontab to run on reboot
 #
-# This script can be called with an os_update=yes argument to trigger an OS update. Otherwise, OS update is skipped.
-# 
+# This script can be called with an os_update=yes argument to trigger an OS update. Otherwise, OS update is
+# skipped.
+#
+##############################################################################################################
 if [ "$1" == "os_update" ]; then
     os_update="yes"
 else
@@ -308,10 +311,10 @@ install_expidite() {
         install_os_packages
     fi
 
-    ###############################################################################################################
-    # We don't return exit code 1 if the install fails, because we want to continue with the rest of the script
-    # and this can happen due to transient network issues causing github.com name resolution to fail.
-    ###############################################################################################################
+    ##########################################################################################################
+    # We don't return exit code 1 if the install fails, because we want to continue with the rest of the
+    # script and this can happen due to transient network issues causing github.com name resolution to fail.
+    ##########################################################################################################
     # Check if the branch exists
     if ! git ls-remote --heads https://github.com/oxford-bee-ops/expidite.git "$expidite_git_branch" > /dev/null; then
         echo "Warning: Branch '$expidite_git_branch' does not exist in the repository."
@@ -415,9 +418,9 @@ install_user_code() {
         exit 1
     fi
 
-    ############################################
+    ##########################################################################################################
     # Determine if using SSH (private repo) or HTTPS (public repo)
-    ############################################
+    ##########################################################################################################
     use_ssh="false"
     
     # Check if SSH key file is specified and exists
@@ -458,9 +461,9 @@ install_user_code() {
     fixed_git_repo_url=$(fix_my_git_repo "$my_git_repo_url" "$use_ssh")
     echo "Git Repository URL: $fixed_git_repo_url (using $([ "$use_ssh" == "true" ] && echo "SSH" || echo "HTTPS"))"
 
-    ##############################################
+    ##########################################################################################################
     # Do the Git clone
-    ##############################################
+    ##########################################################################################################
     # [Re-]install the latest version of the user's code in the virtual environment
     # Extract the project name from the URL
     project_name=$(git_project_name "$my_git_repo_url")
@@ -497,8 +500,9 @@ install_user_code() {
     if [[ "$REMOTE_HASH" != "$LOCAL_HASH" || "$new_install" == "yes" ]]; then
         echo "Detected new commit $REMOTE_HASH on branch $my_git_branch."
 
-        # We don't return exit code 1 if the install fails, because we want to continue with the rest of the script
-        # and this can happen due to transient network issues causing github.com name resolution to fail.
+        # We don't return exit code 1 if the install fails, because we want to continue with the rest of the
+        # script and this can happen due to transient network issues causing github.com name resolution to
+        # fail.
         install_success="false"
         
         # Use appropriate URL scheme based on access method
@@ -545,11 +549,11 @@ install_user_code() {
     echo "$updated_version" > "$HOME/.expidite/user_code_version"
 }
 
-###############################################
+##############################################################################################################
 # Make log storage volatile to reduce SD card writes
 # This is configurable via system.cfg
 # Logs then get written to /run/log/journal which is a tmpfs and managed to a maximum size of 50M
-###############################################
+##############################################################################################################
 set_log_storage_volatile() {
     if [ "$enable_volatile_logs" != "Yes" ]; then
         echo "Skip making storage volatile as enable_volatile_logs is not set to 'Yes'."
@@ -585,12 +589,12 @@ set_log_storage_volatile() {
     fi
 }
 
-###############################################
+##############################################################################################################
 # Create RAM disk
 #
 # If we're running off an SD card, we use a ramdisk instead of the SD card for the /expidite directory.
 # If we're running off an SSD, we mount /expidite on the SSD.
-###############################################
+##############################################################################################################
 create_mount() {
     mountpoint="/expidite"
 
@@ -602,8 +606,8 @@ create_mount() {
         sudo chown -R $USER:$USER $mountpoint
     fi
 
-    # The diagnostics mountpoint is always on disk, so that it survives reboot. This is OK because its use is very
-    # limited - only for when diagnostics are saved when rebooting as a recovery action.
+    # The diagnostics mountpoint is always on disk, so that it survives reboot. This is OK because its use is
+    # very limited - only for when diagnostics are saved when rebooting as a recovery action.
     diags_mountpoint="/expidite-diags"
     sudo mkdir -p $diags_mountpoint
     sudo chown -R $USER:$USER $diags_mountpoint
@@ -619,8 +623,8 @@ create_mount() {
         if grep -Eqs "$mountpoint.*$mount_size" /etc/fstab; then
             echo "The mount point already exists in fstab with the correct size."
         else
-            # If it doesn't exist, we delete any lines that start with "tmpfs /expidite" to clean out old config...
-            # Such as mounts with the wrong size
+            # If it doesn't exist, we delete any lines that start with "tmpfs /expidite" to clean out old
+            # config, such as mounts with the wrong size.
             sudo sed -i '/^tmpfs \/expidite/d' /etc/fstab
 
             # ...and then add the new lines
@@ -647,11 +651,11 @@ create_mount() {
 
 }
 
-####################################
+##############################################################################################################
 # Set predictable network interface names
 #
 # Runs: sudo raspi-config nonint do_net_names 0
-####################################
+##############################################################################################################
 set_predictable_network_interface_names() {
     if [ "$enable_predictable_network_interface_names" == "Yes" ]; then
         sudo raspi-config nonint do_net_names 0
@@ -659,11 +663,11 @@ set_predictable_network_interface_names() {
     fi
 }
 
-####################################
+##############################################################################################################
 # Enable the I2C interface
 #
 # Runs:	sudo raspi-config nonint do_i2c 0
-####################################
+##############################################################################################################
 enable_i2c() {
     if [ "$enable_i2c" == "Yes" ]; then
         # We want to avoid setting this every time the script runs, because we've seen issues
@@ -683,10 +687,10 @@ enable_i2c() {
     fi
 }
 
-##############################################
+##############################################################################################################
 # Set hostname to "expidite-<device_id>"
 # The device_id is the wlan0 mac address with the colons removed
-##############################################
+##############################################################################################################
 set_hostname() {
     if [ ! -f /sys/class/net/wlan0/address ]; then
         echo "Error: wlan0 interface not found."
@@ -719,9 +723,9 @@ set_hostname() {
     fi
 }
 
-##############################################
+##############################################################################################################
 # Create an alias for the bcli command
-##############################################
+##############################################################################################################
 alias_bcli() {
     # Create an alias for the bcli command
     if ! grep -qs "alias bcli=" "$HOME/.bashrc"; then
@@ -733,9 +737,9 @@ alias_bcli() {
     source ~/.bashrc
 }
 
-################################################
+##############################################################################################################
 # Autostart if requested in system.cfg
-################################################
+##############################################################################################################
 auto_start_if_requested() {
     if [ "$auto_start" == "Yes" ]; then
         echo "Auto-starting Expidite RpiCore..."
@@ -752,10 +756,9 @@ auto_start_if_requested() {
     fi
 }
 
-###############################################
-# Make this script persistent by adding it to crontab
-# to run on reboot
-###############################################
+##############################################################################################################
+# Make this script persistent by adding it to crontab to run on reboot.
+##############################################################################################################
 make_persistent() {
     if [ "$auto_start" == "Yes" ]; then        
         rpi_installer_cmd="/bin/bash $HOME/$venv_dir/scripts/rpi_installer.sh 2>&1 | /usr/bin/logger -t EXPIDITE"
@@ -771,11 +774,11 @@ make_persistent() {
     fi
 }
 
-###############################################
+##############################################################################################################
 # Manage LEDs based on system.cfg settings
 # Check /etc/systemd/system/led-manager.service exists - and if not create it
 # Enable and reload service.
-###############################################
+##############################################################################################################
 install_leds_service() {
     if [ "$manage_leds" != "No" ]; then
         if [ -f "/etc/systemd/system/led-manager.service" ]; then
@@ -785,7 +788,8 @@ install_leds_service() {
         elif [ ! -f "$HOME/$venv_dir/scripts/led-manager.service" ]; then
             echo "Error: led-manager.service file not found in $HOME/$venv_dir/scripts/"
         else
-            # Create the led-manager.service by copying the led-manager.service file from the scripts directory
+            # Create the led-manager.service by copying the led-manager.service file from the scripts
+            # directory.
             sudo cp "$HOME/$venv_dir/scripts/led-manager.service" /etc/systemd/system/led-manager.service
 
             # Enable and start the led-manager service
@@ -799,9 +803,9 @@ install_leds_service() {
     fi
 }
 
-################################################
+##############################################################################################################
 # Reboot if required
-################################################
+##############################################################################################################
 reboot_if_required() {
     # Check if reboots are disabled due to too many failures
     if [ -f "$HOME/.expidite/flags/reboot_disabled" ]; then
@@ -837,11 +841,11 @@ reboot_if_required() {
     fi
 }
 
-###################################################################################################
+##############################################################################################################
 #
 # Main script execution to configure a RPi device suitable for long-running RpiCore operations
 # 
-###################################################################################################
+##############################################################################################################
 echo "Starting RPi installer.  (os_update=$os_update)"
 # On reboot, os_update is set to "no".
 # Sleep for 10 seconds to allow the system to settle down after booting
@@ -883,4 +887,3 @@ set_leds_end
 # We use the timestamp on this flag to determine the last update time
 touch "$HOME/.expidite/flags/rpi_installer_ran"
 echo "Expidite RPi installer completed successfully."
-
