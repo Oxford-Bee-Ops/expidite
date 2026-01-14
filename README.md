@@ -127,7 +127,6 @@ With the correct config and auto-start set to yes, your device will immediately 
     - run `bcli`
 
 
-
 ### USER FLOW - EXTENDING & CUSTOMIZING
 - Supporting new sensors
     - To support new sensors, create a new python file in the same form as my_sensor_example.py that extends **expidite_rpi.Sensor**.
@@ -140,9 +139,6 @@ With the correct config and auto-start set to yes, your device will immediately 
 - Contributing updates to RpiCore
     - In the first instance, please email admin@bee-ops.com.
 
-
-### USER FLOW - ETL
-- TBD: Setting up an ETL pipeline to process the data
 
 ## RPI device management functions
 KE=keys.env; SC=system.cfg; FC=Fleet config
@@ -164,7 +160,6 @@ KE=keys.env; SC=system.cfg; FC=Fleet config
 | Install a virtual environment | SC:`venv_dir` | "venv" | Uses uv to install a venv unless one already exists at this location
 | Firewall | SC:`enable_firewall` | "Yes" | Installs and configures UFW (Uncomplicated Firewall)
 | Manage LEDs | SC:`manage_leds` | "Yes" | Manage the LED status indicator; set to "No" if you want to manage LEDs differently
-| Install type | SC:`install_type` | "rpi_sensor" | Should always be rpi_sensor unless you are a power user using the device for system test purposes.
 | Enable I2C | SC:`enable_i2c` | "Yes" | Enables the I2C interfaces for connecting I2C-based sensors
 | Interface naming | SC:`enable_predictable_network_interface_names` | "Yes" | Forces Raspberry Pi to use predictable interface names (eg wlan0)
 

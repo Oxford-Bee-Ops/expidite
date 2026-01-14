@@ -4,7 +4,6 @@ from typing import Any
 
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
-from expidite_rpi.core import api
 from expidite_rpi.utils import utils_clean
 
 ##############################################################################################################
@@ -168,18 +167,12 @@ class SystemCfg(BaseSettings):
     my_fleet_config: str = FAILED_TO_LOAD
     # The fully-qualified module name to call to start the device.
     # eg "my_project.my_start_script"
-    # For RPI_SENSOR installations, this is called on reboot or when expidite is started via bcli.
-    # For SYSTEM_TEST installations, this is called at a scheduled time or via bcli.
+    # This is called on reboot or when expidite is started via bcli.
     my_start_script: str = FAILED_TO_LOAD
 
     ##########################################################################################################
     # Default-able settings
     ##########################################################################################################
-    # Install type is one of api.INSTALL_TYPE:
-    #   - api.INSTALL_TYPE.RPI_SENSOR for a normal sensor installation
-    #   - api.INSTALL_TYPE.SYSTEM_TEST to use the device as a system test device
-    #   - api.INSTALL_TYPE.ETL to use the device as an ETL device
-    install_type: api.INSTALL_TYPE = api.INSTALL_TYPE.RPI_SENSOR
     # Logging and storage settings
     enable_volatile_logs: str = "Yes"
     # Do you want RpiCore to start automatically after running the rpi_installer.sh script?
