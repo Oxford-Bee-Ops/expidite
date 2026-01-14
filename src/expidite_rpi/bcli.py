@@ -670,8 +670,9 @@ class InteractiveMenu:
             with open(root_cfg.KEYS_FILE) as f:
                 for line in f:
                     if line.strip().startswith("cloud_storage_key="):
-                        continue
-                    existing_lines.append(line)
+                        existing_lines.append(f'cloud_storage_key="{new_key}"\n')
+                    else:
+                        existing_lines.append(line)
 
         # Check the key is valid by trying to create a CloudConnector instance.
         try:
@@ -679,11 +680,9 @@ class InteractiveMenu:
             if test_file.exists():
                 test_file.unlink()
 
-            # Write the test file with all existing lines plus the new key.
             with open(test_file, "w") as f:
                 for line in existing_lines:
                     f.write(line)
-                f.write(f'cloud_storage_key="{new_key}"\n')
 
             cc = CloudConnector.get_instance(root_cfg.CloudType.AZURE)
             cc.set_keys(keys_file=test_file)
