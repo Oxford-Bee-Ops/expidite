@@ -132,6 +132,7 @@ class Keys(BaseSettings):
     """Class to hold the keys for the system"""
 
     cloud_storage_key: str = FAILED_TO_LOAD
+    my_git_pat: str = FAILED_TO_LOAD
     model_config = SettingsConfigDict(extra="ignore")
 
     def get_storage_account(self) -> str:
