@@ -120,7 +120,7 @@ git_project_name() {
 # Read system.cfg file and export the key-value pairs found.
 ##############################################################################################################
 export_system_cfg() {
-  echo_header
+    echo_header
     if [ ! -f "$HOME/.expidite/system.cfg" ]; then
         echo "Error: system.cfg file is missing in $HOME/.expidite"
         exit 1
@@ -151,6 +151,7 @@ export_system_cfg() {
 # Read keys.env file and export the key-value pairs found.
 ##############################################################################################################
 export_keys_env() {
+    echo_header
     if [ ! -f "$HOME/.expidite/keys.env" ]; then
         echo "Error: keys.env file is missing in $HOME/.expidite"
         exit 1
@@ -181,7 +182,7 @@ export_keys_env() {
 # We just need to write "red:blink:0.5" to /.expidite/flags/led_status
 TMP_FLAGS_DIR="/expidite/tmp/tmp_flags"
 set_leds_start() {
-  echo_header
+    echo_header
     # Test whether manage_leds is enabled
     if [ "$manage_leds" != "No" ]; then
         mkdir -p "$TMP_FLAGS_DIR" || { echo "Failed to create flags directory"; }
@@ -238,7 +239,7 @@ install_ssh_keys() {
 # Function to create a virtual environment if it doesn't already exist
 # The venv location is specified in the system.cfg (venv_dir)
 create_and_activate_venv() {
-  echo_header
+    echo_header
     if [ -z "$venv_dir" ]; then
         echo "Error: venv_dir is not set in system.cfg"
         exit 1
