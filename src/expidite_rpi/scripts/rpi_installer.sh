@@ -457,11 +457,6 @@ install_user_code() {
 install_user_code_from_package() {
     echo "TODO"
     "$HOME/$venv_dir/scripts/github_installer.py" $my_git_pat
-    # TODO: Can I do ALL of this in github_installer.py?
-    # TODO: Need to know current version (we already have it in user_code_version file, but might be
-    #  missing for clean install.
-    # TODO: Need to get list of available versions for my_git_branch and my_git_repo_url.
-    # TODO: If a newer version is available, download the wheel file using the PAT and install it using pip.
     # TODO: All the same logging as for git clone installation.
     # TODO: Write to .expidite/user_code_version if successful.
     # TODO: Set the reboot_required flag if successful.
