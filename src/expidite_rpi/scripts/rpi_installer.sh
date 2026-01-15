@@ -116,7 +116,9 @@ git_project_name() {
     echo "$project_name"
 }
 
-# Function to read system.cfg file and export the key-value pairs found
+##############################################################################################################
+# Read system.cfg file and export the key-value pairs found.
+##############################################################################################################
 export_system_cfg() {
     if [ ! -f "$HOME/.expidite/system.cfg" ]; then
         echo "Error: system.cfg file is missing in $HOME/.expidite"
@@ -142,6 +144,36 @@ export_system_cfg() {
     if [ -z "$expidite_git_branch" ]; then
         expidite_git_branch="main"
     fi
+}
+
+##############################################################################################################
+# Read keys.env file and export the key-value pairs found.
+##############################################################################################################
+export_keys_env() {
+    if [ ! -f "$HOME/.expidite/keys.env" ]; then
+        echo "Error: keys.env file is missing in $HOME/.expidite"
+        exit 1
+    fi
+    dos2unix -q "$HOME/.expidite/keys.env" || { echo "Failed to convert keys.env to Unix format"; exit 1; }
+    while IFS='=' read -r key value; do
+        # Strip any surrounding whitespace from key and value
+        key=$(echo "$key" | xargs)
+        value=$(echo "$value" | xargs)
+        if [[ $key != \#* && $key != "" ]]; then
+            if [[ $key =~ ^[a-zA-Z_][a-zA-Z0-9_]*$ ]]; then
+                # Strip surrounding quotes from the value
+                value=$(echo "$value" | sed -e 's/^"//' -e 's/"$//')
+
+                if [ "$value" = "NOT_SET" ]; then
+                    value=""
+                fi
+
+                export "$key"="$value"
+            else
+                echo "Warning: Skipping invalid key '$key' in keys.env"
+            fi
+        fi
+    done < "$HOME/.expidite/keys.env"
 }
 
 # Function to set the LEDs on (if available)
@@ -409,10 +441,36 @@ fix_my_git_repo() {
     echo "$git_repo_url"
 }
 
-# Function to install user's code
 install_user_code() {
-    echo "Installing user's code..."
+  echo "Installing user's code..."
 
+  if [ -z "$my_git_pat" ]; then
+      install_user_code_from_git_clone
+  else
+      install_user_code_from_package
+  fi
+}
+
+##############################################################################################################
+# Install user's code from a Python wheel in a GitHub release in a GitHub private repository.
+##############################################################################################################
+install_user_code_from_package() {
+    echo "TODO"
+    "$HOME/$venv_dir/scripts/github_installer.py" $my_git_pat
+    # TODO: Can I do ALL of this in github_installer.py?
+    # TODO: Need to know current version (we already have it in user_code_version file, but might be
+    #  missing for clean install.
+    # TODO: Need to get list of available versions for my_git_branch and my_git_repo_url.
+    # TODO: If a newer version is available, download the wheel file using the PAT and install it using pip.
+    # TODO: All the same logging as for git clone installation.
+    # TODO: Write to .expidite/user_code_version if successful.
+    # TODO: Set the reboot_required flag if successful.
+}
+
+##############################################################################################################
+# Install user's code using `git clone` of either a private or publick repository.
+##############################################################################################################
+install_user_code_from_git_clone() {
     if [ -z "$my_git_repo_url" ] || [ -z "$my_git_branch" ]; then
         echo "Error: my_git_repo_url or my_git_branch is not set in system.cfg"
         exit 1
@@ -853,6 +911,7 @@ sleep 10
 check_prerequisites
 cd "$HOME/.expidite" || { echo "Failed to change directory to $HOME/.expidite"; exit 1; }
 export_system_cfg
+export_keys_env
 set_leds_start
 install_ssh_keys
 create_and_activate_venv # Sets os_update=yes if creating a new venv
@@ -887,3 +946,5 @@ set_leds_end
 # We use the timestamp on this flag to determine the last update time
 touch "$HOME/.expidite/flags/rpi_installer_ran"
 echo "Expidite RPi installer completed successfully."
+
+}
