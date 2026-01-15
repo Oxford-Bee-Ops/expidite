@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "expidite"
-version = "0.1.139"
+version = "0.1.140"
 description = "Python module to support using Raspberry Pi for scientific data collection"
 readme = "README.md"
 requires-python = ">=3.11"
@@ -45,7 +45,7 @@ dev = [
     "pytest == 9.0.2",
     "pytest-socket == 0.7.0",
     "ruff == 0.14.11",
-    "ty == 0.0.11",
+    "ty == 0.0.12",
     "types-psutil == 7.2.1.20251231",
     "types-PyYAML == 6.0.12.20250915",
 ]
