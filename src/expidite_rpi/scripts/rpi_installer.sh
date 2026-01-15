@@ -946,5 +946,3 @@ set_leds_end
 # We use the timestamp on this flag to determine the last update time
 touch "$HOME/.expidite/flags/rpi_installer_ran"
 echo "Expidite RPi installer completed successfully."
-
-}
