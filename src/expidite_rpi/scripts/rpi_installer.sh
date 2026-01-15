@@ -41,7 +41,7 @@ fi
 
 # Function to check pre-requisites
 check_prerequisites() {
-    echo "Checking pre-requisites..."
+    echo_header "Check pre-requisites"
     if [ ! -d "$HOME/.expidite" ]; then
         echo "Error: $HOME/.expidite directory is missing"
         exit 1
@@ -118,6 +118,7 @@ git_project_name() {
 
 # Function to read system.cfg file and export the key-value pairs found
 export_system_cfg() {
+  echo_header
     if [ ! -f "$HOME/.expidite/system.cfg" ]; then
         echo "Error: system.cfg file is missing in $HOME/.expidite"
         exit 1
@@ -148,6 +149,7 @@ export_system_cfg() {
 # We just need to write "red:blink:0.5" to /.expidite/flags/led_status
 TMP_FLAGS_DIR="/expidite/tmp/tmp_flags"
 set_leds_start() {
+  echo_header
     # Test whether manage_leds is enabled
     if [ "$manage_leds" != "No" ]; then
         mkdir -p "$TMP_FLAGS_DIR" || { echo "Failed to create flags directory"; }
@@ -156,6 +158,7 @@ set_leds_start() {
 }
 
 set_leds_end() {
+    echo_header
     # test whether manage_leds is enabled
     if [ "$manage_leds" != "No" ]; then
         echo "red:on" > "$TMP_FLAGS_DIR/LED_STATUS" || { echo "Failed to set LED status"; }
@@ -164,7 +167,7 @@ set_leds_end() {
 
 # Install SSH keys from the ./expidite directory to the ~/.ssh directory
 install_ssh_keys() {
-    echo "Installing SSH keys..."
+    echo_header "Install SSH keys"
 
     # Skip if the SSH keys already exist
     if [ -f "$HOME/.ssh/$my_git_ssh_private_key_file" ]; then
@@ -203,6 +206,7 @@ install_ssh_keys() {
 # Function to create a virtual environment if it doesn't already exist
 # The venv location is specified in the system.cfg (venv_dir)
 create_and_activate_venv() {
+  echo_header
     if [ -z "$venv_dir" ]; then
         echo "Error: venv_dir is not set in system.cfg"
         exit 1
@@ -237,7 +241,7 @@ create_and_activate_venv() {
 # We use this rather than conda or uv because we want packages that are optimised for RPi
 # and we want to use the system package manager to install them.
 install_os_packages() {
-    echo "Installing OS packages..."
+    echo_header "Install OS packages"
     sudo apt-get update && sudo apt-get \
         -o Dpkg::Options::="--force-confdef" \
         -o Dpkg::Options::="--force-confold" \
@@ -261,6 +265,7 @@ install_os_packages() {
 
 # Function to install the Uncomplicated Firewall and set appropriate rules.
 install_ufw() {
+    echo_header
     # If enable_firewall="Yes"
     if [ "$enable_firewall" != "Yes" ]; then
         echo "Firewall installation skipped as enable_firewall is not set to 'Yes'."
@@ -292,7 +297,7 @@ install_ufw() {
 
 # Function to install expidite's RpiCore 
 install_expidite() {
-    # Install expidite from GitHub
+    echo_header "Install expidite from GitHub"
     EXP_HASH_FILE="$HOME/.expidite/flags/expidite-repo-last-hash"
     current_version=$(pip show expidite | grep Version)
     echo "Installing expidite.  Current version: $current_version"
@@ -411,7 +416,7 @@ fix_my_git_repo() {
 
 # Function to install user's code
 install_user_code() {
-    echo "Installing user's code..."
+    echo_header "Install user's code"
 
     if [ -z "$my_git_repo_url" ] || [ -z "$my_git_branch" ]; then
         echo "Error: my_git_repo_url or my_git_branch is not set in system.cfg"
@@ -555,6 +560,7 @@ install_user_code() {
 # Logs then get written to /run/log/journal which is a tmpfs and managed to a maximum size of 50M
 ##############################################################################################################
 set_log_storage_volatile() {
+    echo_header
     if [ "$enable_volatile_logs" != "Yes" ]; then
         echo "Skip making storage volatile as enable_volatile_logs is not set to 'Yes'."
         return
@@ -596,6 +602,7 @@ set_log_storage_volatile() {
 # If we're running off an SSD, we mount /expidite on the SSD.
 ##############################################################################################################
 create_mount() {
+    echo_header
     mountpoint="/expidite"
 
     # Create the mount point directory if it doesn't exist
@@ -657,6 +664,7 @@ create_mount() {
 # Runs: sudo raspi-config nonint do_net_names 0
 ##############################################################################################################
 set_predictable_network_interface_names() {
+    echo_header
     if [ "$enable_predictable_network_interface_names" == "Yes" ]; then
         sudo raspi-config nonint do_net_names 0
         echo "Predictable network interface names set."
@@ -669,6 +677,7 @@ set_predictable_network_interface_names() {
 # Runs:	sudo raspi-config nonint do_i2c 0
 ##############################################################################################################
 enable_i2c() {
+    echo_header
     if [ "$enable_i2c" == "Yes" ]; then
         # We want to avoid setting this every time the script runs, because we've seen issues
         # with corruption of /boot/firmware/config.txt which may be cause by this change
@@ -692,6 +701,7 @@ enable_i2c() {
 # The device_id is the wlan0 mac address with the colons removed
 ##############################################################################################################
 set_hostname() {
+    echo_header
     if [ ! -f /sys/class/net/wlan0/address ]; then
         echo "Error: wlan0 interface not found."
         return 1
@@ -727,6 +737,7 @@ set_hostname() {
 # Create an alias for the bcli command
 ##############################################################################################################
 alias_bcli() {
+    echo_header
     # Create an alias for the bcli command
     if ! grep -qs "alias bcli=" "$HOME/.bashrc"; then
         echo "alias bcli='source ~/$venv_dir/bin/activate && bcli'" >> ~/.bashrc
@@ -741,6 +752,7 @@ alias_bcli() {
 # Autostart if requested in system.cfg
 ##############################################################################################################
 auto_start_if_requested() {
+    echo_header
     if [ "$auto_start" == "Yes" ]; then
         echo "Auto-starting Expidite RpiCore..."
         
@@ -760,6 +772,7 @@ auto_start_if_requested() {
 # Make this script persistent by adding it to crontab to run on reboot.
 ##############################################################################################################
 make_persistent() {
+    echo_header
     if [ "$auto_start" == "Yes" ]; then        
         rpi_installer_cmd="/bin/bash $HOME/$venv_dir/scripts/rpi_installer.sh 2>&1 | /usr/bin/logger -t EXPIDITE"
         rpi_cmd_os_update="/bin/bash $HOME/$venv_dir/scripts/rpi_installer.sh os_update 2>&1 | /usr/bin/logger -t EXPIDITE"
@@ -780,6 +793,7 @@ make_persistent() {
 # Enable and reload service.
 ##############################################################################################################
 install_leds_service() {
+    echo_header
     if [ "$manage_leds" != "No" ]; then
         if [ -f "/etc/systemd/system/led-manager.service" ]; then
             echo "led-manager.service already exists."
@@ -807,6 +821,7 @@ install_leds_service() {
 # Reboot if required
 ##############################################################################################################
 reboot_if_required() {
+    echo_header
     # Check if reboots are disabled due to too many failures
     if [ -f "$HOME/.expidite/flags/reboot_disabled" ]; then
         echo "Automatic reboots are disabled due to repeated failures."
@@ -840,13 +855,23 @@ reboot_if_required() {
         fi
     fi
 }
+# Echo a header for clear separation of the rpi_installer output.
+# Use the supplied string if any, otherwise use the calling function name.
+echo_header() {
+    local header="${1:-${FUNCNAME[1]}}"
+    printf '#%.0s' {1..120}
+    echo
+    echo "# $header"
+    printf '#%.0s' {1..120}
+    echo
+}
 
 ##############################################################################################################
 #
 # Main script execution to configure a RPi device suitable for long-running RpiCore operations
 # 
 ##############################################################################################################
-echo "Starting RPi installer.  (os_update=$os_update)"
+echo_header "Starting RPi installer.  (os_update=$os_update)"
 # On reboot, os_update is set to "no".
 # Sleep for 10 seconds to allow the system to settle down after booting
 sleep 10
