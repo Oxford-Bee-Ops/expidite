@@ -455,11 +455,20 @@ install_user_code() {
 # Install user's code from a Python wheel in a GitHub release in a GitHub private repository.
 ##############################################################################################################
 install_user_code_from_package() {
-    echo "TODO"
+    project_name=$(git_project_name "$my_git_repo_url")
+    current_version=$(pip show "$project_name" | grep Version)
+
     "$HOME/$venv_dir/scripts/github_installer.py" $my_git_pat
-    # TODO: All the same logging as for git clone installation.
-    # TODO: Write to .expidite/user_code_version if successful.
-    # TODO: Set the reboot_required flag if successful.
+
+    updated_version=$(pip show "$project_name" | grep Version)
+
+    if [[ "$current_version" != "$updated_version" ]]; then
+        echo "User's code installation succeeded. Reboot required."
+        touch "$HOME/.expidite/flags/reboot_required"
+
+        # We store the updated_version in the flags directory for later use in logging.
+        echo "$updated_version" > "$HOME/.expidite/user_code_version"
+    fi
 }
 
 ##############################################################################################################

@@ -5,9 +5,9 @@ import sys
 import tempfile
 from importlib.metadata import PackageNotFoundError, version
 from pathlib import Path
-from typing import Any
 
 from github import Auth, Github, GithubException
+from github.GitRelease import GitRelease
 from packaging.version import Version
 
 from expidite_rpi import configuration as root_cfg
@@ -49,7 +49,7 @@ def _get_installed_bee_ops_version() -> str:
         return "0.0.0"
 
 
-def _get_latest_bee_ops_version(g: Github) -> tuple[str, Any | None]:
+def _get_latest_bee_ops_version(g: Github) -> tuple[str, GitRelease | None]:
     repo = g.get_repo(_get_repo_path())
     releases = repo.get_releases()
     if releases is None or releases.totalCount == 0:
@@ -71,7 +71,7 @@ def _get_latest_bee_ops_version(g: Github) -> tuple[str, Any | None]:
     return latest_version_found, latest_release_found
 
 
-def _download_and_install_package(release) -> None:
+def _download_and_install_package(release: GitRelease) -> None:
     if release.assets is not None:
         for asset in release.assets:
             if asset.name.endswith(".whl"):
@@ -108,6 +108,7 @@ def _install_bee_ops_package() -> None:
             print("Latest version already installed. No action needed.")
             return
 
+        assert latest_release is not None
         _download_and_install_package(latest_release)
     except GithubException as e:
         print(f"Failed to read bee_ops repo: {e}")
@@ -122,11 +123,6 @@ if __name__ == "__main__":
         print("Installation of bee_ops package complete")
     except Exception as e:
         print(f"Installation of bee_ops package failed: {e}")
-        # TODO need a return code instead.
-
-# TODO MUST FAIL THE INSTALL OVERALL IF THIS STEP FAILS.
-# TODO If successful, log and set reboot_required (or defer to rpi_installer.sh).
-# TODO If successful, write new current_version file (or defer to rpi_installer.sh).
-# TODO Fix all TODOs in rpi_installer.sh.
-
-# --- end ---
+        # We don't return any indication that the install failed because we want the caller to continue with
+        # the rest of the script and failures can happen due to transient network issues causing github.com
+        # name resolution to fail.
