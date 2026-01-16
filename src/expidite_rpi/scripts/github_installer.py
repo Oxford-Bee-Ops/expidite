@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 
+import importlib.resources
 import subprocess
 import sys
 import tempfile
@@ -80,6 +81,7 @@ def _download_and_install_package(release: GitRelease) -> None:
                     local_wheel_path = Path(temp_dir) / asset.name
                     asset.download_asset(str(local_wheel_path))
                     _install_package(local_wheel_path)
+                    _run_package_post_install(local_wheel_path.stem.split("-")[0])
                     return
 
 
@@ -91,6 +93,24 @@ def _install_package(local_wheel_path: Path) -> None:
         print(f"Successfully installed {local_wheel_path.name}")
     except subprocess.CalledProcessError as e:
         print(f"Failed to install {local_wheel_path.name}: {e}")
+        raise
+
+
+def _run_package_post_install(package_name: str) -> None:
+    """If the user package includes a post-install script, run it now."""
+    try:
+        scripts_module = importlib.import_module(f"{package_name}.scripts")
+        post_install_path = importlib.resources.files(scripts_module) / "post-install.sh"
+        script_content = post_install_path.read_text().strip()
+
+        print(f"Running post-install script: {script_content}")
+        subprocess.check_call(script_content, shell=True)
+        print(f"Successfully ran post-install script for {package_name}")
+    except (ModuleNotFoundError, FileNotFoundError):
+        # The post-install.sh script is optional, so this is fine.
+        pass
+    except subprocess.CalledProcessError as e:
+        print(f"Post-install script failed for {package_name}: {e}")
         raise
 
 
@@ -123,6 +143,6 @@ if __name__ == "__main__":
         print("Installation of bee_ops package complete")
     except Exception as e:
         print(f"Installation of bee_ops package failed: {e}")
-        # We don't return any indication that the install failed because we want the caller to continue with
-        # the rest of the script and failures can happen due to transient network issues causing github.com
-        # name resolution to fail.
+        # We don't return any indication that the installation failed because we want the caller to continue
+        # with the rest of the script and failures can happen due to transient network issues causing
+        # github.com name resolution to fail.
