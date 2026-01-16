@@ -147,37 +147,6 @@ export_system_cfg() {
     fi
 }
 
-##############################################################################################################
-# Read keys.env file and export the key-value pairs found.
-##############################################################################################################
-export_keys_env() {
-    echo_header
-    if [ ! -f "$HOME/.expidite/keys.env" ]; then
-        echo "Error: keys.env file is missing in $HOME/.expidite"
-        exit 1
-    fi
-    dos2unix -q "$HOME/.expidite/keys.env" || { echo "Failed to convert keys.env to Unix format"; exit 1; }
-    while IFS='=' read -r key value; do
-        # Strip any surrounding whitespace from key and value
-        key=$(echo "$key" | xargs)
-        value=$(echo "$value" | xargs)
-        if [[ $key != \#* && $key != "" ]]; then
-            if [[ $key =~ ^[a-zA-Z_][a-zA-Z0-9_]*$ ]]; then
-                # Strip surrounding quotes from the value
-                value=$(echo "$value" | sed -e 's/^"//' -e 's/"$//')
-
-                if [ "$value" = "NOT_SET" ]; then
-                    value=""
-                fi
-
-                export "$key"="$value"
-            else
-                echo "Warning: Skipping invalid key '$key' in keys.env"
-            fi
-        fi
-    done < "$HOME/.expidite/keys.env"
-}
-
 # Function to set the LEDs on (if available)
 # We just need to write "red:blink:0.5" to /.expidite/flags/led_status
 TMP_FLAGS_DIR="/expidite/tmp/tmp_flags"
@@ -464,7 +433,7 @@ install_user_code_from_package() {
     project_name=$(git_project_name "$my_git_repo_url")
     current_version=$(pip show "$project_name" | grep Version)
 
-    "$HOME/$venv_dir/scripts/github_installer.py" $my_git_pat
+    "$HOME/$venv_dir/scripts/github_installer.py"
 
     updated_version=$(pip show "$project_name" | grep Version)
 
@@ -941,7 +910,6 @@ sleep 10
 check_prerequisites
 cd "$HOME/.expidite" || { echo "Failed to change directory to $HOME/.expidite"; exit 1; }
 export_system_cfg
-export_keys_env
 set_leds_start
 install_ssh_keys
 create_and_activate_venv # Sets os_update=yes if creating a new venv
