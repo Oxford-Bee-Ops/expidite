@@ -66,9 +66,10 @@ def _get_latest_user_repo_version(g: Github) -> tuple[str, GitRelease | None]:
     latest_release_found = None
 
     for release in releases:
-        release_branch = release.tag_name.split("-v")[0]
+        release_parts = release.tag_name.rsplit("-", 1)
+        release_branch = release_parts[0]
         if release_branch == my_git_branch:
-            release_version = release.tag_name.split("-v")[1]
+            release_version = release_parts[1]
             if Version(release_version) > Version(latest_version_found):
                 latest_version_found = release_version
                 latest_release_found = release
