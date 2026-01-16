@@ -90,10 +90,20 @@ def _download_and_install_package(release: GitRelease) -> None:
 
     raise AssertionError("No user repo package found")
 
+
 def _install_package(local_wheel_path: Path) -> None:
     try:
         subprocess.check_call(
-            [sys.executable, "-m", "pip", "install", "--upgrade", "--force-reinstall", str(local_wheel_path)]
+            [
+                sys.executable,
+                "-m",
+                "pip",
+                "install",
+                "--upgrade",
+                "--upgrade-strategy",
+                "only-if-needed",
+                str(local_wheel_path),
+            ]
         )
         print(f"Successfully installed {local_wheel_path.name}")
     except subprocess.CalledProcessError as e:
