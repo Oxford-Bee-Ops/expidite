@@ -163,6 +163,9 @@ class SystemCfg(BaseSettings):
     # gives access to the Git repo if it is private.
     # This can field can be left at FAILED_TO_LOAD if the repo is public.
     my_git_ssh_private_key_file: str = FAILED_TO_LOAD
+    # The name of a Python package to install instead of a git clone of the custom sensor code repo.
+    # Optional, and most use cases should omit this.
+    my_package_name: str = FAILED_TO_LOAD
     # The fully-qualified object name of the fleet config inventory.
     # eg "my_project.my_fleet_config.INVENTORY"
     my_fleet_config: str = FAILED_TO_LOAD

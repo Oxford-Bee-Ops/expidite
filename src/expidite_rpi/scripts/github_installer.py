@@ -42,10 +42,14 @@ def _get_my_git_banch() -> str:
     return root_cfg.system_cfg.my_git_branch
 
 
+def _get_my_package_name() -> str:
+    return root_cfg.system_cfg.my_package_name
+
+
 def _get_installed_user_repo_version() -> str:
     """Get version of the user repo package."""
     try:
-        return version("bee_ops") # TODO Remove this!
+        return version(_get_my_package_name())
     except PackageNotFoundError:
         return "0.0.0"
 

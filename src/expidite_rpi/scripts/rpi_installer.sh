@@ -450,7 +450,7 @@ fix_my_git_repo() {
 install_user_code() {
     echo_header "Install user's code"
 
-    if [ -z "$my_git_pat" ]; then
+    if [ -z "$my_package_name" ]; then
         install_user_code_from_git_clone
     else
         install_user_code_from_package
