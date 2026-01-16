@@ -14,7 +14,7 @@ from packaging.version import Version
 from expidite_rpi import configuration as root_cfg
 
 ##############################################################################################################
-# Purpose: download and install the latest version of the bee_ops package from GitHub for the configured
+# Purpose: download and install the latest version of the user repo package from GitHub for the configured
 # branch.
 #############################################################################################################
 
@@ -42,15 +42,15 @@ def _get_my_git_banch() -> str:
     return root_cfg.system_cfg.my_git_branch
 
 
-def _get_installed_bee_ops_version() -> str:
-    """Get version of an installed package."""
+def _get_installed_user_repo_version() -> str:
+    """Get version of the user repo package."""
     try:
-        return version("bee_ops")
+        return version("bee_ops") # TODO Remove this!
     except PackageNotFoundError:
         return "0.0.0"
 
 
-def _get_latest_bee_ops_version(g: Github) -> tuple[str, GitRelease | None]:
+def _get_latest_user_repo_version(g: Github) -> tuple[str, GitRelease | None]:
     repo = g.get_repo(_get_repo_path())
     releases = repo.get_releases()
     if releases is None or releases.totalCount == 0:
@@ -112,15 +112,15 @@ def _run_package_post_install(package_name: str) -> None:
         raise
 
 
-def _install_bee_ops_package() -> None:
-    """Download and install the latest version of the bee_ops package from GitHub."""
-    installed_version = _get_installed_bee_ops_version()
+def _install_user_repo_package() -> None:
+    """Download and install the latest version of the user repo package from GitHub."""
+    installed_version = _get_installed_user_repo_version()
 
     try:
         g = Github(auth=Auth.Token(_get_my_github_pat()))
 
-        latest_version, latest_release = _get_latest_bee_ops_version(g)
-        print(f"bee_ops package: installed: {installed_version}, latest: {latest_version}")
+        latest_version, latest_release = _get_latest_user_repo_version(g)
+        print(f"User package: installed: {installed_version}, latest: {latest_version}")
 
         if installed_version == latest_version:
             print("Latest version already installed. No action needed.")
@@ -129,18 +129,18 @@ def _install_bee_ops_package() -> None:
         assert latest_release is not None
         _download_and_install_package(latest_release)
     except GithubException as e:
-        print(f"Failed to read bee_ops repo: {e}")
+        print(f"Failed to read user repo package: {e}")
         raise
 
 
 if __name__ == "__main__":
-    print("Installing bee_ops package...")
+    print("Installing user repo package...")
 
     try:
-        _install_bee_ops_package()
-        print("Installation of bee_ops package complete")
+        _install_user_repo_package()
+        print("Installation of user repo package complete")
     except Exception as e:
-        print(f"Installation of bee_ops package failed: {e}")
+        print(f"Installation of user repo package failed: {e}")
         # We don't return any indication that the installation failed because we want the caller to continue
         # with the rest of the script and failures can happen due to transient network issues causing
         # github.com name resolution to fail.
