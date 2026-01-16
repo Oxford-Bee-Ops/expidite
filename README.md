@@ -149,9 +149,11 @@ KE=keys.env; SC=system.cfg; FC=Fleet config
 | Function  | Config control | Default | Notes |
 | ------------- | ------------- | ------------- | ------------- |
 | Cloud storage access key | KE:`cloud_storage_key` | The Shared Access Signature that provides access to your Azure cloud storage
+| GitHub PAT | KE:`my_git_pat` | The GitHub PAT that provides access to GitHub releases for `my_git_repo_url`.
 | Auto-start RpiCore | SC:`auto_start` | Starts RpiCore automatically after reboot; unless manual mode invoked via CLI.
 | Git repo | SC:`my_git_repo_url` | "Not set" | URL of your Git repo containing your configuration and any custom code
 | Git branch | SC:`my_git_branch` | "main" | Name of the Git branch to use if not main
+| Python package name | SC:`my_package_name` | "" | By default, Expidite will use git clone to install the custom code repo. It is also possible for Expidite to install a Python package. Only set this if you know what you are doing.
 | SSH keys | SC:`my_git_ssh_private_key_file` | "Not set" | The name of the SSH key file in the .expidite directory that gives access to the Git repo if it is private. This field can be left commented out if the repo is public.
 | Fleet config | SC:`my_fleet_config` | | The fully-qualified object name of the fleet config inventory. For example "my_project.my_fleet_config.INVENTORY".
 | Start-up script | SC:`my_start_script` | | The fully-qualified module name to call to start the device. For example "my_project.my_start_script". This is called on reboot or when expidite is started via bcli.

@@ -116,9 +116,11 @@ git_project_name() {
     echo "$project_name"
 }
 
-# Function to read system.cfg file and export the key-value pairs found
+##############################################################################################################
+# Read system.cfg file and export the key-value pairs found.
+##############################################################################################################
 export_system_cfg() {
-  echo_header
+    echo_header
     if [ ! -f "$HOME/.expidite/system.cfg" ]; then
         echo "Error: system.cfg file is missing in $HOME/.expidite"
         exit 1
@@ -149,7 +151,7 @@ export_system_cfg() {
 # We just need to write "red:blink:0.5" to /.expidite/flags/led_status
 TMP_FLAGS_DIR="/expidite/tmp/tmp_flags"
 set_leds_start() {
-  echo_header
+    echo_header
     # Test whether manage_leds is enabled
     if [ "$manage_leds" != "No" ]; then
         mkdir -p "$TMP_FLAGS_DIR" || { echo "Failed to create flags directory"; }
@@ -206,7 +208,7 @@ install_ssh_keys() {
 # Function to create a virtual environment if it doesn't already exist
 # The venv location is specified in the system.cfg (venv_dir)
 create_and_activate_venv() {
-  echo_header
+    echo_header
     if [ -z "$venv_dir" ]; then
         echo "Error: venv_dir is not set in system.cfg"
         exit 1
@@ -414,10 +416,40 @@ fix_my_git_repo() {
     echo "$git_repo_url"
 }
 
-# Function to install user's code
 install_user_code() {
     echo_header "Install user's code"
 
+    if [ -z "$my_package_name" ]; then
+        install_user_code_from_git_clone
+    else
+        install_user_code_from_package
+    fi
+}
+
+##############################################################################################################
+# Install user's code from a Python wheel in a GitHub release in a GitHub private repository.
+##############################################################################################################
+install_user_code_from_package() {
+    project_name=$(git_project_name "$my_git_repo_url")
+    current_version=$(pip show "$project_name" | grep Version)
+
+    "$HOME/$venv_dir/scripts/github_installer.py"
+
+    updated_version=$(pip show "$project_name" | grep Version)
+
+    if [[ "$current_version" != "$updated_version" ]]; then
+        echo "User's code installation succeeded. Reboot required."
+        touch "$HOME/.expidite/flags/reboot_required"
+
+        # We store the updated_version in the flags directory for later use in logging.
+        echo "$updated_version" > "$HOME/.expidite/user_code_version"
+    fi
+}
+
+##############################################################################################################
+# Install user's code using `git clone` of either a private or publick repository.
+##############################################################################################################
+install_user_code_from_git_clone() {
     if [ -z "$my_git_repo_url" ] || [ -z "$my_git_branch" ]; then
         echo "Error: my_git_repo_url or my_git_branch is not set in system.cfg"
         exit 1
