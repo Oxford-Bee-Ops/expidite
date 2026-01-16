@@ -116,8 +116,8 @@ def _run_package_post_install(package_name: str) -> None:
     try:
         scripts_module = importlib.import_module(f"{package_name}.scripts")
         post_install_path = importlib.resources.files(scripts_module) / "post-install.sh"
-        # Force a reload of the PATH to pickup the new script, with "hash -r".
-        subprocess.check_call(["bash", "-c", f"hash -r && bash {post_install_path}"])
+
+        subprocess.check_call(["bash", str(post_install_path)])
         print(f"Successfully ran post-install script for {package_name}")
     except (ModuleNotFoundError, FileNotFoundError):
         # The post-install.sh script is optional, so this is fine.
