@@ -88,6 +88,7 @@ def _download_and_install_package(release: GitRelease) -> None:
                     _run_package_post_install(local_wheel_path.stem.split("-")[0])
                     return
 
+    raise AssertionError("No user repo package found")
 
 def _install_package(local_wheel_path: Path) -> None:
     try:
