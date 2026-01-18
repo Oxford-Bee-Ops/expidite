@@ -24,7 +24,7 @@ dependencies = [
     "python-crontab==3.3.0",
     "gpiozero==2.0.1",
     "numpy",
-    'opencv-python==4.12.0.88; sys_platform == "win32"',
+    'opencv-python==4.13.0.90; sys_platform == "win32"',
     "pandas==2.3.3",
     "psutil==7.2.1",
     "pydantic-settings==2.12.0",
