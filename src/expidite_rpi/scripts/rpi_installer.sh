@@ -447,7 +447,7 @@ install_user_code_from_package() {
 }
 
 ##############################################################################################################
-# Install user's code using `git clone` of either a private or publick repository.
+# Install user's code using `git clone` of either a private or public repository.
 ##############################################################################################################
 install_user_code_from_git_clone() {
     if [ -z "$my_git_repo_url" ] || [ -z "$my_git_branch" ]; then
