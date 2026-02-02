@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "expidite"
-version = "0.1.148"
+version = "0.1.149"
 description = "Python module to support using Raspberry Pi for scientific data collection"
 readme = "README.md"
 requires-python = ">=3.11"
@@ -83,6 +83,7 @@ select = [
     "RUF", # ruff-specific rules
     "ANN", # flake8-annotations
     "B", # flake8-bugbear
+    "C4", # flake8-comprehensions
     "EM", # flake8-errmsg
     "ISC", # flake8-implicit-str-concat
     "PERF", # flake8-performance

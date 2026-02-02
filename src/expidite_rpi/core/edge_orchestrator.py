@@ -420,15 +420,13 @@ class EdgeOrchestrator:
 
         # We always include the list of mac addresses for all devices in this experiment (fleet_config).
         # This enables the dashboard to check that all devices are present and working.
-        # We filter to those  devices in the inventory that use the same datastore rather than including
-        # all devices in the fleet.
-        fleet_macs = list(root_cfg.INVENTORY.keys())
-        fleet_macs = [
-            mac for mac in fleet_macs if root_cfg.INVENTORY[mac].datastore == root_cfg.my_device.datastore
-        ]
-        fleet_names = [root_cfg.INVENTORY[mac].name for mac in fleet_macs]
-        fleet_dict = {mac: name for mac, name in zip(fleet_macs, fleet_names)}
-        wrap["fleet"] = fleet_dict
+        # We filter to those devices in the inventory that use the same datastore rather than including all
+        # devices in the fleet.
+        wrap["fleet"] = {
+            mac: dev.name
+            for mac, dev in root_cfg.INVENTORY.items()
+            if dev.datastore == root_cfg.my_device.datastore
+        }
 
         cc = CloudConnector.get_instance(root_cfg.CLOUD_TYPE)
 
