@@ -14,16 +14,11 @@ from pathlib import Path
 from threading import Timer
 from zoneinfo import ZoneInfo
 
-import pandas as pd
 import psutil
 
 from expidite_rpi.core import api
 from expidite_rpi.core import configuration as root_cfg
 from expidite_rpi.utils.rpi_emulator import RpiEmulator
-
-# Configure pandas to use copy-on-write
-# https://pandas.pydata.org/pandas-docs/stable/user_guide/copy_on_write.html#copy-on-write-enabling
-pd.options.mode.copy_on_write = True
 
 logger = root_cfg.setup_logger("expidite")
 
