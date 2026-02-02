@@ -62,7 +62,7 @@ class Test_datastream:
         assert output.stream_index == stream_index
 
     @pytest.mark.parametrize(
-        "fname, expected",
+        ("fname", "expected"),
         [
             ("V3_EXITTRACKER_2ccf6791818a_20250522.csv", datetime(2025, 5, 22, tzinfo=ZoneInfo("UTC"))),
             (

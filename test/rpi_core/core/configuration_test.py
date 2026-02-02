@@ -10,7 +10,7 @@ root_cfg.ST_MODE = root_cfg.SOFTWARE_TEST_MODE.TESTING
 
 class Test_configuration:
     @pytest.mark.parametrize(
-        "test_input,expected",
+        ("test_input", "expected"),
         [
             ("('d01111111111','name')", "DUMMY"),
         ],

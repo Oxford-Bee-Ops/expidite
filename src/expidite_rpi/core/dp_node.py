@@ -506,7 +506,7 @@ class DPnode:
         # If we need it, src_file should have been moved to the new_fname or sample_fname.
         # If it still exists, we delete it.
         if src_file.exists():
-            assert (not save_for_dp) and (not save_sample), (
+            assert (not save_for_dp) and (not save_sample), (  # noqa: PT018
                 f"src_file {src_file.name} should not exist if save_for_dp or save_sample is True"
             )
             src_file.unlink()
