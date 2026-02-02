@@ -237,9 +237,9 @@ class DeviceManager:
                 )
             )
             logger.info(utils.run_cmd("sudo arp -n", ignore_errors=True))
-        except Exception as e:
+        except Exception:
             # grep did not match any lines
-            logger.error(f"{root_cfg.RAISE_WARN()}log_wifi_info threw an exception: " + str(e))
+            logger.exception(f"{root_cfg.RAISE_WARN()}log_wifi_info threw an exception")
 
     # Function to manage the AP wifi connection
     # We only enable the AP wifi connection if the client wifi connection is UP

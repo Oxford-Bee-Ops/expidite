@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "expidite"
-version = "0.1.149"
+version = "0.1.150"
 description = "Python module to support using Raspberry Pi for scientific data collection"
 readme = "README.md"
 requires-python = ">=3.11"
@@ -100,6 +100,8 @@ select = [
     "D300", "D301",
     # Docstring D4 covers content and style - we could enable more of these.
     "D402", "D403", "D405", "D412", "D414", "D416", "D418", "D419",
+    # tryceratops rules. We use most, but not all, of them. We should also enforce TRY300, TRY301.
+    "TRY002", "TRY004", "TRY201", "TRY203", "TRY400", "TRY401",
 ]
 # We have deliberately chosen to ignore these rules.
 ignore = [

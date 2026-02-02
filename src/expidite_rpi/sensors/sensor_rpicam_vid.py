@@ -163,7 +163,7 @@ class RpicamSensor(Sensor):
                 # On the assumption that the error is transient, we will continue to run but sleep for 60s
                 self.stop_requested.wait(60)
                 if exception_count > 30:
-                    logger.error(f"RpicamSensor has failed {exception_count} times. Exiting.")
+                    logger.exception(f"RpicamSensor has failed {exception_count} times. Exiting.")
                     self.sensor_failed()
                     break
 

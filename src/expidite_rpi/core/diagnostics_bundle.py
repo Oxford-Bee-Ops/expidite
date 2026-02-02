@@ -162,7 +162,7 @@ class DiagnosticsBundle:
                             delete_src=True,
                             storage_tier=api.StorageTier.COOL,
                         )
-        except FileNotFoundError as e:
-            logger.error(f"Error: Directory not found: {e}")
-        except PermissionError as e:
-            logger.error(f"Error: Permission denied: {e}")
+        except FileNotFoundError:
+            logger.exception("Error: Directory not found")
+        except PermissionError:
+            logger.exception("Error: Permission denied")

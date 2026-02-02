@@ -270,8 +270,8 @@ class CloudConnector:
                 src_file.unlink()
 
             return result
-        except Exception as e:
-            logger.error(f"{root_cfg.RAISE_WARN()}Failed to append data to {src_file}: {e!s}")
+        except Exception:
+            logger.exception(f"{root_cfg.RAISE_WARN()}Failed to append data to {src_file}")
             return False
 
     def _append_data_to_blob(
@@ -333,8 +333,8 @@ class CloudConnector:
             blob_client.append_block(data_to_append)
 
             return True
-        except Exception as e:
-            logger.error(f"{root_cfg.RAISE_WARN()}Failed to append data to {dst_file}: {e!s}")
+        except Exception:
+            logger.exception(f"{root_cfg.RAISE_WARN()}Failed to append data to {dst_file}")
             return False
 
     def container_exists(self, container: str) -> bool:
@@ -689,8 +689,8 @@ class LocalCloudConnector(CloudConnector):
                 src_file.unlink()
 
             return True
-        except Exception as e:
-            logger.error(f"{root_cfg.RAISE_WARN()}Failed to append data to {blob_client}: {e!s}")
+        except Exception:
+            logger.exception(f"{root_cfg.RAISE_WARN()}Failed to append data to {blob_client}")
             return False
 
     def container_exists(self, container: str) -> bool:
@@ -915,7 +915,7 @@ class AsyncCloudConnector(CloudConnector):
             verified_files = []
             for file in action.src_files:
                 if not file.exists():
-                    logger.error(f"{root_cfg.RAISE_WARN()}Upload of file {file} aborted; does not exist")
+                    logger.exception(f"{root_cfg.RAISE_WARN()}Upload of file {file} aborted; does not exist")
                 else:
                     verified_files.append(file)
 
@@ -990,7 +990,7 @@ class AsyncCloudConnector(CloudConnector):
                 assert not block, "Queue.get returned but block is True"
                 logger.debug("Shutting down upload queue")
                 break
-            except Exception as e:
-                logger.error(f"{root_cfg.RAISE_WARN()}Error during do_work execution on {queue_item}: {e!s}")
+            except Exception:
+                logger.exception(f"{root_cfg.RAISE_WARN()}Error during do_work execution on {queue_item}")
 
         logger.info("do_work completed")

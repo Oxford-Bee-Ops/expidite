@@ -213,7 +213,7 @@ def increment_filename(fname: Path) -> Path:
         count += 1
         if count > 100:
             msg = f"Error incrementing filename {fname}, count > 100"
-            raise Exception(msg)
+            raise RuntimeError(msg)
     return new_fname
 
 

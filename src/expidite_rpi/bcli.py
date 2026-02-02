@@ -380,8 +380,8 @@ class InteractiveMenu:
             if not logs:
                 click.echo("No sensor output logs found.")
             click.echo(f"\n{dash_line}\n")
-        except Exception as e:
-            logger.error(f"Error parsing log dictionary: {e}; {log_dict_str}")
+        except Exception:
+            logger.exception(f"Error parsing log dictionary {log_dict_str}")
 
     def display_score_logs(self) -> None:
         """View the SCORE logs."""
@@ -412,8 +412,8 @@ class InteractiveMenu:
             if not logs:
                 click.echo("No SCORE logs found.")
             click.echo(f"\n{dash_line}\n")
-        except Exception as e:
-            logger.error(f"Error parsing log dictionary: {e}")
+        except Exception:
+            logger.exception("Error parsing log dictionary")
 
     def display_running_processes(self) -> None:
         # Running processes

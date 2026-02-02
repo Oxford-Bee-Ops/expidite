@@ -38,8 +38,8 @@ if root_cfg.running_on_rpi:
         logs: list[dict] = []
         try:
             reader = journal.Reader()
-        except Exception as e:
-            logger.error(f"{root_cfg.RAISE_WARN()}Failed to initialize journal reader: {e}")
+        except Exception:
+            logger.exception(f"{root_cfg.RAISE_WARN()}Failed to initialize journal reader")
             return logs
 
         # Set filters

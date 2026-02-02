@@ -32,7 +32,7 @@ def create_root_working_dir(path: Path) -> None:
             print(f"Directory {path} created successfully.")
         except subprocess.CalledProcessError as e:
             print(f"Failed to create directory {path}: {e}")
-            raise e
+            raise
 
 
 ##############################################################################################################

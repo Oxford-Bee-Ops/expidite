@@ -40,7 +40,7 @@ def main() -> None:
             sleep(1800)
 
     except KeyboardInterrupt:
-        logger.error("Keyboard interrupt => stopping RpiCore... this may take up to 180s.")
+        logger.exception("Keyboard interrupt => stopping RpiCore... this may take up to 180s.")
         sc.stop()
     except Exception as e:
         logger.error(f"Error: {e}", exc_info=True)

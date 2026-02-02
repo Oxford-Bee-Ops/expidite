@@ -176,7 +176,7 @@ def run_cmd(cmd: str, ignore_errors: bool = False, grep_strs: list[str] | None =
                 logger.info("Ignoring failure running command: " + cmd + " Err output: " + str(err))
                 return ""
             msg = f"{root_cfg.RAISE_WARN()}Error running command: {cmd}, Error: {err!s}"
-            raise Exception(msg)
+            raise RuntimeError(msg)
 
         # Return lines that contain all of the entries in grep_strs
         output = out.decode("utf-8").strip()
@@ -190,7 +190,7 @@ def run_cmd(cmd: str, ignore_errors: bool = False, grep_strs: list[str] | None =
         logger.error(f"{root_cfg.RAISE_WARN()}Command not found: {cmd}; {e}", exc_info=True)
         if ignore_errors:
             return ""
-        raise e
+        raise
 
 
 # Get entries from the journalctl log

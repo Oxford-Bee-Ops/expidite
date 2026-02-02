@@ -148,7 +148,7 @@ class DPnode:
                     f"Expected:{stream.fields}; "
                     f"Received the following fields:{sensor_data.keys()}"
                 )
-                raise Exception(msg)
+                raise ValueError(msg)
 
         # Add the Datastream indices (datastream_type_id, device_id, sensor_id) and a
         # timestamp to the log_data
@@ -422,10 +422,9 @@ class DPnode:
 
         # Check that the start_time and end_time are valid
         if not isinstance(start_time, datetime):
-            raise ValueError("Start_time must be a valid datetime object.")
-        if end_time is not None:
-            if not isinstance(end_time, datetime):
-                raise ValueError("End_time must be a valid datetime object.")
+            raise TypeError("Start_time must be a valid datetime object.")
+        if end_time is not None and not isinstance(end_time, datetime):
+            raise TypeError("End_time must be a valid datetime object.")
 
         # Check that the start_time and end_time are both timezone aware
         if start_time.tzinfo is None:
@@ -561,7 +560,7 @@ class DPnode:
                     f"{root_cfg.RAISE_WARN()}{field} contains NaN or empty values in output df {data_id}"
                 )
                 logger.error(err_str)
-                raise Exception(err_str)
+                raise ValueError(err_str)
 
         # Add name and tags fields
         output_data[api.RECORD_ID.NAME.value] = root_cfg.my_device.name
@@ -588,7 +587,7 @@ class DPnode:
                         f"{data_id}: {output_data.columns}"
                     )
                     logger.error(err_str)
-                    raise Exception(err_str)
+                    raise ValueError(err_str)
 
         return output_data
 

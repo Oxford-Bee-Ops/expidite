@@ -65,7 +65,7 @@ elif "Windows" in platform.platform():
 elif platform.node().startswith("fv-az"):
     running_on_azure = True
 else:
-    raise Exception("Unknown platform: " + platform.platform())
+    raise NotImplementedError("Unknown platform: " + platform.platform())
 
 DUMMY_MAC = "d01111111111"
 
@@ -125,7 +125,7 @@ elif running_on_linux:
     DIAGS_DIR = Path("/expidite-diags")  # Deliberately separate, so that it survives reboot.
     utils_clean.create_root_working_dir(ROOT_WORKING_DIR)
 else:
-    raise Exception("Unknown platform: " + platform.platform())
+    raise NotImplementedError("Unknown platform: " + platform.platform())
 
 TMP_DIR: Path = ROOT_WORKING_DIR / "tmp"
 LOG_DIR: Path = ROOT_WORKING_DIR / "logs"
@@ -385,7 +385,7 @@ def _load_system_cfg() -> SystemCfg:
         print("#################################################################")
         print(f"Failed to load {SYSTEM_CFG_FILE}: {e}")
         print("#################################################################")
-        logger.error(f"{RAISE_WARN()}Failed to load {SYSTEM_CFG_FILE}: {e}")
+        logger.exception(f"{RAISE_WARN()}Failed to load {SYSTEM_CFG_FILE}")
         return SystemCfg()
 
 
@@ -430,8 +430,8 @@ def load_configuration() -> list[DeviceCfg] | None:
             module_path, obj_name = system_cfg.my_fleet_config.rsplit(".", 1)
             module = importlib.import_module(module_path)
             inventory = getattr(module, obj_name)
-        except Exception as e:
-            logger.error(f"{RAISE_WARN()}Failed to load config from {system_cfg.my_fleet_config}: {e}")
+        except Exception:
+            logger.exception(f"{RAISE_WARN()}Failed to load config from {system_cfg.my_fleet_config}")
     else:
         logger.error(f"{RAISE_WARN()}my_fleet_config not set in {SYSTEM_CFG_FILE}")
 
