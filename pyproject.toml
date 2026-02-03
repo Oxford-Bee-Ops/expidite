@@ -128,7 +128,7 @@ ignore = [
     "SIM102", # Doesn't always improve readability.
     "SIM108", # Ternary operator - could fix but not always more readable.
 ]
-# These files had exceptions prior to rules being enforced.  Ignore temporarily until we can fix.
+# These files had exceptions prior to rules being enforced. Ignore temporarily until we can fix.
 [tool.ruff.lint.per-file-ignores]
 "src/expidite_rpi/core/cloud_connector.py" = ["B012"]
 "src/expidite_rpi/core/edge_orchestrator.py" = ["B905"]

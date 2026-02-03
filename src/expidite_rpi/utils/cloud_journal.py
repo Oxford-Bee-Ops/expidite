@@ -78,8 +78,8 @@ class _CloudJournalManager:
         """Attempt to sync all the queued data to the remote journals.
 
         Blocks until uploads are complete or fail."""
-        # We get the instance locally rather than storing it in self because it avoids issues
-        # when we change between cloud types during testing.
+        # We get the instance locally rather than storing it in self because it avoids issues when we change
+        # between cloud types during testing.
         cc = CloudConnector.get_instance(root_cfg.CLOUD_TYPE)
 
         # We use a lock to ensure that only one thread can flush at a time
@@ -150,8 +150,8 @@ class CloudJournal:
     def download(self) -> list[dict]:
         # Originally implemented with DictReader, but switched to Pandas to get auto-detect of numeric types
         try:
-            # We get the instance locally rather than storing it in self because it avoids issues
-            # when we change between cloud types during testing.
+            # We get the instance locally rather than storing it in self because it avoids issues when we
+            # change between cloud types during testing.
             cc = CloudConnector.get_instance(root_cfg.CLOUD_TYPE)
             cc.download_from_container(self.cloud_container, self.cloud_filename, self.local_fname)
             file_as_df = pd.read_csv(self.local_fname)
@@ -182,8 +182,8 @@ class CloudJournal:
 
     # Access the data list
     #
-    # Normally this is returned as a copy, but for performance on read-only operations,
-    # the copy can be disabled
+    # Normally this is returned as a copy, but for performance on read-only operations, the copy can be
+    # disabled
     def get_data(self, copy: bool = True) -> list[dict]:
         if copy:
             return self._data.copy()

@@ -147,7 +147,7 @@ class RpiEmulator:
     @staticmethod
     def fix_recording_device_id(fname: Path) -> Path:
         """We use real recordings in system test which means they have the wrong
-        device ID.  We want to replace the device_id with that of this device otherwise
+        device ID. We want to replace the device_id with that of this device otherwise
         expidite won't find the recordings in the EDGE_PROCESSING_DIR.
         """
         # Get the current device ID
@@ -262,7 +262,7 @@ class RpiEmulator:
 
         Parameters:
             cmd: str
-                The command to run.  This should be a string that can be passed to the shell.
+                The command to run. This should be a string that can be passed to the shell.
 
         Returns:
             Path | None
@@ -309,16 +309,16 @@ class RpiEmulator:
 
         Parameters:
             cmd: str
-                The command to run.  This should be a string that can be passed to the shell.
+                The command to run. This should be a string that can be passed to the shell.
             ignore_errors: bool
-                If True, ignore errors and return an empty string.  If False, raise an exception on error.
+                If True, ignore errors and return an empty string. If False, raise an exception on error.
             grep_strs: list[str]
-                A list of strings to grep for in the output.  If None, return the full output.
+                A list of strings to grep for in the output. If None, return the full output.
                 If not None, return only the lines that contain all of the strings in the list.
 
         Returns:
             str
-                The output of the command.  If ignore_errors is True, return an empty string on error.
+                The output of the command. If ignore_errors is True, return an empty string on error.
                 If grep_strs is not None, return only the lines that contain all of the strings in the list.
         """
         if cmd.startswith("rpicam-vid"):
@@ -388,7 +388,7 @@ class RpiEmulator:
             shutil.copy(recording, filename)
             logger.info(f"Recording {recording} saved to DS")
         else:
-            # No recording.  Create a dummy video file.
+            # No recording. Create a dummy video file.
             # Use OpenCV to create a dummy video file
             if suffix == "h264":
                 fourcc = cv2.VideoWriter.fourcc(*"h264")

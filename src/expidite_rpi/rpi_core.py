@@ -11,8 +11,8 @@ logger = root_cfg.setup_logger("expidite")
 ##############################################################################################################
 # RpiCore provides the public interface to the rpi_core module.
 # It is the entry point for users to configure and start the rpi.
-# Since the RpiCore may already be running (for example from boot in crontab), we can't assume
-# that this is the only instance of RpiCore on this device.
+# Since the RpiCore may already be running (for example from boot in crontab), we can't assume that this is
+# the only instance of RpiCore on this device.
 # Therefore, all actions need to be taken indirectly via file flags or system calls.
 ##############################################################################################################
 
@@ -20,8 +20,8 @@ logger = root_cfg.setup_logger("expidite")
 class RpiCore:
     """RpiCore provides the public interface to the rpi_core module."""
 
-    # We make the location of the keys file a public variable so that users can reference
-    # it in their own code.
+    # We make the location of the keys file a public variable so that users can reference it in their own
+    # code.
     KEYS_FILE: Path = root_cfg.KEYS_FILE
 
     def __init__(self, inventory: list[DeviceCfg] | None = None) -> None:

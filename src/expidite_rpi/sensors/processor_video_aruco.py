@@ -125,9 +125,8 @@ class VideoArucoProcessor(DataProcessor):
         self, source_file: Path, save_marked_up_video: bool = True, aruco_dict_name: str = "DICT_4X4_50"
     ) -> pd.DataFrame:
         """Process a single file - find potential aruco markers in each frame & save results"""
-        # In future this might also return the CSV, so that the results can be
-        # combined with other analysis of the video (e.g. to find
-        # unmarked bees)
+        # In future this might also return the CSV, so that the results can be combined with other analysis of
+        # the video (e.g. to find unmarked bees)
 
         # Verify the parameters
         logger.debug(f"process_video_file() using {aruco_dict_name} on {source_file}")
@@ -140,8 +139,8 @@ class VideoArucoProcessor(DataProcessor):
         )
 
         try:
-            # If requested, get ready to output a marked up version of the video,
-            # with the same properties as the original.
+            # If requested, get ready to output a marked up version of the video, with the same properties as
+            # the original.
             if save_marked_up_video:
                 fps = int(video.get(cv2.CAP_PROP_FPS))
                 width = int(video.get(cv2.CAP_PROP_FRAME_WIDTH))
@@ -168,9 +167,8 @@ class VideoArucoProcessor(DataProcessor):
 
             while frame_num <= total_frame_count:
                 read_ok, frame = video.read()
-                # Read_ok will be also false when we reach the end of the file,
-                # but we check the total_frame_count so if read_ok
-                # is false, then something bad has happened
+                # Read_ok will be also false when we reach the end of the file, but we check the
+                # total_frame_count so if read_ok is false, then something bad has happened
                 assert read_ok, f"Unable to read {frame_num=} in {source_file=}"
                 frame_markers = self._get_aruco_markers_in_frame(
                     detector=detector, frame=frame, frame_num=frame_num
@@ -183,11 +181,10 @@ class VideoArucoProcessor(DataProcessor):
 
                 # If requested, store a marked up version
                 # Color format is BGR
-                # Note - the red is quite orange (to my eyes).  It also looks like
-                # some bad markers are red and some are orange, but I think
-                # that may be an optical effect when a marker changes from
-                # green in 1 frame to orange in the next frame, because it only happens
-                # on actual aruco markers
+                # Note - the red is quite orange (to my eyes). It also looks like some bad markers are red
+                # and some are orange, but I think that may be an optical effect when a marker changes from
+                # green in 1 frame to orange in the next frame, because it only happens on actual aruco
+                # markers.
                 if save_marked_up_video:
                     for corner_set in frame_markers.known_markers.corner_sets:
                         pts = np.array(corner_set).astype(int).reshape((-1, 1, 2))
@@ -247,18 +244,17 @@ class VideoArucoProcessor(DataProcessor):
             list_to_update: list[dict], corners_as_3d_array: array, marker_id: list[int] | None
         ) -> None:
             # Note, a corner set from detectMarkers() is a 3D array, (1,4,2).
-            # 4 = number of corners, 2 = x,y for each corner.  Not sure
-            # why we need the extra dimension, but hence taking the [0] element
-            # to get the actual list of x,y corners.
+            # 4 = number of corners, 2 = x,y for each corner. Not sure why we need the extra dimension, but
+            # hence taking the [0] element to get the actual list of x,y corners.
 
             # From https://docs.opencv.org/4.x/d5/dae/tutorial_aruco_detection.html
-            # " For each marker, its four corners are returned in their original
-            # order (which is clockwise starting with top left).
-            # So, the first corner is the top left corner,
-            # followed by the top right, bottom right and bottom left."
+            # " For each marker, its four corners are returned in their original order (which is clockwise
+            # starting with top left).
+            # So, the first corner is the top left corner, followed by the top right, bottom right and bottom
+            # left."
             # Note that this is top-left of the marker in the original
-            # printed version, not top-left of the detected square.  i.e. if
-            # a marker is rotated, the marker top-left corner also rotates
+            # printed version, not top-left of the detected square. i.e. if a marker is rotated, the marker
+            # top-left corner also rotates
             corners_as_2d_array = corners_as_3d_array[0]
             top_left, top_right, bottom_right, bottom_left = corners_as_2d_array
             x_col = 0
@@ -268,11 +264,10 @@ class VideoArucoProcessor(DataProcessor):
             centreX = corners_as_2d_array[:, x_col].mean()
             centreY = corners_as_2d_array[:, y_col].mean()
 
-            # Do we need to store the midpoint of the top edge.  Not sure
-            # why but assume it might be useful for some sort of analysis.
-            # Assuming we always stick the markers on the bees in the same
-            # orientation,then I think the top edge would be the
-            # front/head of the bee = roughly which way it's looking
+            # Do we need to store the midpoint of the top edge. Not sure why but assume it might be useful for
+            # some sort of analysis.
+            # Assuming we always stick the markers on the bees in the same orientation,then I think the top
+            # edge would be the front/head of the bee = roughly which way it's looking
 
             # We just record all 4 corners explicitly for now
             list_to_update.append(
@@ -323,7 +318,7 @@ class VideoArucoProcessor(DataProcessor):
         known_marker_count = len(known_marker_info)
         unknown_marker_count = len(unknown_marker_info)
         logger.debug(
-            f"Frame {frame_num}: {known_marker_count} known IDs, {unknown_marker_count} unknown IDs.  "
+            f"Frame {frame_num}: {known_marker_count} known IDs, {unknown_marker_count} unknown IDs. "
             f"Total = {known_marker_count + unknown_marker_count}"
         )
         return return_data

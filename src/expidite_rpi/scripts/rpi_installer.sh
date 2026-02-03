@@ -302,7 +302,7 @@ install_expidite() {
     echo_header "Install expidite from GitHub"
     EXP_HASH_FILE="$HOME/.expidite/flags/expidite-repo-last-hash"
     current_version=$(pip show expidite | grep Version)
-    echo "Installing expidite.  Current version: $current_version"
+    echo "Installing expidite. Current version: $current_version"
 
     # If the current version is blank, remove any existing EXP_HASH_FILE which might be left over 
     # from a previous installation
@@ -342,7 +342,7 @@ install_expidite() {
         echo "Detected new commit $EXP_REMOTE_HASH on branch $expidite_git_branch."
         pip install "git+https://github.com/oxford-bee-ops/expidite.git@$expidite_git_branch" || { echo "Failed to install Expidite"; }
         updated_version=$(pip show expidite | grep Version)
-        echo "Expidite installed successfully.  Now version: $updated_version"
+        echo "Expidite installed successfully. Now version: $updated_version"
 
         # We store the updated_version in the flags directory for later use in logging
         echo "$updated_version" > "$HOME/.expidite/expidite_code_version"
@@ -350,7 +350,7 @@ install_expidite() {
 
         # If the version has changed, we need to set a flag so we reboot at the end of the script
         if [ "$current_version" != "$updated_version" ]; then
-            echo "Expidite version has changed from $current_version to $updated_version.  Reboot required."
+            echo "Expidite version has changed from $current_version to $updated_version. Reboot required."
             # Set a flag to indicate that a reboot is required
             touch "$HOME/.expidite/flags/reboot_required"
         fi
@@ -713,7 +713,7 @@ enable_i2c() {
     if [ "$enable_i2c" == "Yes" ]; then
         # We want to avoid setting this every time the script runs, because we've seen issues
         # with corruption of /boot/firmware/config.txt which may be cause by this change
-        # and a potential race condition.  Therefore check if it is already enabled first....
+        # and a potential race condition. Therefore check if it is already enabled first....
         # Check if i2c-dev module is loaded
         if lsmod | grep -q "^i2c_dev"; then
             echo "I2C interface is already enabled (i2c-dev module loaded)."

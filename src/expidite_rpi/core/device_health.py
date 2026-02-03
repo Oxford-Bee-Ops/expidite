@@ -277,8 +277,8 @@ class DeviceHealth(Sensor):
                     process_list_str = ""
 
             # Check update status by getting the last modified time of the rpi_installer_ran file
-            # This file is created when the rpi_installer.sh script is run
-            # and is used to track the last time the system was updated
+            # This file is created when the rpi_installer.sh script is run and is used to track the last time
+            # the system was updated
             last_update_time: str = ""
             rpi_installer_file = root_cfg.FLAGS_DIR / "rpi_installer_ran"
             if os.path.exists(rpi_installer_file):
@@ -368,8 +368,8 @@ class DeviceHealth(Sensor):
     @staticmethod
     def log_top_memory_processes(num_processes: int = 5) -> None:
         # Create a list of all processes with their memory usage
-        # It's possible for processes to disappear between the time we get the list and the time we log it
-        # so we need to be careful about this
+        # It's possible for processes to disappear between the time we get the list and the time we log it so
+        # we need to be careful about this
         processes = []
         for proc in psutil.process_iter(attrs=["pid", "name", "memory_info", "cmdline"]):
             # The memory_info is in a pmem object, so we need to extract the rss value
@@ -413,7 +413,7 @@ class DeviceHealth(Sensor):
             output = utils.run_cmd(
                 cmd="nmcli -g SSID,IN-USE,SIGNAL device wifi | grep '*'", ignore_errors=True
             )
-            # The return output contains a string like "SSID:*:95".  We need to strip out the ":*"
+            # The return output contains a string like "SSID:*:95". We need to strip out the ":*"
             # and return just the SSID and the signal strength
             if output:
                 parts = output.split(":")

@@ -104,8 +104,8 @@ class EdgeOrchestrator:
             self._sensorThreads.append(self.selftracker)
             self._dpworkers.append(tracker_dpe)
             self.selftracker.set_dpworkers(self._dpworkers)
-            # We set the _selftracker as a class variable so that all DPtreeNoes instances can
-            # log their performance data
+            # We set the _selftracker as a class variable so that all DPtreeNoes instances can log their
+            # performance data
             DPnode._selftracker = self.selftracker
 
     def status(self) -> dict[str, str]:
@@ -232,8 +232,8 @@ class EdgeOrchestrator:
         for dpe in self._dpworkers:
             dpe.start()
 
-        # Only once we've started the datastreams, do we start the Sensor threads
-        # otherwise we get a "Datastream not started" error.
+        # Only once we've started the datastreams, do we start the Sensor threads otherwise we get a
+        # "Datastream not started" error.
         # If the device is being used for re-processing, we don't start the sensors
         if root_cfg.system_cfg and root_cfg.system_cfg.reprocessor != "Yes":
             for sensor in self._sensorThreads:
@@ -276,10 +276,10 @@ class EdgeOrchestrator:
 
             self._status = OrchestratorStatus.STOPPING
 
-            # Set the STOP_EXPIDITE_FLAG file; this is polled by the main() method in
-            # the EdgeOrchestrator which will continue to restart the RpiCore until the flag is removed.
-            # This is also important when we are not the running instance of the orchestrator,
-            # as the running instance will check the file and stop itself.
+            # Set the STOP_EXPIDITE_FLAG file; this is polled by the main() method in the EdgeOrchestrator
+            # which will continue to restart the RpiCore until the flag is removed.
+            # This is also important when we are not the running instance of the orchestrator, as the running
+            # instance will check the file and stop itself.
             if not restart:
                 root_cfg.STOP_EXPIDITE_FLAG.touch()
                 root_cfg.RESTART_EXPIDITE_FLAG.unlink(missing_ok=True)
@@ -300,8 +300,8 @@ class EdgeOrchestrator:
 
             # Block until all Sensor threads have exited
             for sensor in self._sensorThreads:
-                # We need the check that the thread we're waiting on is not our own thread,
-                # because that will cause a RuntimeError
+                # We need the check that the thread we're waiting on is not our own thread, because that will
+                # cause a RuntimeError
                 our_thread = threading.current_thread().ident
                 if (sensor.ident != our_thread) and sensor.is_alive():
                     logger.info(f"Waiting for sensor thread {sensor}")
@@ -323,8 +323,7 @@ class EdgeOrchestrator:
             else:
                 logger.info(f"Datastream thread {dpe} already stopped")
 
-        # Trigger a flush_all on the CloudJournals so we save collected information
-        # before we kill everything
+        # Trigger a flush_all on the CloudJournals so we save collected information before we kill everything
         jp = JournalPool.get(root_cfg.Mode.EDGE)
         jp.flush_journals()
         jp.stop()
@@ -345,9 +344,9 @@ class EdgeOrchestrator:
     @staticmethod
     def watchdog_file_alive() -> bool:
         """Check if the RpiCore is running"""
-        # If the EXPIDITE_IS_RUNNING_FLAG exists and was touched within the last 2x _FREQUENCY seconds,
-        # and the timestamp on the file is < than the timestamp on the STOP_EXPIDITE_FLAG file,
-        # then we are running.
+        # If the EXPIDITE_IS_RUNNING_FLAG exists and was touched within the last 2x _FREQUENCY seconds, and
+        # the timestamp on the file is < than the timestamp on the STOP_EXPIDITE_FLAG file, then we are
+        # running.
         # If the file doesn't exist, we are not running.
         # If the file exists, but was not touched within the last 2x _FREQUENCY seconds, we are not running.
 
@@ -363,8 +362,8 @@ class EdgeOrchestrator:
         if root_cfg.EXPIDITE_IS_RUNNING_FLAG.stat().st_mtime < time_threshold.timestamp():  # noqa: SIM103
             return False
 
-        # If we get here, the file exists, was touched within the last 2x _FREQUENCY seconds,
-        # and the timestamp is > than the timestamp on the STOP_EXPIDITE_FLAG file.
+        # If we get here, the file exists, was touched within the last 2x _FREQUENCY seconds, and the
+        # timestamp is > than the timestamp on the STOP_EXPIDITE_FLAG file.
         return True
 
     def save_FAIR_record(self) -> None:
@@ -439,7 +438,7 @@ class EdgeOrchestrator:
             root_cfg.my_device.cc_for_fair, [fair_fname], delete_src=True, storage_tier=api.StorageTier.COOL
         )
 
-        # Also save to the "latest" container.  This is used by the dashboard so that it can get the latest
+        # Also save to the "latest" container. This is used by the dashboard so that it can get the latest
         # data without having to sort through an ever-growing list of files.
         fair_latest_fname = root_cfg.EDGE_UPLOAD_DIR / f"V3_{root_cfg.my_device_id}.yaml"
         with open(fair_latest_fname, "w") as f:

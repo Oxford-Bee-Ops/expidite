@@ -32,8 +32,8 @@ class Edge(NamedTuple):
 # - 'from' accepts either a Sensor or a DataProcessor object.
 # - 'to' accepts a DataProcessor object.
 #
-# The first call to connect() or chain() must supply a Sensor object which
-# will create the root node of the tree.
+# The first call to connect() or chain() must supply a Sensor object which will create the root node of the
+# tree.
 #
 # The DPtree is built in a top-down fashion, starting from the root node and working down to the leaf nodes.
 # The DPtree creates DPtreeNode objects for each node in the tree.

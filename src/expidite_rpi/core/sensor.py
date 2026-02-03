@@ -1,8 +1,8 @@
 ##############################################################################################################
 # Sensor classes
-#  - EdgeOrchestrator: Manages the state of the sensor threads
-#  - SensorConfig: Dataclass for sensor configuration, specified in sensor_cac.py
-#  - Sensor: Super class for all sensor classes
+# - EdgeOrchestrator: Manages the state of the sensor threads
+# - SensorConfig: Dataclass for sensor configuration, specified in sensor_cac.py
+# - Sensor: Super class for all sensor classes
 ##############################################################################################################
 from abc import ABC
 from datetime import UTC, datetime, timedelta
@@ -79,7 +79,7 @@ class Sensor(Thread, DPnode, ABC):
         name so that the user positioning a camera can see what the camera is seeing in near-real time.
         I2C sensors will typically increase their logging frequency to help with manual review.
 
-        Review mode is set via the BCLI.  The BCLI also helps the user understand how to see the
+        Review mode is set via the BCLI. The BCLI also helps the user understand how to see the
         output from the sensors in review mode.
 
         Review mode is indicated by the presence of the REVIEW_MODE_FLAG file.
@@ -110,8 +110,8 @@ class Sensor(Thread, DPnode, ABC):
 
     # Sensors should sub-class this method to implement continuous sensing.
     # If not sub-classed, this default implements on-demand triggered sensing.
-    # Implementations should use continue_recording() to control recording loops and terminate
-    # within a reasonable time (~3min).
+    # Implementations should use continue_recording() to control recording loops and terminate within a
+    # reasonable time (~3min).
     def run(self) -> None:
         """The run method is where the sensor does its work of sensing and logging data.
         For continuous sensing, this method should be sub-classed to implement the sensing loop.

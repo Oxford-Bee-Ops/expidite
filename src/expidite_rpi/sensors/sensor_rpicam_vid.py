@@ -136,8 +136,8 @@ class RpicamSensor(Sensor):
                 # Replace the FILENAME placeholder in the command with the actual filename
                 cmd = self.rpicam_cmd.replace("FILENAME", str(filename))
 
-                # If the "--camera SENSOR_INDEX" string is present, replace SENSOR_INDEX with
-                # the actual sensor index
+                # If the "--camera SENSOR_INDEX" string is present, replace SENSOR_INDEX with the actual
+                # sensor index
                 if "--camera SENSOR_INDEX" in cmd:
                     cmd = cmd.replace("SENSOR_INDEX", str(self.sensor_index))
 

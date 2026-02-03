@@ -486,8 +486,8 @@ class InteractiveMenu:
             try:
                 my_start_script = root_cfg.system_cfg.my_start_script
                 # Try creating an instance and calling main()
-                # This will raise an ImportError if the module is not found
-                # or if the main() function is not defined in the module
+                # This will raise an ImportError if the module is not found or if the main() function is not
+                # defined in the module
                 module = __import__(my_start_script, fromlist=["main"])
                 main_func = getattr(module, "main", None)
                 if main_func is None:
@@ -563,7 +563,7 @@ class InteractiveMenu:
         Review mode automatically exits after a timeout period (e.g. 30 minutes) to avoid cases
         where the device is unexpectedly left in review mode.
 
-        Review mode is set via the BCLI.  The BCLI also helps the user understand how to see the
+        Review mode is set via the BCLI. The BCLI also helps the user understand how to see the
         output from the sensors in review mode."""
         click.echo(f"{dash_line}")
         click.echo("# REVIEW MODE")
@@ -652,8 +652,8 @@ class InteractiveMenu:
             "GXTB9JjFfD/ZDuaLH8m3te6+ASt2HoD+w==;EndpointSuffix=core.windows.net;'\n"
         )
         click.echo("Enter the new storage key:")
-        # Strip any leading or trailing whitespace or " or ' characters so we can handle
-        # users either wrapping with quotes or not
+        # Strip any leading or trailing whitespace or " or ' characters so we can handle users either wrapping
+        # with quotes or not
         new_key = input()
         new_key = new_key.strip().strip('"').strip("'")
         # Check the key is not empty and contains "core.windows.net"

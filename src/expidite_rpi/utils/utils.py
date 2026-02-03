@@ -73,29 +73,29 @@ def is_sampling_period(
     on the time, periodicity of sampling and probability requested.
 
     In this context, "sampling" is not about recording normal periodic data (eg recording 180s
-    of audio every hour, anaysing it for sounds, and saving numerical results).  Instead, it is
+    of audio every hour, anaysing it for sounds, and saving numerical results). Instead, it is
     about choosing to save a full sample of that audio *intact* to enable offline validation of
     the analysis process. In this case it is useful to have samples from all the different sensors
     at the same time, so that we can compare the results between audio & video, for example.
 
     It is assumed that sensors record data at a fixed periodicity (eg every 180s), aligned to
-    the start of the day (00:00:00).  This segments the day into a fixed number of periods.
+    the start of the day (00:00:00). This segments the day into a fixed number of periods.
     The number of segments that should be sampled is a function of the sample_probability.
 
     Sensors that want to synchronise their sampling can call this function to determine if
-    they should save a sample at a specified time.  The outcome is randomly distributed but
+    they should save a sample at a specified time. The outcome is randomly distributed but
     deterministic so that any sensor calling with the same periodicity and sample_probability
     will get the same answer for a given sampling period.
 
     Parameters:
         sample_probability: float
-            The probability of sampling in a given period.  This is a float between 0 and 1.
+            The probability of sampling in a given period. This is a float between 0 and 1.
         period_len: int
-            The length of the sampling period in seconds.  This should be a factor of 86400.
+            The length of the sampling period in seconds. This should be a factor of 86400.
         timestamp: datetime
             The timestamp to check for sampling. api.utc_now() if not specified.
         sampling_window: tuple(datetime, datetime)
-            The start and end of the sampling window.  If the timestamp is outside this window, return False.
+            The start and end of the sampling window. If the timestamp is outside this window, return False.
             Useful for sensors that only sample during daylight hours.
 
     Returns:
@@ -136,16 +136,16 @@ def run_cmd(cmd: str, ignore_errors: bool = False, grep_strs: list[str] | None =
 
     Parameters:
         cmd: str
-            The command to run.  This should be a string that can be passed to the shell.
+            The command to run. This should be a string that can be passed to the shell.
         ignore_errors: bool
-            If True, ignore errors and return an empty string.  If False, raise an exception on error.
+            If True, ignore errors and return an empty string. If False, raise an exception on error.
         grep_strs: list[str]
-            A list of strings to grep for in the output.  If None, return the full output.
+            A list of strings to grep for in the output. If None, return the full output.
             If not None, return only the lines that contain all of the strings in the list.
 
     Returns:
         str
-            The output of the command.  If ignore_errors is True, return an empty string on error.
+            The output of the command. If ignore_errors is True, return an empty string on error.
             If grep_strs is not None, return only the lines that contain all of the strings in the list.
 
     Raises:
@@ -262,8 +262,8 @@ def get_current_user() -> str:
 ##############################################################################################################
 # Utility to determine if a process is already running
 #
-# Looks for process_name in the list of running processes
-# and confirms that the process ID is not the current process ID.
+# Looks for process_name in the list of running processes and confirms that the process ID is not the current
+# process ID.
 ##############################################################################################################
 def is_already_running(process_name: str) -> bool:
     if root_cfg.running_on_windows:
@@ -287,8 +287,7 @@ def is_already_running(process_name: str) -> bool:
 ##############################################################################################################
 # Utility to check what processes are running.
 #
-# All the interesting ones are python ones and we can match a module string
-# eg core.device_manager
+# All the interesting ones are python ones and we can match a module string eg core.device_manager
 #
 # This function discards all lines and all parts of the line that don't match the module string
 # It builds up a set of the module strings, discarding duplicates

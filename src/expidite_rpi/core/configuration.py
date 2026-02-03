@@ -25,13 +25,13 @@ JOURNAL_SYNC_FREQUENCY: float = 60 * 3
 WATCHDOG_FREQUENCY: float = 1
 # See also DeviceCfg class for:
 # Frequency of health monitor heart beat logs
-#   - heart_beat_frequency: int = 60 * 10
+# - heart_beat_frequency: int = 60 * 10
 # Default environmental sensor logging frequency in seconds
-#   - env_sensor_frequency: int = 60 * 10
+# - env_sensor_frequency: int = 60 * 10
 # Max recording timer in seconds
-# This limits how quickly the system will cleanly shutdown as we wait for all recording
-# threads to complete. It also limits the duration of any recordings
-#   - max_recording_timer
+# This limits how quickly the system will cleanly shutdown as we wait for all recording threads to complete.
+# It also limits the duration of any recordings
+# - max_recording_timer
 
 
 ##############################################################################################################
@@ -99,8 +99,8 @@ if running_on_windows:
     CODE_DIR: Path = Path(__file__).parent.parent.parent.parent.parent
     SC_CODE_DIR: Path = CODE_DIR / "expidite"
     CFG_DIR: Path = HOME_DIR / ".expidite"
-    # We use a time string in the root_working_dir to avoid clashes when running multiple instances
-    # of RpiCore on the same machine
+    # We use a time string in the root_working_dir to avoid clashes when running multiple instances of RpiCore
+    # on the same machine
     ROOT_WORKING_DIR: Path = Path(tempfile.gettempdir()) / "expidite" / api.utc_to_fname_str()
     DIAGS_DIR: Path = HOME_DIR / "expidite-diags"
     assert HOME_DIR is not None, f"No 'code' directory found in path {Path.cwd()}"
@@ -198,9 +198,8 @@ def set_mode(mode: Mode) -> None:
 STOP_EXPIDITE_FLAG = FLAGS_DIR / "STOP_EXPIDITE_FLAG"
 RESTART_EXPIDITE_FLAG = FLAGS_DIR / "RESTART_EXPIDITE_FLAG"
 # Used to indicate we're in review mode (ie enabling manual review of video or I2C sensor output)
-# Logic in Sensor will clear the flag after 30 minutes, but making it persistent means it you
-# can trigger review mode faster by just rebooting the device rather than waiting for the
-# ~10min env timer to expire.
+# Logic in Sensor will clear the flag after 30 minutes, but making it persistent means it you can trigger
+# review mode faster by just rebooting the device rather than waiting for the ~10min env timer to expire.
 REVIEW_MODE_FLAG = FLAGS_DIR / "IN_REVIEW_MODE_FLAG"
 
 ##############################################################################################################
@@ -232,8 +231,8 @@ ST_MODE: SOFTWARE_TEST_MODE = SOFTWARE_TEST_MODE.LIVE
 # Set up logging
 #
 # The logging level is a combination of:
-#  - the value set in config
-#  - the value requested by the calling module (default is INFO)
+# - the value set in config
+# - the value requested by the calling module (default is INFO)
 #
 # There is update code at the end of this file that sets the level once we've loaded config.
 ##############################################################################################################

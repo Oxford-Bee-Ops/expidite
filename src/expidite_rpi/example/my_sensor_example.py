@@ -79,8 +79,8 @@ class ExampleSensor(Sensor):
                 stream_index=EXAMPLE_FILE_STREAM_INDEX, temporary_file=fname, start_time=api.utc_now()
             )
 
-            # Sensors should not sleep for more than ~180s so that the stop_requested flag can be checked
-            # and the sensor shut down cleanly in a reasonable time frame.
+            # Sensors should not sleep for more than ~180s so that the stop_requested flag can be checked and
+            # the sensor shut down cleanly in a reasonable time frame.
             if root_cfg.ST_MODE == root_cfg.SOFTWARE_TEST_MODE.TESTING:
                 # In test mode, sleep for 0.1s to allow the test to run quickly
                 self.stop_requested.wait(0.1)

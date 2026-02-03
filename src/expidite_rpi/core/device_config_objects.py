@@ -55,8 +55,8 @@ class DeviceCfg(Configuration):
     """Configuration for a device"""
 
     # DPtree objects define the Sensor and DataProcessor objects that will be used to process the data.
-    # This field holds a function reference that when called return the instantiated DPtree objects
-    # for this device.
+    # This field holds a function reference that when called return the instantiated DPtree objects for this
+    # device.
     # This method can take optional arguments defined in dp_trees_create_kwargs.
     dp_trees_create_method: Callable | None = None
     dp_trees_create_kwargs: dict | None = None
@@ -66,8 +66,8 @@ class DeviceCfg(Configuration):
     notes: str = "blank"
 
     # The tags field allows the recording of arbitrary key-value pairs that will be written to the
-    # FAIR record.  This is useful for recording information about the device in a structured way
-    # that can be used in subsequent analysis (eg the location of the deployment).
+    # FAIR record. This is useful for recording information about the device in a structured way that can be
+    # used in subsequent analysis (eg the location of the deployment).
     tags: dict[str, str] = field(default_factory=dict)
 
     # The datastore field identifies the blob datastore that this device will use.
@@ -105,8 +105,8 @@ class DeviceCfg(Configuration):
     review_mode_frequency: int = 5
 
     # Max recording timer in seconds
-    # This limits how quickly the system will cleanly shutdown as we wait for all recording
-    # threads to complete. It also limits the duration of any recordings
+    # This limits how quickly the system will cleanly shutdown as we wait for all recording threads to
+    # complete. It also limits the duration of any recordings
     max_recording_timer: int = 180
 
     # Logging: 20=INFO, 10=DEBUG as per logging module
@@ -159,8 +159,8 @@ class SystemCfg(BaseSettings):
     my_git_repo_url: str = FAILED_TO_LOAD
     # The name of the branch in the Git repo to use.
     my_git_branch: str = "main"
-    # The name of the SSH key file in the .expidite directory that
-    # gives access to the Git repo if it is private.
+    # The name of the SSH key file in the .expidite directory that gives access to the Git repo if it is
+    # private.
     # This can field can be left at FAILED_TO_LOAD if the repo is public.
     my_git_ssh_private_key_file: str = FAILED_TO_LOAD
     # The name of a Python package to install instead of a git clone of the custom sensor code repo.

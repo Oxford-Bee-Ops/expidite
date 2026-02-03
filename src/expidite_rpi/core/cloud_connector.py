@@ -23,8 +23,7 @@ logger = root_cfg.setup_logger("expidite")
 ##############################################################################################################
 # Default implementation of the CloudConnector class and interface definition.
 #
-# This class is used to connect to the cloud storage provider (Azure Blob Storage) but does so
-# synchronously.
+# This class is used to connect to the cloud storage provider (Azure Blob Storage) but does so synchronously.
 ##############################################################################################################
 class CloudConnector:
     _instance: Optional["CloudConnector"] = None
@@ -245,7 +244,7 @@ class CloudConnector:
         Each file in the cloud will only ever be written to by one device (ie this one), so we only need
         to check the headers once at start up.
         If this is the first time we're writing to this remote file, but the file already exists,
-        we check that the headers in the local file match the headers in the remote file.  If they do not
+        we check that the headers in the local file match the headers in the remote file. If they do not
         match, we download the remote file, merge the data to create a coherent set of headers and push
         the aggregated data back to the remote file.
         """
@@ -503,8 +502,8 @@ class SyncCloudConnector(CloudConnector):
 ##############################################################################################################
 # LocalCloudConnector class
 #
-# This class is used to connect to the local cloud emulator.  It is a subclass of CloudConnector and
-# implements the same interface.  It is used for testing purposes only and should not be used in production.
+# This class is used to connect to the local cloud emulator. It is a subclass of CloudConnector and implements
+# the same interface. It is used for testing purposes only and should not be used in production.
 ##############################################################################################################
 class LocalCloudConnector(CloudConnector):
     def __init__(self) -> None:
@@ -522,11 +521,11 @@ class LocalCloudConnector(CloudConnector):
         )
 
     def get_local_cloud(self) -> Path:
-        """Creates a local cloud directory.  Usually called by RpiEmulator.__enter__() as
+        """Creates a local cloud directory. Usually called by RpiEmulator.__enter__() as
         when the RpiEmulator is used as a context manager.
 
         This is an unpredictable string so we don't clash with other local cloud instances."""
-        #    shutil.rmtree(self.local_cloud)
+        # shutil.rmtree(self.local_cloud)
         if not self.local_cloud.exists():
             self.local_cloud.mkdir(parents=True, exist_ok=True)
         return self.local_cloud

@@ -65,8 +65,8 @@ class DPnode:
         Returns:
             True if this node is a leaf node, False otherwise.
         """
-        # Although the node may have children, we care about whether there is a child node for the
-        # given stream_index. If there is no child node for this stream, is_leaf == True.
+        # Although the node may have children, we care about whether there is a child node for the given
+        # stream_index. If there is no child node for this stream, is_leaf == True.
         return stream_index not in self._dpnode_children
 
     def get_config(self) -> DPtreeNodeCfg:
@@ -149,8 +149,8 @@ class DPnode:
                 )
                 raise ValueError(msg)
 
-        # Add the Datastream indices (datastream_type_id, device_id, sensor_id) and a
-        # timestamp to the log_data
+        # Add the Datastream indices (datastream_type_id, device_id, sensor_id) and a timestamp to the
+        # log_data
         log_data[api.RECORD_ID.VERSION.value] = "V3"
         log_data[api.RECORD_ID.DATA_TYPE_ID.value] = stream.type_id
         log_data[api.RECORD_ID.DEVICE_ID.value] = root_cfg.my_device_id
@@ -271,8 +271,8 @@ class DPnode:
         """
         suffix = self.get_stream(stream_index).format
 
-        # We save the recording to the EDGE|ETL_PROCESSING_DIR if there are more DPs to run,
-        # otherwise we save it to the EDGE|ETL_UPLOAD_DIR
+        # We save the recording to the EDGE|ETL_PROCESSING_DIR if there are more DPs to run, otherwise we save
+        # it to the EDGE|ETL_UPLOAD_DIR
         if root_cfg.get_mode() == root_cfg.Mode.EDGE:
             if self.is_leaf(stream_index):
                 save_dir = root_cfg.EDGE_UPLOAD_DIR

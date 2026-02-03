@@ -58,10 +58,10 @@ In terms of applications, it is helpful to install:
 - **Microsoft Azure Storage Explorer** to view your files in the Azure blobstore
 
 ### USER FLOW - INITIAL SETUP
-The following steps enable you to run the default example sensor on your RPI.  Do this first to prove that your cloud storage config is working and to learn the basics.  Then you can move on to defining your actual experimental setup!
+The following steps enable you to run the default example sensor on your RPI. Do this first to prove that your cloud storage config is working and to learn the basics. Then you can move on to defining your actual experimental setup!
 
 - Physically build your RPI and attach your chosen sensors.
-- Get an SD card with the Raspberry Pi OS.  If you use Raspberry Pi Imager, enabling SSH access and including default Wifi config will make your life easier.
+- Get an SD card with the Raspberry Pi OS. If you use Raspberry Pi Imager, enabling SSH access and including default Wifi config will make your life easier.
 - Install the SD card and power up your RPI.
 - Copy the **keys.env** and **system.cfg** files from the expidite repo `/src/expidite_rpi/example/` folder to your own computer / dev environment / git project.
 - Edit **keys.env**:
@@ -88,7 +88,7 @@ The following steps enable you to run the default example sensor on your RPI.  D
 
 
 ### USER FLOW - CONFIGURING YOUR DEVICES
-To execute your particular experimental setup, you need to configure your devices in a "fleet config" python file.  You will want to maintain this configuration in Git.
+To execute your particular experimental setup, you need to configure your devices in a "fleet config" python file. You will want to maintain this configuration in Git.
 
 - Create your own Git repo if you haven't already got one
 - Copy the `/src/expidite_rpi/example` folder into your Git repo as a starting point for your own config and code customizations.

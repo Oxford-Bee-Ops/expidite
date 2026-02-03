@@ -14,7 +14,7 @@ from expidite_rpi.example.my_sensor_example import (
 # This fleet config must be returned as a list of DeviceCfg objects.
 # The inventory is passed to RpiCore when it is first configured:
 #
-#   RpiCore.configure(fleet_config=example.my_fleet_config.INVENTORY)
+# RpiCore.configure(fleet_config=example.my_fleet_config.INVENTORY)
 #
 # The DeviceCfg contains:
 # - name: a friendly name for the device (eg Alex)
@@ -29,14 +29,14 @@ from expidite_rpi.example.my_sensor_example import (
 # The combined config of a sensor and its datastreams are in a SensorDsCfg object.
 #
 # The data produced by a Datastream (eg video files) may be processed by 0 or more DataProcessors.
-# In the video file example, a DataProcessor might use an ML algorithm to identify bees in a video
-# and output the number of bees identified.
+# In the video file example, a DataProcessor might use an ML algorithm to identify bees in a video and output
+# the number of bees identified.
 # DataProcessors act in a chain, with data being passed from one to the next.
-# The DataProcessors associated with a Datastream are defined on the DatastreamCfg
-# as lists of DataProcessorCfg objects.
+# The DataProcessors associated with a Datastream are defined on the DatastreamCfg as lists of
+# DataProcessorCfg objects.
 # There are two lists:
-#  - EdgeProcessors that act on the device
-#  - CloudProcessors that act as part of a subsequent ETL on a server or in the cloud.
+# - EdgeProcessors that act on the device
+# - CloudProcessors that act as part of a subsequent ETL on a server or in the cloud.
 #
 # DeviceCfg (1 per physical device)
 # -> sensor_ds_list: list[SensorDsCfg] - 1 per Sensor)

@@ -142,8 +142,8 @@ class Journal:
 
     # Access the data list
     #
-    # Normally this is returned as a copy, but for performance on read-only operations,
-    # the copy can be disabled
+    # Normally this is returned as a copy, but for performance on read-only operations, the copy can be
+    # disabled
     def get_data(self, copy: bool = True) -> list[dict]:
         if copy:
             return self._data.to_dict(orient="records")
