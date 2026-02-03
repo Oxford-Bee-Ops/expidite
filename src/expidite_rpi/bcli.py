@@ -800,7 +800,7 @@ class InteractiveMenu:
                 i2c_test_result = run_cmd("i2cdetect -y 1")
                 for index in i2c_indexes:
                     # We need to convert the index from base10 to base16
-                    hex_index = hex(index)[2:].upper()
+                    hex_index = f"{index:X}"
                     if str(hex_index) in i2c_test_result:
                         click.echo(f"I2C device {index} ({hex_index}) is working.")
                     else:

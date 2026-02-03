@@ -98,6 +98,7 @@ select = [
     "NPY", # numpy
     "PD", # pandas-vet
     "PL", # pylint
+    "FURB", # refurb
     "UP", # pyupgrade
     # Docstring D1 rules require docstring, which we don't currently enforce.
     # Docstring D2/D3 rules cover correctness of the content - if we have docstring it should be correct. We
