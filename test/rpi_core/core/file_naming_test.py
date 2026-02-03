@@ -1,5 +1,4 @@
-from datetime import datetime, timedelta
-from zoneinfo import ZoneInfo
+from datetime import UTC, datetime, timedelta
 
 import pytest
 
@@ -64,10 +63,10 @@ class Test_datastream:
     @pytest.mark.parametrize(
         ("fname", "expected"),
         [
-            ("V3_EXITTRACKER_2ccf6791818a_20250522.csv", datetime(2025, 5, 22, tzinfo=ZoneInfo("UTC"))),
+            ("V3_EXITTRACKER_2ccf6791818a_20250522.csv", datetime(2025, 5, 22, tzinfo=UTC)),
             (
                 "V3_TRAPCAM_d83adde765e4_01_00_20250523T172338065_20250523T172340565.mp4",
-                datetime(2025, 5, 23, 17, 23, 38, tzinfo=ZoneInfo("UTC")),
+                datetime(2025, 5, 23, 17, 23, 38, tzinfo=UTC),
             ),
         ],
     )

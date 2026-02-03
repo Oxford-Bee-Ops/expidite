@@ -9,10 +9,9 @@ import shutil
 import subprocess
 import time
 import zipfile
-from datetime import datetime
+from datetime import UTC, datetime
 from pathlib import Path
 from threading import Timer
-from zoneinfo import ZoneInfo
 
 import psutil
 
@@ -39,7 +38,7 @@ MAGENTA = (255, 0, 255)
 # Functions used by sensors.
 ##############################################################################################################
 
-last_space_check = dt.datetime(1970, 1, 1, tzinfo=ZoneInfo("UTC"))
+last_space_check = dt.datetime(1970, 1, 1, tzinfo=UTC)
 last_check_outcome = False
 high_memory_usage_threshold = 75.0
 
@@ -109,8 +108,8 @@ def is_sampling_period(
     # Check if the timestamp is within the sampling window
     if sampling_window is not None:
         # Convert the sampling_window elements from "HH:MM" to a datetime object
-        start_time = datetime.strptime(sampling_window[0], "%H:%M")
-        end_time = datetime.strptime(sampling_window[1], "%H:%M")
+        start_time = datetime.strptime(sampling_window[0], "%H:%M").replace(tzinfo=UTC)
+        end_time = datetime.strptime(sampling_window[1], "%H:%M").replace(tzinfo=UTC)
         timestamp_time = timestamp.time()
         if not start_time.time() <= timestamp_time <= end_time.time():
             return False

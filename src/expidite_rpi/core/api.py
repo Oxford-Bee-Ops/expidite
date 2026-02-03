@@ -3,9 +3,8 @@
 #
 # File define constants used on interfaces between components in the Expidite system.
 ##############################################################################################################
-from datetime import datetime
+from datetime import UTC, datetime
 from enum import Enum, StrEnum
-from zoneinfo import ZoneInfo
 
 from azure.storage.blob import StandardBlobTier
 
@@ -158,14 +157,14 @@ PADDED_TIME_LEN = len("20210101T010101000000")
 
 def utc_now() -> datetime:
     """Return the current time in UTC."""
-    return datetime.now(ZoneInfo("UTC"))
+    return datetime.now(tz=UTC)
 
 
 def _to_datetime(t: datetime | float | None) -> datetime:
     if isinstance(t, datetime):
         return t
     if isinstance(t, float):
-        return datetime.fromtimestamp(t, tz=ZoneInfo("UTC"))
+        return datetime.fromtimestamp(t, tz=UTC)
     return utc_now()
 
 
@@ -184,10 +183,7 @@ def utc_from_str(t: str) -> datetime:
     """Convert a string timestamp formatted according to a datetime object."""
     # strptime doesn't support just milliseconds, so pad the string with 3 zeros
     t += "0" * (PADDED_TIME_LEN - len(t))
-
-    naive_dt = datetime.strptime(t, STRFTIME)
-    # Convert to UTC timezone
-    return naive_dt.replace(tzinfo=ZoneInfo("UTC"))
+    return datetime.strptime(t, STRFTIME).replace(tzinfo=UTC)
 
 
 def str_to_iso(t: str) -> str:

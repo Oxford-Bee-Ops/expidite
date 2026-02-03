@@ -1,10 +1,9 @@
 import shutil
 import threading  # Add this import for thread safety
 from dataclasses import asdict, dataclass
-from datetime import datetime
+from datetime import UTC, datetime
 from pathlib import Path
 from random import random
-from zoneinfo import ZoneInfo
 
 import pandas as pd
 
@@ -432,13 +431,13 @@ class DPnode:
                 f"{root_cfg.RAISE_WARN}start_time must be timezone aware. "
                 "Use api.utc_now() to get the current time."
             )
-            start_time = start_time.replace(tzinfo=ZoneInfo("UTC"))
+            start_time = start_time.replace(tzinfo=UTC)
         if end_time is not None and end_time.tzinfo is None:
             logger.warning(
                 f"{root_cfg.RAISE_WARN}end_time must be timezone aware. "
                 "Use api.utc_now() to get the current time."
             )
-            end_time = end_time.replace(tzinfo=ZoneInfo("UTC"))
+            end_time = end_time.replace(tzinfo=UTC)
 
         if end_time is not None:
             if start_time > end_time:

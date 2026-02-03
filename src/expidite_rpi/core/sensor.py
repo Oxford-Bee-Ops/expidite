@@ -5,7 +5,7 @@
 #  - Sensor: Super class for all sensor classes
 ##############################################################################################################
 from abc import ABC
-from datetime import datetime, timedelta
+from datetime import UTC, datetime, timedelta
 from threading import Event, Thread
 
 from expidite_rpi.core import configuration as root_cfg
@@ -22,7 +22,7 @@ logger = root_cfg.setup_logger("expidite")
 class Sensor(Thread, DPnode, ABC):
     # Create a class variable to track the review_mode status
     review_mode: bool = False
-    last_checked_review_mode: datetime = datetime.min
+    last_checked_review_mode: datetime = datetime.min.replace(tzinfo=UTC)
     review_mode_check_interval: timedelta = timedelta(seconds=5)
 
     def __init__(self, config: SensorCfg) -> None:
@@ -85,13 +85,15 @@ class Sensor(Thread, DPnode, ABC):
         Review mode is indicated by the presence of the REVIEW_MODE_FLAG file.
         """
         # We maintain a class variable to avoid repeated filesystem checks.
-        if (datetime.now() - Sensor.last_checked_review_mode) > Sensor.review_mode_check_interval:
-            Sensor.last_checked_review_mode = datetime.now()
+        if (datetime.now(tz=UTC) - Sensor.last_checked_review_mode) > Sensor.review_mode_check_interval:
+            Sensor.last_checked_review_mode = datetime.now(tz=UTC)
             Sensor.review_mode = root_cfg.REVIEW_MODE_FLAG.exists()
             if Sensor.review_mode:
                 # Check the timestamp of the flag file to ensure it is sufficiently recent
                 # We auto exit review mode if the flag file is stale (>30 mins)
-                flag_age = datetime.now() - datetime.fromtimestamp(root_cfg.REVIEW_MODE_FLAG.stat().st_mtime)
+                flag_age = datetime.now(tz=UTC) - datetime.fromtimestamp(
+                    root_cfg.REVIEW_MODE_FLAG.stat().st_mtime, tz=UTC
+                )
                 if flag_age > timedelta(minutes=30):
                     Sensor.review_mode = False
                     root_cfg.REVIEW_MODE_FLAG.unlink(missing_ok=True)
@@ -122,7 +124,7 @@ class Sensor(Thread, DPnode, ABC):
             # Check for the sensing trigger set via the BCLI
             if root_cfg.SENSOR_TRIGGER_FLAG.exists():
                 try:
-                    start_time = datetime.now()
+                    start_time = datetime.now(tz=UTC)
                     # Read the duration from the flag file
                     with open(root_cfg.SENSOR_TRIGGER_FLAG) as f:
                         duration_str = f.read().strip()
@@ -133,7 +135,7 @@ class Sensor(Thread, DPnode, ABC):
                     self.sensing_triggered(duration)
 
                     # Clear the file after processing and after the requisite duration
-                    elapsed = (datetime.now() - start_time).total_seconds()
+                    elapsed = (datetime.now(tz=UTC) - start_time).total_seconds()
                     if elapsed < duration:
                         wait_time = duration - elapsed
                         logger.info(f"Waiting additional {wait_time:.1f}s to complete requested duration")

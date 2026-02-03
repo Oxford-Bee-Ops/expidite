@@ -1,8 +1,7 @@
-from datetime import datetime
+from datetime import UTC, datetime
 from pathlib import Path
 from random import random
 from typing import NamedTuple
-from zoneinfo import ZoneInfo
 
 from expidite_rpi.core import api
 from expidite_rpi.core import configuration as root_cfg
@@ -140,11 +139,11 @@ def get_file_datetime(fname: Path | str) -> datetime:
 
     if (de_count < 3) or (de_count == 4):
         logger.warning(f"{root_cfg.RAISE_WARN()}Invalid filename format: {fname}")
-        return datetime.min
+        return datetime.min.replace(tzinfo=UTC)
 
     if de_count == 3:
         # We have a journal name of the form V3_EXITTRACKER_2ccf6791818a_20250522.csv
-        start_time = datetime.strptime(fields[-1], "%Y%m%d").replace(tzinfo=ZoneInfo("UTC"))
+        start_time = datetime.strptime(fields[-1], "%Y%m%d").replace(tzinfo=UTC)
     else:
         # We have a regular record filename
         start_time = api.utc_from_str(fields[5])
@@ -267,7 +266,7 @@ def parse_journal_filename(fname: Path | str) -> dict:
         raise ValueError(msg)
     timestamp = None
     if len(fields) > 3:
-        timestamp = datetime.strptime(fields[3], "%Y%m%d").replace(tzinfo=ZoneInfo("UTC"))
+        timestamp = datetime.strptime(fields[3], "%Y%m%d").replace(tzinfo=UTC)
 
     fields_dict = {
         api.RECORD_ID.VERSION.value: version,
