@@ -92,6 +92,8 @@ select = [
     "PT", # flake8-pytest-style
     "RET", # flake8-return
     "SIM", # flake8-simplify
+    "YTT", # flake8-2020
+    "NPY", # numpy
     "PD", # pandas-vet
     "PL", # pylint
     "UP", # pyupgrade
