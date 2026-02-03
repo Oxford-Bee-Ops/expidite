@@ -144,8 +144,8 @@ class RpicamStillSensor(Sensor):
 
                 exception_count = 0  # Reset exception count on success
 
-            except Exception as e:
-                logger.error(f"{root_cfg.RAISE_WARN()}Error in RpicamSensor: {e}", exc_info=True)
+            except Exception:
+                logger.exception(f"{root_cfg.RAISE_WARN()}Error in RpicamSensor")
                 exception_count += 1
 
                 # On the assumption that the error is transient, we will continue to run but sleep for 60s

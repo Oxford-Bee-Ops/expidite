@@ -109,5 +109,5 @@ class VideoOnDemandSensor(Sensor):
                 VIDEO_OD_STREAM_INDEX, filename, start_time=start_time, end_time=api.utc_now()
             )
 
-        except Exception as e:
-            logger.error(f"{root_cfg.RAISE_WARN()}Error in VideoOnDemandSensor: {e}", exc_info=True)
+        except Exception:
+            logger.exception(f"{root_cfg.RAISE_WARN()}Error in VideoOnDemandSensor")

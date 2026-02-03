@@ -108,10 +108,8 @@ class RpicamSensor(Sensor):
             logger.info("Review mode image captured")
             self.save_recording(RPICAM_REVIEW_MODE_STREAM_INDEX, filename, start_time=api.utc_now())
 
-        except Exception as e:
-            logger.error(
-                f"{root_cfg.RAISE_WARN()}Error in RpicamSensor review_mode_output: {e}", exc_info=True
-            )
+        except Exception:
+            logger.exception(f"{root_cfg.RAISE_WARN()}Error in RpicamSensor review_mode_output")
 
     def run(self) -> None:
         """Main loop for the RpicamSensor - runs continuously unless paused."""
@@ -156,8 +154,8 @@ class RpicamSensor(Sensor):
 
                 exception_count = 0  # Reset exception count on success
 
-            except Exception as e:
-                logger.error(f"{root_cfg.RAISE_WARN()}Error in RpicamSensor: {e}", exc_info=True)
+            except Exception:
+                logger.exception(f"{root_cfg.RAISE_WARN()}Error in RpicamSensor")
                 exception_count += 1
 
                 # On the assumption that the error is transient, we will continue to run but sleep for 60s

@@ -100,8 +100,8 @@ class DPworker(Thread):
                 self.edge_run()
             else:
                 raise AssertionError("ETL mode not implemented yet")
-        except Exception as e:
-            logger.error(f"{root_cfg.RAISE_WARN()}Fatal error running {self!r}: {e!s}", exc_info=True)
+        except Exception:
+            logger.exception(f"{root_cfg.RAISE_WARN()}Fatal error running {self!r}")
             # @@@ Should we add recovery code? eg call stop_all?
 
     def edge_run(self) -> None:
@@ -150,22 +150,16 @@ class DPworker(Thread):
                                 if f.exists():
                                     try:
                                         f.unlink()
-                                    except Exception as e:
-                                        logger.error(
-                                            f"{root_cfg.RAISE_WARN()}Failed to unlink {f} {e!s}",
-                                            exc_info=True,
-                                        )
+                                    except Exception:
+                                        logger.exception(f"{root_cfg.RAISE_WARN()}Failed to unlink {f}")
                                 else:
                                     logger.error(f"{root_cfg.RAISE_WARN()}File does not exist after DP {f}")
 
                     # Log the processing time
                     exec_time = api.utc_now() - exec_start_time
                     dp._scorp_stat(stream.index, duration=exec_time.total_seconds())
-                except Exception as e:
-                    logger.error(
-                        f"{root_cfg.RAISE_WARN()}Error processing files for {self}. e={e!s}",
-                        exc_info=True,
-                    )
+                except Exception:
+                    logger.exception(f"{root_cfg.RAISE_WARN()}Error processing files for {self}")
 
             # We want to run this loop every minute, so see how long it took us since the start_time
             sleep_time = root_cfg.DP_FREQUENCY - (api.utc_now() - start_time).total_seconds()
@@ -204,8 +198,8 @@ class DPworker(Thread):
         for csv_file in csv_files:
             try:
                 df_list.append(pd.read_csv(csv_file))
-            except Exception as e:
-                logger.error(f"{root_cfg.RAISE_WARN()}Error reading CSV file {csv_file}: {e}", exc_info=True)
+            except Exception:
+                logger.exception(f"{root_cfg.RAISE_WARN()}Error reading CSV file {csv_file}")
 
         # Concat all DataFrames into one
         if df_list:

@@ -99,8 +99,8 @@ class SHT31(Sensor):
                 )
                 logger.debug(f"SHT31 sensor {self.sensor_index} data: {temperature:.1f}C, {humidity:.1f}%")
 
-            except Exception as e:
-                logger.error(f"{root_cfg.RAISE_WARN()}Error in SHT31 sensor run: {e}", exc_info=True)
+            except Exception:
+                logger.exception(f"{root_cfg.RAISE_WARN()}Error in SHT31 sensor run")
             finally:
                 if self.in_review_mode():
                     wait_period = root_cfg.my_device.review_mode_frequency

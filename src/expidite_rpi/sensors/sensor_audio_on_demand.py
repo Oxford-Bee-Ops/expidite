@@ -113,5 +113,5 @@ class AudioSensor(Sensor):
             )
 
             logger.info(f"Saved audio of {duration!s}s to {final_output_filename}; ")
-        except Exception as e:
-            logger.error(f"{root_cfg.RAISE_WARN()}Error in AudioSensor: {e}", exc_info=True)
+        except Exception:
+            logger.exception(f"{root_cfg.RAISE_WARN()}Error in AudioSensor")

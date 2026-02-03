@@ -111,8 +111,8 @@ class ADXL34X(Sensor):
                     },
                 )
 
-            except Exception as e:
-                logger.error(f"{root_cfg.RAISE_WARN()}Error in ADXL34X sensor run: {e}", exc_info=True)
+            except Exception:
+                logger.exception(f"{root_cfg.RAISE_WARN()}Error in ADXL34X sensor run")
 
     def capture_data_block(self, accelerometer: adafruit_adxl34x.ADXL343) -> pd.DataFrame:
         """Capture approximately 1 second of readings, but stop at a realtime second boundary

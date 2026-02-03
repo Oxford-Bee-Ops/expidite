@@ -495,9 +495,7 @@ class InteractiveMenu:
                     click.echo("Exiting...")
                     return
             except ImportError as e:
-                logger.error(
-                    f"{root_cfg.RAISE_WARN()}Module {my_start_script} not resolvable ({e})", exc_info=True
-                )
+                logger.exception(f"{root_cfg.RAISE_WARN()}Module {my_start_script} not resolvable")
                 click.echo(f"Module {my_start_script} not resolvable ({e})")
                 click.echo("Exiting...")
                 return
@@ -821,7 +819,7 @@ class InteractiveMenu:
                     click.echo("\nNo error logs found.")
 
         except Exception as e:
-            logger.error(f"{root_cfg.RAISE_WARN()}Exception running validation tests: {e}", exc_info=True)
+            logger.exception(f"{root_cfg.RAISE_WARN()}Exception running validation tests")
             click.echo(f"ERROR: exception running validation tests: {e}")
             success = False
 
@@ -1036,7 +1034,7 @@ def main() -> None:
         except (KeyboardInterrupt, click.exceptions.Abort):
             click.echo("\nExiting...")
         except Exception as e:
-            logger.error(f"Error in CLI: {e}", exc_info=True)
+            logger.exception("Error in CLI")
             click.echo(f"Error in CLI: {e}")
         finally:
             # Ensure the cloud connector is shut down

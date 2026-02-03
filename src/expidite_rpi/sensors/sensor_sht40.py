@@ -95,8 +95,8 @@ class SHT40(Sensor):
                         )
                         sensor.activate_medium_heater_power_long()
 
-                except Exception as e:
-                    logger.error(f"{root_cfg.RAISE_WARN()}Error in SHT40 sensor run: {e}", exc_info=True)
+                except Exception:
+                    logger.exception(f"{root_cfg.RAISE_WARN()}Error in SHT40 sensor run")
                 finally:
                     if self.in_review_mode():
                         wait_period = root_cfg.my_device.review_mode_frequency

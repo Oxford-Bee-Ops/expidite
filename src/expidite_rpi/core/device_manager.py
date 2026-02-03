@@ -132,10 +132,8 @@ class DeviceManager:
             elif self.currentState == self.S_WIFI_FAILED:
                 # Green should be off; red should be on
                 self.set_led_status("red", "2.0")
-        except Exception as e:
-            logger.error(
-                f"{root_cfg.RAISE_WARN()}LED timer callback threw an exception: " + str(e), exc_info=True
-            )
+        except Exception:
+            logger.exception(f"{root_cfg.RAISE_WARN()}LED timer callback threw an exception")
 
     def set_led_status(self, colour: str, status: str) -> None:
         """Update the LED status file which is read by the led_control script.
@@ -147,10 +145,8 @@ class DeviceManager:
         try:
             with open(root_cfg.LED_STATUS_FILE, "w") as f:
                 f.write(f"{colour}:{status}\n")
-        except Exception as e:
-            logger.error(
-                f"{root_cfg.RAISE_WARN()}set_led_status threw an exception: " + str(e), exc_info=True
-            )
+        except Exception:
+            logger.exception(f"{root_cfg.RAISE_WARN()}set_led_status threw an exception")
 
     ##########################################################################################################
     # Wifi management functions
@@ -259,10 +255,8 @@ class DeviceManager:
                 self.log_wifi_info()
             self.log_counter += 1
 
-        except Exception as e:
-            logger.error(
-                f"{root_cfg.RAISE_WARN()}Wifi timer callback threw an exception: " + str(e), exc_info=True
-            )
+        except Exception:
+            logger.exception(f"{root_cfg.RAISE_WARN()}Wifi timer callback threw an exception")
 
     def action_on_ping_fail(self) -> None:
         # Track ping stats for logging purposes
@@ -377,8 +371,5 @@ class DeviceManager:
         try:
             logger.debug("Diagnostics upload timer callback")
             DiagnosticsBundle.upload()
-        except Exception as e:
-            logger.error(
-                f"{root_cfg.RAISE_WARN()}Diagnostics upload callback threw an exception: " + str(e),
-                exc_info=True,
-            )
+        except Exception:
+            logger.exception(f"{root_cfg.RAISE_WARN()}Diagnostics upload callback threw an exception")

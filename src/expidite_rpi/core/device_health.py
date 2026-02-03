@@ -189,8 +189,8 @@ class DeviceHealth(Sensor):
                 self.log_counter += 1
                 sleep_time = root_cfg.my_device.heart_beat_frequency
                 self.stop_requested.wait(sleep_time)
-        except Exception as e:
-            logger.error(f"{root_cfg.RAISE_WARN()}Error in DeviceHealth thread: {e}", exc_info=True)
+        except Exception:
+            logger.exception(f"{root_cfg.RAISE_WARN()}Error in DeviceHealth thread")
 
     def log_health(self) -> None:
         """Logs device health data to the HEART datastream."""
@@ -326,7 +326,7 @@ class DeviceHealth(Sensor):
                     # cause performance degradation. Triggering a controlled reboot at 90% memory usage is
                     # generally considered good practice to recover before performance degrades.
                     if memory_usage > 90:
-                        logger.error(root_cfg.RAISE_WARN() + "Memory usage >90%, rebooting")
+                        logger.error(f"{root_cfg.RAISE_WARN()}Memory usage >90%, rebooting")
                         DiagnosticsBundle.collect("Memory usage >90%, rebooting")
                         utils.run_cmd("sudo reboot", ignore_errors=True)
 
@@ -359,8 +359,8 @@ class DeviceHealth(Sensor):
                 "user_code_version": user_code_version,
             }
 
-        except Exception as e:
-            logger.error(root_cfg.RAISE_WARN() + "Failed to get telemetry: " + str(e), exc_info=True)
+        except Exception:
+            logger.exception(f"{root_cfg.RAISE_WARN()}Failed to get telemetry")
 
         return health
 

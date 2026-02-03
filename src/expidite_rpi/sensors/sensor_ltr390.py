@@ -96,8 +96,8 @@ class LTR390(Sensor):
                     },
                 )
 
-            except Exception as e:
-                logger.error(f"{root_cfg.RAISE_WARN()}Error in LTR390 sensor run: {e}", exc_info=True)
+            except Exception:
+                logger.exception(f"{root_cfg.RAISE_WARN()}Error in LTR390 sensor run")
             finally:
                 if self.in_review_mode():
                     wait_period = root_cfg.my_device.review_mode_frequency

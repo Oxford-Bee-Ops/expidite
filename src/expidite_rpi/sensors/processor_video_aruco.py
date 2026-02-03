@@ -113,11 +113,8 @@ class VideoArucoProcessor(DataProcessor):
                 if result is not None:
                     results.append(result)
 
-            except Exception as e:
-                logger.error(
-                    f"{root_cfg.RAISE_WARN()}Exception occurred processing video {f!s}; {e!s}",
-                    exc_info=True,
-                )
+            except Exception:
+                logger.exception(f"{root_cfg.RAISE_WARN()}Exception occurred processing video {f!s}")
 
         self.save_data(
             stream_index=ARUCO_DATA_STREAM_INDEX,

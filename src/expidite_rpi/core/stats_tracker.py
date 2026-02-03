@@ -86,5 +86,5 @@ class StatTracker(Sensor):
                 # Set timer for next run
                 self.last_ran = api.utc_now()
                 self.stop_requested.wait(root_cfg.my_device.heart_beat_frequency)
-        except Exception as e:
-            logger.error(f"{root_cfg.RAISE_WARN()}Error in SelfTracker thread: {e}", exc_info=True)
+        except Exception:
+            logger.exception(f"{root_cfg.RAISE_WARN()}Error in SelfTracker thread")

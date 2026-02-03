@@ -60,11 +60,8 @@ class TrapcamDp(DataProcessor):
             try:
                 logger.info(f"Processing video file: {f!s}")
                 self.process_video(f, min_blob_size, max_blob_size)
-            except Exception as e:
-                logger.error(
-                    f"{root_cfg.RAISE_WARN()}Exception occurred processing video {f!s}; {e!s}",
-                    exc_info=True,
-                )
+            except Exception:
+                logger.exception(f"{root_cfg.RAISE_WARN()}Exception occurred processing video {f!s}")
 
     def process_video(self, video_path: Path, min_blob_size: int, max_blob_size: int) -> None:
         """Process a video file to detect movement and save segments with movement.

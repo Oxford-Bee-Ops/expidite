@@ -140,8 +140,8 @@ class Sensor(Thread, DPnode, ABC):
                         self.stop_requested.wait(wait_time)
                     root_cfg.SENSOR_TRIGGER_FLAG.unlink(missing_ok=True)
 
-                except Exception as e:
-                    logger.error(f"Error processing sensing trigger: {e}", exc_info=True)
+                except Exception:
+                    logger.exception("Error processing sensing trigger")
                     # Ensure the trigger flag file is removed on error
                     root_cfg.SENSOR_TRIGGER_FLAG.unlink(missing_ok=True)
             self.stop_requested.wait(1)

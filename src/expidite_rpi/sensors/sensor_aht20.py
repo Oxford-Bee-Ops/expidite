@@ -58,8 +58,8 @@ class AHT20(Sensor):
                     sensor_data={"temperature": ("%.1f" % temperature), "humidity": ("%.1f" % humidity)},
                 )
 
-            except Exception as e:
-                logger.error(f"{root_cfg.RAISE_WARN()}Error in AHT20 sensor run: {e}", exc_info=True)
+            except Exception:
+                logger.exception(f"{root_cfg.RAISE_WARN()}Error in AHT20 sensor run")
             finally:
                 logger.debug(
                     f"AHT20 sensor {self.sensor_index} sleeping for "

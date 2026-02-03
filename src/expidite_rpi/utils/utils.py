@@ -168,7 +168,7 @@ def run_cmd(cmd: str, ignore_errors: bool = False, grep_strs: list[str] | None =
 
         if p.returncode != 0:
             if ignore_errors:
-                logger.info("Ignoring failure running command: " + cmd + " Err output: " + str(err))
+                logger.info(f"Ignoring failure running command: {cmd} Err output: {err!s}")
                 return ""
             msg = f"{root_cfg.RAISE_WARN()}Error running command: {cmd}, Error: {err!s}"
             raise RuntimeError(msg)
@@ -181,8 +181,8 @@ def run_cmd(cmd: str, ignore_errors: bool = False, grep_strs: list[str] | None =
 
         return output
 
-    except FileNotFoundError as e:
-        logger.error(f"{root_cfg.RAISE_WARN()}Command not found: {cmd}; {e}", exc_info=True)
+    except FileNotFoundError:
+        logger.exception(f"{root_cfg.RAISE_WARN()}Command not found: {cmd}")
         if ignore_errors:
             return ""
         raise

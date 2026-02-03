@@ -72,8 +72,8 @@ class BMP280(Sensor):
                 )
                 logger.debug(f"BMP280 sensor {self.sensor_index} data: {pressure:.1f}Pa")
 
-            except Exception as e:
-                logger.error(f"{root_cfg.RAISE_WARN()}Error in BMP280 sensor run: {e}", exc_info=True)
+            except Exception:
+                logger.exception(f"{root_cfg.RAISE_WARN()}Error in BMP280 sensor run")
             finally:
                 if self.in_review_mode():
                     wait_period = root_cfg.my_device.review_mode_frequency
