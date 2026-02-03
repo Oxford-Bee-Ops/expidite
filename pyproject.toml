@@ -46,7 +46,7 @@ dev = [
     "pyright==1.1.408",
     "pytest==9.0.2",
     "pytest-socket==0.7.0",
-    "ruff==0.14.14",
+    "ruff==0.15.0",
     "ty==0.0.14",
     "types-psutil==7.2.2.20260130",
     "types-PyYAML==6.0.12.20250915",
