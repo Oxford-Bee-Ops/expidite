@@ -280,9 +280,9 @@ def parse_journal_filename(fname: Path | str) -> dict:
     return fields_dict
 
 
-def get_temporary_filename(format: api.FORMAT) -> Path:
+def get_temporary_filename(file_format: api.FORMAT) -> Path:
     """Generate a temporary filename in the TMP_DIR with the specified suffix."""
-    suffix = format.value
+    suffix = file_format.value
     return root_cfg.TMP_DIR.joinpath(f"tmp_{api.utc_to_fname_str()}_{random():.4g}.{suffix}")
 
 

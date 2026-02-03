@@ -275,17 +275,17 @@ class InteractiveMenu:
         click.echo(char)
         if char == "y":
             click.echo("Enter the grep filter string:")
-            filter = input()
+            filter_str = input()
         else:
-            filter = ""
+            filter_str = ""
         click.echo("Press Ctrl+C to exit...\n")
         if root_cfg.running_on_windows:
             click.echo("This command only works on Linux. Exiting...")
             return
         try:
-            if filter != "":
+            if filter_str != "":
                 process = subprocess.Popen(
-                    ["journalctl", "-f", "|", "grep -i", filter],
+                    ["journalctl", "-f", "|", "grep -i", filter_str],
                     stdout=subprocess.PIPE,
                     stderr=subprocess.PIPE,
                 )
@@ -906,7 +906,7 @@ class InteractiveMenu:
             else:
                 click.echo("Invalid choice. Please try again.")
         # Clean up and exit
-        cc = CloudConnector.get_instance(type=root_cfg.CloudType.AZURE)
+        cc = CloudConnector.get_instance(root_cfg.CloudType.AZURE)
         assert isinstance(cc, AsyncCloudConnector)
         cc.shutdown()
 
@@ -1040,7 +1040,7 @@ def main() -> None:
             click.echo(f"Error in CLI: {e}")
         finally:
             # Ensure the cloud connector is shut down
-            cc = CloudConnector.get_instance(type=root_cfg.CloudType.AZURE)
+            cc = CloudConnector.get_instance(root_cfg.CloudType.AZURE)
             assert isinstance(cc, AsyncCloudConnector)
             cc.shutdown()
             click.echo("Done")

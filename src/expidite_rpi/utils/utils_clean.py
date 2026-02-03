@@ -58,7 +58,7 @@ def display_dataclass(obj: Any, indent: int = 0) -> str:  # noqa: ANN401
     def bb(i: int) -> str:
         return f"{bbracket[i % 3]}"
 
-    def id(i: int) -> str:
+    def id(i: int) -> str:  # noqa: A001
         return f"{'  ' * i}"
 
     def nlb(i: int) -> str:

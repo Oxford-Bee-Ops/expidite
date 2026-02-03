@@ -41,10 +41,10 @@ class CloudConnector:
         self._validated_append_files: set[str] = set()
 
     @staticmethod
-    def get_instance(type: CloudType) -> "CloudConnector":
+    def get_instance(cloud_type: CloudType) -> "CloudConnector":
         """We use a factory pattern to offer up alternative types of CloudConnector for accessing
         different cloud storage providers and / or the local emulator."""
-        match type:
+        match cloud_type:
             case CloudType.AZURE:
                 if CloudConnector._instance is None:
                     CloudConnector._instance = AsyncCloudConnector()
