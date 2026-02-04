@@ -95,6 +95,7 @@ select = [
     "PIE", # flake8-pie
     "PT", # flake8-pytest-style
     "RET", # flake8-return
+    "SLF", # flake8-self
     "SIM", # flake8-simplify
     "YTT", # flake8-2020
     "NPY", # numpy
@@ -131,7 +132,11 @@ ignore = [
 # These files had exceptions prior to rules being enforced. Ignore temporarily until we can fix.
 [tool.ruff.lint.per-file-ignores]
 "src/expidite_rpi/core/cloud_connector.py" = ["B012"]
-"src/expidite_rpi/core/edge_orchestrator.py" = ["B905"]
+"src/expidite_rpi/core/config_validator.py" = ["SLF001"]
+"src/expidite_rpi/core/dp_tree.py" = ["SLF001"]
+"src/expidite_rpi/core/dp_worker_thread.py" = ["SLF001"]
+"src/expidite_rpi/core/edge_orchestrator.py" = ["B905", "SLF001"]
+"src/expidite_rpi/rpi_core.py" = ["SLF001"]
 "src/expidite_rpi/sensors/drivers/*" = ["ANN001", "ANN201"]
 "src/expidite_rpi/sensors/processor_video_aruco.py" = ["ANN001", "B905"]
 "src/expidite_rpi/sensors/sensor_adxl34x.py" = ["UP031"]
@@ -142,7 +147,9 @@ ignore = [
 "src/expidite_rpi/sensors/sensor_sht40.py" = ["UP031"]
 "src/expidite_rpi/utils/rpi_emulator.py" = ["ANN001", "PLW2901"]
 "test/conftest.py" = ["ANN001", "ANN201"]
+"test/rpi_core/core/cloud_journal_test.py" = ["SLF001"]
 "test/rpi_core/core/review_mode_test.py" = ["ANN001"]
+"test/rpi_core/core/orchestrator_test.py" = ["SLF001"]
 
 fixable = ["ALL"]
 

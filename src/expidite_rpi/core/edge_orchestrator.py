@@ -132,6 +132,9 @@ class EdgeOrchestrator:
             "DPtrees alive": str(dps_alive),
         }
 
+    def get_status(self) -> OrchestratorStatus:
+        return self._status
+
     def load_config(self) -> None:
         """Load the sensor and data processor config into the EdgeOrchestrator by calling
         the DeviceCfg.dp_trees_create_method()."""
@@ -462,7 +465,7 @@ def main() -> None:
         logger.info(root_cfg.my_device.display())
 
         orchestrator = EdgeOrchestrator.get_instance()
-        if orchestrator.watchdog_file_alive() or OrchestratorStatus.running(orchestrator._status):
+        if orchestrator.watchdog_file_alive() or OrchestratorStatus.running(orchestrator.get_status()):
             logger.warning("RpiCore is already running; exiting")
             return
 
@@ -476,13 +479,13 @@ def main() -> None:
             if root_cfg.RESTART_EXPIDITE_FLAG.exists():
                 # Restart the re-load and re-start the EdgeOrchestrator if it fails.
                 logger.error(
-                    f"{root_cfg.RAISE_WARN()}Orchestrator failed; restarting; {orchestrator._status}"
+                    f"{root_cfg.RAISE_WARN()}Orchestrator failed; restarting; {orchestrator.get_status()}"
                 )
                 orchestrator.stop_all()
                 orchestrator.load_config()
                 orchestrator.start_all()
             else:
-                logger.debug(f"Orchestrator running ({orchestrator._status})")
+                logger.debug(f"Orchestrator running ({orchestrator.get_status()})")
                 root_cfg.EXPIDITE_IS_RUNNING_FLAG.touch()
 
             sleep(root_cfg.WATCHDOG_FREQUENCY)
