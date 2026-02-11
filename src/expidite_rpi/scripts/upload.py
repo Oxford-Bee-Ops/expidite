@@ -15,10 +15,12 @@ def main() -> None:
         filename = Path(filename_str)
         cc = CloudConnector.get_instance(root_cfg.CLOUD_TYPE)
         cc.upload_to_container("tmp-upload", [filename], delete_src=False)
-        print(f"Successfully uploaded {filename} to blobstore.")
+        print(f"Successfully uploaded {filename} to 'tmp-upload' container")
     except Exception as e:
         print(f"Failed to upload {filename}: {e}")
         sys.exit(1)
+    finally:
+        cc.shutdown()
 
 
 if __name__ == "__main__":
