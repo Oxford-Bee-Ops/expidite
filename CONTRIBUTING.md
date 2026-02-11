@@ -25,8 +25,8 @@ Install Dependencies
 Before you commit your changes, you must run the following quality checks to ensure your code meets project standards.
 
 1. `ruff format` Ruff is used to ensure consistent code styling.
-2. `ruff check` Linting and Static Analysis (Ruff Check)This command runs all static checks configured in pyproject.toml. This command should return no errors.
-3. `uvx ty check` Type Checking. This command should return no errors.
+2. `ruff check` Linting and Static Analysis (ruff check). This command runs all static checks configured in pyproject.toml. This command should return no errors.
+3. `ty check` Type Checking. This command should return no errors.
 4. `pyright` Type Checking and bug detection. More comprehensive checking that mypy. This command should return no errors.
 5. `mypy` Type Checking. Mypy verifies all type hints for correctness and completeness. This command should return no errors.
 6. `pytest` Unit Tests. Run the full test suite to ensure your changes did not break existing functionality. All tests must pass.
