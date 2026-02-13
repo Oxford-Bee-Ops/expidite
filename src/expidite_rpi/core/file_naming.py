@@ -10,7 +10,7 @@ logger = root_cfg.setup_logger("expidite")
 
 
 class DATA_ID(NamedTuple):
-    """Datastream ID is composed of {datastream_type_id}_{device_id}_{sensor_id}"""
+    """Datastream ID is composed of {datastream_type_id}_{device_id}_{sensor_id}."""
 
     type_id: str
     device_id: str
@@ -22,7 +22,7 @@ class DATA_ID(NamedTuple):
 
 
 def create_data_id(device_id: str, sensor_index: int, type_id: str, stream_index: int) -> str:
-    """Returns a standard, universally unique, identifier for the Datastream"""
+    """Returns a standard, universally unique, identifier for the Datastream."""
     return f"{type_id}_{device_id}_{sensor_index:02d}_{stream_index:02d}"
 
 

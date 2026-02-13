@@ -44,7 +44,7 @@ high_memory_usage_threshold = 75.0
 
 
 def failing_to_keep_up() -> bool:
-    """Function that allows us to back off intensive operations if we're running low on space"""
+    """Function that allows us to back off intensive operations if we're running low on space."""
     # Cache the result for 30 seconds to avoid repeated disk checks
     global last_space_check, last_check_outcome
     now = api.utc_now()
@@ -345,7 +345,7 @@ def list_files_older_than(search_string: Path, age_in_seconds: float) -> list[Pa
 
 
 def list_all_large_dirs(path: str, recursion: int = 0) -> int:
-    """Utility function that walks the directory tree and logs all directories using more than 1GB of space"""
+    """Walks the directory tree and logs all directories using more than 1GB of space."""
     total = 0
     if recursion == 0:
         print("Large directories:")

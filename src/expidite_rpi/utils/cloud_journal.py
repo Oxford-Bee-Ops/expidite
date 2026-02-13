@@ -31,13 +31,13 @@ class _CloudJournalManager:
 
     @staticmethod
     def get(cloud_container: str) -> "_CloudJournalManager":
-        """Get the singleton worker thread"""
+        """Get the singleton worker thread."""
         if _CloudJournalManager._instance is None:
             _CloudJournalManager._instance = _CloudJournalManager(cloud_container)
         return _CloudJournalManager._instance
 
     def sync_run(self) -> None:
-        """Persistently manage synchronisation of the CloudJournal objects to the cloud
+        """Persistently manage synchronisation of the CloudJournal objects to the cloud.
 
         Alternatively, the user can use flush() to actively manage synchronization."""
         try:
@@ -59,7 +59,7 @@ class _CloudJournalManager:
             cc.shutdown()
 
     def add(self, journal: "CloudJournal", data: list[dict]) -> None:
-        """Add data to the local data queue
+        """Add data to the local data queue.
 
         Parameters:
             - journal: CloudJournal to which data should be added

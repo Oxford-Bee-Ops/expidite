@@ -195,5 +195,5 @@ class RpiCore:
 
     @staticmethod
     def update_my_device_id(new_device_id: str) -> None:
-        """Function used in testing to change the device_id"""
+        """Function used in testing to change the device_id."""
         root_cfg.update_my_device_id(new_device_id)

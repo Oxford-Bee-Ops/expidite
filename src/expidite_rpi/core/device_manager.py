@@ -16,7 +16,7 @@ class DeviceManager:
     """Manages LED & Wifi status if configured to do so in my_device (DeviceCfg):
     - manage_wifi: bool = True
     - manage_leds: bool = True
-    """
+    """  # noqa: D415
 
     # Device states
     S_BOOTING = "Booting"

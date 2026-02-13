@@ -2,8 +2,7 @@
 #
 # SPDX-License-Identifier: MIT
 
-"""
-`adafruit_adxl34x`
+"""`adafruit_adxl34x`.
 ====================================================
 
 A driver for the ADXL34x 3-axis accelerometer family
@@ -147,7 +146,7 @@ class Range:
 
 
 class ADXL345:
-    """Driver for the ADXL345 3 axis accelerometer
+    """Driver for the ADXL345 3 axis accelerometer.
 
     :param ~busio.I2C i2c: The I2C bus the ADXL345 is connected to.
     :param int address: The I2C device address for the sensor. Default is :const:`0x53`.
@@ -197,7 +196,7 @@ class ADXL345:
 
     @property
     def acceleration(self) -> tuple[int, int, int]:
-        """The x, y, z acceleration values returned in a 3-tuple in :math:`m / s ^ 2`"""
+        """The x, y, z acceleration values returned in a 3-tuple in :math:`m / s ^ 2`."""
         x, y, z = unpack("<hhh", self._read_register(_REG_DATAX0, 6))
         x = x * _ADXL345_MG2G_MULTIPLIER * _STANDARD_GRAVITY
         y = y * _ADXL345_MG2G_MULTIPLIER * _STANDARD_GRAVITY
@@ -221,9 +220,8 @@ class ADXL345:
 
     @property
     def events(self) -> dict[str, bool]:
-        """
-        :attr:`events` will return a dictionary with a key for each
-        event type that has been enabled.
+        """Return a dictionary with a key for each event type that has been enabled.
+
         The possible keys are:
 
         +------------+----------------------------------------------------------------------------+
@@ -283,7 +281,7 @@ class ADXL345:
         self._enabled_interrupts["motion"] = True
 
     def disable_motion_detection(self) -> None:
-        """Disable motion detection"""
+        """Disable motion detection."""
         active_interrupts = self._read_register_unpacked(_REG_INT_ENABLE)
         active_interrupts &= ~_INT_ACT
         self._write_register_byte(_REG_INT_ENABLE, active_interrupts)
@@ -291,7 +289,7 @@ class ADXL345:
 
     def enable_freefall_detection(self, *, threshold: int = 10, time: int = 25) -> None:
         """
-        Freefall detection parameters:
+        Freefall detection parameters.
 
         :param int threshold: The value that acceleration on all axes must be under to\
         register as dropped. The scale factor is 62.5 mg/LSB.
@@ -320,7 +318,7 @@ class ADXL345:
         self._enabled_interrupts["freefall"] = True
 
     def disable_freefall_detection(self) -> None:
-        """Disable freefall detection"""
+        """Disable freefall detection."""
         active_interrupts = self._read_register_unpacked(_REG_INT_ENABLE)
         active_interrupts &= ~_INT_FREE_FALL
         self._write_register_byte(_REG_INT_ENABLE, active_interrupts)
@@ -383,7 +381,7 @@ class ADXL345:
             raise ValueError("tap_count must be 1 for single tap or 2 for double tap")
 
     def disable_tap_detection(self) -> None:
-        """Disable tap detection"""
+        """Disable tap detection."""
         active_interrupts = self._read_register_unpacked(_REG_INT_ENABLE)
         active_interrupts &= ~_INT_SINGLE_TAP
         active_interrupts &= ~_INT_DOUBLE_TAP
@@ -457,4 +455,4 @@ class ADXL345:
 
 
 class ADXL343(ADXL345):
-    """Stub class for the ADXL343 3-axis accelerometer"""
+    """Stub class for the ADXL343 3-axis accelerometer."""

@@ -65,7 +65,7 @@ class OVERRIDE(StrEnum):
 # https://learn.microsoft.com/en-us/azure/storage/blobs/storage-blob-storage-tiers
 ##############################################################################################################
 class StorageTier(Enum):
-    """Enum for the supported blob tiers"""
+    """Enum for the supported blob tiers."""
 
     HOT = StandardBlobTier.HOT
     COOL = StandardBlobTier.COOL
@@ -110,7 +110,7 @@ DATA_FORMATS = [FORMAT.DF, FORMAT.CSV, FORMAT.LOG]
 # A stream can choose to use a specific file naming convention by setting this field.
 ##############################################################################################################
 class FILE_NAMING(Enum):
-    """Enum for file naming conventions"""
+    """Enum for file naming conventions."""
 
     # Default file naming convention
     DEFAULT = "default"

@@ -49,7 +49,7 @@ class TestCloudConnector:
         suffix: Optional[str] = None,
         more_recent_than: Optional[datetime] = None,
     def get_blob_modified_time(self, container: str, blob_name: str) -> datetime:
-    """
+    """  # noqa: D415
 
     def test_production_cloud_connector(self) -> None:
         """Test the AsyncCloudConnector."""

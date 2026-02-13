@@ -21,7 +21,7 @@ FAILED_TO_LOAD = "Not set"
 
 @dataclass
 class Configuration:
-    """Utility super class"""
+    """Utility super class."""
 
     def update_field(self, field_name: str, value: Any) -> None:  # noqa: ANN401
         setattr(self, field_name, value)
@@ -52,7 +52,7 @@ class WifiClient:
 ##############################################################################################################
 @dataclass
 class DeviceCfg(Configuration):
-    """Configuration for a device"""
+    """Configuration for a device."""
 
     # DPtree objects define the Sensor and DataProcessor objects that will be used to process the data.
     # This field holds a function reference that when called return the instantiated DPtree objects for this
@@ -129,14 +129,14 @@ class DeviceCfg(Configuration):
 # Define the two .env files that hold the keys and the RpiCore configuration class ref
 ##############################################################################################################
 class Keys(BaseSettings):
-    """Class to hold the keys for the system"""
+    """Class to hold the keys for the system."""
 
     cloud_storage_key: str = FAILED_TO_LOAD
     my_git_pat: str = FAILED_TO_LOAD
     model_config = SettingsConfigDict(extra="ignore")
 
     def get_storage_account(self) -> str:
-        """Return the storage account name from the key"""
+        """Return the storage account name from the key."""
         try:
             # Extract the storage account name from the key
             if "AccountName=" in self.cloud_storage_key:
@@ -150,7 +150,7 @@ class Keys(BaseSettings):
 
 
 class SystemCfg(BaseSettings):
-    """Class to hold the keys for the system"""
+    """Class to hold the keys for the system."""
 
     ##########################################################################################################
     # Mandatory custom settings

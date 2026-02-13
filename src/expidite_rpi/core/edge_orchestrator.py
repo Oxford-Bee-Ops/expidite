@@ -28,7 +28,7 @@ logger = root_cfg.setup_logger("expidite")
 
 
 class OrchestratorStatus(Enum):
-    """Enum for the status of the orchestrator"""
+    """Enum for the status of the orchestrator."""
 
     STOPPED = 0
     STARTING = 1
@@ -40,17 +40,18 @@ class OrchestratorStatus(Enum):
 
     @staticmethod
     def running(status: "OrchestratorStatus") -> bool:
-        """Check if the orchestrator is starting"""
+        """Check if the orchestrator is starting."""
         return status in [OrchestratorStatus.STARTING, OrchestratorStatus.RUNNING]
 
     @staticmethod
     def stopped(status: "OrchestratorStatus") -> bool:
-        """Check if the orchestrator is stopped"""
+        """Check if the orchestrator is stopped."""
         return status in [OrchestratorStatus.STOPPED, OrchestratorStatus.STOPPING]
 
 
 class EdgeOrchestrator:
     """The EdgeOrchestrator manages the state of the sensors and their associated Datastreams.
+
     Started by the SensorFactory, which creates the sensors and registers them with the EdgeOrchestrator.
     The EdgeOrchestrator:
     - interrogates the Sensor to get its Datastreams
@@ -73,7 +74,7 @@ class EdgeOrchestrator:
 
     @staticmethod
     def get_instance() -> "EdgeOrchestrator":
-        """Get the singleton instance of the EdgeOrchestrator"""
+        """Get the singleton instance of the EdgeOrchestrator."""
         with EdgeOrchestrator._status_lock:
             if EdgeOrchestrator._instance is None:
                 EdgeOrchestrator._instance = EdgeOrchestrator()
@@ -109,7 +110,7 @@ class EdgeOrchestrator:
             DPnode._selftracker = self.selftracker
 
     def status(self) -> dict[str, str]:
-        """Return a key-value status describing the state of the EdgeOrchestrator"""
+        """Return a key-value status describing the state of the EdgeOrchestrator."""
         # Check that all threads are alive
         sensors_alive = 0
         for sensor in self._sensorThreads:
@@ -196,7 +197,7 @@ class EdgeOrchestrator:
         root_cfg.RESTART_EXPIDITE_FLAG.touch()
 
     def _get_sensor(self, sensor_type: api.SENSOR_TYPE, sensor_index: int) -> Sensor | None:
-        """Private method to get a sensor by type & index"""
+        """Private method to get a sensor by type & index."""
         logger.debug(f"_get_sensor {sensor_type} {sensor_index} from {self._sensorThreads}")
         for sensor in self._sensorThreads:
             if (sensor.config.sensor_type == sensor_type) and (sensor.sensor_index == sensor_index):
@@ -209,7 +210,7 @@ class EdgeOrchestrator:
     #
     ##########################################################################################################
     def start_all(self) -> None:
-        """Start all Sensor & DPworker threads"""
+        """Start all Sensor & DPworker threads."""
         with EdgeOrchestrator._status_lock:
             if self._status != OrchestratorStatus.STOPPED:
                 logger.warning(f"EdgeOrchestrator is already running; {self}; {self._status}")
@@ -251,6 +252,7 @@ class EdgeOrchestrator:
     @staticmethod
     def start_all_with_watchdog() -> None:
         """This function starts the orchestrator and maintains it with a watchdog.
+
         This is a non-blocking function that starts a new thread and returns.
         It calls the edge_orchestrator main() function."""
         logger.debug("Start orchestrator with watchdog")
@@ -261,9 +263,9 @@ class EdgeOrchestrator:
         sleep(1)
 
     def stop_all(self, restart: bool | None = False) -> None:
-        """Stop all Sensor, Datastream and observability threads
+        """Stop all Sensor, Datastream and observability threads.
 
-        Blocks until all threads have exited"""
+        Blocks until all threads have exited."""
         logger.info(f"stop_all on {self!r} called by {threading.current_thread().name}")
 
         with EdgeOrchestrator._status_lock:
@@ -341,12 +343,13 @@ class EdgeOrchestrator:
 
     def is_stop_requested(self) -> bool:
         """Check if a stop has been manually requested by the user.
+
         This function is polled by the main thread every second to check if the user has requested a stop."""
         return root_cfg.STOP_EXPIDITE_FLAG.exists()
 
     @staticmethod
     def watchdog_file_alive() -> bool:
-        """Check if the RpiCore is running"""
+        """Check if the RpiCore is running."""
         # If the EXPIDITE_IS_RUNNING_FLAG exists and was touched within the last 2x _FREQUENCY seconds, and
         # the timestamp on the file is < than the timestamp on the STOP_EXPIDITE_FLAG file, then we are
         # running.
@@ -371,13 +374,14 @@ class EdgeOrchestrator:
 
     def save_FAIR_record(self) -> None:
         """Save a FAIR record describing this Device, its Sensor and associated data processing.
+
         We save one FAIR record to the expidite-fair (where we store all snapshots) and one to
         expidite-fair-latest (which is just the latest snapshot; overriding the old one)."""
         logger.debug(f"Save FAIR record for {self}")
 
         # Custom representer for Enum
         def enum_representer(dumper: Dumper, data: Enum) -> yaml.Node:
-            """Represent an Enum as a plain string in YAML"""
+            """Represent an Enum as a plain string in YAML."""
             return dumper.represent_scalar("tag:yaml.org,2002:str", str(data.value))
 
         # Create a custom Dumper class

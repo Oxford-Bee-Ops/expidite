@@ -219,7 +219,7 @@ SENSOR_TRIGGER_FLAG = TMP_FLAGS_DIR / "SENSOR_TRIGGER_FLAG"
 # Software testing flag
 ##############################################################################################################
 class SOFTWARE_TEST_MODE(Enum):
-    """Test modes for the RpiCore"""
+    """Test modes for the RpiCore."""
 
     LIVE = "live"
     TESTING = "testing"
@@ -395,7 +395,7 @@ system_cfg = _load_system_cfg()
 # Cloud configuration
 ##############################################################################################################
 class CloudType(Enum):
-    """Enum for the supported cloud types"""
+    """Enum for the supported cloud types."""
 
     AZURE = "azure"
     SYNC_AZURE = "sync_azure"  # Enforced synchronous mode
@@ -459,6 +459,7 @@ def set_inventory(inventory: list[DeviceCfg]) -> dict[str, DeviceCfg]:
 
 def check_inventory_loaded() -> bool:
     """Check if the inventory has been loaded.
+
     This is used in testing to check if the inventory has been loaded.
     """
     # If we have not loaded the inventory yet, it will still be set to the DUMMY_DEVICE
@@ -466,7 +467,7 @@ def check_inventory_loaded() -> bool:
 
 
 def update_my_device_id(new_device_id: str) -> None:
-    """Function used in testing to change the device_id"""
+    """Function used in testing to change the device_id."""
     global my_device_id, my_device
     assert len(new_device_id) == 12, f"Invalid device_id: {new_device_id}"
     my_device_id = new_device_id

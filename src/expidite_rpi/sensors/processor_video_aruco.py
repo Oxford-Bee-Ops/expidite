@@ -124,7 +124,7 @@ class VideoArucoProcessor(DataProcessor):
     def process_video_file(
         self, source_file: Path, save_marked_up_video: bool = True, aruco_dict_name: str = "DICT_4X4_50"
     ) -> pd.DataFrame:
-        """Process a single file - find potential aruco markers in each frame & save results"""
+        """Process a single file - find potential aruco markers in each frame & save results."""
         # In future this might also return the CSV, so that the results can be combined with other analysis of
         # the video (e.g. to find unmarked bees)
 
