@@ -14,6 +14,7 @@ from pydantic_settings import BaseSettings
 
 def create_root_working_dir(path: Path) -> None:
     """Create the root working directory if it doesn't exist.
+
     This requires root privileges on Linux.
 
     Args:
@@ -39,8 +40,7 @@ def create_root_working_dir(path: Path) -> None:
 # Dataclass display utility
 ##############################################################################################################
 def display_dataclass(obj: Any, indent: int = 0) -> str:  # noqa: ANN401
-    """
-    Recursively display the contents of a dataclass hierarchy.
+    """Recursively display the contents of a dataclass hierarchy.
 
     Args:
         obj (Any): The dataclass object to display.
@@ -95,8 +95,7 @@ def display_dataclass(obj: Any, indent: int = 0) -> str:  # noqa: ANN401
 
 
 def save_settings_to_env(settings: BaseSettings, file_path: str | Path) -> None:
-    """
-    Save a Pydantic BaseSettings object to a .env file.
+    """Save a Pydantic BaseSettings object to a .env file.
 
     Parameters:
         settings (BaseSettings): The Pydantic BaseSettings object to save.
@@ -114,8 +113,8 @@ def save_settings_to_env(settings: BaseSettings, file_path: str | Path) -> None:
 
 @contextmanager
 def disable_console_logging(logger_name: str) -> Generator[Any, Any, Any]:
-    """
-    Temporarily disable console logging for the specified logger.
+    """Temporarily disable console logging for the specified logger.
+
     We use in the CLI to avoid interspersing log output with the output of the command.
 
     Args:

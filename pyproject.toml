@@ -78,38 +78,37 @@ line-ending = "auto"
 select = ["ALL"]
 ignore = [
     # Rules that we don't want to enforce.
+    "COM812",  # Little benefit.
     "D100", "D101", "D102", "D103", "D104", "D105", "D106", "D107",  # Public docstring.
     "EM101",  # No benefit.
     "ERA",  # No benefit.
+    "FBT",  # No benefit.
     "FIX",  # No benefit.
     "G004",  # Prefer readability over this micro-optimization.
     "PLC0415",  # We want this in some places.
     "PLR2004",  # Little benefit in defining constants in many cases.
     "PLW0603",  # We want to use `global` in a few places.
     "PTH",  # No benefit.
+    "S101",  # No benefit.
     "SIM102",  # Doesn't always improve readability.
     "SIM108",  # Doesn't always improve readability.
     "T20",  # We want this in some places.
     "TD",  # No benefit.
     "TRY003",  # No benefit.
     # Rules that we should enforce, but need to fix the code first.
-    "PLR0912", 
-    "PLR0913", 
-    "PLR0915", 
-    # Rules that we haven't decided what to do with.
     "ARG001",
     "ARG002",
     "BLE001",
     "C901",
-    "COM812",
     "D205",
     "D209",
     "D212",
-    "FBT",
     "N",
     "PGH003",
+    "PLR0912",
+    "PLR0913",
+    "PLR0915",
     "PYI034",
-    "S101",
     "S108",
     "S110",
     "S307",

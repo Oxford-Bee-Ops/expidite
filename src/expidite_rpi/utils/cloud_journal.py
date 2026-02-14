@@ -39,7 +39,8 @@ class _CloudJournalManager:
     def sync_run(self) -> None:
         """Persistently manage synchronisation of the CloudJournal objects to the cloud.
 
-        Alternatively, the user can use flush() to actively manage synchronization."""
+        Alternatively, the user can use flush() to actively manage synchronization.
+        """
         try:
             self.flush_all()
         except Exception:
@@ -77,7 +78,8 @@ class _CloudJournalManager:
     def flush_all(self) -> None:
         """Attempt to sync all the queued data to the remote journals.
 
-        Blocks until uploads are complete or fail."""
+        Blocks until uploads are complete or fail.
+        """
         # We get the instance locally rather than storing it in self because it avoids issues when we change
         # between cloud types during testing.
         cc = CloudConnector.get_instance(root_cfg.CLOUD_TYPE)

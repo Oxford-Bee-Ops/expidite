@@ -44,14 +44,16 @@ class JournalPool(ABC):
     def add_rows(self, stream: Stream, data: list[dict], timestamp: datetime | None = None) -> None:
         """Add data rows as a list of dictionaries.
 
-        The fields in each dictionary must match the DPtreeNodeCfg reqd_fields."""
+        The fields in each dictionary must match the DPtreeNodeCfg reqd_fields.
+        """
         raise AssertionError("Abstract method needs to be implemented")
 
     @abstractmethod
     def add_rows_from_df(self, stream: Stream, data: pd.DataFrame, timestamp: datetime | None = None) -> None:
         """Add data in the form of a Pandas DataFrame to the Journal, which will auto-sync to the cloud.
 
-        All data MUST relate to the same DAY as timestamp."""
+        All data MUST relate to the same DAY as timestamp.
+        """
         raise AssertionError("Abstract method needs to be implemented")
 
     @abstractmethod
@@ -78,7 +80,8 @@ class CloudJournalPool(JournalPool):
     def add_rows(self, stream: Stream, data: list[dict], timestamp: datetime | None = None) -> None:
         """Add data to the appropriate CloudJournal, which will auto-sync to the cloud.
 
-        All data MUST relate to the same DAY as timestamp."""
+        All data MUST relate to the same DAY as timestamp.
+        """
         assert timestamp is not None, "Timestamp must be provided for add_rows_from_df with CloudJournalPool"
         logger.debug(f"Lock: adding rows for stream {stream.type_id}")
         with self.jlock:
@@ -89,7 +92,8 @@ class CloudJournalPool(JournalPool):
     def add_rows_from_df(self, stream: Stream, data: pd.DataFrame, timestamp: datetime | None = None) -> None:
         """Add data to the appropriate CloudJournal, which will auto-sync to the cloud.
 
-        All data MUST relate to the same DAY as timestamp."""
+        All data MUST relate to the same DAY as timestamp.
+        """
         if timestamp is None:
             timestamp = api.utc_now()
 
@@ -166,7 +170,8 @@ class LocalJournalPool(JournalPool):
 
     def flush_journals(self) -> None:
         """Called by the EdgeOrchestrator.upload_to_container function to flush all journals to disk and
-        onwards to archive."""
+        onwards to archive.
+        """
         logger.debug("Flushing all journals to disk")
 
         with self.jlock:

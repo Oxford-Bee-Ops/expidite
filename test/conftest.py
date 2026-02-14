@@ -42,8 +42,8 @@ def pytest_terminal_summary(terminalreporter, exitstatus, config):
 
 @pytest.fixture(autouse=True)
 def log_test_lifecycle(request):
-    """
-    Pytest fixture that automatically logs the start and end of every test.
+    """Pytest fixture that automatically logs the start and end of every test.
+
     This runs for all tests without requiring a decorator.
     """
     test_name = request.node.name
@@ -95,8 +95,8 @@ def shutdown_cloud_connector():
 
 @pytest.fixture
 def inventory() -> list[DeviceCfg]:
-    """
-    Pytest fixture that should be overridden in each test to provide device inventory.
+    """Pytest fixture that should be overridden in each test to provide device inventory.
+
     This fixture should be defined in each test class or test file that uses rpi_emulator.
     This default will use the inventory defined in the CFG_DIR/system.cfg file.
 
@@ -123,8 +123,8 @@ def inventory() -> list[DeviceCfg]:
 
 @pytest.fixture
 def rpi_emulator(inventory: list[DeviceCfg]) -> Generator[RpiEmulator, None, None]:
-    """
-    Pytest fixture that provides an RpiEmulator instance with mocked timers.
+    """Pytest fixture that provides an RpiEmulator instance with mocked timers.
+
     Automatically applies mock_timers to the provided inventory.
 
     Requires an 'inventory' fixture to be defined in the test.
