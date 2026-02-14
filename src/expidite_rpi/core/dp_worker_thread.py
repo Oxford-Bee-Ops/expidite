@@ -157,7 +157,7 @@ class DPworker(Thread):
 
                     # Log the processing time
                     exec_time = api.utc_now() - exec_start_time
-                    dp._scorp_stat(stream.index, duration=exec_time.total_seconds())
+                    dp._scorp_stat(stream.type_id, duration=exec_time.total_seconds())
                 except Exception:
                     logger.exception(f"{root_cfg.RAISE_WARN()}Error processing files for {self}")
 

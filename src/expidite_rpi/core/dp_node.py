@@ -370,12 +370,11 @@ class DPnode:
     # Private methods in support of Sensors
     #
     ##########################################################################################################
-    def _scorp_stat(self, stream_index: int, duration: float) -> None:
+    def _scorp_stat(self, type_id: str, duration: float) -> None:
         """Record the duration of a DataProcessor cycle in the SCORP stream."""
-        stream = self.get_stream(stream_index)
         with self._stats_lock:
-            self._dpnode_scorp_stats.setdefault(stream.type_id, DPnodeStat()).record(duration)
-        logger.debug(f"Recorded SCORP stat for {stream.type_id} duration {duration}")
+            self._dpnode_scorp_stats.setdefault(type_id, DPnodeStat()).record(duration)
+        logger.debug(f"Recorded SCORP stat for {type_id} duration {duration}")
 
     def _save_recording(
         self,
