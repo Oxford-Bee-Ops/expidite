@@ -46,12 +46,12 @@ class Sensor(Thread, DPnode, ABC):
         self.stop_requested = Event()
 
     def start(self) -> None:
-        """Start the sensor thread - this method must not be subclassed"""
+        """Start the sensor thread - this method must not be subclassed."""
         logger.info(f"Starting sensor thread {self!r}")
         super().start()
 
     def stop(self) -> None:
-        """Stop the sensor thread - this method must not be subclassed"""
+        """Stop the sensor thread - this method must not be subclassed."""
         logger.info(f"Stop sensor thread {self!r}")
         self.stop_requested.set()
 

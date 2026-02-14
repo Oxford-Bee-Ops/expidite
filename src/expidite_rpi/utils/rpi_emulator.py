@@ -111,7 +111,8 @@ class RpiEmulator:
     def set_recordings(self, recordings: list[RpiTestRecording]) -> None:
         """Set the recordings to be used for testing.
 
-        Call this function to specify which recording should be returned in which conditions."""
+        Call this function to specify which recording should be returned in which conditions.
+        """
         for recording in recordings:
             # Check the recording exists
             for rec in recording.recordings:
@@ -122,7 +123,9 @@ class RpiEmulator:
 
     def set_recording_cap(self, cap: int, type_id: str | None = None) -> None:
         """Set the maximum number of recordings to be saved.
-        If a type_id is provided, set the cap for that type only."""
+
+        If a type_id is provided, set the cap for that type only.
+        """
         if type_id is not None:
             self.recording_cap_dict[type_id] = cap
         else:
@@ -217,7 +220,8 @@ class RpiEmulator:
 
     def get_journal_as_df(self, container: str, file_prefix: str) -> pd.DataFrame:
         """Get the journal specified by the container & file_prefix and return as a pandas DataFrame
-        for further custom validation."""
+        for further custom validation.
+        """
         assert self.local_cloud is not None, (
             "Local cloud not set. Use RpiEmulator as a context manager to set it."
             "with RpiEmulator.get_instance() as scem: "
@@ -275,7 +279,9 @@ class RpiEmulator:
 
     def ok_to_save_recording(self, type_id: str) -> bool:
         """Check if we are allowed to save a recording.
-        We have to check both the global recording cap and the per-type recording cap."""
+
+        We have to check both the global recording cap and the per-type recording cap.
+        """
         previous_recordings = self.recordings_saved.get(type_id, 0)
         type_cap = self.recording_cap_dict.get(type_id, self.recording_cap)
 

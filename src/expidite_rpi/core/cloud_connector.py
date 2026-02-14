@@ -78,7 +78,7 @@ class CloudConnector:
                 return CloudConnector._instance
 
     def set_keys(self, keys_file: Path) -> None:
-        """Sets the cloud storage key for the CloudConnector from a file"""
+        """Sets the cloud storage key for the CloudConnector from a file."""
         if not keys_file.exists():
             msg = f"Keys file {keys_file} does not exist"
             raise ValueError(msg)
@@ -143,7 +143,7 @@ class CloudConnector:
         files: list[str] | None = None,
         overwrite: bool | None = True,
     ) -> None:
-        """Download all the files in the src_datastore to the dst_dir
+        """Download all the files in the src_datastore to the dst_dir.
 
         Parameters:
             src_datastore: source CloudDatastore
@@ -200,7 +200,7 @@ class CloudConnector:
         delete_src: bool = False,
         storage_tier: api.StorageTier = api.StorageTier.COOL,
     ) -> None:
-        """Move blobs between containers
+        """Move blobs between containers.
 
         Parameters:
             src_container: source container
@@ -226,7 +226,7 @@ class CloudConnector:
     def append_to_cloud(
         self, dst_container: str, src_file: Path, delete_src: bool, col_order: list[str] | None = None
     ) -> bool:
-        """Append a block of CSV data to an existing CSV file in the cloud
+        """Append a block of CSV data to an existing CSV file in the cloud.
 
         Parameters:
             dst_container: destination container
@@ -337,22 +337,22 @@ class CloudConnector:
             return False
 
     def container_exists(self, container: str) -> bool:
-        """Check if the specified container exists"""
+        """Check if the specified container exists."""
         containerClient = self._validate_container(container)
         return containerClient.exists()
 
     def create_container(self, container: str) -> None:
-        """Create the specified container"""
+        """Create the specified container."""
         self._validate_container(container)
 
     def exists(self, src_container: str, blob_name: str) -> bool:
-        """Check if the specified blob exits"""
+        """Check if the specified blob exits."""
         containerClient = self._validate_container(src_container)
         blob_client = containerClient.get_blob_client(blob_name)
         return blob_client.exists()
 
     def delete(self, container: str, blob_name: str) -> None:
-        """Delete specified blob"""
+        """Delete specified blob."""
         containerClient = self._validate_container(container)
         blob_client = containerClient.get_blob_client(blob_name)
         blob_client.delete_blob()
@@ -397,7 +397,7 @@ class CloudConnector:
         return files
 
     def get_blob_modified_time(self, container: str, blob_name: str) -> datetime:
-        """Get the last modified time of the specified blob"""
+        """Get the last modified time of the specified blob."""
         containerClient = self._validate_container(container)
         blob_client = containerClient.get_blob_client(blob_name)
         if blob_client.exists():
@@ -407,7 +407,7 @@ class CloudConnector:
         return datetime.min.replace(tzinfo=UTC)
 
     def shutdown(self) -> None:
-        """Shutdown the CloudConnector instance"""
+        """Shutdown the CloudConnector instance."""
         logger.debug("Shutting down CloudConnector")
         # No resources to release in this implementation, but we could close any open connections if needed
         self._validated_containers.clear()
@@ -422,7 +422,7 @@ class CloudConnector:
             my_file.write(download_stream.readall())  # type: ignore[invalid-argument-type]
 
     def _download_file(self, blob_client: BlobClient, dst_file: Path) -> str:
-        """Download a single file"""
+        """Download a single file."""
         if not dst_file.parent.exists():
             dst_file.parent.mkdir(parents=True, exist_ok=True)
         self._download_blob(blob_client, dst_file)
@@ -430,6 +430,7 @@ class CloudConnector:
 
     def _validate_container(self, container: str) -> ContainerClient:
         """Validate a container string or ContainerClient and return a ContainerClient instance.
+
         Create the container if it does not already exist."""
         container_client = ContainerClient.from_connection_string(
             conn_str=self._get_connection_string(), container_name=container
@@ -494,7 +495,7 @@ class SyncCloudConnector(CloudConnector):
         super().__init__()
 
     def shutdown(self) -> None:
-        """Shutdown the SyncCloudConnector instance"""
+        """Shutdown the SyncCloudConnector instance."""
         logger.debug("Shutting down SyncCloudConnector")
         super().shutdown()
 
@@ -531,7 +532,7 @@ class LocalCloudConnector(CloudConnector):
         return self.local_cloud
 
     def clear_local_cloud(self) -> None:
-        """Clear the local cloud storage - this is used for testing only"""
+        """Clear the local cloud storage - this is used for testing only."""
         if self.local_cloud.exists():
             shutil.rmtree(self.local_cloud)
 
@@ -582,7 +583,7 @@ class LocalCloudConnector(CloudConnector):
         files: list[str] | None = None,
         overwrite: bool | None = True,
     ) -> None:
-        """Download all the files in the src_datastore to the dst_dir
+        """Download all the files in the src_datastore to the dst_dir.
 
         Parameters:
             src_datastore: source CloudDatastore
@@ -619,7 +620,7 @@ class LocalCloudConnector(CloudConnector):
         delete_src: bool = False,
         storage_tier: api.StorageTier = api.StorageTier.COOL,
     ) -> None:
-        """Move blobs between containers
+        """Move blobs between containers.
 
         Parameters:
             src_container: source container
@@ -642,7 +643,7 @@ class LocalCloudConnector(CloudConnector):
     def append_to_cloud(
         self, dst_container: str, src_file: Path, delete_src: bool, col_order: list[str] | None = None
     ) -> bool:
-        """Append a block of CSV data to an existing CSV file in the cloud
+        """Append a block of CSV data to an existing CSV file in the cloud.
 
         Parameters:
             dst_container: destination container
@@ -693,7 +694,7 @@ class LocalCloudConnector(CloudConnector):
             return False
 
     def container_exists(self, container: str) -> bool:
-        """Check if the specified container exists"""
+        """Check if the specified container exists."""
         # We always return true in the emulator; creating the container if it doesn't exist
         containerClient = self.local_cloud / container
         if not containerClient.exists():
@@ -701,19 +702,19 @@ class LocalCloudConnector(CloudConnector):
         return True
 
     def create_container(self, container: str) -> None:
-        """Create the specified container"""
+        """Create the specified container."""
         containerClient = self.local_cloud / container
         if not containerClient.exists():
             logger.info(f"Creating container {container}")
             containerClient.mkdir(parents=True, exist_ok=True)
 
     def exists(self, src_container: str, blob_name: str) -> bool:
-        """Check if the specified blob exits"""
+        """Check if the specified blob exits."""
         blob_client = self.local_cloud / src_container / blob_name
         return blob_client.exists()
 
     def delete(self, container: str, blob_name: str) -> None:
-        """Delete specified blob"""
+        """Delete specified blob."""
         blob_client = self.local_cloud / container / blob_name
         blob_client.unlink()
 
@@ -754,7 +755,7 @@ class LocalCloudConnector(CloudConnector):
         return files
 
     def get_blob_modified_time(self, container: str, blob_name: str) -> datetime:
-        """Get the last modified time of the specified blob"""
+        """Get the last modified time of the specified blob."""
         containerClient = self.local_cloud / container
         blob_client = containerClient / blob_name
         if blob_client.exists():
@@ -773,7 +774,7 @@ class LocalCloudConnector(CloudConnector):
 ##############################################################################################################
 @dataclass
 class AsyncUpload:
-    """Class to hold the action to be performed on the cloud"""
+    """Class to hold the action to be performed on the cloud."""
 
     dst_container: str
     src_files: list[Path]
@@ -784,7 +785,7 @@ class AsyncUpload:
 
 @dataclass
 class AsyncAppend:
-    """Class to hold the action to be performed on the cloud"""
+    """Class to hold the action to be performed on the cloud."""
 
     dst_container: str
     src_fname: str

@@ -1,5 +1,4 @@
-"""
-Simple test script to exercise the review mode functionality of RpicamSensor.
+"""Simple test script to exercise the review mode functionality of RpicamSensor.
 
 This test demonstrates the review mode behavior by:
 1. Creating a sensor with proper stream configuration

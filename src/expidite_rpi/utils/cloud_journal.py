@@ -31,15 +31,16 @@ class _CloudJournalManager:
 
     @staticmethod
     def get(cloud_container: str) -> "_CloudJournalManager":
-        """Get the singleton worker thread"""
+        """Get the singleton worker thread."""
         if _CloudJournalManager._instance is None:
             _CloudJournalManager._instance = _CloudJournalManager(cloud_container)
         return _CloudJournalManager._instance
 
     def sync_run(self) -> None:
-        """Persistently manage synchronisation of the CloudJournal objects to the cloud
+        """Persistently manage synchronisation of the CloudJournal objects to the cloud.
 
-        Alternatively, the user can use flush() to actively manage synchronization."""
+        Alternatively, the user can use flush() to actively manage synchronization.
+        """
         try:
             self.flush_all()
         except Exception:
@@ -59,7 +60,7 @@ class _CloudJournalManager:
             cc.shutdown()
 
     def add(self, journal: "CloudJournal", data: list[dict]) -> None:
-        """Add data to the local data queue
+        """Add data to the local data queue.
 
         Parameters:
             - journal: CloudJournal to which data should be added
@@ -77,7 +78,8 @@ class _CloudJournalManager:
     def flush_all(self) -> None:
         """Attempt to sync all the queued data to the remote journals.
 
-        Blocks until uploads are complete or fail."""
+        Blocks until uploads are complete or fail.
+        """
         # We get the instance locally rather than storing it in self because it avoids issues when we change
         # between cloud types during testing.
         cc = CloudConnector.get_instance(root_cfg.CLOUD_TYPE)

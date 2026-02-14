@@ -34,7 +34,7 @@ class JournalPool(ABC):
 
     @staticmethod
     def get(mode: Mode) -> JournalPool:
-        """Get the singleton instance of the JournalPool"""
+        """Get the singleton instance of the JournalPool."""
         if JournalPool._instance is None:
             logger.debug(f"Creating JournalPool instance for mode: {mode}")
             JournalPool._instance = CloudJournalPool()
@@ -42,26 +42,28 @@ class JournalPool(ABC):
 
     @abstractmethod
     def add_rows(self, stream: Stream, data: list[dict], timestamp: datetime | None = None) -> None:
-        """Add data rows as a list of dictionaries
+        """Add data rows as a list of dictionaries.
 
-        The fields in each dictionary must match the DPtreeNodeCfg reqd_fields."""
+        The fields in each dictionary must match the DPtreeNodeCfg reqd_fields.
+        """
         raise AssertionError("Abstract method needs to be implemented")
 
     @abstractmethod
     def add_rows_from_df(self, stream: Stream, data: pd.DataFrame, timestamp: datetime | None = None) -> None:
-        """Add data in the form of a Pandas DataFrame to the Journal, which will auto-sync to the cloud
+        """Add data in the form of a Pandas DataFrame to the Journal, which will auto-sync to the cloud.
 
-        All data MUST relate to the same DAY as timestamp."""
+        All data MUST relate to the same DAY as timestamp.
+        """
         raise AssertionError("Abstract method needs to be implemented")
 
     @abstractmethod
     def flush_journals(self) -> None:
-        """Flush all journals to disk and onwards to archive"""
+        """Flush all journals to disk and onwards to archive."""
         raise AssertionError("Abstract method needs to be implemented")
 
     @abstractmethod
     def stop(self) -> None:
-        """Stop the JournalPool, flush all data and exit any threads"""
+        """Stop the JournalPool, flush all data and exit any threads."""
         raise AssertionError("Abstract method needs to be implemented")
 
 
@@ -76,9 +78,10 @@ class CloudJournalPool(JournalPool):
         self.jlock = RLock()
 
     def add_rows(self, stream: Stream, data: list[dict], timestamp: datetime | None = None) -> None:
-        """Add data to the appropriate CloudJournal, which will auto-sync to the cloud
+        """Add data to the appropriate CloudJournal, which will auto-sync to the cloud.
 
-        All data MUST relate to the same DAY as timestamp."""
+        All data MUST relate to the same DAY as timestamp.
+        """
         assert timestamp is not None, "Timestamp must be provided for add_rows_from_df with CloudJournalPool"
         logger.debug(f"Lock: adding rows for stream {stream.type_id}")
         with self.jlock:
@@ -87,9 +90,10 @@ class CloudJournalPool(JournalPool):
         logger.debug(f"Unlock: added rows for stream {stream.type_id}")
 
     def add_rows_from_df(self, stream: Stream, data: pd.DataFrame, timestamp: datetime | None = None) -> None:
-        """Add data to the appropriate CloudJournal, which will auto-sync to the cloud
+        """Add data to the appropriate CloudJournal, which will auto-sync to the cloud.
 
-        All data MUST relate to the same DAY as timestamp."""
+        All data MUST relate to the same DAY as timestamp.
+        """
         if timestamp is None:
             timestamp = api.utc_now()
 
@@ -100,7 +104,7 @@ class CloudJournalPool(JournalPool):
         logger.debug(f"Unlock: added rows for stream {stream.type_id}")
 
     def flush_journals(self) -> None:
-        """Flush all journals to disk and onwards to archive"""
+        """Flush all journals to disk and onwards to archive."""
         logger.debug("Lock: flush_journals")
         with self.jlock:
             # We can call flush_all on any CloudJournal in the pool and all will get flushed
@@ -110,7 +114,7 @@ class CloudJournalPool(JournalPool):
         logger.debug("Unlock: flush_journals")
 
     def stop(self) -> None:
-        """Stop the CloudJournalPool, flush all data and exit any threads"""
+        """Stop the CloudJournalPool, flush all data and exit any threads."""
         logger.debug("Lock: stopping CloudJournalPool")
         with self.jlock:
             # We can call stop on any CloudJournal in the pool and all will get stopped
@@ -153,20 +157,21 @@ class LocalJournalPool(JournalPool):
         self.jlock = RLock()
 
     def add_rows(self, stream: Stream, data: list[dict], timestamp: datetime | None = None) -> None:
-        """Add data to the appropriate Journal, which will auto-upload to the cloud"""
+        """Add data to the appropriate Journal, which will auto-upload to the cloud."""
         with self.jlock:
             j = self._get_journal(stream)
             j.add_rows(data)
 
     def add_rows_from_df(self, stream: Stream, data: pd.DataFrame, timestamp: datetime | None = None) -> None:
-        """Add data to the appropriate Journal, which will auto-sync to the cloud"""
+        """Add data to the appropriate Journal, which will auto-sync to the cloud."""
         with self.jlock:
             j = self._get_journal(stream)
             j.add_rows_from_df(data)
 
     def flush_journals(self) -> None:
         """Called by the EdgeOrchestrator.upload_to_container function to flush all journals to disk and
-        onwards to archive"""
+        onwards to archive.
+        """
         logger.debug("Flushing all journals to disk")
 
         with self.jlock:
@@ -196,7 +201,7 @@ class LocalJournalPool(JournalPool):
                 j.delete()
 
     def stop(self) -> None:
-        """Stop the LocalJournalPool, flush all data and exit any threads"""
+        """Stop the LocalJournalPool, flush all data and exit any threads."""
         self.flush_journals()
         # No threads to stop
 

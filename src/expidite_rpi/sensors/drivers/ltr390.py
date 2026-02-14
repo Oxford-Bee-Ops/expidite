@@ -89,8 +89,8 @@ UV = 1
 
 
 class UnalignedStruct(Struct):
-    """Class for reading multi-byte data registers with a data length less than the full bitwidth
-    of the registers. Most registers of this sort are left aligned to preserve the sign bit
+    """Class for reading multi-byte data registers with a data length less than the full bitwidth of the
+    registers. Most registers of this sort are left aligned to preserve the sign bit.
     """
 
     def __init__(self, register_address, struct_format, bitwidth, length) -> None:
@@ -125,7 +125,7 @@ class UnalignedStruct(Struct):
 
 
 class CV:
-    """struct helper"""
+    """struct helper."""
 
     string: ClassVar[dict[int, str]] = {}
     lsb: ClassVar[dict[int, float]] = {}
@@ -137,7 +137,7 @@ class CV:
         cls,
         value_tuples: Iterable[tuple[str, int, str, float | None, int, float | None]],
     ) -> None:
-        """Add CV values to the class"""
+        """Add CV values to the class."""
         cls.string = {}
         cls.lsb = {}
         cls.factor = {}  # Scale or bit resolution factor
@@ -155,12 +155,12 @@ class CV:
 
     @classmethod
     def is_valid(cls, value: int) -> bool:
-        """Validate that a given value is a member"""
+        """Validate that a given value is a member."""
         return value in cls.string
 
 
 class Gain(CV):
-    """Options for `gain`
+    """Options for `gain`.
 
     +---------------------------+----------------------------+
     | Gain                      | Raw Measurement Multiplier |
@@ -191,7 +191,7 @@ Gain.add_values(
 
 
 class Resolution(CV):
-    """Options for `resolution`
+    """Options for `resolution`.
 
     +-----------------------------------------+-------------------------+
     | Resolution                              | Internal ADC Resolution |
@@ -225,7 +225,7 @@ Resolution.add_values(
 
 
 class MeasurementDelay(CV):
-    """Options for `measurement_delay`
+    """Options for `measurement_delay`.
 
     +-------------------------------------------+--------------------------------------+
     | MeasurementDelay                          | Time Between Measurement Cycles (ms) |
@@ -262,11 +262,10 @@ MeasurementDelay.add_values(
 
 
 class LTR390Driver:  # pylint:disable=too-many-instance-attributes
-    """Class to use the LTR390 Ambient Light and UV sensor
+    """Class to use the LTR390 Ambient Light and UV sensor.
 
     :param ~busio.I2C i2c: The I2C bus the LTR390 is connected to.
     :param int address: The I2C device address. Defaults to ::`0x53`
-
 
     **Quickstart: Importing and using the LTR390**
 
@@ -339,8 +338,8 @@ class LTR390Driver:  # pylint:disable=too-many-instance-attributes
         self.initialize()
 
     def initialize(self) -> None:
-        """Reset the sensor to it's initial unconfigured state and configure it with sensible
-        defaults so it can be used"""
+        """Reset the sensor to it's initial unconfigured state and configure it with sensible defaults so it
+        can be used."""
         self._reset()
         self._enable_bit = True
         if not self._enable_bit:
@@ -385,7 +384,7 @@ class LTR390Driver:  # pylint:disable=too-many-instance-attributes
     # something is wrong here; I had to add a sleep to the loop to get both to update correctly
     @property
     def uvs(self) -> int:
-        """The calculated UV value"""
+        """The calculated UV value."""
         # SW: because we're limited to 16-bit resolution, it's easy to max out the sensor
         # To balance low UV and high ALS, we set gain on UV to 18X and ALS to 1X
         self.set_gain(Gain.GAIN_18X)  # type: ignore
@@ -396,7 +395,7 @@ class LTR390Driver:  # pylint:disable=too-many-instance-attributes
 
     @property
     def light(self) -> int:
-        """The currently measured ambient light level"""
+        """The currently measured ambient light level."""
         # SW: because we're limited to 16-bit resolution, it's easy to max out the sensor
         # To balance low UV and high ALS, we set gain on UV to 18X and ALS to 1X
         self.set_gain(Gain.GAIN_1X)  # type: ignore
@@ -407,7 +406,7 @@ class LTR390Driver:  # pylint:disable=too-many-instance-attributes
 
     @property
     def gain(self) -> int:
-        """The amount of gain the raw measurements are multiplied by"""
+        """The amount of gain the raw measurements are multiplied by."""
         return self._gain_bits
 
     def set_gain(self, value: int) -> None:
@@ -417,7 +416,7 @@ class LTR390Driver:  # pylint:disable=too-many-instance-attributes
 
     @property
     def resolution(self) -> int:
-        """Set the precision of the internal ADC used to read the light measurements"""
+        """Set the precision of the internal ADC used to read the light measurements."""
         return self._resolution_bits
 
     def set_resolution(self, value: int) -> None:
@@ -426,7 +425,7 @@ class LTR390Driver:  # pylint:disable=too-many-instance-attributes
         self._resolution_bits = value
 
     def enable_alerts(self, enable: bool, source: bool, persistance: int) -> None:
-        """The configuration of alerts raised by the sensor
+        """The configuration of alerts raised by the sensor.
 
         :param enable: Whether the interrupt output is enabled
         :param source: Whether to use the ALS or UVS data register to compare
@@ -445,8 +444,8 @@ class LTR390Driver:  # pylint:disable=too-many-instance-attributes
 
     @property
     def measurement_delay(self) -> int:
-        """The delay between measurements. This can be used to set the measurement rate which
-        affects the sensor power usage."""
+        """The delay between measurements. This can be used to set the measurement rate which affects the
+        sensor power usage."""
         return self._measurement_delay_bits
 
     def set_measurement_delay(self, value: int) -> None:

@@ -1,5 +1,5 @@
 """
-Code from https://github.com/Chouffy/python_sensor_aht20/blob/main/AHT20.py
+Code from https://github.com/Chouffy/python_sensor_aht20/blob/main/AHT20.py.
 
 This is free and unencumbered software released into the public domain.
 
@@ -110,8 +110,8 @@ class AHT20:
             return i2c_bus.read_i2c_block_data(AHT20_I2CADDR, 0x0, 7)
 
     def get_measure_CRC8(self):
-        """
-        This function will calculate crc8 code with G(x) = x8 + x5 + x4 + 1 -> 0x131(0x31),
+        """This function will calculate crc8 code with G(x) = x8 + x5 + x4 + 1 -> 0x131(0x31).
+
         Initial value = 0xFF. No XOROUT.
         return: all_data (1 bytes status + 2.5 byes humidity + 2.5 bytes temperature + 1 bytes crc8 code),
         isCRC8_pass
