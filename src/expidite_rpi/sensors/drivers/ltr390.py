@@ -339,7 +339,8 @@ class LTR390Driver:  # pylint:disable=too-many-instance-attributes
 
     def initialize(self) -> None:
         """Reset the sensor to it's initial unconfigured state and configure it with sensible defaults so it
-        can be used."""
+        can be used.
+        """
         self._reset()
         self._enable_bit = True
         if not self._enable_bit:
@@ -445,7 +446,8 @@ class LTR390Driver:  # pylint:disable=too-many-instance-attributes
     @property
     def measurement_delay(self) -> int:
         """The delay between measurements. This can be used to set the measurement rate which affects the
-        sensor power usage."""
+        sensor power usage.
+        """
         return self._measurement_delay_bits
 
     def set_measurement_delay(self, value: int) -> None:
@@ -456,7 +458,8 @@ class LTR390Driver:  # pylint:disable=too-many-instance-attributes
     @property
     def uvi(self) -> float:
         """Read UV count and return calculated UV Index (UVI) value based upon the rated sensitivity
-        of 1 UVI per 2300 counts at 18X gain factor and 20-bit resolution."""
+        of 1 UVI per 2300 counts at 18X gain factor and 20-bit resolution.
+        """
         return (
             self.uvs
             / ((Gain.factor[self.gain] / 18) * (2 ** Resolution.factor[self.resolution]) / (2**20) * 2300)

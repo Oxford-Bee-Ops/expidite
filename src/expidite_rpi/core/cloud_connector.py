@@ -42,7 +42,8 @@ class CloudConnector:
     @staticmethod
     def get_instance(cloud_type: CloudType) -> "CloudConnector":
         """We use a factory pattern to offer up alternative types of CloudConnector for accessing
-        different cloud storage providers and / or the local emulator."""
+        different cloud storage providers and / or the local emulator.
+        """
         match cloud_type:
             case CloudType.AZURE:
                 if CloudConnector._instance is None:
@@ -431,7 +432,8 @@ class CloudConnector:
     def _validate_container(self, container: str) -> ContainerClient:
         """Validate a container string or ContainerClient and return a ContainerClient instance.
 
-        Create the container if it does not already exist."""
+        Create the container if it does not already exist.
+        """
         container_client = ContainerClient.from_connection_string(
             conn_str=self._get_connection_string(), container_name=container
         )
@@ -450,7 +452,8 @@ class CloudConnector:
 
     def _headers_match(self, blob_client: BlobClient, local_line: str) -> bool:
         """Check if the headers in the local file match the headers in the remote file.
-        Will return false if either is empty or if the headers do not match."""
+        Will return false if either is empty or if the headers do not match.
+        """
         start_of_contents = blob_client.download_blob(encoding="utf-8").read(chars=1000)
 
         if not start_of_contents:
@@ -525,7 +528,8 @@ class LocalCloudConnector(CloudConnector):
         """Creates a local cloud directory. Usually called by RpiEmulator.__enter__() as
         when the RpiEmulator is used as a context manager.
 
-        This is an unpredictable string so we don't clash with other local cloud instances."""
+        This is an unpredictable string so we don't clash with other local cloud instances.
+        """
         # shutil.rmtree(self.local_cloud)
         if not self.local_cloud.exists():
             self.local_cloud.mkdir(parents=True, exist_ok=True)
@@ -657,7 +661,8 @@ class LocalCloudConnector(CloudConnector):
         If the remote file does exist, the first line (headers) in the src_file will be dropped
         so that we don't duplicate a header row.
         It the responsibility of the calling function to ensure that the columns & headers in the
-        CSV data are consistent between local and remote files"""
+        CSV data are consistent between local and remote files
+        """
         try:
             logger.debug(f"LocalCC.append_to_cloud() with delete_src={delete_src} for {src_file}")
 
@@ -807,7 +812,8 @@ class AsyncCloudConnector(CloudConnector):
 
     def shutdown(self) -> None:
         """Shutdown the worker pool.
-        Will wait until scheduled uploads are complete before returning."""
+        Will wait until scheduled uploads are complete before returning.
+        """
         # Try to schedule any remaining uploads (waits up to 1sec for the queue to be processed)
         logger.debug("AsyncCloudConnector.shutdown() called")
         self.do_work(block=False)
@@ -890,7 +896,8 @@ class AsyncCloudConnector(CloudConnector):
     ) -> None:
         """A wrapper to handle failure when uploading a file to the cloud asynchronously.
         We re-queue the upload if it fails if the src files still exist.
-        This method is called on a thread from the ThreadPoolExecutor."""
+        This method is called on a thread from the ThreadPoolExecutor.
+        """
         try:
             logger.debug(
                 f"_async_upload with delete_src={action.delete_src}, "
@@ -934,7 +941,8 @@ class AsyncCloudConnector(CloudConnector):
     ) -> None:
         """A wrapper to handle failure when uploading append data to the cloud asynchronously.
         We re-queue the append if it fails.
-        This method is called on a thread from the ThreadPoolExecutor."""
+        This method is called on a thread from the ThreadPoolExecutor.
+        """
         succeeded: bool = False
         try:
             logger.debug(f"_async_append iteration {action.iteration} for {action.src_fname}")

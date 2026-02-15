@@ -23,8 +23,7 @@ if root_cfg.running_on_rpi:
         grep_str: list[str] | None = None,
         max_logs: int = 1000,
     ) -> list[dict[str, Any]]:
-        """
-        Fetch logs from the system journal.
+        """Fetch logs from the system journal.
 
         Args:
             since (datetime): A timestamp to fetch logs since.
@@ -200,7 +199,8 @@ class DeviceHealth(Sensor):
     def log_warnings(self) -> None:
         """Capture warning and error logs to the WARNING datastream.
         We get these from the system journal and log them to the WARNING datastream.
-        We capture logs tagged with the RAISE_WARN_TAG and all logs with priority <=3 (Error)."""
+        We capture logs tagged with the RAISE_WARN_TAG and all logs with priority <=3 (Error).
+        """
         if root_cfg.running_on_rpi:
             logs = get_logs(since=self.last_ran, min_priority=4)
             self.last_ran = api.utc_now()
@@ -393,8 +393,7 @@ class DeviceHealth(Sensor):
 
     @staticmethod
     def get_wifi_ssid_and_signal() -> tuple[str, str]:
-        """
-        Get the SSID of the wlan0 interface.
+        """Get the SSID of the wlan0 interface.
 
         Returns:
             The SSID as a string, or "Not connected" if no SSID is found.

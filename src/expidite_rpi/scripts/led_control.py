@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
-"""
-LED manager: reflect status file in GPIO using pinctrl.
+"""LED manager: reflect status file in GPIO using pinctrl.
+
 The text is always a colour (green|red) followed by a status (on|off|blink:N), with an optional
 blink rate.
 For example:

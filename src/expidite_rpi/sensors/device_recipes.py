@@ -105,7 +105,8 @@ def create_ltr390_device() -> list[DPtree]:
 ##############################################################################################################
 def create_continuous_video_4fps_device() -> list[DPtree]:
     """Create a standard camera device.
-    No recordings are saved to the cloud - it is assumed a DP will process the recordings locally."""
+    No recordings are saved to the cloud - it is assumed a DP will process the recordings locally.
+    """
     sensor_index = 0
     cfg: RpicamSensorCfg = replace(
         DEFAULT_RPICAM_SENSOR_CFG,
@@ -186,7 +187,8 @@ def create_aruco_camera_device(sensor_index: int) -> list[DPtree]:
 ##############################################################################################################
 def create_on_demand_audio_video_device() -> list[DPtree]:
     """Create a device that has both on-demand audio and video sensors.
-    Recording is triggered via the BCLI sensing options."""
+    Recording is triggered via the BCLI sensing options.
+    """
     # Audio Sensor
     audio_cfg = DEFAULT_AUDIO_SENSOR_CFG
     audio_cfg.sensor_index = 1

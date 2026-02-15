@@ -43,8 +43,7 @@ def run_cmd(cmd: str) -> str:
 
 
 def reader(proc: subprocess.Popen, queue: queue.Queue) -> None:
-    """
-    Read 'stdout' from the subprocess and put it into the queue.
+    """Read 'stdout' from the subprocess and put it into the queue.
 
     Args:
         proc: The subprocess to read from.
@@ -56,8 +55,7 @@ def reader(proc: subprocess.Popen, queue: queue.Queue) -> None:
 
 
 def run_cmd_live_echo(cmd: str) -> str:
-    """
-    Run a command and echo its output in real-time.
+    """Run a command and echo its output in real-time.
 
     Args:
         cmd: The command to run.
@@ -106,8 +104,7 @@ def check_if_setup_required() -> None:
 
 
 def check_keys_env() -> bool:
-    """
-    Check if the keys.env exists in ./rpi_core and is not empty.
+    """Check if the keys.env exists in ./rpi_core and is not empty.
 
     Returns:
         True if the keys.env file exists and is valid, False otherwise.
@@ -564,7 +561,8 @@ class InteractiveMenu:
         where the device is unexpectedly left in review mode.
 
         Review mode is set via the BCLI. The BCLI also helps the user understand how to see the
-        output from the sensors in review mode."""
+        output from the sensors in review mode.
+        """
         click.echo(f"{dash_line}")
         click.echo("# REVIEW MODE")
         click.echo("The intent of review mode is to help with manual review of sensor data.")

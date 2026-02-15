@@ -42,8 +42,7 @@ class Stream:
     storage_tier: api.StorageTier = api.StorageTier.COOL
 
     def get_data_id(self, sensor_index: int) -> str:
-        """
-        Returns the unique identifier for this node. Used in filenaming and other data management.
+        """Returns the unique identifier for this node. Used in filenaming and other data management.
 
         Returns:
             The unique identifier for this node.
@@ -90,4 +89,5 @@ class SensorCfg(DPtreeNodeCfg):
 @dataclass
 class DataProcessorCfg(DPtreeNodeCfg):
     """Defines the configuration for a concrete DataProcessor class implementation.
-    Can be subclassed to add additional configuration parameters specific to the DataProcessor class."""
+    Can be subclassed to add additional configuration parameters specific to the DataProcessor class.
+    """

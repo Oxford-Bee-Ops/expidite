@@ -18,8 +18,7 @@ class ValidationRule(ABC):
 
     @abstractmethod
     def validate(self, dpnode: DPnode) -> tuple[bool, str]:
-        """
-        Validate the configuration.
+        """Validate the configuration.
 
         Args:
             dpnode (DPtreeNode): The configuration to validate.
@@ -148,8 +147,7 @@ RULE_SET: list[ValidationRule] = [
 
 
 def validate_trees(dptrees: list[DPtree]) -> tuple[bool, list[str]]:
-    """
-    Validate the configuration using all added rules.
+    """Validate the configuration using all added rules.
 
     Args:
         dptrees (list): The configuration to validate.

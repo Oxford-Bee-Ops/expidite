@@ -321,5 +321,6 @@ def get_diags_filename() -> Path:
 def get_review_mode_filename(data_id: str, suffix: api.FORMAT) -> Path:
     """Generate a filename for a review mode file.
     These are special in not containing timestamps because the intention is that they overwrite
-    each other."""
+    each other.
+    """
     return root_cfg.EDGE_UPLOAD_DIR / f"V3_{data_id}.{suffix.value}"
