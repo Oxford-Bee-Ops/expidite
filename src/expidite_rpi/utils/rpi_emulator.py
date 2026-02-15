@@ -327,6 +327,9 @@ class RpiEmulator:
                 The output of the command. If ignore_errors is True, return an empty string on error.
                 If grep_strs is not None, return only the lines that contain all of the strings in the list.
         """
+        if cmd.startswith("rpicam-still"):
+            return self.emulate_rpicam_still(cmd, ignore_errors, grep_strs)
+
         if cmd.startswith("rpicam-vid"):
             return self.emulate_rpicam_vid(cmd, ignore_errors, grep_strs)
 
@@ -419,6 +422,44 @@ class RpiEmulator:
         time.sleep(duration)
         return f"rpicam-vid command emulated successfully, created {filename}"
 
+    def emulate_rpicam_still(
+        self, cmd: str, ignore_errors: bool = False, grep_strs: list[str] | None = None
+    ) -> str:
+        # Emulate the rpicam-still command
+        # We expect commands like:
+        #  "rpicam-still --framerate 4 --width 640 --height 480 -o FILENAME -t 180000 -v 0"
+        #
+        # We try to find a matching recording to provide.
+        #
+        # If we fail, we create a video file with:
+        # - filename taken from the -o parameter
+        args = shlex.split(cmd, posix=False)
+        if args.index("-o") == -1:
+            raise ValueError("Missing required arguments in command: " + cmd)
+
+        filename = args[args.index("-o") + 1]
+
+        # See if we have a matching cmd in the recordings list
+        # We need to replace the filename with FILENAME
+        match_cmd = cmd.replace(filename, "FILENAME")
+        recordings = self._match_recording(match_cmd)
+
+        if recordings:
+            logger.info(f"Found matching command for: {match_cmd}")
+            # We have a recording so save that with the appropriate filename
+            recording = recordings[self.previous_recordings_index]
+            self.previous_recordings_index += 1
+            self.previous_recordings_index %= len(recordings)
+            shutil.copy(recording, filename)
+            logger.info(f"Recording {recording} saved to DS")
+        else:
+            logger.error(f"Match not found for command: {cmd}")
+            if not ignore_errors:
+                msg = f"Match not found for command: {cmd}"
+                raise FileNotFoundError(msg)
+
+        return f"rpicam-still command emulated successfully, created {filename}"
+
     def emulate_arecord(
         self, cmd: str, ignore_errors: bool = False, grep_strs: list[str] | None = None
     ) -> str:
@@ -448,9 +489,9 @@ class RpiEmulator:
             shutil.copy(recording, filename)
             logger.info(f"Recording {recording} saved to DS")
         else:
-            logger.error(f"Recording not found for command: {cmd}")
+            logger.error(f"Match not found for command: {cmd}")
             if not ignore_errors:
-                msg = f"Recording not found for command: {cmd}"
+                msg = f"Match not found for command: {cmd}"
                 raise FileNotFoundError(msg)
 
         # Sleep for the duration of the video to simulate recording time.
