@@ -74,8 +74,8 @@ class RpiCore:
         return (is_valid, errors)
 
     def configure(self, fleet_config: list[DeviceCfg]) -> None:
-        """
-        Set the RpiCore configuration.
+        """Set the RpiCore configuration.
+
         See the /examples folder for configuration file templates.
 
         Parameters:
@@ -106,8 +106,7 @@ class RpiCore:
         root_cfg.set_inventory(fleet_config)
 
     def start(self) -> None:
-        """
-        Start the rpi_core to begin data collection.
+        """Start the rpi_core to begin data collection.
 
         Raises:
         - Exception: If the RpiCore is not configured.
@@ -122,8 +121,8 @@ class RpiCore:
         EdgeOrchestrator.start_all_with_watchdog()
 
     def stop(self) -> None:
-        """
-        Stop RpiCore.
+        """Stop RpiCore.
+
         And remove any crontab entries added by make_my_script_persistent.
         """
         # Ask the EdgeOrchestrator to stop all sensors
@@ -131,8 +130,7 @@ class RpiCore:
         EdgeOrchestrator.get_instance().stop_all()
 
     def status(self, verbose: bool = True) -> str:
-        """
-        Get the current status of the RpiCore.
+        """Get the current status of the RpiCore.
 
         Returns:
             A string describing the status of the RpiCore.
@@ -169,8 +167,7 @@ class RpiCore:
         return display_message
 
     def display_configuration(self) -> str:
-        """
-        Display the current configuration of the RpiCore.
+        """Display the current configuration of the RpiCore.
 
         Returns:
             A string message containing the configuration of the RpiCore.

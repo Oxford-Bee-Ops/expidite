@@ -1,5 +1,4 @@
-"""
-Code from https://github.com/Chouffy/python_sensor_aht20/blob/main/AHT20.py.
+"""Code from https://github.com/Chouffy/python_sensor_aht20/blob/main/AHT20.py.
 
 This is free and unencumbered software released into the public domain.
 

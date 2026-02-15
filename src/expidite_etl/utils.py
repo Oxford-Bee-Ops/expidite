@@ -12,8 +12,7 @@ logger = root_cfg.setup_logger("expidite")
 class CloudUtilities:
     @staticmethod
     def download_journal_set(container_name: str, type_id: str) -> pd.DataFrame:
-        """
-        Downloads CSV files from a cloud storage container with the specified prefix and
+        """Downloads CSV files from a cloud storage container with the specified prefix and
         combines them into a single DataFrame.
 
         Args:

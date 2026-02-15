@@ -66,8 +66,8 @@ class DPtree:
         source: tuple[DPnode, int],
         sink: DPnode,
     ) -> None:
-        """
-        Connects two nodes in the tree.
+        """Connects two nodes in the tree.
+
         Sensor & DataProcessor objects support an out() method that returns an appropriate tuple.
         The index supplied in the tuple is the index of the output stream from the source node.
 
@@ -110,8 +110,7 @@ class DPtree:
         self._edges.append(Edge(src_node, sink, stream))
 
     def chain(self, *configs: DPnode) -> None:
-        """
-        Connects multiple nodes in a single chain.
+        """Connects multiple nodes in a single chain.
 
         Args:
             configs: A sequence of configuration objects to connect in order.
@@ -120,8 +119,7 @@ class DPtree:
             self.connect((configs[i], 0), configs[i + 1])  # Default metadata value is 0.
 
     def get_node(self, data_id: str) -> DPnode:
-        """
-        Retrieves a node from the tree by its data_id.
+        """Retrieves a node from the tree by its data_id.
 
         Args:
             data_id: The unique identifier for the node.
@@ -135,8 +133,7 @@ class DPtree:
         return self._nodes[data_id]
 
     def get_edges(self) -> list[Edge]:
-        """
-        Retrieves all edges in the tree.
+        """Retrieves all edges in the tree.
 
         Returns:
             A list of tuples representing the edges in the tree.
@@ -144,8 +141,7 @@ class DPtree:
         return self._edges
 
     def get_processors(self) -> list[DPnode]:
-        """
-        Retrieves all processor nodes in the tree.
+        """Retrieves all processor nodes in the tree.
 
         Returns:
             A list of DataProcessor objects representing the processors in the tree.
@@ -153,8 +149,7 @@ class DPtree:
         return [node for node in self._nodes.values() if not isinstance(node, Sensor)]
 
     def export(self) -> dict:
-        """
-        Exports the tree structure as a dictionary.
+        """Exports the tree structure as a dictionary.
 
         Returns:
             A dictionary representing the tree structure.

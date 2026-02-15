@@ -23,8 +23,7 @@ if root_cfg.running_on_rpi:
         grep_str: list[str] | None = None,
         max_logs: int = 1000,
     ) -> list[dict[str, Any]]:
-        """
-        Fetch logs from the system journal.
+        """Fetch logs from the system journal.
 
         Args:
             since (datetime): A timestamp to fetch logs since.
@@ -394,8 +393,7 @@ class DeviceHealth(Sensor):
 
     @staticmethod
     def get_wifi_ssid_and_signal() -> tuple[str, str]:
-        """
-        Get the SSID of the wlan0 interface.
+        """Get the SSID of the wlan0 interface.
 
         Returns:
             The SSID as a string, or "Not connected" if no SSID is found.

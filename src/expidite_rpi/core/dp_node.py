@@ -35,8 +35,7 @@ class DPnode:
     _selftracker: "DPnode | None"
 
     def __init__(self, config: DPtreeNodeCfg, sensor_index: int) -> None:
-        """
-        Initializes a DPtreeNode with the given configuration.
+        """Initializes a DPtreeNode with the given configuration.
 
         Args:
             config: The configuration object for this node, which can be a Sensor, DataProcessor, or

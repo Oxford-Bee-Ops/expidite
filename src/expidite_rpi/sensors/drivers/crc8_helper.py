@@ -63,8 +63,7 @@ def AHT20_crc8_calculate(all_data_int):
 
 
 def AHT20_crc8_check(all_data_int):
-    """
-    The input data should be:
+    """The input data should be:
     Status Humidity0 Humidity1 Humidity2|Temperature0 Temperature1 Temperature2 CRCCode.
     In python's int64.
     """

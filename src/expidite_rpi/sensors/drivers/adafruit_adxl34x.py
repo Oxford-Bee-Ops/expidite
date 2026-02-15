@@ -257,8 +257,7 @@ class ADXL345:
         return self._event_status
 
     def enable_motion_detection(self, *, threshold: int = 18) -> None:
-        """
-        The activity detection parameters.
+        """The activity detection parameters.
 
         :param int threshold: The value that acceleration on any axis must exceed to\
         register as active. The scale factor is 62.5 mg/LSB.
@@ -288,8 +287,7 @@ class ADXL345:
         self._enabled_interrupts.pop("motion")
 
     def enable_freefall_detection(self, *, threshold: int = 10, time: int = 25) -> None:
-        """
-        Freefall detection parameters.
+        """Freefall detection parameters.
 
         :param int threshold: The value that acceleration on all axes must be under to\
         register as dropped. The scale factor is 62.5 mg/LSB.
@@ -333,8 +331,7 @@ class ADXL345:
         latency: int = 20,
         window: int = 255,
     ) -> None:
-        """
-        The tap detection parameters.
+        """The tap detection parameters.
 
         :param int tap_count: 1 to detect only single taps, and 2 to detect only double taps.
 
@@ -419,8 +416,7 @@ class ADXL345:
 
     @property
     def offset(self) -> tuple[int, int, int]:
-        """
-        The x, y, z offsets as a tuple of raw count values.
+        """The x, y, z offsets as a tuple of raw count values.
 
         See offset_calibration example for usage.
         """
