@@ -40,7 +40,8 @@ class ExampleProcessor(DataProcessor):
         """This implementation of the process_data method is used in testing:
         - so has an excess number of asserts!
         - demonstrates a file DP converting a file list to a DataFrame
-        - demonstrates a DF DP returning a DataFrame"""  # noqa: D415
+        - demonstrates a DF DP returning a DataFrame
+        """  # noqa: D415
         assert input_data is not None
         assert isinstance(input_data, list)
 

@@ -90,4 +90,5 @@ class SensorCfg(DPtreeNodeCfg):
 @dataclass
 class DataProcessorCfg(DPtreeNodeCfg):
     """Defines the configuration for a concrete DataProcessor class implementation.
-    Can be subclassed to add additional configuration parameters specific to the DataProcessor class."""
+    Can be subclassed to add additional configuration parameters specific to the DataProcessor class.
+    """

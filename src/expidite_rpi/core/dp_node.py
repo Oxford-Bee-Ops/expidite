@@ -349,7 +349,8 @@ class DPnode:
         """Return True if this node should save sample data to the datastore.
         This method can be subclassed to provide more complex sampling logic.
         In this default implementation, we assume sample_probability is a
-        float value between 0.0 and 1.0."""
+        float value between 0.0 and 1.0.
+        """
         if sample_probability is None:
             return False
         try:
@@ -604,7 +605,8 @@ class DPnode:
     def _get_cpool(self) -> JournalPool:
         """Return the JournalPool object for this node.
         We don't do this during init to avoid unnecessary work for things like config validation that
-        don't need the JournalPool."""
+        don't need the JournalPool.
+        """
         if self.journal_pool is None:
             self.journal_pool = JournalPool.get(mode=root_cfg.get_mode())
         return self.journal_pool

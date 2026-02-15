@@ -116,7 +116,8 @@ class ADXL34X(Sensor):
 
     def capture_data_block(self, accelerometer: adafruit_adxl34x.ADXL343) -> pd.DataFrame:
         """Capture approximately 1 second of readings, but stop at a realtime second boundary
-        so that captures stay aligned and don't drift over time."""
+        so that captures stay aligned and don't drift over time.
+        """
         data = []
         start_time = int(time.monotonic())  # Round to realtime boundary
         while time.monotonic() - start_time < 1:

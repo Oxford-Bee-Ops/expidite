@@ -564,7 +564,8 @@ class InteractiveMenu:
         where the device is unexpectedly left in review mode.
 
         Review mode is set via the BCLI. The BCLI also helps the user understand how to see the
-        output from the sensors in review mode."""
+        output from the sensors in review mode.
+        """
         click.echo(f"{dash_line}")
         click.echo("# REVIEW MODE")
         click.echo("The intent of review mode is to help with manual review of sensor data.")

@@ -138,7 +138,8 @@ class EdgeOrchestrator:
 
     def load_config(self) -> None:
         """Load the sensor and data processor config into the EdgeOrchestrator by calling
-        the DeviceCfg.dp_trees_create_method()."""
+        the DeviceCfg.dp_trees_create_method().
+        """
         self.dp_trees = self._safe_call_create_method(
             root_cfg.my_device.dp_trees_create_method, root_cfg.my_device.dp_trees_create_kwargs
         )
@@ -157,7 +158,8 @@ class EdgeOrchestrator:
         create_method: Callable | None, create_kwargs: dict | None = None
     ) -> list[DPtree]:
         """Call the create method and return the DPtree object.
-        Raises ValueError if the create method does not successfully create any DPtree objects."""
+        Raises ValueError if the create method does not successfully create any DPtree objects.
+        """
         if create_method is None:
             msg = f"create_method not defined for {root_cfg.my_device_id}"
             logger.error(f"{root_cfg.RAISE_WARN()}{msg}")
@@ -254,7 +256,8 @@ class EdgeOrchestrator:
         """This function starts the orchestrator and maintains it with a watchdog.
 
         This is a non-blocking function that starts a new thread and returns.
-        It calls the edge_orchestrator main() function."""
+        It calls the edge_orchestrator main() function.
+        """
         logger.debug("Start orchestrator with watchdog")
         orchestrator_thread = threading.Thread(target=main, name="EdgeOrchestrator")
         orchestrator_thread.start()
@@ -265,7 +268,8 @@ class EdgeOrchestrator:
     def stop_all(self, restart: bool | None = False) -> None:
         """Stop all Sensor, Datastream and observability threads.
 
-        Blocks until all threads have exited."""
+        Blocks until all threads have exited.
+        """
         logger.info(f"stop_all on {self!r} called by {threading.current_thread().name}")
 
         with EdgeOrchestrator._status_lock:
@@ -344,7 +348,8 @@ class EdgeOrchestrator:
     def is_stop_requested(self) -> bool:
         """Check if a stop has been manually requested by the user.
 
-        This function is polled by the main thread every second to check if the user has requested a stop."""
+        This function is polled by the main thread every second to check if the user has requested a stop.
+        """
         return root_cfg.STOP_EXPIDITE_FLAG.exists()
 
     @staticmethod
@@ -376,7 +381,8 @@ class EdgeOrchestrator:
         """Save a FAIR record describing this Device, its Sensor and associated data processing.
 
         We save one FAIR record to the expidite-fair (where we store all snapshots) and one to
-        expidite-fair-latest (which is just the latest snapshot; overriding the old one)."""
+        expidite-fair-latest (which is just the latest snapshot; overriding the old one).
+        """
         logger.debug(f"Save FAIR record for {self}")
 
         # Custom representer for Enum

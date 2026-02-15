@@ -103,7 +103,8 @@ class Sensor(Thread, DPnode, ABC):
     def sensor_failed(self) -> None:
         """Called by a subclass when the Sensor fails and needs to be restarted.
 
-        The Sensor superclass notifies the EdgeOrchestrator which will stop & restart all Sensors."""
+        The Sensor superclass notifies the EdgeOrchestrator which will stop & restart all Sensors.
+        """
         from expidite_rpi.core.edge_orchestrator import EdgeOrchestrator
 
         EdgeOrchestrator.get_instance().sensor_failed(self)
@@ -118,7 +119,8 @@ class Sensor(Thread, DPnode, ABC):
         The subclass *must* use "while self.continue_recording()" and
         "self.stop_requested.wait(sleep_time)" to enable prompt and clean shutdown.
         For on-demand, triggered sensing, the subclass may leave this method unimplemented, but
-        instead implement the sensing_triggered() method which will be invoked when triggered."""
+        instead implement the sensing_triggered() method which will be invoked when triggered.
+        """
         logger.info(f"Sensor {self!r} running in on-demand triggered sensing mode")
         while self.continue_recording():
             # Check for the sensing trigger set via the BCLI
@@ -151,5 +153,6 @@ class Sensor(Thread, DPnode, ABC):
     # Sensors should sub-class this method to implement on-demand, triggered, sensing.
     def sensing_triggered(self, duration: int) -> None:
         """The sensing_triggered method is where the sensor does its work of sensing and logging data
-        in response to an external trigger, typically being invoked via the BCLI."""
+        in response to an external trigger, typically being invoked via the BCLI.
+        """
         raise AssertionError("Sub-classes must override this method")
