@@ -40,7 +40,7 @@ DEFAULT_SHT31_SENSOR_CFG = SHT31SensorCfg(
 )
 
 
-@dataclass
+@dataclass(frozen=True)
 class SHT31_CFG:
     address = 0x44
     write_register = 0x2C

@@ -26,7 +26,7 @@ from expidite_rpi.core.device_config_objects import DeviceCfg
 logger = root_cfg.setup_logger("expidite")
 
 
-@dataclass
+@dataclass(frozen=True)
 class RpiTestRecording:
     cmd_prefix: str
     recordings: list[Path]
