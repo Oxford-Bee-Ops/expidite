@@ -959,15 +959,6 @@ set_leds_start
 install_ssh_keys
 create_and_activate_venv # Sets os_update=yes if creating a new venv
 if [ "$os_update" == "yes" ]; then
-    # OS updates occur on a cron job which could lead to all devices being updated at the same time.
-    # To avoid overloading the network, we stagger updates by a random amount between 0 and 20 minutes.
-    # The system will still be running happily while this script sleeps.
-    # A manual new install will not sleep.
-    if [ "$new_install" != "yes" ]; then
-        sleep_time=$((RANDOM % 1200))
-        echo "Sleeping for $sleep_time seconds to stagger updates."
-        sleep $sleep_time
-    fi
     install_os_packages
     install_ufw
 fi
