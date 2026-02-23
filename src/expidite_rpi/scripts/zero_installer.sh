@@ -147,13 +147,6 @@ export_system_cfg() {
         expidite_git_branch="main"
     fi
 
-    # Pi Zero profile defaults: minimize memory pressure unless explicitly opted in.
-    if [ -z "$zero_enable_science_stack" ]; then
-        zero_enable_science_stack="No"
-    fi
-    if [ -z "$zero_enable_camera_stack" ]; then
-        zero_enable_camera_stack="Yes"
-    fi
 }
 
 # Returns total memory in MB as an integer.
@@ -258,32 +251,46 @@ create_and_activate_venv() {
 # and we want to use the system package manager to install them.
 install_os_packages() {
     echo_header "Install OS packages"
+    apt_dpkg_opts=(
+        -o Dpkg::Options::="--force-confdef"
+        -o Dpkg::Options::="--force-confold"
+    )
+    base_packages=(
+        pip
+        git
+        libsystemd-dev
+        ffmpeg
+        python3-smbus
+    )
+    science_packages=(
+        python3-scipy
+        python3-pandas
+        python3-opencv
+        libopenblas0-pthread
+        libopenblas-dev
+        build-essential
+        gfortran
+        pkg-config
+        python3-dev
+    )
+    camera_python_packages=(
+        libcamera-dev
+        python3-picamera2
+        rpicam-apps
+    )
+
     sudo apt-get update && sudo apt-get \
-        -o Dpkg::Options::="--force-confdef" \
-        -o Dpkg::Options::="--force-confold" \
+        "${apt_dpkg_opts[@]}" \
         upgrade -y || { echo "Failed to update package list"; }
-    sudo apt-get \
-        -o Dpkg::Options::="--force-confdef" \
-        -o Dpkg::Options::="--force-confold" \
-        install -y \
-        pip git libsystemd-dev ffmpeg python3-smbus || { echo "Failed to install base packages"; }
+    sudo apt-get "${apt_dpkg_opts[@]}" install -y "${base_packages[@]}" || { echo "Failed to install base packages"; }
 
-    if [ "$zero_enable_science_stack" == "Yes" ]; then
-        echo "Installing science stack for pandas/scipy/opencv."
-        sudo apt-get install -y python3-scipy python3-pandas python3-opencv || { echo "Failed to install science stack"; }
-    else
-        echo "Skipping heavy science stack on Zero profile (zero_enable_science_stack=No)."
-    fi
+    echo "Installing science stack for pandas/scipy/opencv."
+    sudo apt-get install -y "${science_packages[@]}" || { echo "Failed to install science stack"; }
 
-    if [ "$zero_enable_camera_stack" == "Yes" ]; then
-        sudo apt-get install -y libcamera-dev python3-picamera2 || { echo "Failed to install camera python packages"; }
-        # If we install the lite version (no desktop), we need to install the full version of rpicam-apps
-        # Otherwise we get ERROR: *** Unable to find an appropriate H.264 codec ***
-        sudo apt-get purge -y rpicam-apps-lite || { echo "Failed to remove rpicam-apps-lite"; }
-        sudo apt-get install -y rpi-connect-lite rpicam-apps || { echo "Failed to install rpi connect and rpicam-apps"; }
-    else
-        echo "Skipping camera stack (zero_enable_camera_stack=No)."
-    fi
+    # If we install the lite version (no desktop), we need to install the full version of rpicam-apps
+    # Otherwise we get ERROR: *** Unable to find an appropriate H.264 codec ***
+    sudo apt-get purge -y rpicam-apps-lite || { echo "Failed to remove rpicam-apps-lite"; }
+    sudo apt-get install -y "${camera_python_packages[@]}" || { echo "Failed to install camera packages"; }
     sudo apt-get autoremove -y || { echo "Failed to remove unnecessary packages"; }
     echo "OS packages installed successfully."
     # A reboot is always required after installing packages, otherwise the system is unstable
@@ -759,12 +766,8 @@ enable_i2c() {
         # We want to avoid setting this every time the script runs, because we've seen issues
         # with corruption of /boot/firmware/config.txt which may be cause by this change
         # and a potential race condition. Therefore check if it is already enabled first....
-        # Check if i2c-dev module is loaded
-        if lsmod | grep -q "^i2c_dev"; then
-            echo "I2C interface is already enabled (i2c-dev module loaded)."
-        # Or check if dtparam is set in /boot/config.txt
-        elif grep -E '^\s*dtparam=i2c_arm=on' /boot/config.txt >/dev/null; then
-            echo "I2C interface is already enabled (dtparam in /boot/config.txt)."
+        if grep -E '^\s*dtparam=i2c_arm=on' /boot/firmware/config.txt >/dev/null; then
+            echo "I2C interface is already enabled (dtparam in /boot/firmware/config.txt)."
         else
             # We do need to enable it
             sudo raspi-config nonint do_i2c 0
