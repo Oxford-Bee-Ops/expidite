@@ -9,8 +9,9 @@ from datetime import UTC, datetime, timedelta
 from threading import Event, Thread
 
 from expidite_rpi.core import configuration as root_cfg
-from expidite_rpi.core.dp_config_objects import SensorCfg
+from expidite_rpi.core.dp_config_objects import SensorCfg, SensorMode
 from expidite_rpi.core.dp_node import DPnode
+from expidite_rpi.core.hardware.button import ButtonInput
 from expidite_rpi.utils import utils
 
 logger = root_cfg.setup_logger("expidite")
@@ -122,6 +123,17 @@ class Sensor(Thread, DPnode, ABC):
         instead implement the sensing_triggered() method which will be invoked when triggered.
         """
         logger.info(f"Sensor {self!r} running in on-demand triggered sensing mode")
+        if self.config.sensor_mode == SensorMode.BCLI_TRIGGERED:
+            self._run_bcli_triggered(duration=30)
+        elif self.config.sensor_mode == SensorMode.BUTTON_TRIGGERED:
+            self._run_button_triggered()
+
+    def _run_bcli_triggered(self, duration: int) -> None:
+        """This method is invoked by the BCLI when a sensing trigger is detected. The default implementation
+        simply calls sensing_triggered, but the run can be sub-classed to implement custom behavior
+        on BCLI triggers.
+        """
+        logger.info(f"Sensor {self!r} running in on-demand triggered sensing mode")
         while self.continue_recording():
             # Check for the sensing trigger set via the BCLI
             if root_cfg.SENSOR_TRIGGER_FLAG.exists():
@@ -149,6 +161,28 @@ class Sensor(Thread, DPnode, ABC):
                     # Ensure the trigger flag file is removed on error
                     root_cfg.SENSOR_TRIGGER_FLAG.unlink(missing_ok=True)
             self.stop_requested.wait(1)
+
+    def _run_button_triggered(self) -> None:
+        """This method is invoked when a button trigger is detected. The default implementation simply calls
+        sensing_triggered with a default duration, but this method can be sub-classed to implement custom
+        behavior on button triggers.
+        """
+        pin = self.config.button_gpio_pin if self.config.button_gpio_pin is not None else 27
+        button = ButtonInput(pin=pin)
+        try:
+            while self.continue_recording():
+                # Wait_for_press returns every so often to enable checking the continue_recording condition
+                # and clean shutdown.  If this is the case, rc will be false and we simply loop back and wait
+                # again.
+                rc = button.wait_for_press()
+                if rc:
+                    self.sensing_triggered(duration=0)
+                logger.info("Button pressed -> trigger sequence")
+        except Exception:
+            logger.exception("run_button_triggered encountered an error")
+        finally:
+            button.cleanup()
+            logger.info("Button input cleaned up")
 
     # Sensors should sub-class this method to implement on-demand, triggered, sensing.
     def sensing_triggered(self, duration: int) -> None:

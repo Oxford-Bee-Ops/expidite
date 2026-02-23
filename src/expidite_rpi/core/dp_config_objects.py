@@ -1,4 +1,5 @@
 from dataclasses import dataclass
+from enum import Enum, auto
 
 from expidite_rpi.core import api, file_naming
 from expidite_rpi.core import configuration as root_cfg
@@ -62,6 +63,14 @@ class DPtreeNodeCfg:
     description: str
 
 
+class SensorMode(Enum):
+    """Auto Enum for sensor modes."""
+
+    CONTINUOUS = auto()
+    BCLI_TRIGGERED = auto()
+    BUTTON_TRIGGERED = auto()
+
+
 @dataclass
 class SensorCfg(DPtreeNodeCfg):
     """Defines the configuration for a concrete Sensor class implementation.
@@ -84,6 +93,8 @@ class SensorCfg(DPtreeNodeCfg):
     sensor_type: api.SENSOR_TYPE = api.SENSOR_TYPE.NOT_SET
     sensor_index: int = 0
     sensor_model: str = root_cfg.FAILED_TO_LOAD
+    sensor_mode: SensorMode = SensorMode.CONTINUOUS
+    button_gpio_pin: int | None = None
 
 
 @dataclass
