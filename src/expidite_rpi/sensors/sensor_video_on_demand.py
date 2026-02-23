@@ -9,7 +9,7 @@ from dataclasses import dataclass
 
 from expidite_rpi.core import api, file_naming
 from expidite_rpi.core import configuration as root_cfg
-from expidite_rpi.core.dp_config_objects import Stream
+from expidite_rpi.core.dp_config_objects import SensorMode, Stream
 from expidite_rpi.core.sensor import Sensor, SensorCfg
 from expidite_rpi.utils import utils
 
@@ -47,6 +47,7 @@ DEFAULT_VIDEO_OD_SENSOR_CFG = VideoOnDemandSensorCfg(
     sensor_type=api.SENSOR_TYPE.CAMERA,
     sensor_index=0,
     sensor_model="PiCameraModule3",
+    sensor_mode=SensorMode.BCLI_TRIGGERED,
     description="Video sensor that uses rpicam-vid for on-demand recording.",
     outputs=[VIDEO_OD_STREAM],
 )
