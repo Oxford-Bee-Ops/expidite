@@ -302,7 +302,7 @@ class DPnode:
         This is used by EdgeOrchestrator to periodically log observability data
         """
         if DPnode._selftracker is None:
-            logger.error(f"{root_cfg.RAISE_WARN}SelfTracker not set; cannot log sample data")
+            logger.error(f"{root_cfg.RAISE_WARN()}SelfTracker not set; cannot log sample data")
             return
 
         # Lock the dictionary to prevent concurrent access
@@ -427,13 +427,13 @@ class DPnode:
         # Check that the start_time and end_time are both timezone aware
         if start_time.tzinfo is None:
             logger.warning(
-                f"{root_cfg.RAISE_WARN}start_time must be timezone aware. "
+                f"{root_cfg.RAISE_WARN()}start_time must be timezone aware. "
                 "Use api.utc_now() to get the current time."
             )
             start_time = start_time.replace(tzinfo=UTC)
         if end_time is not None and end_time.tzinfo is None:
             logger.warning(
-                f"{root_cfg.RAISE_WARN}end_time must be timezone aware. "
+                f"{root_cfg.RAISE_WARN()}end_time must be timezone aware. "
                 "Use api.utc_now() to get the current time."
             )
             end_time = end_time.replace(tzinfo=UTC)
