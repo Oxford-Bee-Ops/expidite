@@ -51,6 +51,7 @@ def _get_pi_model() -> str:
 running_on_linux = False
 running_on_rpi = False
 running_on_rpi5 = False
+running_on_pi_zero = False
 running_on_windows = False
 running_on_azure = False
 
@@ -60,6 +61,8 @@ if "Linux" in platform.platform():
         running_on_rpi = True
         if "Pi 5" in _get_pi_model():
             running_on_rpi5 = True
+        elif "Zero" in _get_pi_model():
+            running_on_pi_zero = True
 elif "Windows" in platform.platform():
     running_on_windows = True
 elif platform.node().startswith("fv-az"):

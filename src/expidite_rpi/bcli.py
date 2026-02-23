@@ -453,7 +453,12 @@ class InteractiveMenu:
             return
         scripts_dir = Path.home() / root_cfg.system_cfg.venv_dir / "scripts"
         if scripts_dir.exists():
-            run_cmd_live_echo(f"sudo -u $USER {scripts_dir}/rpi_installer.sh")
+            # We need to trigger rpi_installer.sh if we're on a RPI,
+            # but trigger zero_installer.sh if we're on a Pi Zero.
+            if root_cfg.running_on_pi_zero:
+                run_cmd_live_echo(f"sudo -u $USER {scripts_dir}/zero_installer.sh")
+            else:
+                run_cmd_live_echo(f"sudo -u $USER {scripts_dir}/rpi_installer.sh")
         else:
             click.echo(
                 f"Error: scripts directory does not exist at {scripts_dir}. Please check your installation."
