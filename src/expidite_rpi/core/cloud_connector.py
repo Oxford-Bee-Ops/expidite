@@ -144,13 +144,13 @@ class CloudConnector:
         files: list[str] | None = None,
         overwrite: bool | None = True,
     ) -> None:
-        """Download all the files in the src_datastore to the dst_dir.
+        """Download all the files in the src_container to the dst_dir.
 
         Parameters:
-            src_datastore: source CloudDatastore
+            src_container: source container
             dst_dir: destination directory to download the files to
             folder_prefix_len: Optional; first n characters of the file name to use as a subfolder
-            files: Optional; list of files to download from src_datastore; if None, all files in the container
+            files: Optional; list of files to download from src_container; if None, all files in the container
                 will be downloaded; useful for chunking downloads
             overwrite: Optional; if False, function will skip downloading files that already existing in
                 dst_dir
@@ -365,12 +365,12 @@ class CloudConnector:
         suffix: str | None = None,
         more_recent_than: datetime | None = None,
     ) -> list[str]:
-        """Similar to the Path.glob() method but against a cloud datastore.
+        """Similar to the Path.glob() method but against a cloud container.
 
         Parameters:
-            - datastore: CloudDatastore defining the container to be searched
-            - prefix: prefix to match to files in the datastore container; does not support wildcards
-            - suffix: suffix to match to files in the datastore container
+            - container: container name to be searched
+            - prefix: prefix to match to files in the container; does not support wildcards
+            - suffix: suffix to match to files in the container
             - more_recent_than: Optional; if specified, only files more recent than this date will be returned
 
         The current backend implementation is the Azure Blobstore which only supports prefix search
@@ -587,13 +587,13 @@ class LocalCloudConnector(CloudConnector):
         files: list[str] | None = None,
         overwrite: bool | None = True,
     ) -> None:
-        """Download all the files in the src_datastore to the dst_dir.
+        """Download all the files in the src_container to the dst_dir.
 
         Parameters:
-            src_datastore: source CloudDatastore
+            src_container: source container
             dst_dir: destination directory to download the files to
             folder_prefix_len: Optional; first n characters of the file name to use as a subfolder
-            files: Optional; list of files to download from src_datastore; if None, all files in the container
+            files: Optional; list of files to download from src_container; if None, all files in the container
                 will be downloaded; useful for chunking downloads
         """
         download_container = self.local_cloud / src_container
@@ -734,12 +734,12 @@ class LocalCloudConnector(CloudConnector):
         suffix: str | None = None,
         more_recent_than: datetime | None = None,
     ) -> list[str]:
-        """Similar to the Path.glob() method but against a cloud datastore.
+        """Similar to the Path.glob() method but against a cloud container.
 
         Parameters:
-            - datastore: CloudDatastore defining the container to be searched
-            - prefix: prefix to match to files in the datastore container; does not support wildcards
-            - suffix: suffix to match to files in the datastore container
+            - container: container to be searched
+            - prefix: prefix to match to files in the container; does not support wildcards
+            - suffix: suffix to match to files in the container
             - more_recent_than: Optional; if specified, only files more recent than this date will be returned
 
         The current backend implementation is the Azure Blobstore which only supports prefix search
