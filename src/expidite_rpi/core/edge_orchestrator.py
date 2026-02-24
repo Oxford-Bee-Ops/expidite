@@ -470,6 +470,7 @@ class EdgeOrchestrator:
 # Main loop called from crontab on boot up
 ##############################################################################################################
 def main() -> None:
+    orchestrator = None
     try:
         # Provide diagnostics
         logger.info(root_cfg.my_device.display())
