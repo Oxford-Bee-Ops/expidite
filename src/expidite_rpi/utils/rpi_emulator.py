@@ -357,7 +357,7 @@ class RpiEmulator:
         # - width taken from the --width parameter
         # - height taken from the --height parameter
         args = shlex.split(cmd, posix=False)
-        if args.index("-o") == -1 or args.index("-t") == -1:
+        if "-o" not in args or "-t" not in args:
             raise ValueError("Missing required arguments in command: " + cmd)
 
         filename = args[args.index("-o") + 1]
@@ -434,7 +434,7 @@ class RpiEmulator:
         # If we fail, we create a video file with:
         # - filename taken from the -o parameter
         args = shlex.split(cmd, posix=False)
-        if args.index("-o") == -1:
+        if "-o" not in args:
             raise ValueError("Missing required arguments in command: " + cmd)
 
         filename = args[args.index("-o") + 1]
