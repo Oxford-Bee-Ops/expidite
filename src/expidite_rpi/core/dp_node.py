@@ -312,7 +312,7 @@ class DPnode:
             score_stats: list[tuple[str, DPnodeStat]] = list(self._dpnode_score_stats.items())
             for type_id in self._dpnode_score_stats:
                 self._dpnode_score_stats[type_id] = DPnodeStat()
-            scorp_stats: list[tuple[str, DPnodeStat]] = list(self._dpnode_score_stats.items())
+            scorp_stats: list[tuple[str, DPnodeStat]] = list(self._dpnode_scorp_stats.items())
             for type_id in self._dpnode_scorp_stats:
                 self._dpnode_scorp_stats[type_id] = DPnodeStat()
 
