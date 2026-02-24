@@ -967,13 +967,12 @@ class AsyncCloudConnector(CloudConnector):
                         f"{root_cfg.RAISE_WARN()}Upload failed for {action.src_fname}"
                         " too many times; giving up"
                     )
-                    return
-
-                # Re-queue the upload @@@ but only if it was a transient failure!
-                action.iteration += 1
-                self._upload_queue.put(action)
-                # Back off for a bit before re-trying the upload
-                sleep(2 * action.iteration)
+                else:
+                    # Re-queue the upload @@@ but only if it was a transient failure!
+                    action.iteration += 1
+                    self._upload_queue.put(action)
+                    # Back off for a bit before re-trying the upload
+                    sleep(2 * action.iteration)
 
     def do_work(self, block: bool = True) -> None:
         """Process the upload queue."""
