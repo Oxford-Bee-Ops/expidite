@@ -80,12 +80,13 @@ def parse_record_filename(fname: Path | str) -> dict:
 
     stem = fname.stem
 
-    # First remove any increment counter used to create a unique filename
-    # This is a double underscore, so we can split on it and take the first part
+    # First remove any increment counter used to create a unique filename.
+    # This is a double underscore, so we can split on it and take the first part.
     increment = 0
     if "__" in stem:
-        stem = stem.split("__")[0]
-        increment = int(stem.split("__")[1])
+        parts = stem.split("__")
+        stem = parts[0]
+        increment = int(parts[1])
 
     # Extract the fields from the filename, parsing with the "_" delimiter
     fields = stem.split("_")
