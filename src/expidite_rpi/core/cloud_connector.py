@@ -601,16 +601,20 @@ class LocalCloudConnector(CloudConnector):
         if files is None:
             for blob in download_container.glob("*"):
                 if folder_prefix_len is not None:
-                    prefix_folder_dir = dst_dir.joinpath(blob.name[:folder_prefix_len])
-                    if not prefix_folder_dir.exists():
-                        prefix_folder_dir.mkdir(parents=True, exist_ok=True)
-                shutil.copy(blob, prefix_folder_dir)
+                    folder_dir = dst_dir.joinpath(blob.name[:folder_prefix_len])
+                else:
+                    folder_dir = dst_dir
+                if not folder_dir.exists():
+                    folder_dir.mkdir(parents=True, exist_ok=True)
+                shutil.copy(blob, folder_dir)
         else:
             for blob_name in files:
                 src_file = download_container / blob_name
                 if folder_prefix_len is not None:
-                    prefix_folder_dir = dst_dir.joinpath(blob_name[:folder_prefix_len])
-                dst_file = prefix_folder_dir.joinpath(blob_name)
+                    folder_dir = dst_dir.joinpath(blob_name[:folder_prefix_len])
+                else:
+                    folder_dir = dst_dir
+                dst_file = folder_dir.joinpath(blob_name)
                 if not overwrite and dst_file.exists():
                     logger.debug(f"File {dst_file} already exists; skipping download")
                     continue
