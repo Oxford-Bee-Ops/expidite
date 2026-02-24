@@ -318,13 +318,15 @@ class DPnode:
 
         # Log SCORE data
         for type_id, stat in score_stats:
+            logger.info(f"NICKB: {str(stat.count)} vs {str(stat.sum)}")
             DPnode._selftracker.log(
                 stream_index=api.SCORE_STREAM_INDEX,
                 sensor_data={
                     "observed_type_id": type_id,
                     "observed_sensor_index": self.sensor_index,
                     "sample_period": api.utc_to_iso_str(sample_period_start_time),
-                    "count": str(stat.sum),
+                    "count": str(stat.count),
+                    "nickbcount": str(stat.sum),
                 },
             )
 
