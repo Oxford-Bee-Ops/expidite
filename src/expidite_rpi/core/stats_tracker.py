@@ -85,6 +85,6 @@ class StatTracker(Sensor):
 
                 # Set timer for next run
                 self.last_ran = api.utc_now()
-                self.stop_requested.wait(30)
+                self.stop_requested.wait(600)
         except Exception:
             logger.exception(f"{root_cfg.RAISE_WARN()}Error in SelfTracker thread")
