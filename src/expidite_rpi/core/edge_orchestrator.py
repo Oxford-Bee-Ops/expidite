@@ -501,7 +501,7 @@ def main() -> None:
             sleep(root_cfg.WATCHDOG_FREQUENCY)
 
     except Exception:
-        logger.exception(f"{root_cfg.RAISE_WARN()}(Sensor exception")
+        logger.exception(f"{root_cfg.RAISE_WARN()}Sensor exception")
     finally:
         # To get here, we hit an exception on one thread or have been explicitly asked to stop.
         # Tell all threads to terminate so we can cleanly restart all via cron
