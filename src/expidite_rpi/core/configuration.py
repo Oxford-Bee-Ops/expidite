@@ -460,15 +460,6 @@ def set_inventory(inventory: list[DeviceCfg]) -> dict[str, DeviceCfg]:
     return INVENTORY
 
 
-def check_inventory_loaded() -> bool:
-    """Check if the inventory has been loaded.
-
-    This is used in testing to check if the inventory has been loaded.
-    """
-    # If we have not loaded the inventory yet, it will still be set to the DUMMY_DEVICE
-    return my_device is not None and len(INVENTORY) == 0
-
-
 def update_my_device_id(new_device_id: str) -> None:
     """Function used in testing to change the device_id."""
     global my_device_id, my_device
