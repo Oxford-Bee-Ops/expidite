@@ -76,17 +76,17 @@ check_prerequisites() {
 
     # Ensure the flags directory exists
     mkdir -p "$HOME/.expidite/flags"
-    
+
     # Check for repeated reboot failures to prevent cyclical reboots
     REBOOT_COUNT_FILE="$HOME/.expidite/flags/reboot_count"
     REBOOT_TIMESTAMP_FILE="$HOME/.expidite/flags/last_reboot_time"
     current_time=$(date +%s)
-    
+
     if [ -f "$REBOOT_COUNT_FILE" ]; then
         reboot_count=$(<"$REBOOT_COUNT_FILE")
         last_reboot_time=$(<"$REBOOT_TIMESTAMP_FILE" 2>/dev/null || echo "0")
         time_since_reboot=$((current_time - last_reboot_time))
-        
+
         # If we've rebooted more than 3 times in the last hour, stop rebooting
         if [ "$reboot_count" -gt 3 ] && [ "$time_since_reboot" -lt 3600 ]; then
             echo "WARNING: Too many reboots detected ($reboot_count in last hour). Disabling automatic reboots."
@@ -100,7 +100,7 @@ check_prerequisites() {
     else
         echo "0" > "$REBOOT_COUNT_FILE"
     fi
-    
+
     # Delete the reboot_required flag if it exists (normal startup)
     if [ -f "$HOME/.expidite/flags/reboot_required" ]; then
         rm "$HOME/.expidite/flags/reboot_required"
@@ -129,7 +129,7 @@ export_system_cfg() {
     while IFS='=' read -r key value; do
         # Strip any surrounding whitespace from key and value
         key=$(echo "$key" | xargs)
-        value=$(echo "$value" | xargs) 
+        value=$(echo "$value" | xargs)
         if [[ $key != \#* && $key != "" ]]; then
             if [[ $key =~ ^[a-zA-Z_][a-zA-Z0-9_]*$ ]]; then
                 # Strip surrounding quotes from the value
@@ -140,7 +140,7 @@ export_system_cfg() {
             fi
         fi
     done < "$HOME/.expidite/system.cfg"
-    
+
     # If expidite_git_branch is not set, default to main
     if [ -z "$expidite_git_branch" ]; then
         expidite_git_branch="main"
@@ -260,7 +260,7 @@ install_os_packages() {
     sudo apt-get install -y rpi-connect-lite rpicam-apps || { echo "Failed to install rpi connect and rpicam-apps"; }
     sudo apt-get autoremove -y || { echo "Failed to remove unnecessary packages"; }
     echo "OS packages installed successfully."
-    # A reboot is always required after installing packages, otherwise the system is unstable 
+    # A reboot is always required after installing packages, otherwise the system is unstable
     # (eg rpicam broken pipe)
     touch "$HOME/.expidite/flags/reboot_required"
 }
@@ -297,14 +297,14 @@ install_ufw() {
     sudo ufw --force enable
 }
 
-# Function to install expidite's RpiCore 
+# Function to install expidite's RpiCore
 install_expidite() {
     echo_header "Install expidite from GitHub"
     EXP_HASH_FILE="$HOME/.expidite/flags/expidite-repo-last-hash"
     current_version=$(pip show expidite | grep Version)
     echo "Installing expidite. Current version: $current_version"
 
-    # If the current version is blank, remove any existing EXP_HASH_FILE which might be left over 
+    # If the current version is blank, remove any existing EXP_HASH_FILE which might be left over
     # from a previous installation
     if [ -z "$current_version" ]; then
         rm -f "$EXP_HASH_FILE"
@@ -378,7 +378,7 @@ install_expidite() {
 fix_my_git_repo() {
     local git_repo_url="$1"
     local use_ssh="$2"
-    
+
     if [ "$use_ssh" == "true" ]; then
         # Convert to SSH format for pip: git@github.com:owner/repo.git
         if [[ $git_repo_url == *"github.com/"* ]] && [[ $git_repo_url != *"git@"* ]]; then
@@ -386,7 +386,7 @@ fix_my_git_repo() {
             git_repo_url="${git_repo_url/github.com\//github.com:}"
             git_repo_url="git@$git_repo_url"
         elif [[ $git_repo_url == *"github.com:"* ]] && [[ $git_repo_url != *"git@"* ]]; then
-            # Convert "github.com:owner/repo.git" to "git@github.com:owner/repo.git"  
+            # Convert "github.com:owner/repo.git" to "git@github.com:owner/repo.git"
             git_repo_url="git@$git_repo_url"
         elif [[ $git_repo_url == *"https://github.com/"* ]]; then
             # Convert "https://github.com/owner/repo.git" to "git@github.com:owner/repo.git"
@@ -403,7 +403,7 @@ fix_my_git_repo() {
             # Convert "git@github.com:owner/repo.git" to "https://github.com/owner/repo.git"
             git_repo_url="${git_repo_url/git@github.com:/https://github.com/}"
         elif [[ $git_repo_url == *"git@github.com/"* ]]; then
-            # Convert "git@github.com/owner/repo.git" to "https://github.com/owner/repo.git"  
+            # Convert "git@github.com/owner/repo.git" to "https://github.com/owner/repo.git"
             git_repo_url="${git_repo_url/git@github.com\//https://github.com/}"
         elif [[ $git_repo_url == *"github.com:"* ]] && [[ $git_repo_url != *"git@"* ]]; then
             # Convert "github.com:owner/repo.git" to "https://github.com/owner/repo.git"
@@ -431,11 +431,11 @@ install_user_code() {
 ##############################################################################################################
 install_user_code_from_package() {
     project_name=$(git_project_name "$my_git_repo_url")
-    current_version=$(pip show "$project_name" | grep Version)
+    current_version=$(pip show "$project_name" 2>/dev/null | grep Version)
 
     "$HOME/$venv_dir/scripts/github_installer.py"
 
-    updated_version=$(pip show "$project_name" | grep Version)
+    updated_version=$(pip show "$project_name" 2>/dev/null | grep Version)
 
     if [[ "$current_version" != "$updated_version" ]]; then
         echo "User's code installation succeeded. Reboot required."
@@ -459,7 +459,7 @@ install_user_code_from_git_clone() {
     # Determine if using SSH (private repo) or HTTPS (public repo)
     ##########################################################################################################
     use_ssh="false"
-    
+
     # Check if SSH key file is specified and exists
     if [ -n "$my_git_ssh_private_key_file" ] && [ -f "$HOME/.ssh/$my_git_ssh_private_key_file" ]; then
         use_ssh="true"
@@ -475,7 +475,7 @@ install_user_code_from_git_clone() {
         if ! grep -qs "export GIT_SSH_COMMAND=" "$HOME/.bashrc"; then
             echo "export GIT_SSH_COMMAND='ssh -i \$HOME/.ssh/$my_git_ssh_private_key_file -o IdentitiesOnly=yes -o ConnectTimeout=10 -o ConnectionAttempts=2'" >> "$HOME/.bashrc"
         fi
-        
+
         # Ensure known_hosts exists and add GitHub key if necessary
         mkdir -p "$HOME/.ssh"
         chmod 700 "$HOME/.ssh"
@@ -504,14 +504,18 @@ install_user_code_from_git_clone() {
     # [Re-]install the latest version of the user's code in the virtual environment
     # Extract the project name from the URL
     project_name=$(git_project_name "$my_git_repo_url")
-    current_version=$(pip show "$project_name" | grep Version)
+    current_version=$(pip show "$project_name" 2>/dev/null | grep Version)
 
-    # If the current version is blank, remove any existing HASH_FILE which might be left over 
-    # from a previous installation
     HASH_FILE="$HOME/.expidite/flags/user-repo-last-hash"
-    if [ -z "$current_version" ]; then
+
+    # On a fresh install, clear any stale hash. If version lookup fails for an existing install,
+    # keep the hash so we don't force reinstall/reboot loops.
+    if [ "$new_install" == "yes" ] && [ -z "$current_version" ]; then
         rm -f "$HASH_FILE"
-        echo "New install flag: $new_install"
+        echo "Fresh install detected; cleared cached user repo hash."
+    elif [ -z "$current_version" ]; then
+        echo "Warning: Could not determine installed version for '$project_name' via pip show."
+        echo "Proceeding with hash-based change detection using cached hash file."
     else
         echo "Current version: $current_version"
     fi
@@ -541,7 +545,7 @@ install_user_code_from_git_clone() {
         # script and this can happen due to transient network issues causing github.com name resolution to
         # fail.
         install_success="false"
-        
+
         # Use appropriate URL scheme based on access method
         if [ "$use_ssh" == "true" ]; then
             # For SSH URLs, pip expects git+ssh:// format
@@ -567,7 +571,7 @@ install_user_code_from_git_clone() {
         if [ "$install_success" == "true" ]; then
             echo "$REMOTE_HASH" > "$HASH_FILE"
             echo "Installation complete; hash updated."
-            
+
             # Only set reboot flag if installation succeeded AND hash actually changed
             echo "User's code hash has changed and installation succeeded. Reboot required."
             touch "$HOME/.expidite/flags/reboot_required"
@@ -578,8 +582,8 @@ install_user_code_from_git_clone() {
     else
         echo "No changes on $my_git_branch ($REMOTE_HASH). Skipping install."
     fi
-    
-    updated_version=$(pip show "$project_name" | grep Version)
+
+    updated_version=$(pip show "$project_name" 2>/dev/null | grep Version)
     echo "User's code installation attempt completed. Current version: $updated_version"
 
     # We store the updated_version in the flags directory for later use in logging
@@ -737,13 +741,13 @@ set_hostname() {
     if [ ! -f /sys/class/net/wlan0/address ]; then
         echo "Error: wlan0 interface not found."
         return 1
-    fi 
+    fi
     mac_address=$(cat /sys/class/net/wlan0/address)
     device_id=$(echo "$mac_address" | tr -d ':')
 
     # Set the hostname to expidite-<device_id>
     new_hostname="expidite-$device_id"
-    
+
     # Check if the hostname is already set correctly
     current_hostname=$(hostname)
     if [ "$current_hostname" == "$new_hostname" ]; then
@@ -754,7 +758,7 @@ set_hostname() {
     # Set the new hostname
     echo "Setting hostname to $new_hostname..."
     sudo hostnamectl set-hostname "$new_hostname" || { echo "Failed to set hostname"; exit 1; }
-    
+
     # Update /etc/hosts file
     if ! grep -q "$new_hostname" /etc/hosts; then
         echo "Updating /etc/hosts file..."
@@ -787,7 +791,7 @@ auto_start_if_requested() {
     echo_header
     if [ "$auto_start" == "Yes" ]; then
         echo "Auto-starting Expidite RpiCore..."
-        
+
         # Check the script is not already running
         if pgrep -f "$my_start_script" > /dev/null; then
             echo "Expidite RpiCore is already running."
@@ -805,10 +809,10 @@ auto_start_if_requested() {
 ##############################################################################################################
 make_persistent() {
     echo_header
-    if [ "$auto_start" == "Yes" ]; then        
+    if [ "$auto_start" == "Yes" ]; then
         rpi_installer_cmd="/bin/bash $HOME/$venv_dir/scripts/rpi_installer.sh 2>&1 | /usr/bin/logger -t EXPIDITE"
         rpi_cmd_os_update="/bin/bash $HOME/$venv_dir/scripts/rpi_installer.sh os_update 2>&1 | /usr/bin/logger -t EXPIDITE"
-        
+
         # Delete and re-add any lines containing "rpi_installer" from crontab
         crontab -l | grep -v "rpi_installer" | crontab -
 
@@ -860,22 +864,22 @@ reboot_if_required() {
         echo "Manual intervention required. Check logs and run 'rm $HOME/.expidite/flags/reboot_disabled' to re-enable."
         return
     fi
-    
+
     if [ -f "$HOME/.expidite/flags/reboot_required" ]; then
         # Increment reboot counter
         REBOOT_COUNT_FILE="$HOME/.expidite/flags/reboot_count"
         REBOOT_TIMESTAMP_FILE="$HOME/.expidite/flags/last_reboot_time"
-        
+
         if [ -f "$REBOOT_COUNT_FILE" ]; then
             reboot_count=$(<"$REBOOT_COUNT_FILE")
             reboot_count=$((reboot_count + 1))
         else
             reboot_count=1
         fi
-        
+
         echo "$reboot_count" > "$REBOOT_COUNT_FILE"
         echo "$(date +%s)" > "$REBOOT_TIMESTAMP_FILE"
-        
+
         echo "Reboot required. This will be reboot #$reboot_count. Rebooting now..."
         sudo reboot
     else
@@ -901,7 +905,7 @@ echo_header() {
 ##############################################################################################################
 #
 # Main script execution to configure a RPi device suitable for long-running RpiCore operations
-# 
+#
 ##############################################################################################################
 echo_header "Starting RPi installer.  (os_update=$os_update)"
 # On reboot, os_update is set to "no".
@@ -919,7 +923,7 @@ if [ "$os_update" == "yes" ]; then
     # The system will still be running happily while this script sleeps.
     # A manual new install will not sleep.
     if [ "$new_install" != "yes" ]; then
-        sleep_time=$((RANDOM % 1200)) 
+        sleep_time=$((RANDOM % 1200))
         echo "Sleeping for $sleep_time seconds to stagger updates."
         sleep $sleep_time
     fi
