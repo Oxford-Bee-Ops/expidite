@@ -17,7 +17,7 @@ dependencies = [
     "adafruit-circuitpython-busdevice==5.2.15",
     "adafruit-circuitpython-bmp280==3.3.9",
     "adafruit-circuitpython-ltr390==1.1.22",
-    "adafruit-platformdetect==3.87",
+    "adafruit-platformdetect==3.88",
     "azure-storage-blob==12.28.0",
     "bottleneck==1.6.0", # Required by pandas.
     "click==8.3.1",
@@ -47,7 +47,7 @@ dev = [
     "pytest==9.0.2",
     "pytest-socket==0.7.0",
     "ruff==0.15.2",
-    "ty==0.0.18",
+    "ty==0.0.19",
     "types-psutil==7.2.2.20260130",
     "types-PyYAML==6.0.12.20250915",
 ]
