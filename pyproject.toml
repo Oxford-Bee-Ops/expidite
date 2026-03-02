@@ -13,7 +13,7 @@ authors = [
   {name = "Stuart", email = "stuart@bee-ops.com"},
 ]
 dependencies = [
-    "adafruit-blinka==8.69.0",
+    "adafruit-blinka==8.70.0",
     "adafruit-circuitpython-busdevice==5.2.15",
     "adafruit-circuitpython-bmp280==3.3.9",
     "adafruit-circuitpython-ltr390==1.1.22",
@@ -46,8 +46,8 @@ dev = [
     "pyright==1.1.408",
     "pytest==9.0.2",
     "pytest-socket==0.7.0",
-    "ruff==0.15.2",
-    "ty==0.0.19",
+    "ruff==0.15.4",
+    "ty==0.0.20",
     "types-psutil==7.2.2.20260130",
     "types-PyYAML==6.0.12.20250915",
 ]
