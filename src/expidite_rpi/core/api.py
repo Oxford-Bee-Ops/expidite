@@ -4,7 +4,7 @@
 # File define constants used on interfaces between components in the Expidite system.
 ##############################################################################################################
 from datetime import UTC, datetime
-from enum import Enum, StrEnum
+from enum import Enum, StrEnum, auto
 
 from azure.storage.blob import StandardBlobTier
 
@@ -140,6 +140,15 @@ SYSTEM_DS_TYPES = [
 ]
 SCORP_STREAM_INDEX = 0
 SCORE_STREAM_INDEX = 1
+
+
+##############################################################################################################
+# LEDs installed on the device
+##############################################################################################################
+class LedsInstalled(Enum):
+    RED_ONLY = auto()
+    RED_AND_GREEN = auto()
+
 
 ##############################################################################################################
 # Datetime formats used in the system

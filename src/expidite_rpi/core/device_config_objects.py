@@ -4,6 +4,7 @@ from typing import Any
 
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
+from expidite_rpi.core.api import LedsInstalled
 from expidite_rpi.utils import utils_clean
 
 ##############################################################################################################
@@ -118,6 +119,9 @@ class DeviceCfg(Configuration):
     # Wifi networks
     # These are the networks that the device will connect to if they are available.
     wifi_clients: list[WifiClient] = field(default_factory=list)
+
+    # LED modes: 1 Red LED or red+green LEDs
+    leds_installed: LedsInstalled = LedsInstalled.RED_AND_GREEN
 
     # List the tests that a system test installation should run.
     # This will be passed to pytest to identify and invoke the tests.

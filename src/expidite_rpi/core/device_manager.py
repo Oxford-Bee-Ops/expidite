@@ -118,20 +118,46 @@ class DeviceManager:
     # This function gets called every second.
     # Set the LEDs to ON or OFF as appropriate given the current device state.
     def led_timer_callback(self) -> None:
+        if root_cfg.my_device.leds_installed == api.LedsInstalled.RED_ONLY:
+            self._set_leds_red_only()
+        else:
+            self._set_leds_red_and_green()
+
+    def _set_leds_red_only(self) -> None:
+        """We only have a red LED."""
+        try:
+            logger.debug("LED timer callback")
+            if self.currentState == self.S_BOOTING:
+                # Red should be blinking
+                self.set_led_status("red", "blink:0.5:0.25")
+            elif self.currentState == self.S_WIFI_UP:
+                # Red should be blinking
+                self.set_led_status("red", "blink:2.0:0.25")
+            elif self.currentState == self.S_INTERNET_UP:
+                # Happy status - blink once every 10s to show we're alive
+                self.set_led_status("red", "blink:10.0:0.25")
+            elif self.currentState == self.S_WIFI_FAILED:
+                # Red should be on solid to indicate an issue
+                self.set_led_status("red", "blink:3.0:2.0")
+        except Exception:
+            logger.exception(f"{root_cfg.RAISE_WARN()}LED timer callback threw an exception")
+
+    def _set_leds_red_and_green(self) -> None:
+        """We have both red and green LEDs, so we can show more states."""
         try:
             logger.debug("LED timer callback")
             if self.currentState == self.S_BOOTING:
                 # Green should be off; red should be blinking
-                self.set_led_status("red", "blink:0.5")
+                self.set_led_status("red", "blink:1.0:0.5")
             elif self.currentState == self.S_WIFI_UP:
                 # Green should be blinking; red should be off
-                self.set_led_status("green", "blink:1.0")
+                self.set_led_status("green", "blink:1.0:0.5")
             elif self.currentState == self.S_INTERNET_UP:
                 # Green should be on; red should be off
                 self.set_led_status("green", "on")
             elif self.currentState == self.S_WIFI_FAILED:
                 # Green should be off; red should be on
-                self.set_led_status("red", "2.0")
+                self.set_led_status("red", "on")
         except Exception:
             logger.exception(f"{root_cfg.RAISE_WARN()}LED timer callback threw an exception")
 
@@ -140,7 +166,7 @@ class DeviceManager:
 
         Parameters:
             - colour: "red" or "green"
-            - status: "on", "off", or "blink"
+            - status: "on", "off", "blink",
         """
         try:
             with open(root_cfg.LED_STATUS_FILE, "w") as f:
