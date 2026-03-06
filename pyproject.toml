@@ -74,8 +74,13 @@ indent-style = "space"
 line-ending = "auto"
 
 [tool.ruff.lint]
-# Enforce all ruff rules, unless explicitly overridden below.
+# Enable all standard ruff rules, unless explicitly overridden below.
 select = ["ALL"]
+# Enable some preview rules (all other preview rules not listed here are automatically ignored).
+preview = true
+explicit-preview-rules = true
+extend-select = ["RUF027"]
+# Ignore standard rules that we don't want to enforce, or that we do want to enforce but need to fix first.
 ignore = [
     # Rules that we don't want to enforce.
     "COM812",  # Little benefit.

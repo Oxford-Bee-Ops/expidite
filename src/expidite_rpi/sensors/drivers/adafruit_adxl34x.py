@@ -339,7 +339,7 @@ class ADXL345:
         The higher the value the less sensitive the detection.
 
         :param int duration: This caps the duration of the impulse above ``threshold``.\
-        Anything above ``duration`` won't register as a tap. The scale factor is 625 µs/LSB
+        Anything above ``duration`` won't register as a tap. The scale factor is 625 μs/LSB
 
         :param int latency: (double tap only) The length of time after the initial impulse\
         falls below ``threshold`` to start the window looking for a second impulse.\
