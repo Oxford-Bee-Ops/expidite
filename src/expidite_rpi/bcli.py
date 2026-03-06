@@ -65,6 +65,8 @@ def run_cmd_live_echo(cmd: str) -> str:
     """
     if not root_cfg.running_on_rpi:
         return "This command only works on a Raspberry Pi"
+
+    process = None
     try:
         process = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, shell=True)
         q: queue.Queue = queue.Queue()
@@ -485,8 +487,8 @@ class InteractiveMenu:
             click.echo("Starting RpiCore using default configuration...")
             self.sc.start()
         else:
+            my_start_script = root_cfg.system_cfg.my_start_script
             try:
-                my_start_script = root_cfg.system_cfg.my_start_script
                 # Try creating an instance and calling main()
                 # This will raise an ImportError if the module is not found or if the main() function is not
                 # defined in the module
@@ -676,8 +678,8 @@ class InteractiveMenu:
                         existing_lines.append(line)
 
         # Check the key is valid by trying to create a CloudConnector instance.
+        test_file = root_cfg.KEYS_FILE.with_suffix(".test")
         try:
-            test_file = root_cfg.KEYS_FILE.with_suffix(".test")
             if test_file.exists():
                 test_file.unlink()
 

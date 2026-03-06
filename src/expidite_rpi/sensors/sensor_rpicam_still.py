@@ -106,23 +106,23 @@ class RpicamStillSensor(Sensor):
 
         # Main loop to record video and take still images
         while self.continue_recording():
+            # Record video for the specified number of seconds
+            start_time = api.utc_now()
+
+            # Get the filename for the video file
+            filename = file_naming.get_temporary_filename(self.recording_format)
+
+            if self.in_review_mode():
+                config = cast(RpicamStillSensorCfg, self.config)
+                cmd_to_use = config.rpicam_review_mode_cmd
+                stream_index_to_use = RPICAM_STILL_REVIEW_MODE_STREAM_INDEX
+                wait_period = root_cfg.my_device.review_mode_frequency
+            else:
+                cmd_to_use = self.rpicam_cmd
+                stream_index_to_use = RPICAM_STILL_STREAM_INDEX
+                wait_period = self.recording_interval_seconds
+
             try:
-                # Record video for the specified number of seconds
-                start_time = api.utc_now()
-
-                # Get the filename for the video file
-                filename = file_naming.get_temporary_filename(self.recording_format)
-
-                if self.in_review_mode():
-                    config = cast(RpicamStillSensorCfg, self.config)
-                    cmd_to_use = config.rpicam_review_mode_cmd
-                    stream_index_to_use = RPICAM_STILL_REVIEW_MODE_STREAM_INDEX
-                    wait_period = root_cfg.my_device.review_mode_frequency
-                else:
-                    cmd_to_use = self.rpicam_cmd
-                    stream_index_to_use = RPICAM_STILL_STREAM_INDEX
-                    wait_period = self.recording_interval_seconds
-
                 # Replace the FILENAME placeholder in the command with the actual filename
                 cmd = cmd_to_use.replace("FILENAME", str(filename))
 

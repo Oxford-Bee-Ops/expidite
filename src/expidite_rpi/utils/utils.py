@@ -191,8 +191,9 @@ def run_cmd(cmd: str, ignore_errors: bool = False, grep_strs: list[str] | None =
 def save_journald_log_entries(output_file_name: Path, grep_str: str = "", since_minutes: int = 31) -> None:
     if root_cfg.running_on_windows:
         logger.warning("save_journald_log_entries not supported on Windows")
-    else:
-        import systemd.journal  # type: ignore
+        return
+
+    import systemd.journal  # type: ignore
 
     # Calculate the start time for entries
     start_time = api.utc_now() - dt.timedelta(minutes=since_minutes)

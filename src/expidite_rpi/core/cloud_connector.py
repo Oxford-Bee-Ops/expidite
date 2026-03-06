@@ -667,6 +667,7 @@ class LocalCloudConnector(CloudConnector):
         It the responsibility of the calling function to ensure that the columns & headers in the
         CSV data are consistent between local and remote files
         """
+        blob_client = None
         try:
             logger.debug(f"LocalCC.append_to_cloud() with delete_src={delete_src} for {src_file}")
 
@@ -981,6 +982,7 @@ class AsyncCloudConnector(CloudConnector):
     def do_work(self, block: bool = True) -> None:
         """Process the upload queue."""
         while not self._stop_requested.is_set():
+            queue_item = None
             try:
                 if block:
                     queue_item = self._upload_queue.get()
