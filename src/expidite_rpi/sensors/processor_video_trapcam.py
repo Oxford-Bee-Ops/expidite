@@ -86,13 +86,14 @@ class TrapcamDp(DataProcessor):
         frame_height = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
         fps = int(cap.get(cv2.CAP_PROP_FPS))
         suffix = video_path.suffix[1:]
-        if suffix == "h264":
-            fourcc = cv2.VideoWriter.fourcc(*"h264")
-        elif suffix == "mp4":
-            fourcc = cv2.VideoWriter.fourcc(*"mp4v")
-        else:
-            msg = f"Unsupported video format: {suffix}"
-            raise ValueError(msg)
+        match suffix:
+            case "h264":
+                fourcc = cv2.VideoWriter.fourcc(*"h264")
+            case "mp4":
+                fourcc = cv2.VideoWriter.fourcc(*"mp4v")
+            case _:
+                msg = f"Unsupported video format: {suffix}"
+                raise ValueError(msg)
 
         samples_saved = 0
         sum_sample_duration = 0
@@ -221,13 +222,14 @@ class TrapcamDp(DataProcessor):
                 raise ValueError(msg)
 
             suffix = video_path.suffix[1:]
-            if suffix == "h264":
-                fourcc = cv2.VideoWriter.fourcc(*"h264")
-            elif suffix == "mp4":
-                fourcc = cv2.VideoWriter.fourcc(*"mp4v")
-            else:
-                msg = f"Unsupported video format: {suffix}"
-                raise ValueError(msg)
+            match suffix:
+                case "h264":
+                    fourcc = cv2.VideoWriter.fourcc(*"h264")
+                case "mp4":
+                    fourcc = cv2.VideoWriter.fourcc(*"mp4v")
+                case _:
+                    msg = f"Unsupported video format: {suffix}"
+                    raise ValueError(msg)
 
             logger.info(
                 f"Processing video (3-phase) with fps={fps}, frames={total_frames}, "

@@ -536,21 +536,22 @@ class DPnode:
         # If not already present, add the RECORD_ID fields to the output_df
         for field in api.REQD_RECORD_ID_FIELDS:
             if field not in output_data.columns:
-                if field == api.RECORD_ID.VERSION.value:
-                    output_data[field] = "V3"
-                elif field == api.RECORD_ID.TIMESTAMP.value:
-                    output_data[field] = api.utc_to_iso_str()
-                elif field == api.RECORD_ID.DEVICE_ID.value:
-                    output_data[field] = root_cfg.my_device_id
-                elif field == api.RECORD_ID.SENSOR_INDEX.value:
-                    output_data[field] = self.sensor_index
-                elif field == api.RECORD_ID.DATA_TYPE_ID.value:
-                    output_data[field] = stream.type_id
-                elif field == api.RECORD_ID.STREAM_INDEX.value:
-                    output_data[field] = stream.index
-                else:
-                    msg = f"Unknown RECORD_ID field {field}"
-                    raise AssertionError(msg)
+                match field:
+                    case api.RECORD_ID.VERSION.value:
+                        output_data[field] = "V3"
+                    case api.RECORD_ID.TIMESTAMP.value:
+                        output_data[field] = api.utc_to_iso_str()
+                    case api.RECORD_ID.DEVICE_ID.value:
+                        output_data[field] = root_cfg.my_device_id
+                    case api.RECORD_ID.SENSOR_INDEX.value:
+                        output_data[field] = self.sensor_index
+                    case api.RECORD_ID.DATA_TYPE_ID.value:
+                        output_data[field] = stream.type_id
+                    case api.RECORD_ID.STREAM_INDEX.value:
+                        output_data[field] = stream.index
+                    case _:
+                        msg = f"Unknown RECORD_ID field {field}"
+                        raise AssertionError(msg)
         # Check the values in the RECORD_ID are not nan or empty
         for field in api.REQD_RECORD_ID_FIELDS:
             if not output_data[field].notna().all():

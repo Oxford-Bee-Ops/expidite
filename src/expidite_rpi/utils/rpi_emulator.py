@@ -399,12 +399,13 @@ class RpiEmulator:
         else:
             # No recording. Create a dummy video file.
             # Use OpenCV to create a dummy video file
-            if suffix == "h264":
-                fourcc = cv2.VideoWriter.fourcc(*"h264")
-            elif suffix == "mp4":
-                fourcc = cv2.VideoWriter.fourcc(*"mp4v")
-            else:
-                raise ValueError("Unsupported video format: " + suffix)
+            match suffix:
+                case "h264":
+                    fourcc = cv2.VideoWriter.fourcc(*"h264")
+                case "mp4":
+                    fourcc = cv2.VideoWriter.fourcc(*"mp4v")
+                case _:
+                    raise ValueError("Unsupported video format: " + suffix)
 
             out = cv2.VideoWriter(filename, fourcc, framerate, (width, height))
             num_frames = int(framerate * duration)

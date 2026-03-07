@@ -889,23 +889,25 @@ class InteractiveMenu:
                 click.echo("Invalid input. Please enter a number.")
                 continue
 
-            if choice == 1:
-                self.view_rpi_core_config()
-            elif choice == 2:
-                self.view_status()
-            elif choice == 3:
-                self.validate_device()
-            elif choice == 4:
-                self.sensing_menu()
-            elif choice == 5:
-                self.maintenance_menu()
-            elif choice == 6:
-                self.debug_menu()
-            elif choice == 0:
-                click.echo("Exiting...")
-                break
-            else:
-                click.echo("Invalid choice. Please try again.")
+            match choice:
+                case 1:
+                    self.view_rpi_core_config()
+                case 2:
+                    self.view_status()
+                case 3:
+                    self.validate_device()
+                case 4:
+                    self.sensing_menu()
+                case 5:
+                    self.maintenance_menu()
+                case 6:
+                    self.debug_menu()
+                case 0:
+                    click.echo("Exiting...")
+                    break
+                case _:
+                    click.echo("Invalid choice. Please try again.")
+
         # Clean up and exit
         cc = CloudConnector.get_instance(root_cfg.CloudType.AZURE)
         assert isinstance(cc, AsyncCloudConnector)
@@ -924,12 +926,13 @@ class InteractiveMenu:
                 click.echo("Invalid input. Please enter a number.")
                 continue
 
-            if choice == 1:
-                self.trigger_sensing()
-            elif choice == 0:
-                break
-            else:
-                click.echo("Invalid choice. Please try again.")
+            match choice:
+                case 1:
+                    self.trigger_sensing()
+                case 0:
+                    break
+                case _:
+                    click.echo("Invalid choice. Please try again.")
 
     def debug_menu(self) -> None:
         """Menu for debugging commands."""
@@ -957,30 +960,31 @@ class InteractiveMenu:
                 click.echo("Invalid input. Please enter a number.")
                 continue
 
-            if choice == 1:
-                self.run_network_test()
-            elif choice == 2:
-                self.journalctl()
-            elif choice == 3:
-                self.display_errors()
-            elif choice == 4:
-                self.display_rpi_core_logs()
-            elif choice == 5:
-                self.display_sensor_logs()
-            elif choice == 6:
-                self.display_score_logs()
-            elif choice == 7:
-                self.display_running_processes()
-            elif choice == 8:
-                self.show_recordings()
-            elif choice == 9:
-                self.show_crontab_entries()
-            elif choice == 10:
-                self.nmap_ping_scan()
-            elif choice == 0:
-                break
-            else:
-                click.echo("Invalid choice. Please try again.")
+            match choice:
+                case 1:
+                    self.run_network_test()
+                case 2:
+                    self.journalctl()
+                case 3:
+                    self.display_errors()
+                case 4:
+                    self.display_rpi_core_logs()
+                case 5:
+                    self.display_sensor_logs()
+                case 6:
+                    self.display_score_logs()
+                case 7:
+                    self.display_running_processes()
+                case 8:
+                    self.show_recordings()
+                case 9:
+                    self.show_crontab_entries()
+                case 10:
+                    self.nmap_ping_scan()
+                case 0:
+                    break
+                case _:
+                    click.echo("Invalid choice. Please try again.")
 
     def maintenance_menu(self) -> None:
         """Menu for maintenance commands."""
@@ -1002,26 +1006,27 @@ class InteractiveMenu:
                 click.echo("Invalid input. Please enter a number.")
                 continue
 
-            if choice == 1:
-                self.update_software()
-            elif choice == 2:
-                self.enable_rpi_connect()
-            elif choice == 3:
-                self.review_mode()
-            elif choice == 4:
-                self.start_rpi_core()
-            elif choice == 5:
-                self.stop_rpi_core(pkill=False)
-            elif choice == 6:
-                self.stop_rpi_core(pkill=True)
-            elif choice == 7:
-                self.reboot_device()
-            elif choice == 8:
-                self.update_storage_key()
-            elif choice == 0:
-                break
-            else:
-                click.echo("Invalid choice. Please try again.")
+            match choice:
+                case 1:
+                    self.update_software()
+                case 2:
+                    self.enable_rpi_connect()
+                case 3:
+                    self.review_mode()
+                case 4:
+                    self.start_rpi_core()
+                case 5:
+                    self.stop_rpi_core(pkill=False)
+                case 6:
+                    self.stop_rpi_core(pkill=True)
+                case 7:
+                    self.reboot_device()
+                case 8:
+                    self.update_storage_key()
+                case 0:
+                    break
+                case _:
+                    click.echo("Invalid choice. Please try again.")
 
 
 ##############################################################################################################

@@ -27,14 +27,15 @@ def pytest_terminal_summary(terminalreporter, exitstatus, config):
         duration = getattr(rep, "duration", None)
         outcome = rep.outcome.upper()
 
-        if outcome == "PASSED":
-            outcome_colored = f"{GREEN}{outcome}{RESET}"
-        elif outcome == "FAILED":
-            outcome_colored = f"{RED}{outcome}{RESET}"
-        elif outcome == "SKIPPED":
-            outcome_colored = f"{YELLOW}{outcome}{RESET}"
-        else:
-            outcome_colored = outcome
+        match outcome:
+            case "PASSED":
+                outcome_colored = f"{GREEN}{outcome}{RESET}"
+            case "FAILED":
+                outcome_colored = f"{RED}{outcome}{RESET}"
+            case "SKIPPED":
+                outcome_colored = f"{YELLOW}{outcome}{RESET}"
+            case _:
+                outcome_colored = outcome
 
         test_name = rep.nodeid.split("::")[-1]
         tr.write_line(f"{test_name} - {outcome_colored} - {duration:.3f}s")

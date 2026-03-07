@@ -2,6 +2,7 @@
 # - Wifi
 # - LED indicator status
 import os
+from enum import IntEnum, auto
 from time import sleep
 
 from expidite_rpi.core import api
@@ -12,20 +13,18 @@ from expidite_rpi.utils import utils
 logger = root_cfg.setup_logger("expidite")
 
 
+class DeviceState(IntEnum):
+    BOOTING = auto()
+    WIFI_UP = auto()
+    INTERNET_UP = auto()
+    WIFI_FAILED = auto()
+
+
 class DeviceManager:
     """Manages LED & Wifi status if configured to do so in my_device (DeviceCfg):
     - manage_wifi: bool = True
     - manage_leds: bool = True
     """  # noqa: D415
-
-    # Device states
-    S_BOOTING = "Booting"
-    S_WIFI_UP = "Wifi Up"
-    S_INTERNET_UP = "Internet Up"
-    S_WIFI_FAILED = "Wifi failed"
-    S_AP_DOWN = "AP Down"
-    S_AP_UP = "AP Up"
-    S_AP_IN_USE = "AP In Use"
 
     def __init__(self) -> None:
         if not root_cfg.system_cfg.is_valid:
@@ -38,6 +37,7 @@ class DeviceManager:
         self.led_timer: utils.RepeatTimer | None = None
         self.wifi_timer: utils.RepeatTimer | None = None
         self.diagnostics_upload_timer: utils.RepeatTimer | None = None
+        self.current_state = DeviceState.BOOTING
 
     def start(self) -> None:
         """Start the DeviceManager threads."""
@@ -64,9 +64,8 @@ class DeviceManager:
         ######################################################################################################
         # LED status management
         ######################################################################################################
-        self.currentState = self.S_BOOTING
-        self.currentAPState = self.S_AP_DOWN
-        self.lastStateChangeTime = api.utc_now()
+        self.current_state = DeviceState.BOOTING
+        self.last_state_change_time = api.utc_now()
         self.red_led = False
         self.green_led = False
         # Start the LED management thread
@@ -118,6 +117,7 @@ class DeviceManager:
     # This function gets called every second.
     # Set the LEDs to ON or OFF as appropriate given the current device state.
     def led_timer_callback(self) -> None:
+        logger.debug("LED timer callback")
         if root_cfg.my_device.leds_installed == api.LedsInstalled.RED_ONLY:
             self._set_leds_red_only()
         else:
@@ -126,38 +126,38 @@ class DeviceManager:
     def _set_leds_red_only(self) -> None:
         """We only have a red LED."""
         try:
-            logger.debug("LED timer callback")
-            if self.currentState == self.S_BOOTING:
-                # Red should be blinking
-                self.set_led_status("red", "blink:0.5:0.25")
-            elif self.currentState == self.S_WIFI_UP:
-                # Red should be blinking
-                self.set_led_status("red", "blink:2.0:0.25")
-            elif self.currentState == self.S_INTERNET_UP:
-                # Happy status - blink once every 10s to show we're alive
-                self.set_led_status("red", "blink:10.0:0.25")
-            elif self.currentState == self.S_WIFI_FAILED:
-                # Red should be on solid to indicate an issue
-                self.set_led_status("red", "blink:3.0:2.0")
+            match self.current_state:
+                case DeviceState.BOOTING:
+                    # Red should be blinking
+                    self.set_led_status("red", "blink:0.5:0.25")
+                case DeviceState.WIFI_UP:
+                    # Red should be blinking
+                    self.set_led_status("red", "blink:2.0:0.25")
+                case DeviceState.INTERNET_UP:
+                    # Happy status - blink once every 10s to show we're alive
+                    self.set_led_status("red", "blink:10.0:0.25")
+                case DeviceState.WIFI_FAILED:
+                    # Red should be on solid to indicate an issue
+                    self.set_led_status("red", "blink:3.0:2.0")
         except Exception:
             logger.exception(f"{root_cfg.RAISE_WARN()}LED timer callback threw an exception")
 
     def _set_leds_red_and_green(self) -> None:
         """We have both red and green LEDs, so we can show more states."""
         try:
-            logger.debug("LED timer callback")
-            if self.currentState == self.S_BOOTING:
-                # Green should be off; red should be blinking
-                self.set_led_status("red", "blink:1.0:0.5")
-            elif self.currentState == self.S_WIFI_UP:
-                # Green should be blinking; red should be off
-                self.set_led_status("green", "blink:1.0:0.5")
-            elif self.currentState == self.S_INTERNET_UP:
-                # Green should be on; red should be off
-                self.set_led_status("green", "on")
-            elif self.currentState == self.S_WIFI_FAILED:
-                # Green should be off; red should be on
-                self.set_led_status("red", "on")
+            match self.current_state:
+                case DeviceState.BOOTING:
+                    # Green should be off; red should be blinking
+                    self.set_led_status("red", "blink:1.0:0.5")
+                case DeviceState.WIFI_UP:
+                    # Green should be blinking; red should be off
+                    self.set_led_status("green", "blink:1.0:0.5")
+                case DeviceState.INTERNET_UP:
+                    # Green should be on; red should be off
+                    self.set_led_status("green", "on")
+                case DeviceState.WIFI_FAILED:
+                    # Green should be off; red should be on
+                    self.set_led_status("red", "on")
         except Exception:
             logger.exception(f"{root_cfg.RAISE_WARN()}LED timer callback threw an exception")
 
@@ -215,36 +215,31 @@ class DeviceManager:
     def set_wifi_status(self, wifi_up: bool) -> None:
         if wifi_up:
             # We only check wifi status if ping has failed
-            if self.currentState != self.S_WIFI_UP:
-                self.currentState = self.S_WIFI_UP
+            if self.current_state != DeviceState.WIFI_UP:
+                self.current_state = DeviceState.WIFI_UP
                 self.set_last_state_change_time()
         # Wifi failed
-        elif self.currentState != self.S_WIFI_FAILED:
-            self.currentState = self.S_WIFI_FAILED
+        elif self.current_state != DeviceState.WIFI_FAILED:
+            self.current_state = DeviceState.WIFI_FAILED
             self.set_last_state_change_time()
-
-    def set_ap_status(self, device_status: str) -> None:
-        self.currentAPState = device_status
 
     def set_ping_status(self, ping_successful: bool) -> None:
         if ping_successful:
             # We have good connectivity to the internet
-            if self.currentState != self.S_INTERNET_UP:
-                self.currentState = self.S_INTERNET_UP
+            if self.current_state != DeviceState.INTERNET_UP:
+                self.current_state = DeviceState.INTERNET_UP
                 self.set_last_state_change_time()
-        else:
-            # Ping failed, but wifi might be up
-            self.set_ap_status(DeviceManager.S_AP_DOWN)
-            if self.currentState == self.S_INTERNET_UP:
-                self.currentState = self.S_WIFI_UP
-                self.set_last_state_change_time()
+        # Ping failed, but wifi might be up
+        elif self.current_state == DeviceState.INTERNET_UP:
+            self.current_state = DeviceState.WIFI_UP
+            self.set_last_state_change_time()
 
     def set_last_state_change_time(self) -> None:
-        self.lastStateChangeTime = api.utc_now()
+        self.last_state_change_time = api.utc_now()
 
     def get_time_since_last_state_change(self) -> float:
         currentTime = api.utc_now()
-        return (currentTime - self.lastStateChangeTime).total_seconds()
+        return (currentTime - self.last_state_change_time).total_seconds()
 
     # Create a function for logging useful info
     def log_wifi_info(self) -> None:
