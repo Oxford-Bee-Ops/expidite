@@ -6,8 +6,8 @@ from dataclasses import dataclass
 from datetime import UTC, datetime
 from pathlib import Path
 from queue import Empty, Queue
-from threading import Event
-from time import sleep
+from threading import Event, Lock
+from time import perf_counter, sleep
 from typing import Optional
 
 import pandas as pd
@@ -811,6 +811,13 @@ class AsyncCloudConnector(CloudConnector):
         self._stop_requested = Event()
         self._upload_queue: Queue = Queue()
         self._worker_pool: ThreadPoolExecutor = ThreadPoolExecutor(max_workers=6)
+        self._perf_lock = Lock()
+        self._perf_report_interval_seconds = 15 * 60
+        self._perf_last_report_time = perf_counter()
+        self._async_upload_count = 0
+        self._async_upload_total_seconds = 0.0
+        self._async_append_count = 0
+        self._async_append_total_seconds = 0.0
         # Start the worker thread to process the upload queue
         self._worker_pool.submit(self.do_work)
 
@@ -828,6 +835,8 @@ class AsyncCloudConnector(CloudConnector):
             self._upload_queue.put(None)
         if self._worker_pool is not None:
             self._worker_pool.shutdown(wait=True, cancel_futures=True)
+
+        self._log_async_performance(force=True)
 
         super().shutdown()  # Call the parent shutdown method
 
@@ -902,6 +911,7 @@ class AsyncCloudConnector(CloudConnector):
         We re-queue the upload if it fails if the src files still exist.
         This method is called on a thread from the ThreadPoolExecutor.
         """
+        start_time = perf_counter()
         try:
             logger.debug(
                 f"_async_upload with delete_src={action.delete_src}, "
@@ -938,6 +948,8 @@ class AsyncCloudConnector(CloudConnector):
                 self._upload_queue.put(action)
                 # Back off for a bit before re-trying the upload
                 sleep(2 * action.iteration)
+        finally:
+            self._record_async_timing("upload", perf_counter() - start_time)
 
     def _async_append(
         self,
@@ -948,6 +960,7 @@ class AsyncCloudConnector(CloudConnector):
         This method is called on a thread from the ThreadPoolExecutor.
         """
         succeeded: bool = False
+        start_time = perf_counter()
         try:
             logger.debug(f"_async_append iteration {action.iteration} for {action.src_fname}")
 
@@ -977,6 +990,50 @@ class AsyncCloudConnector(CloudConnector):
                     self._upload_queue.put(action)
                     # Back off for a bit before re-trying the upload
                     sleep(2 * action.iteration)
+            self._record_async_timing("append", perf_counter() - start_time)
+
+    def _record_async_timing(self, method: str, duration_seconds: float) -> None:
+        with self._perf_lock:
+            if method == "upload":
+                self._async_upload_count += 1
+                self._async_upload_total_seconds += duration_seconds
+            elif method == "append":
+                self._async_append_count += 1
+                self._async_append_total_seconds += duration_seconds
+
+        self._log_async_performance(force=False)
+
+    def _log_async_performance(self, force: bool) -> None:
+        with self._perf_lock:
+            now = perf_counter()
+            if not force and (now - self._perf_last_report_time) < self._perf_report_interval_seconds:
+                return
+
+            upload_count = self._async_upload_count
+            upload_total_seconds = self._async_upload_total_seconds
+            append_count = self._async_append_count
+            append_total_seconds = self._async_append_total_seconds
+
+            if upload_count == 0 and append_count == 0:
+                self._perf_last_report_time = now
+                return
+
+            upload_avg_ms = (upload_total_seconds / upload_count) * 1000 if upload_count else 0.0
+            append_avg_ms = (append_total_seconds / append_count) * 1000 if append_count else 0.0
+
+            logger.info(
+                "Async cloud performance (last 15 min): "
+                f"_async_upload count={upload_count}, total_s={upload_total_seconds:.3f}, "
+                f"avg_ms={upload_avg_ms:.2f}; "
+                f"_async_append count={append_count}, total_s={append_total_seconds:.3f}, "
+                f"avg_ms={append_avg_ms:.2f}"
+            )
+
+            self._perf_last_report_time = now
+            self._async_upload_count = 0
+            self._async_upload_total_seconds = 0.0
+            self._async_append_count = 0
+            self._async_append_total_seconds = 0.0
 
     def do_work(self, block: bool = True) -> None:
         """Process the upload queue."""
