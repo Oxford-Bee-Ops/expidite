@@ -262,7 +262,7 @@ def setup_logger(name: str, level: int | None = None, filename: str | Path | Non
         logger = logging.getLogger(name)
         logger.setLevel(_LOG_LEVEL)
         if len(logger.handlers) == 0:
-            handler = JournaldLogHandler()
+            handler = JournaldLogHandler(SYSLOG_IDENTIFIER=Path(sys.argv[0]).name)
             handler.setFormatter(logging.Formatter("%(name)s %(levelname)-6s [%(thread)d] %(message)s"))
             logger.addHandler(handler)
     else:  # elif root_cfg.running_on_windows
