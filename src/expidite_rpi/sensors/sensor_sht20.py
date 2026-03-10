@@ -1,0 +1,105 @@
+from dataclasses import dataclass
+from time import sleep
+
+from sensirion_driver_adapters.i2c_adapter.i2c_channel import I2cChannel
+from sensirion_i2c_driver import CrcCalculator, I2cConnection, LinuxI2cTransceiver
+from sensirion_i2c_sht.sht2x.device import Sht2xI2cDevice
+from sensirion_i2c_sht.sht2x.response_types import Sht2xHumidity, Sht2xTemperature
+
+from expidite_rpi.core import api
+from expidite_rpi.core import configuration as root_cfg
+from expidite_rpi.core.dp_config_objects import Stream
+from expidite_rpi.core.sensor import Sensor, SensorCfg
+
+logger = root_cfg.setup_logger("expidite")
+
+SHT20_SENSOR_INDEX = 64  # SHT20 i2c address, 0x40(64)
+SHT20_SENSOR_TYPE_ID = "SHT20"
+SHT20_FIELDS = ["temperature", "humidity"]
+SHT20_STREAM_INDEX = 0
+SHT20_STREAM: Stream = Stream(
+    description="Temperature and humidity data from SHT20",
+    type_id=SHT20_SENSOR_TYPE_ID,
+    index=SHT20_STREAM_INDEX,
+    format=api.FORMAT.LOG,
+    fields=SHT20_FIELDS,
+    cloud_container="expidite-journals",
+)
+
+
+@dataclass
+class SHT20SensorCfg(SensorCfg):
+    ##########################################################################################################
+    # Custom fields
+    ##########################################################################################################
+    pass
+
+
+DEFAULT_SHT20_SENSOR_CFG = SHT20SensorCfg(
+    sensor_type=api.SENSOR_TYPE.I2C,
+    sensor_index=SHT20_SENSOR_INDEX,
+    sensor_model="SHT20",
+    description="SHT20 Temperature and Humidity sensor",
+    outputs=[SHT20_STREAM],
+)
+
+
+class SHT20(Sensor):
+    # Init
+    def __init__(self, config: SHT20SensorCfg) -> None:
+        super().__init__(config)
+        self.config = config
+
+    # Separate thread to log data
+    def run(self) -> None:
+        with LinuxI2cTransceiver("/dev/i2c-1") as i2c_transceiver:
+            channel = I2cChannel(
+                I2cConnection(i2c_transceiver), slave_address=0x40, crc=CrcCalculator(8, 0x31, 0xFF, 0x0)
+            )
+            sensor = Sht2xI2cDevice(channel)
+
+            try:
+                sensor.soft_reset()
+                sleep(0.01)
+            except Exception:
+                logger.warning(f"{root_cfg.RAISE_WARN()}Could not reset SHT20 sensor {self.sensor_index}")
+            serial_number = sensor.read_serial_number()
+            logger.debug(f"SHT20 serial_number: {serial_number}; ")
+
+            while self.continue_recording():
+                try:
+                    response = sensor.single_shot_measurement()
+                    if not isinstance(response, tuple) or len(response) != 2:
+                        logger.error(
+                            f"{root_cfg.RAISE_WARN()}Unexpected response format from SHT20 sensor: {response}"
+                        )
+                        continue
+
+                    temperature: Sht2xTemperature = response[0]
+                    humidity: Sht2xHumidity = response[1]
+
+                    if temperature is None or humidity is None:
+                        logger.error(f"{root_cfg.RAISE_WARN()}Error in SHT20 sensor run: No data")
+                        continue
+
+                    self.log(
+                        stream_index=SHT20_STREAM_INDEX,
+                        sensor_data={
+                            "temperature": (f"{temperature.ticks:.1f}"),
+                            "humidity": (f"{humidity.ticks:.1f}"),
+                        },
+                    )
+                    logger.debug(
+                        f"SHT20 sensor {self.sensor_index} data: "
+                        f"{temperature.ticks:.1f}C, {humidity.ticks:.1f}%"
+                    )
+
+                except Exception:
+                    logger.exception(f"{root_cfg.RAISE_WARN()}Error in SHT20 sensor run")
+                finally:
+                    if self.in_review_mode():
+                        wait_period = root_cfg.my_device.review_mode_frequency
+                    else:
+                        wait_period = root_cfg.my_device.env_sensor_frequency
+                    logger.debug(f"SHT20 sensor {self.sensor_index} sleeping for {wait_period} seconds")
+                    self.stop_requested.wait(wait_period)
