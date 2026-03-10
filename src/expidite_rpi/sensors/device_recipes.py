@@ -33,12 +33,22 @@ from expidite_rpi.sensors.sensor_rpicam_vid import (
     RpicamSensor,
     RpicamSensorCfg,
 )
+from expidite_rpi.sensors.sensor_sht20 import DEFAULT_SHT20_SENSOR_CFG, SHT20
 from expidite_rpi.sensors.sensor_sht31 import DEFAULT_SHT31_SENSOR_CFG, SHT31
 from expidite_rpi.sensors.sensor_sht40 import DEFAULT_SHT40_SENSOR_CFG, SHT40
 from expidite_rpi.sensors.sensor_video_on_demand import DEFAULT_VIDEO_OD_SENSOR_CFG, VideoOnDemandSensor
 
 logger = root_cfg.setup_logger("expidite")
 
+
+##############################################################################################################
+# Create SHT20 temp and humidity sensor device
+##############################################################################################################
+def create_sht20_device() -> list[DPtree]:
+    cfg = DEFAULT_SHT20_SENSOR_CFG
+    my_sensor = SHT20(cfg)
+    my_tree = DPtree(my_sensor)
+    return [my_tree]
 
 ##############################################################################################################
 # Create SHT31 temp and humidity sensor device
