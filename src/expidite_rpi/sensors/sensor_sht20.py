@@ -13,6 +13,9 @@ from expidite_rpi.core.sensor import Sensor, SensorCfg
 
 logger = root_cfg.setup_logger("expidite")
 
+SHT20_STARTUP_RETRIES = 3
+SHT20_STARTUP_RETRY_DELAY_SECONDS = 0.2
+
 SHT20_SENSOR_INDEX = 64  # SHT20 i2c address, 0x40(64)
 SHT20_SENSOR_TYPE_ID = "SHT20"
 SHT20_FIELDS = ["temperature", "humidity"]
@@ -52,54 +55,84 @@ class SHT20(Sensor):
 
     # Separate thread to log data
     def run(self) -> None:
-        with LinuxI2cTransceiver("/dev/i2c-1") as i2c_transceiver:
-            channel = I2cChannel(
-                I2cConnection(i2c_transceiver), slave_address=0x40, crc=CrcCalculator(8, 0x31, 0xFF, 0x0)
-            )
-            sensor = Sht2xI2cDevice(channel)
-
+        while self.continue_recording():
             try:
-                sensor.soft_reset()
-                sleep(0.01)
+                with LinuxI2cTransceiver("/dev/i2c-1") as i2c_transceiver:
+                    channel = I2cChannel(
+                        I2cConnection(i2c_transceiver),
+                        slave_address=0x40,
+                        crc=CrcCalculator(8, 0x31, 0xFF, 0x0),
+                    )
+                    sensor = Sht2xI2cDevice(channel)
+
+                    startup_succeeded = False
+                    for attempt in range(1, SHT20_STARTUP_RETRIES + 1):
+                        try:
+                            sensor.soft_reset()
+                            sleep(0.01)
+                            serial_number = sensor.read_serial_number()
+                            logger.debug(f"SHT20 serial_number: {serial_number}; ")
+                            startup_succeeded = True
+                            break
+                        except Exception:
+                            logger.warning(
+                                f"{root_cfg.RAISE_WARN()}SHT20 startup transient failure "
+                                f"{attempt}/{SHT20_STARTUP_RETRIES} for sensor {self.sensor_index}"
+                            )
+                            if attempt < SHT20_STARTUP_RETRIES:
+                                self.stop_requested.wait(SHT20_STARTUP_RETRY_DELAY_SECONDS)
+
+                    if not startup_succeeded:
+                        msg = f"SHT20 startup failed for sensor {self.sensor_index}"
+                        raise RuntimeError(msg)
+
+                    while self.continue_recording():
+                        try:
+                            response = sensor.single_shot_measurement()
+                            if not isinstance(response, tuple) or len(response) != 2:
+                                msg = (
+                                    f"{root_cfg.RAISE_WARN()}Unexpected response format "
+                                    f"from SHT20 sensor: {response}"
+                                )
+                                logger.error(msg)
+                                continue
+
+                            temperature: Sht2xTemperature = response[0]
+                            humidity: Sht2xHumidity = response[1]
+
+                            if temperature is None or humidity is None:
+                                logger.error(f"{root_cfg.RAISE_WARN()}Error in SHT20 sensor run: No data")
+                                continue
+
+                            self.log(
+                                stream_index=SHT20_STREAM_INDEX,
+                                sensor_data={
+                                    "temperature": (f"{temperature.ticks:.1f}"),
+                                    "humidity": (f"{humidity.ticks:.1f}"),
+                                },
+                            )
+                            logger.debug(
+                                f"SHT20 sensor {self.sensor_index} data: "
+                                f"{temperature.ticks:.1f}C, {humidity.ticks:.1f}%"
+                            )
+
+                        except OSError:
+                            logger.warning(
+                                f"{root_cfg.RAISE_WARN()}SHT20 I2C transient failure for sensor "
+                                f"{self.sensor_index}; reinitializing bus"
+                            )
+                            break
+                        except Exception:
+                            logger.exception(f"{root_cfg.RAISE_WARN()}Error in SHT20 sensor run")
+                        finally:
+                            if self.in_review_mode():
+                                wait_period = root_cfg.my_device.review_mode_frequency
+                            else:
+                                wait_period = root_cfg.my_device.env_sensor_frequency
+                            logger.debug(
+                                f"SHT20 sensor {self.sensor_index} sleeping for {wait_period} seconds"
+                            )
+                            self.stop_requested.wait(wait_period)
             except Exception:
-                logger.warning(f"{root_cfg.RAISE_WARN()}Could not reset SHT20 sensor {self.sensor_index}")
-            serial_number = sensor.read_serial_number()
-            logger.debug(f"SHT20 serial_number: {serial_number}; ")
-
-            while self.continue_recording():
-                try:
-                    response = sensor.single_shot_measurement()
-                    if not isinstance(response, tuple) or len(response) != 2:
-                        logger.error(
-                            f"{root_cfg.RAISE_WARN()}Unexpected response format from SHT20 sensor: {response}"
-                        )
-                        continue
-
-                    temperature: Sht2xTemperature = response[0]
-                    humidity: Sht2xHumidity = response[1]
-
-                    if temperature is None or humidity is None:
-                        logger.error(f"{root_cfg.RAISE_WARN()}Error in SHT20 sensor run: No data")
-                        continue
-
-                    self.log(
-                        stream_index=SHT20_STREAM_INDEX,
-                        sensor_data={
-                            "temperature": (f"{temperature.ticks:.1f}"),
-                            "humidity": (f"{humidity.ticks:.1f}"),
-                        },
-                    )
-                    logger.debug(
-                        f"SHT20 sensor {self.sensor_index} data: "
-                        f"{temperature.ticks:.1f}C, {humidity.ticks:.1f}%"
-                    )
-
-                except Exception:
-                    logger.exception(f"{root_cfg.RAISE_WARN()}Error in SHT20 sensor run")
-                finally:
-                    if self.in_review_mode():
-                        wait_period = root_cfg.my_device.review_mode_frequency
-                    else:
-                        wait_period = root_cfg.my_device.env_sensor_frequency
-                    logger.debug(f"SHT20 sensor {self.sensor_index} sleeping for {wait_period} seconds")
-                    self.stop_requested.wait(wait_period)
+                logger.warning(f"{root_cfg.RAISE_WARN()}SHT20 startup failed; will retry")
+                self.stop_requested.wait(SHT20_STARTUP_RETRY_DELAY_SECONDS)

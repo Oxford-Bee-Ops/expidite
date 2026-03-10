@@ -8,6 +8,8 @@ For more information, please refer to <https://unlicense.org>
 import sys
 import time
 import types
+from collections.abc import Callable
+from typing import TypeVar
 
 from expidite_rpi.sensors.drivers.crc8_helper import AHT20_crc8_check
 
@@ -44,6 +46,11 @@ AHT20_CMD_MEASURE = [0xAC, 0x33, 0x00]
 AHT20_STATUSBIT_BUSY = 7  # The 7th bit is the Busy indication bit. 1 = Busy, 0 = not.
 AHT20_STATUSBIT_CALIBRATED = 3  # The 3rd bit is the CAL (calibration) Enable bit. 1 = Calibrated, 0 = not
 
+AHT20_I2C_RETRY_ATTEMPTS = 3
+AHT20_I2C_RETRY_DELAY_SECONDS = 0.05
+
+_T = TypeVar("_T")
+
 
 class AHT20:
     # I2C communication driver for AHT20, using only smbus2
@@ -59,30 +66,48 @@ class AHT20:
             while self.get_status_calibrated() != 1:
                 time.sleep(0.01)
 
+    def _retry_i2c_call(self, func: Callable[[], _T]) -> _T:
+        last_error: OSError | None = None
+        for attempt in range(AHT20_I2C_RETRY_ATTEMPTS):
+            try:
+                return func()
+            except OSError as error:
+                last_error = error
+                if attempt == AHT20_I2C_RETRY_ATTEMPTS - 1:
+                    break
+                time.sleep(AHT20_I2C_RETRY_DELAY_SECONDS)
+        if last_error is not None:
+            raise last_error
+        raise RuntimeError("AHT20 I2C retry failed without an OSError")
+
     def cmd_soft_reset(self):
         # Send the command to soft reset
         with SMBus(self.BusNum) as i2c_bus:
-            i2c_bus.write_i2c_block_data(AHT20_I2CADDR, 0x0, AHT20_CMD_SOFTRESET)
+            self._retry_i2c_call(
+                lambda: i2c_bus.write_i2c_block_data(AHT20_I2CADDR, 0x0, AHT20_CMD_SOFTRESET)
+            )
         time.sleep(0.04)  # Wait 40 ms after poweron
         return True
 
     def cmd_initialize(self):
         # Send the command to initialize (calibrate)
         with SMBus(self.BusNum) as i2c_bus:
-            i2c_bus.write_i2c_block_data(AHT20_I2CADDR, 0x0, AHT20_CMD_INITIALIZE)
+            self._retry_i2c_call(
+                lambda: i2c_bus.write_i2c_block_data(AHT20_I2CADDR, 0x0, AHT20_CMD_INITIALIZE)
+            )
         return True
 
     def cmd_measure(self):
         # Send the command to measure
         with SMBus(self.BusNum) as i2c_bus:
-            i2c_bus.write_i2c_block_data(AHT20_I2CADDR, 0, AHT20_CMD_MEASURE)
+            self._retry_i2c_call(lambda: i2c_bus.write_i2c_block_data(AHT20_I2CADDR, 0, AHT20_CMD_MEASURE))
         time.sleep(0.08)  # Wait 80 ms after measure
         return True
 
     def get_status(self):
         # Get the full status byte
         with SMBus(self.BusNum) as i2c_bus:
-            return i2c_bus.read_i2c_block_data(AHT20_I2CADDR, 0x0, 1)[0]
+            return self._retry_i2c_call(lambda: i2c_bus.read_i2c_block_data(AHT20_I2CADDR, 0x0, 1)[0])
 
     def get_status_calibrated(self):
         # Get the calibrated bit
@@ -106,7 +131,7 @@ class AHT20:
 
         # Read data and return it
         with SMBus(self.BusNum) as i2c_bus:
-            return i2c_bus.read_i2c_block_data(AHT20_I2CADDR, 0x0, 7)
+            return self._retry_i2c_call(lambda: i2c_bus.read_i2c_block_data(AHT20_I2CADDR, 0x0, 7))
 
     def get_measure_CRC8(self):
         """This function will calculate crc8 code with G(x) = x8 + x5 + x4 + 1 -> 0x131(0x31).
