@@ -78,16 +78,19 @@ class SHT20(Sensor):
                                 logger.error(f"{root_cfg.RAISE_WARN()}Error in SHT20 sensor run: No data")
                                 continue
 
+                            temperature_c = temperature.degrees_celsius
+                            humidity_rh = humidity.percent_rh
+
                             self.log(
                                 stream_index=SHT20_STREAM_INDEX,
                                 sensor_data={
-                                    "temperature": (f"{temperature.ticks:.1f}"),
-                                    "humidity": (f"{humidity.ticks:.1f}"),
+                                    "temperature": (f"{temperature_c:.1f}"),
+                                    "humidity": (f"{humidity_rh:.1f}"),
                                 },
                             )
                             logger.debug(
                                 f"SHT20 sensor {self.sensor_index} data: "
-                                f"{temperature.ticks:.1f}C, {humidity.ticks:.1f}%"
+                                f"{temperature_c:.1f}C, {humidity_rh:.1f}%"
                             )
 
                         except OSError:

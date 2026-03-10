@@ -17,6 +17,8 @@ class _WaitRecorder:
 class _ResponseValue:
     def __init__(self, ticks: float) -> None:
         self.ticks = ticks
+        self.degrees_celsius = ticks
+        self.percent_rh = ticks
 
 
 class _DummySHT20Self:
