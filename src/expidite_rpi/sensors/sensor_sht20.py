@@ -1,6 +1,5 @@
 from dataclasses import dataclass
 
-from sensirion_driver_adapters.i2c_adapter.i2c_channel import I2cChannel
 from sensirion_i2c_driver import I2cConnection, LinuxI2cTransceiver
 from sensirion_i2c_sht.sht2x.device import Sht2xI2cDevice
 from sensirion_i2c_sht.sht2x.response_types import Sht2xHumidity, Sht2xTemperature
@@ -57,12 +56,9 @@ class SHT20(Sensor):
         while self.continue_recording():
             try:
                 with LinuxI2cTransceiver("/dev/i2c-1") as i2c_transceiver:
-                    channel = I2cChannel(
-                        I2cConnection(i2c_transceiver),
-                        slave_address=0x40,
-                        crc=None,  # CrcCalculator(8, 0x31, 0xFF, 0x0),
-                    )
-                    sensor = Sht2xI2cDevice(channel)
+                    connection = I2cConnection(i2c_transceiver)
+                    sensor = Sht2xI2cDevice(connection, slave_address=0x40)
+                    sensor.soft_reset()
 
                     while self.continue_recording():
                         try:
