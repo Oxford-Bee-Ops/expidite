@@ -1,10 +1,30 @@
+import importlib
 from dataclasses import dataclass
+from types import ModuleType
+from typing import Protocol, cast
+
+import adafruit_ahtx0
+import busio
 
 from expidite_rpi.core import api
 from expidite_rpi.core import configuration as root_cfg
 from expidite_rpi.core.dp_config_objects import Stream
 from expidite_rpi.core.sensor import Sensor, SensorCfg
-from expidite_rpi.sensors.drivers.aht20 import AHT20 as AHT20_driver
+
+_board_module: ModuleType | None
+try:
+    # This is only needed for typing
+    _board_module = importlib.import_module("board")
+except (ImportError, NotImplementedError):
+    # Running on non-CircuitPython environment (Windows/standard Python)
+    _board_module = None
+
+
+class _BoardModule(Protocol):
+    def I2C(self) -> busio.I2C: ...
+
+
+board = cast(_BoardModule | None, _board_module)
 
 logger = root_cfg.setup_logger("expidite")
 
@@ -47,11 +67,16 @@ class AHT20(Sensor):
 
     # Separate thread to log data
     def run(self) -> None:
+        if board is None:
+            raise RuntimeError("AHT20 sensor requires the CircuitPython 'board' module on this device")
+
+        i2c = board.I2C()
+        sensor = adafruit_ahtx0.AHTx0(i2c, address=AHT20_SENSOR_INDEX)
+
         while self.continue_recording():
             try:
-                aht20 = AHT20_driver(1)
-                temperature = aht20.get_temperature()
-                humidity = aht20.get_humidity()
+                temperature = sensor.temperature
+                humidity = sensor.relative_humidity
 
                 self.log(
                     stream_index=AHT20_STREAM_INDEX,

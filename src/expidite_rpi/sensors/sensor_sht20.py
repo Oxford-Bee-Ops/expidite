@@ -1,8 +1,7 @@
 from dataclasses import dataclass
-from time import sleep
 
 from sensirion_driver_adapters.i2c_adapter.i2c_channel import I2cChannel
-from sensirion_i2c_driver import CrcCalculator, I2cConnection, LinuxI2cTransceiver
+from sensirion_i2c_driver import I2cConnection, LinuxI2cTransceiver
 from sensirion_i2c_sht.sht2x.device import Sht2xI2cDevice
 from sensirion_i2c_sht.sht2x.response_types import Sht2xHumidity, Sht2xTemperature
 
@@ -61,30 +60,9 @@ class SHT20(Sensor):
                     channel = I2cChannel(
                         I2cConnection(i2c_transceiver),
                         slave_address=0x40,
-                        crc=CrcCalculator(8, 0x31, 0xFF, 0x0),
+                        crc=None,  # CrcCalculator(8, 0x31, 0xFF, 0x0),
                     )
                     sensor = Sht2xI2cDevice(channel)
-
-                    startup_succeeded = False
-                    for attempt in range(1, SHT20_STARTUP_RETRIES + 1):
-                        try:
-                            sensor.soft_reset()
-                            sleep(0.01)
-                            serial_number = sensor.read_serial_number()
-                            logger.debug(f"SHT20 serial_number: {serial_number}; ")
-                            startup_succeeded = True
-                            break
-                        except Exception:
-                            logger.warning(
-                                f"{root_cfg.RAISE_WARN()}SHT20 startup transient failure "
-                                f"{attempt}/{SHT20_STARTUP_RETRIES} for sensor {self.sensor_index}"
-                            )
-                            if attempt < SHT20_STARTUP_RETRIES:
-                                self.stop_requested.wait(SHT20_STARTUP_RETRY_DELAY_SECONDS)
-
-                    if not startup_succeeded:
-                        msg = f"SHT20 startup failed for sensor {self.sensor_index}"
-                        raise RuntimeError(msg)
 
                     while self.continue_recording():
                         try:
