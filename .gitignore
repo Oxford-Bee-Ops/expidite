@@ -15,3 +15,5 @@ wheels/
 .idea
 .vscode
 /runs
+# Claude Code
+.claude
