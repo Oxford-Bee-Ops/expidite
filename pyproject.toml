@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "expidite"
-version = "0.1.172"
+version = "0.1.173"
 description = "Python module to support using Raspberry Pi for scientific data collection"
 readme = "README.md"
 requires-python = ">=3.11"
@@ -128,7 +128,6 @@ ignore = [
 ]
 # Rules that we should enforce, but need to fix the code first.
 [tool.ruff.lint.per-file-ignores]
-"src/expidite_rpi/core/cloud_connector.py" = ["B012"]
 "src/expidite_rpi/core/config_validator.py" = ["SLF001"]
 "src/expidite_rpi/core/dp_tree.py" = ["SLF001"]
 "src/expidite_rpi/core/dp_worker_thread.py" = ["SLF001"]
@@ -193,7 +192,6 @@ module = [
     "expidite_rpi.core.device_config_objects",
     "expidite_rpi.utils.journal",
     "expidite_rpi.core.file_naming",
-    "expidite_rpi.core.cloud_connector",
     "expidite_rpi.utils.rpi_emulator",
     "expidite_rpi.utils.cloud_journal",
     "expidite_rpi.utils.utils",
@@ -212,7 +210,7 @@ disallow_any_generics = false
 module = [
     "expidite_rpi.sensors.drivers.ltr390",
     "expidite_rpi.sensors.drivers.adafruit_adxl34x",
-    "expidite_rpi.core.cloud_connector",
+    "expidite_rpi.core.cloud_connector.cloud_connector",
     "expidite_rpi.core.configuration",
     "expidite_rpi.utils.utils",
     "expidite_rpi.core.device_health",
