@@ -49,7 +49,7 @@ dev = [
     "pytest==9.0.2",
     "pytest-socket==0.7.0",
     "ruff==0.15.5",
-    "ty==0.0.21",
+    "ty==0.0.22",
     "types-psutil==7.2.2.20260130",
     "types-PyYAML==6.0.12.20250915",
 ]
