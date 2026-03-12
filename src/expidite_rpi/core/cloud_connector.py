@@ -78,19 +78,23 @@ class CloudConnector:
                     CloudConnector._instance = SyncCloudConnector()
                 return CloudConnector._instance
 
-    def set_keys(self, keys_file: Path) -> None:
-        """Sets the cloud storage key for the CloudConnector from a file."""
-        if not keys_file.exists():
-            msg = f"Keys file {keys_file} does not exist"
-            raise ValueError(msg)
+    def set_keys(self, keys_file: Path | None = None, key: str | None = None) -> None:
+        """Sets the cloud storage key for the CloudConnector from either a file or directly from a string."""
+        if keys_file:
+            if not keys_file.exists():
+                msg = f"Keys file {keys_file} does not exist"
+                raise ValueError(msg)
 
-        # Create a new Keys class with the env_file set in the model_config
-        keys = root_cfg.Keys(_env_file=keys_file, _env_file_encoding="utf-8")  # type: ignore
-        if keys.cloud_storage_key == root_cfg.FAILED_TO_LOAD:
-            msg = f"Failed to load cloud storage key from {keys_file}"
-            raise ValueError(msg)
+            # Create a new Keys class with the env_file set in the model_config
+            keys = root_cfg.Keys(_env_file=keys_file, _env_file_encoding="utf-8")  # type: ignore
+            if keys.cloud_storage_key == root_cfg.FAILED_TO_LOAD:
+                msg = f"Failed to load cloud storage key from {keys_file}"
+                raise ValueError(msg)
 
-        self._connection_string = keys.cloud_storage_key
+            self._connection_string = keys.cloud_storage_key
+        else:
+            assert key is not None
+            self._connection_string = key
 
     def upload_to_container(
         self,
