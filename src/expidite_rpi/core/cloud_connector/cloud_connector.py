@@ -402,6 +402,29 @@ class CloudConnector:
 
         return files
 
+    def list_cloud_files_with_details(
+        self,
+        container: str,
+        include_prefixes: set[str] | None = None,
+    ) -> list[tuple[str, int, float]]:
+        """Return a list of (filename, size_bytes, last_modified) for all blobs in the container.
+
+        Parameters:
+            - container: container name to be searched
+            - include_prefixes: Optional, if specified, only return details for files that begin with one of
+            these prefixes. Take care when one prefix is a substring of another.
+        """
+        container_client = self._validate_container(container)
+
+        def include_file(fname: str, include_prefixes: set[str] | None) -> bool:
+            return not include_prefixes or ("_".join(fname.split("_")[:2]) + "_") in include_prefixes
+
+        return [
+            (blob.name, blob.size, blob.last_modified.timestamp())
+            for blob in container_client.list_blobs()
+            if include_file(blob.name, include_prefixes)
+        ]
+
     def get_blob_modified_time(self, container: str, blob_name: str) -> datetime:
         """Get the last modified time of the specified blob."""
         containerClient = self._validate_container(container)
