@@ -407,6 +407,14 @@ class DPnode:
         stream = self.get_stream(stream_index)
         data_id = stream.get_data_id(self.sensor_index)
 
+        logger.debug(
+            f"_save_recording for DPnode:{data_id} stream {stream_index}; "
+            f"src_file: {src_file}, dst_dir: {dst_dir}, "
+            f"start_time: {start_time}, end_time: {end_time}, "
+            f"suffix: {suffix}, offset_index: {offset_index}, "
+            f"secondary_offset_index: {secondary_offset_index}, override_sampling: {override_sampling}"
+        )
+
         # Check that the file is present and not empty
         if not src_file.exists():
             msg = f"File {src_file} not found."
