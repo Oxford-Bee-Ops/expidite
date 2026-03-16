@@ -26,6 +26,7 @@
 # - set_predictable_network_interface_names
 # - enable_i2c
 # - alias_bcli so that you can run 'bcli' at any prompt
+# - wait_for_ntp_sync to ensure we have an accurate system clock before starting RpiCore
 # - auto_start_if_requested to start RpiCore & DeviceManager automatically if requested in system.cfg
 # - make_persistent by adding this script to crontab to run on reboot
 #
@@ -829,6 +830,27 @@ alias_bcli() {
 }
 
 ##############################################################################################################
+# Wait for NTP sync. We must do this before starting RpiCore, otherwise it may attempt to connect to Azure
+# with an incorrect system clock, which will fail. But don't wait indefinitely as that would prevent testing
+# on a device with no connectivity.
+##############################################################################################################
+wait_for_ntp_sync() {
+  echo_header
+
+  MAX_WAIT=60
+  WAITED=0
+
+  until [ -f /run/systemd/timesync/synchronized ]; do
+      if [ "$WAITED" -ge "$MAX_WAIT" ]; then
+          echo "WARNING: NTP sync timed out after ${MAX_WAIT}s, continuing anyway"
+          break
+      fi
+      sleep 2
+      WAITED=$((WAITED + 2))
+  done
+}
+
+##############################################################################################################
 # Autostart if requested in system.cfg
 ##############################################################################################################
 auto_start_if_requested() {
@@ -973,6 +995,7 @@ set_predictable_network_interface_names
 enable_i2c
 alias_bcli
 set_hostname
+wait_for_ntp_sync
 auto_start_if_requested
 make_persistent
 install_leds_service
