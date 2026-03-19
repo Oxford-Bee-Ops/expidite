@@ -6,6 +6,7 @@
 #
 # It provides utilities to interrogate the local output and check that the expected data is present.
 ##############################################################################################################
+import json
 import shlex
 import shutil
 import time
@@ -363,6 +364,14 @@ class RpiEmulator:
         filename = args[args.index("-o") + 1]
         suffix = filename.split(".")[-1]
         duration = int(args[args.index("-t") + 1]) / 1000  # Convert to seconds
+        metadata_filename = None
+        if "--metadata" in args:
+            metadata_filename = args[args.index("--metadata") + 1]
+        else:
+            for arg in args:
+                if arg.startswith("--metadata="):
+                    metadata_filename = arg.split("=", maxsplit=1)[1]
+                    break
 
         # We divide duration to get a 25x speedup for testing purposes
         duration = int(duration / 25)
@@ -420,6 +429,27 @@ class RpiEmulator:
             logger.info(f"Recording generated: {filename}")
 
         # Sleep for the duration of the video to simulate recording time.
+        if metadata_filename is not None:
+            metadata_path = Path(metadata_filename)
+            metadata_path.parent.mkdir(parents=True, exist_ok=True)
+            metadata_path.write_text(
+                json.dumps(
+                    [
+                        {
+                            "frame": 0,
+                            "width": width,
+                            "height": height,
+                            "framerate": framerate,
+                            "ExposureTime": 1000,
+                            "AnalogueGain": 1.0,
+                            "LensPosition": 1.5,
+                            "Lux": 123.4,
+                        }
+                    ]
+                ),
+                encoding="utf-8",
+            )
+
         time.sleep(duration)
         return f"rpicam-vid command emulated successfully, created {filename}"
 

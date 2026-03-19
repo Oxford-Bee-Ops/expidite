@@ -5,7 +5,11 @@
 #
 ##############################################################################################################
 
+import json
+import shlex
 from dataclasses import dataclass
+from json import JSONDecodeError
+from pathlib import Path
 from typing import cast
 
 from expidite_rpi.core import api, file_naming
@@ -38,6 +42,17 @@ RPICAM_REVIEW_MODE_STREAM: Stream = Stream(
     file_naming=api.FILE_NAMING.REVIEW_MODE,
     storage_tier=api.StorageTier.HOT,
 )
+RPICAM_METADATA_DATA_TYPE_ID = "RPICAMMETA"
+RPICAM_METADATA_STREAM_INDEX: int = 2
+RPICAM_METADATA_FIELDS = ["exposure_time", "analogue_gain", "lens_position", "lux"]
+RPICAM_METADATA_STREAM: Stream = Stream(
+    description="First frame metadata emitted by rpicam-vid.",
+    type_id=RPICAM_METADATA_DATA_TYPE_ID,
+    index=RPICAM_METADATA_STREAM_INDEX,
+    format=api.FORMAT.LOG,
+    fields=RPICAM_METADATA_FIELDS,
+    cloud_container="expidite-journals",
+)
 
 
 @dataclass
@@ -52,6 +67,7 @@ class RpicamSensorCfg(SensorCfg):
     # The FILENAME suffix should match the datastream input_format.
     rpicam_cmd: str = "rpicam-vid --framerate 15 --width 640 --height 480 -o FILENAME -t 5000"
     review_mode_cmd: str = "rpicam-still --width 640 --height 480 -o FILENAME"
+    metadata_enabled: bool = False
 
 
 DEFAULT_RPICAM_SENSOR_CFG = RpicamSensorCfg(
@@ -59,7 +75,7 @@ DEFAULT_RPICAM_SENSOR_CFG = RpicamSensorCfg(
     sensor_index=0,
     sensor_model="PiCameraModule3",
     description="Video sensor that uses rpicam-vid",
-    outputs=[RPICAM_STREAM, RPICAM_REVIEW_MODE_STREAM],
+    outputs=[RPICAM_STREAM, RPICAM_REVIEW_MODE_STREAM, RPICAM_METADATA_STREAM],
 )
 
 
@@ -70,6 +86,7 @@ class RpicamSensor(Sensor):
         self.config = config
         self.recording_format = self.get_stream(RPICAM_STREAM_INDEX).format
         self.rpicam_cmd = self.config.rpicam_cmd
+        self.metadata_enabled = self.config.metadata_enabled
 
         assert self.rpicam_cmd, f"rpicam_cmd must be set in the sensor configuration: {self.rpicam_cmd}"
         assert self.rpicam_cmd.startswith("rpicam-vid "), (
@@ -94,6 +111,117 @@ class RpicamSensor(Sensor):
                 f"RpicamSensor requires a review mode stream at index {RPICAM_REVIEW_MODE_STREAM_INDEX}: {e}"
             )
             raise ValueError(msg) from e
+
+        try:
+            self.get_stream(RPICAM_METADATA_STREAM_INDEX)  # Metadata stream
+        except ValueError as e:
+            msg = f"RpicamSensor requires a metadata stream at index {RPICAM_METADATA_STREAM_INDEX}: {e}"
+            raise ValueError(msg) from e
+
+    @staticmethod
+    def get_metadata_filename(recording_filename: Path) -> Path:
+        """Generate the temporary metadata sidecar path for a recording."""
+        return recording_filename.with_suffix(".json")
+
+    @staticmethod
+    def get_metadata_output_path(cmd: str, default_path: Path) -> Path:
+        """Extract the metadata output path from a concrete rpicam command string."""
+        args = shlex.split(cmd, posix=False)
+        for i, arg in enumerate(args):
+            if arg == "--metadata" and i + 1 < len(args):
+                return Path(args[i + 1])
+            if arg.startswith("--metadata="):
+                return Path(arg.split("=", maxsplit=1)[1])
+        return default_path
+
+    def build_recording_command(
+        self, recording_filename: Path, metadata_filename: Path
+    ) -> tuple[str, Path | None]:
+        """Build the rpicam command and optionally emit JSON metadata to a known file."""
+        cmd = self.rpicam_cmd.replace("FILENAME", str(recording_filename))
+        metadata_output_path = None
+
+        if self.metadata_enabled:
+            if "--metadata" not in cmd:
+                cmd = f"{cmd} --metadata {metadata_filename}"
+            if "--metadata-format" not in cmd:
+                cmd = f"{cmd} --metadata-format json"
+
+            metadata_output_path = self.get_metadata_output_path(cmd, metadata_filename)
+
+        if "--camera SENSOR_INDEX" in cmd:
+            cmd = cmd.replace("SENSOR_INDEX", str(self.sensor_index))
+
+        return cmd, metadata_output_path
+
+    @staticmethod
+    def _extract_first_frame_metadata(metadata_json: object) -> dict[str, object]:
+        if isinstance(metadata_json, list):
+            if len(metadata_json) == 0:
+                raise ValueError("Metadata JSON list is empty")
+            first_frame = metadata_json[0]
+        elif isinstance(metadata_json, dict):
+            metadata_dict = cast(dict[str, object], metadata_json)
+            frames = metadata_dict.get("frames")
+            if isinstance(frames, list):
+                if len(frames) == 0:
+                    raise ValueError("Metadata JSON frames list is empty")
+                first_frame = frames[0]
+            else:
+                first_frame = metadata_dict
+        else:
+            msg = f"Unsupported metadata JSON type: {type(metadata_json)!r}"
+            raise TypeError(msg)
+
+        if not isinstance(first_frame, dict):
+            msg = f"Expected metadata entry to be a dict, got {type(first_frame)!r}"
+            raise TypeError(msg)
+
+        return cast(dict[str, object], first_frame)
+
+    @classmethod
+    def load_first_frame_metadata(cls, metadata_file: Path) -> dict[str, object]:
+        """Load the first metadata frame from a JSON sidecar file."""
+        raw_metadata = metadata_file.read_text(encoding="utf-8").strip()
+        if not raw_metadata:
+            msg = f"Metadata file is empty: {metadata_file}"
+            raise ValueError(msg)
+
+        try:
+            return cls._extract_first_frame_metadata(json.loads(raw_metadata))
+        except JSONDecodeError:
+            for line in raw_metadata.splitlines():
+                cleaned_line = line.strip().rstrip(",")
+                if cleaned_line in {"", "[", "]"}:
+                    continue
+                try:
+                    return cls._extract_first_frame_metadata(json.loads(cleaned_line))
+                except JSONDecodeError:
+                    continue
+
+        msg = f"Could not parse metadata JSON from {metadata_file}"
+        raise ValueError(msg)
+
+    def process_metadata_json_file(self, metadata_file: Path) -> None:
+        """Save the first frame metadata from a rpicam JSON sidecar to the metadata stream."""
+        if not metadata_file.exists():
+            logger.warning(f"Metadata sidecar not found for recording: {metadata_file}")
+            return
+
+        try:
+            first_frame_metadata = self.load_first_frame_metadata(metadata_file)
+            sensor_data = {
+                "exposure_time": first_frame_metadata.get("ExposureTime"),
+                "analogue_gain": first_frame_metadata.get("AnalogueGain"),
+                "lens_position": first_frame_metadata.get("LensPosition"),
+                "lux": first_frame_metadata.get("Lux"),
+            }
+            self.log(
+                stream_index=RPICAM_METADATA_STREAM_INDEX,
+                sensor_data=sensor_data,
+            )
+        finally:
+            metadata_file.unlink(missing_ok=True)
 
     def review_mode_output(self) -> None:
         """Output an image to show the user what the camera is viewing.
@@ -133,14 +261,11 @@ class RpicamSensor(Sensor):
 
                 # Get the filename for the video file
                 filename = file_naming.get_temporary_filename(self.recording_format)
+                metadata_filename = self.get_metadata_filename(filename)
 
-                # Replace the FILENAME placeholder in the command with the actual filename
-                cmd = self.rpicam_cmd.replace("FILENAME", str(filename))
-
-                # If the "--camera SENSOR_INDEX" string is present, replace SENSOR_INDEX with the actual
-                # sensor index
-                if "--camera SENSOR_INDEX" in cmd:
-                    cmd = cmd.replace("SENSOR_INDEX", str(self.sensor_index))
+                # Replace the FILENAME placeholder in the command with the actual filename and ensure
+                # metadata is saved as JSON for the first-frame metadata stream.
+                cmd, metadata_output_path = self.build_recording_command(filename, metadata_filename)
 
                 logger.info(f"Recording video with command: {cmd}")
 
@@ -152,6 +277,8 @@ class RpicamSensor(Sensor):
                 self.save_recording(
                     RPICAM_STREAM_INDEX, filename, start_time=start_time, end_time=api.utc_now()
                 )
+                if metadata_output_path is not None:
+                    self.process_metadata_json_file(metadata_output_path)
 
                 exception_count = 0  # Reset exception count on success
 
