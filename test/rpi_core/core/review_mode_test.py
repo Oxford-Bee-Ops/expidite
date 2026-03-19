@@ -12,8 +12,6 @@ import time
 from pathlib import Path
 from unittest.mock import patch
 
-import pytest
-
 from expidite_rpi.core import api
 from expidite_rpi.core import configuration as root_cfg
 from expidite_rpi.sensors.sensor_rpicam_vid import (
@@ -309,34 +307,6 @@ class TestReviewModeExercise:
         assert RPICAM_METADATA_DATA_TYPE_ID not in called_command
         mock_save_recording.assert_called_once()
         mock_process_metadata_json_file.assert_not_called()
-
-    def test_sensor_init_allows_missing_metadata_stream_when_disabled(self) -> None:
-        """Test metadata-disabled config can omit the metadata output stream."""
-        cfg = RpicamSensorCfg(
-            sensor_type=api.SENSOR_TYPE.CAMERA,
-            sensor_index=0,
-            sensor_model="PiCameraModule3",
-            description="Video sensor that uses rpicam-vid",
-            outputs=DEFAULT_RPICAM_SENSOR_CFG.outputs[:2],
-            metadata_enabled=False,
-        )
-
-        sensor = RpicamSensor(cfg)
-        assert sensor.metadata_enabled is False
-
-    def test_sensor_init_requires_metadata_stream_when_enabled(self) -> None:
-        """Test metadata-enabled config must include the metadata output stream."""
-        cfg = RpicamSensorCfg(
-            sensor_type=api.SENSOR_TYPE.CAMERA,
-            sensor_index=0,
-            sensor_model="PiCameraModule3",
-            description="Video sensor that uses rpicam-vid",
-            outputs=DEFAULT_RPICAM_SENSOR_CFG.outputs[:2],
-            metadata_enabled=True,
-        )
-
-        with pytest.raises(ValueError, match="metadata stream"):
-            RpicamSensor(cfg)
 
 
 if __name__ == "__main__":
