@@ -112,11 +112,15 @@ class RpicamSensor(Sensor):
             )
             raise ValueError(msg) from e
 
-        try:
-            self.get_stream(RPICAM_METADATA_STREAM_INDEX)  # Metadata stream
-        except ValueError as e:
-            msg = f"RpicamSensor requires a metadata stream at index {RPICAM_METADATA_STREAM_INDEX}: {e}"
-            raise ValueError(msg) from e
+        if self.metadata_enabled:
+            try:
+                self.get_stream(RPICAM_METADATA_STREAM_INDEX)  # Metadata stream
+            except ValueError as e:
+                msg = (
+                    "RpicamSensor requires a metadata stream at index "
+                    f"{RPICAM_METADATA_STREAM_INDEX} when metadata_enabled=True: {e}"
+                )
+                raise ValueError(msg) from e
 
     @staticmethod
     def get_metadata_filename(recording_filename: Path) -> Path:
