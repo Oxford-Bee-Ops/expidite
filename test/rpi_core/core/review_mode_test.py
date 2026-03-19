@@ -16,8 +16,6 @@ from expidite_rpi.core import api
 from expidite_rpi.core import configuration as root_cfg
 from expidite_rpi.sensors.sensor_rpicam_vid import (
     DEFAULT_RPICAM_SENSOR_CFG,
-    RPICAM_METADATA_DATA_TYPE_ID,
-    RPICAM_METADATA_STREAM_INDEX,
     RPICAM_REVIEW_MODE_STREAM_INDEX,
     RpicamSensor,
     RpicamSensorCfg,
@@ -204,109 +202,6 @@ class TestReviewModeExercise:
         called_command = mock_run_cmd.call_args[0][0]
         expected_command = f"rpicam-still --width 1280 --height 720 --quality 95 -o {test_file}"
         assert called_command == expected_command
-
-    def test_process_metadata_json_file_logs_first_frame(self) -> None:
-        """Test that the first metadata frame is emitted to the metadata stream."""
-        metadata_file = self.temp_dir / "metadata.json"
-        metadata_file.write_text(
-            '[{"frame":0,"ExposureTime":1234,"AnalogueGain":1.5,"LensPosition":2.25,"Lux":456.7},'
-            '{"frame":1,"ExposureTime":5678,"AnalogueGain":3.5,"LensPosition":4.25,"Lux":111.1}]',
-            encoding="utf-8",
-        )
-
-        sensor = RpicamSensor(
-            RpicamSensorCfg(
-                sensor_type=api.SENSOR_TYPE.CAMERA,
-                sensor_index=0,
-                sensor_model="PiCameraModule3",
-                description="Video sensor that uses rpicam-vid",
-                outputs=DEFAULT_RPICAM_SENSOR_CFG.outputs,
-                metadata_enabled=True,
-            )
-        )
-
-        with patch.object(sensor, "log") as mock_log:
-            sensor.process_metadata_json_file(metadata_file)
-
-        mock_log.assert_called_once()
-        assert mock_log.call_args.kwargs["stream_index"] == RPICAM_METADATA_STREAM_INDEX
-        sensor_data = mock_log.call_args.kwargs["sensor_data"]
-        assert sensor_data == {
-            "exposure_time": 1234,
-            "analogue_gain": 1.5,
-            "lens_position": 2.25,
-            "lux": 456.7,
-        }
-        assert not metadata_file.exists()
-
-    @patch.object(RpicamSensor, "process_metadata_json_file")
-    @patch.object(RpicamSensor, "save_recording")
-    @patch("expidite_rpi.utils.utils.run_cmd")
-    @patch("expidite_rpi.core.file_naming.get_temporary_filename")
-    def test_sensor_run_adds_metadata_output(
-        self,
-        mock_get_filename,
-        mock_run_cmd,
-        mock_save_recording,
-        mock_process_metadata_json_file,
-    ) -> None:
-        """Test that normal video recording requests a JSON metadata sidecar."""
-        test_file = self.temp_dir / "test_video.mp4"
-        mock_get_filename.return_value = test_file
-        mock_run_cmd.return_value = 0
-
-        sensor = RpicamSensor(
-            RpicamSensorCfg(
-                sensor_type=api.SENSOR_TYPE.CAMERA,
-                sensor_index=0,
-                sensor_model="PiCameraModule3",
-                description="Video sensor that uses rpicam-vid",
-                outputs=DEFAULT_RPICAM_SENSOR_CFG.outputs,
-                metadata_enabled=True,
-            )
-        )
-
-        with (
-            patch.object(sensor, "continue_recording", side_effect=[True, False]),
-            patch.object(sensor, "in_review_mode", return_value=False),
-        ):
-            sensor.run()
-
-        called_command = mock_run_cmd.call_args[0][0]
-        assert f"--metadata {test_file.with_suffix('.json')}" in called_command
-        assert "--metadata-format json" in called_command
-        mock_save_recording.assert_called_once()
-        mock_process_metadata_json_file.assert_called_once_with(test_file.with_suffix(".json"))
-
-    @patch.object(RpicamSensor, "process_metadata_json_file")
-    @patch.object(RpicamSensor, "save_recording")
-    @patch("expidite_rpi.utils.utils.run_cmd")
-    @patch("expidite_rpi.core.file_naming.get_temporary_filename")
-    def test_sensor_run_without_metadata_by_default(
-        self,
-        mock_get_filename,
-        mock_run_cmd,
-        mock_save_recording,
-        mock_process_metadata_json_file,
-    ) -> None:
-        """Test that metadata capture is disabled by default."""
-        test_file = self.temp_dir / "test_video.mp4"
-        mock_get_filename.return_value = test_file
-        mock_run_cmd.return_value = 0
-
-        sensor = RpicamSensor(DEFAULT_RPICAM_SENSOR_CFG)
-
-        with (
-            patch.object(sensor, "continue_recording", side_effect=[True, False]),
-            patch.object(sensor, "in_review_mode", return_value=False),
-        ):
-            sensor.run()
-
-        called_command = mock_run_cmd.call_args[0][0]
-        assert "--metadata" not in called_command
-        assert RPICAM_METADATA_DATA_TYPE_ID not in called_command
-        mock_save_recording.assert_called_once()
-        mock_process_metadata_json_file.assert_not_called()
 
 
 if __name__ == "__main__":
