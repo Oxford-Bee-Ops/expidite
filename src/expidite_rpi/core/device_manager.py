@@ -38,6 +38,7 @@ class DeviceManager:
         self.wifi_timer: utils.RepeatTimer | None = None
         self.diagnostics_upload_timer: utils.RepeatTimer | None = None
         self.current_state = DeviceState.BOOTING
+        self.ping_check_interval = 10.0  # seconds
 
     def start(self) -> None:
         """Start the DeviceManager threads."""
@@ -57,7 +58,7 @@ class DeviceManager:
 
         # Start wifi management thread
         if root_cfg.running_on_rpi and root_cfg.my_device.attempt_wifi_recovery:
-            self.wifi_timer = utils.RepeatTimer(interval=2.0, function=self.wifi_timer_callback)
+            self.wifi_timer = utils.RepeatTimer(interval=self.ping_check_interval, function=self.wifi_timer_callback)
             self.wifi_timer.start()
             logger.info("DeviceManager Wifi timer started")
 
@@ -266,7 +267,19 @@ class DeviceManager:
             # Test that internet connectivity is UP and working by pinging google DNS servers
             # -c 1 means ping once, -W 1 means timeout after 1 second
             ping_rc = os.system("ping -c 1 -W 1 8.8.8.8 1>/dev/null")
-            if ping_rc != 0:
+            # Even if ICMP ping works, we still see situation where TCP can be failed (router issue).
+            # We can identify this by running ss -tpn and checking for connections in SYN_SENT state
+            # which indicates that the TCP handshake is not completing.
+            ss_rc = os.system("ss -tpn 2>/dev/null | grep SYN_SENT 1>/dev/null")
+            # If ss_rc fails, we may have hit a transitory situation, run again and check that there are no
+            # connections in ESTAB. If there are connections in ESTAB, then we know that the TCP handshake is working.
+            if ss_rc != 0:
+                logger.warning("Ping succeeded but ss check failed; re-running ss check to confirm")
+                estab_rc = os.system("ss -tpn 2>/dev/null | grep ESTAB 1>/dev/null")
+                if estab_rc == 0:
+                    ss_rc = 0
+
+            if ping_rc != 0 or ss_rc != 0:
                 self.action_on_ping_fail()
             else:
                 self.action_on_ping_ok()
@@ -328,34 +341,34 @@ class DeviceManager:
     # If that doesn't recover it, then after the failure count gets to 4 hours reboot the device.
     ##########################################################################################################
     def attempt_wifi_recovery(self) -> None:
-        retry_frequency = 600  # Retry recovery action set every 2s*600=1200s=20mins
+        retry_frequency = int(self.ping_check_interval * 120)  # Retry recovery action set every 10s*120=1200s=20mins
 
-        # Ping cycle is 2s, so 60*60*2 = 4 hours.
-        if self.ping_failure_count_run == (60 * 60 * 2):
-            logger.error(f"{root_cfg.RAISE_WARN()}Rebooting device due to no internet for >4 hours")
-            DiagnosticsBundle.collect("Rebooting device due to no internet for >4 hours")
+        # Ping cycle is 10s, so 6*60*2 = 2 hours.
+        if self.ping_failure_count_run == (6 * 60 * 2):
+            logger.error(f"{root_cfg.RAISE_WARN()}Rebooting device due to no internet for >2 hours")
+            DiagnosticsBundle.collect("Rebooting device due to no internet for >2 hours")
             utils.run_cmd("sudo reboot")
 
-        elif self.ping_failure_count_run % retry_frequency == 60:
+        elif self.ping_failure_count_run % retry_frequency == 10:
             logger.info("Restarting client wifi interface")
             utils.run_cmd("sudo nmcli dev disconnect " + self.client_wlan, ignore_errors=True)
             sleep(1)
             utils.run_cmd("sudo nmcli dev connect " + self.client_wlan, ignore_errors=True)
             sleep(1)
 
-        elif self.ping_failure_count_run % retry_frequency == 120:
+        elif self.ping_failure_count_run % retry_frequency == 20:
             logger.info("Toggle wifi radio")
             utils.run_cmd("sudo nmcli radio wifi off", ignore_errors=True)
             sleep(1)
             utils.run_cmd("sudo nmcli radio wifi on", ignore_errors=True)
             sleep(1)
 
-        elif self.ping_failure_count_run % retry_frequency == 180:
+        elif self.ping_failure_count_run % retry_frequency == 30:
             logger.info("Reloading NetworkManager")
             utils.run_cmd("sudo nmcli general reload", ignore_errors=True)
             sleep(1)
 
-        elif self.ping_failure_count_run % retry_frequency == 240:
+        elif self.ping_failure_count_run % retry_frequency == 40:
             logger.info("Explicitly connecting to wifi network")
             for client in self.wifi_clients:
                 if client.ssid is not None and client.pw is not None:
@@ -366,6 +379,12 @@ class DeviceManager:
                     )
                     break
             sleep(1)
+
+        elif self.ping_failure_count_run % retry_frequency == 50:
+            logger.info("Reload networkmanager")
+            utils.run_cmd("sudo systemctl restart NetworkManager", ignore_errors=True)
+            sleep(1)
+
 
     def action_on_ping_ok(self) -> None:
         # Track ping stats for logging purposes
