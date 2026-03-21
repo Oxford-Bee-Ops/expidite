@@ -266,20 +266,18 @@ class DeviceManager:
             logger.debug("Wifi timer callback")
             # Test that internet connectivity is UP and working by pinging google DNS servers
             # -c 1 means ping once, -W 1 means timeout after 1 second
-            ping_rc = os.system("ping -c 1 -W 1 8.8.8.8 1>/dev/null")
+            ping_ok = os.system("ping -c 1 -W 1 8.8.8.8 1>/dev/null") == 0
             # Even if ICMP ping works, we still see situation where TCP can be failed (router issue).
             # We can identify this by running ss -tpn and checking for connections in SYN_SENT state
             # which indicates that the TCP handshake is not completing.
-            ss_rc = os.system("ss -tpn 2>/dev/null | grep SYN_SENT 1>/dev/null")
-            # If ss_rc fails, we may have hit a transitory situation, run again and check that there are no
-            # connections in ESTAB. If there are connections in ESTAB, then we know that the TCP handshake is working.
-            if ss_rc != 0:
+            ss_ok = os.system("ss -tpn 2>/dev/null | grep SYN_SENT 1>/dev/null") != 0 # OK if SYN_SENT not found.
+            if not ss_ok:
                 logger.warning("Ping succeeded but ss check failed; re-running ss check to confirm")
-                estab_rc = os.system("ss -tpn 2>/dev/null | grep ESTAB 1>/dev/null")
-                if estab_rc == 0:
-                    ss_rc = 0
+                estab_ok = os.system("ss -tpn 2>/dev/null | grep ESTAB 1>/dev/null") == 0 # OK if ESTAB found
+                if estab_ok:
+                    ss_ok = True
 
-            if ping_rc != 0 or ss_rc != 0:
+            if not ping_ok or not ss_ok:
                 self.action_on_ping_fail()
             else:
                 self.action_on_ping_ok()
@@ -332,8 +330,9 @@ class DeviceManager:
     # Possible recovery actions:
     # - Restart the wlan0 interface:  nmcli dev disconnect / connect wlan0
     # - Toggle radio:                 nmcli radio wifi off / on
-    # - Explicit wifi connect:        nmcli dev wifi connect <SSID> password <password>
     # - Reload NMCLI:                 nlcli general reload
+    # - Explicit wifi connect:        nmcli dev wifi connect <SSID> password <password>
+    # - Restart NetworkManager:       sudo systemctl restart NetworkManager
     # - Restart the device:           sudo reboot
     #
     # Try the first four recovery actions on a 20 minute cycle.
@@ -343,8 +342,8 @@ class DeviceManager:
     def attempt_wifi_recovery(self) -> None:
         retry_frequency = int(self.ping_check_interval * 120)  # Retry recovery action set every 10s*120=1200s=20mins
 
-        # Ping cycle is 10s, so 6*60*2 = 2 hours.
-        if self.ping_failure_count_run == (6 * 60 * 2):
+        # Reboot after 2 hours.
+        if self.ping_failure_count_run == int((2 * 3600) / self.ping_check_interval):
             logger.error(f"{root_cfg.RAISE_WARN()}Rebooting device due to no internet for >2 hours")
             DiagnosticsBundle.collect("Rebooting device due to no internet for >2 hours")
             utils.run_cmd("sudo reboot")
@@ -364,7 +363,7 @@ class DeviceManager:
             sleep(1)
 
         elif self.ping_failure_count_run % retry_frequency == 30:
-            logger.info("Reloading NetworkManager")
+            logger.info("Reloading NMCLI configuration")
             utils.run_cmd("sudo nmcli general reload", ignore_errors=True)
             sleep(1)
 
@@ -381,7 +380,7 @@ class DeviceManager:
             sleep(1)
 
         elif self.ping_failure_count_run % retry_frequency == 50:
-            logger.info("Reload networkmanager")
+            logger.info("Restarting NetworkManager")
             utils.run_cmd("sudo systemctl restart NetworkManager", ignore_errors=True)
             sleep(1)
 
