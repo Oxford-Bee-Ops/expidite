@@ -14,7 +14,6 @@ from .core.dp_config_objects import (
 )
 from .core.dp_tree import DPtree
 from .core.sensor import Sensor
-from .core.shared_state import SharedState, SharedStateEntry
 from .rpi_core import RpiCore
 from .utils import rpi_emulator
 
@@ -32,8 +31,6 @@ __all__ = [
     "RpiCore",
     "Sensor",
     "SensorCfg",
-    "SharedState",
-    "SharedStateEntry",
     "Stream",
     "WifiClient",
     "api",
