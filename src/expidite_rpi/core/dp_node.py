@@ -11,6 +11,7 @@ from expidite_rpi.core import api, file_naming
 from expidite_rpi.core import configuration as root_cfg
 from expidite_rpi.core.cloud_connector import CloudConnector
 from expidite_rpi.core.dp_config_objects import DPtreeNodeCfg, Stream
+from expidite_rpi.core.shared_state import JSONValue, SharedState
 from expidite_rpi.utils.journal_pool import JournalPool
 from expidite_rpi.utils.rpi_emulator import RpiEmulator
 
@@ -57,6 +58,30 @@ class DPnode:
 
         # Create the Journals that we will use to store this DPtree's output.
         self.journal_pool: JournalPool | None = None
+
+        # SharedState is lazily loaded to avoid setup overhead for config-only operations.
+        self._shared_state: SharedState | None = None
+
+    ##########################################################################################################
+    #
+    # Shared state methods available to Sensor and DataProcessor subclasses.
+    #
+    ##########################################################################################################
+    def shared_set(self, key: str, value: JSONValue, ttl_seconds: float | None = None) -> int:
+        """Set a value in the global shared state and return its new version."""
+        return self._get_shared_state().set(key=key, value=value, ttl_seconds=ttl_seconds)
+
+    def shared_get(self, key: str, default: JSONValue | None = None) -> JSONValue | None:
+        """Get a value from shared state, returning default if absent or expired."""
+        return self._get_shared_state().get(key=key, default=default)
+
+    def shared_delete(self, key: str) -> bool:
+        """Delete a key from shared state."""
+        return self._get_shared_state().delete(key=key)
+
+    def shared_list_keys(self, prefix: str | None = None) -> list[str]:
+        """List shared-state keys, optionally constrained by prefix."""
+        return self._get_shared_state().list_keys(prefix=prefix)
 
     def is_leaf(self, stream_index: int) -> bool:
         """Check if this node is a leaf node (i.e., it has no children).
@@ -618,3 +643,9 @@ class DPnode:
         if self.journal_pool is None:
             self.journal_pool = JournalPool.get(mode=root_cfg.get_mode())
         return self.journal_pool
+
+    def _get_shared_state(self) -> SharedState:
+        """Return the process-wide SharedState service."""
+        if self._shared_state is None:
+            self._shared_state = SharedState.get_instance()
+        return self._shared_state

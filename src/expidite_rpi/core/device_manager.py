@@ -58,7 +58,9 @@ class DeviceManager:
 
         # Start wifi management thread
         if root_cfg.running_on_rpi and root_cfg.my_device.attempt_wifi_recovery:
-            self.wifi_timer = utils.RepeatTimer(interval=self.ping_check_interval, function=self.wifi_timer_callback)
+            self.wifi_timer = utils.RepeatTimer(
+                interval=self.ping_check_interval, function=self.wifi_timer_callback
+            )
             self.wifi_timer.start()
             logger.info("DeviceManager Wifi timer started")
 
@@ -270,10 +272,12 @@ class DeviceManager:
             # Even if ICMP ping works, we still see situation where TCP can be failed (router issue).
             # We can identify this by running ss -tpn and checking for connections in SYN_SENT state
             # which indicates that the TCP handshake is not completing.
-            ss_ok = os.system("ss -tpn 2>/dev/null | grep SYN_SENT 1>/dev/null") != 0 # OK if SYN_SENT not found.
+            ss_ok = (
+                os.system("ss -tpn 2>/dev/null | grep SYN_SENT 1>/dev/null") != 0
+            )  # OK if SYN_SENT not found.
             if not ss_ok:
                 logger.warning("Ping succeeded but ss check failed; re-running ss check to confirm")
-                estab_ok = os.system("ss -tpn 2>/dev/null | grep ESTAB 1>/dev/null") == 0 # OK if ESTAB found
+                estab_ok = os.system("ss -tpn 2>/dev/null | grep ESTAB 1>/dev/null") == 0  # OK if ESTAB found
                 if estab_ok:
                     ss_ok = True
 
@@ -340,7 +344,9 @@ class DeviceManager:
     # If that doesn't recover it, then after the failure count gets to 4 hours reboot the device.
     ##########################################################################################################
     def attempt_wifi_recovery(self) -> None:
-        retry_frequency = int(self.ping_check_interval * 120)  # Retry recovery action set every 10s*120=1200s=20mins
+        retry_frequency = int(
+            self.ping_check_interval * 120
+        )  # Retry recovery action set every 10s*120=1200s=20mins
 
         # Reboot after 2 hours.
         if self.ping_failure_count_run == int((2 * 3600) / self.ping_check_interval):
@@ -383,7 +389,6 @@ class DeviceManager:
             logger.info("Restarting NetworkManager")
             utils.run_cmd("sudo systemctl restart NetworkManager", ignore_errors=True)
             sleep(1)
-
 
     def action_on_ping_ok(self) -> None:
         # Track ping stats for logging purposes
