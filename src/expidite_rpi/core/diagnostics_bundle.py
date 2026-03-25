@@ -101,9 +101,10 @@ class DiagnosticsBundle:
                 f.write("\n")
                 write_bar()
 
-            expidite_version, user_code_version = root_cfg.get_version_info()
+            expidite_version, user_code_version, python_version = root_cfg.get_version_info()
             f.write(f"\nExpidite version: {expidite_version}\n")
             f.write(f"User code version: {user_code_version}\n")
+            f.write(f"Python version: {python_version}\n")
             f.write("\nExpidite system configuration:\n")
             if root_cfg.system_cfg is not None:
                 for key, value in root_cfg.system_cfg.model_dump().items():

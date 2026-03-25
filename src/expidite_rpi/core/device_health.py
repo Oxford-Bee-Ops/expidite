@@ -106,6 +106,7 @@ HEART_FIELDS = [
     "process_list",
     "expidite_version",
     "user_code_version",
+    "python_version",
 ]
 
 # WARNING - special datastream for capturing warning and error logs from any component
@@ -332,7 +333,7 @@ class DeviceHealth(Sensor):
 
             # Get the expidite version and user code version from the files
             # Stored in .expidite/user_code_version and .expidite/expidite_code_version
-            expidite_version, user_code_version = root_cfg.get_version_info()
+            expidite_version, user_code_version, python_version = root_cfg.get_version_info()
 
             health = {
                 "boot_time": api.utc_to_iso_str(psutil.boot_time()),
@@ -357,6 +358,7 @@ class DeviceHealth(Sensor):
                 "process_list": process_list_str,
                 "expidite_version": expidite_version,
                 "user_code_version": user_code_version,
+                "python_version": python_version,
             }
 
         except Exception:

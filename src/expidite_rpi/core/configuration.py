@@ -479,8 +479,8 @@ def display_config(device_id: str | None = None) -> str:
     return display_str
 
 
-def get_version_info() -> tuple[str, str]:
-    """Get the version string of the expidite code and the user code."""
+def get_version_info() -> tuple[str, str, str]:
+    """Get the version string of the expidite code, the user code, and Python."""
     expidite_version = "unknown"
     user_code_version = "unknown"
     if EXPIDITE_VERSION_FILE.exists():
@@ -490,4 +490,4 @@ def get_version_info() -> tuple[str, str]:
         with open(USER_CODE_VERSION_FILE) as f:
             user_code_version = f.read().strip()
 
-    return (expidite_version, user_code_version)
+    return expidite_version, user_code_version, platform.python_version()

@@ -257,9 +257,10 @@ class InteractiveMenu:
             click.echo(f"\n{dash_line}")
             click.echo("# SYSTEM CONFIGURATION")
             click.echo(f"{dash_line}")
-            expidite_version, user_code_version = root_cfg.get_version_info()
+            expidite_version, user_code_version, python_version = root_cfg.get_version_info()
             click.echo(f"Expidite version: {expidite_version}")
             click.echo(f"User code version: {user_code_version}")
+            click.echo(f"Python version: {python_version}")
             # Display each field in the root_cfg.system_cfg BaseSettings object
             # Convert the base settings to a dictionary
             system_cfg_dict = root_cfg.system_cfg.model_dump()

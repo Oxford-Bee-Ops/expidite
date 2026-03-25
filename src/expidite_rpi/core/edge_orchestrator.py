@@ -411,9 +411,10 @@ class EdgeOrchestrator:
             wrap["system_config"] = root_cfg.system_cfg.model_dump()
 
         # Code version info
-        expidite_version, user_code_version = root_cfg.get_version_info()
+        expidite_version, user_code_version, python_version = root_cfg.get_version_info()
         wrap["expidite_version"] = expidite_version
         wrap["user_code_version"] = user_code_version
+        wrap["python_version"] = python_version
 
         # Storage account name
         if root_cfg.keys is not None:
