@@ -6,6 +6,7 @@ from pathlib import Path
 from typing import Optional
 
 import pandas as pd
+from azure.core.exceptions import ResourceModifiedError
 from azure.storage.blob import BlobClient, ContainerClient
 
 from expidite_rpi.core import api, file_naming
@@ -446,9 +447,18 @@ class CloudConnector:
     # Private utility methods
     ##########################################################################################################
     def _download_blob(self, blob_client: BlobClient, dst_file: Path) -> None:
-        with open(dst_file, "wb") as my_file:
-            download_stream = blob_client.download_blob()
-            my_file.write(download_stream.readall())  # type: ignore[invalid-argument-type]
+        # If the file changed on Azure while downloading, we'll get ResourceModifiedError. This is expected
+        # occasionally for journals that get appended regularly.
+        for attempt in range(2):
+            try:
+                with open(dst_file, "wb") as my_file:
+                    download_stream = blob_client.download_blob()
+                    my_file.write(download_stream.readall())  # type: ignore[invalid-argument-type]
+                return
+            except ResourceModifiedError:
+                logger.info(f"ResourceModifiedError on {dst_file} attempt {attempt + 1}")
+                if attempt == 2:
+                    raise
 
     def _download_file(self, blob_client: BlobClient, dst_file: Path) -> str:
         """Download a single file."""
