@@ -27,6 +27,7 @@ from expidite_rpi.sensors.sensor_aht20 import AHT20, DEFAULT_AHT20_SENSOR_CFG
 from expidite_rpi.sensors.sensor_audio_on_demand import DEFAULT_AUDIO_SENSOR_CFG, AudioSensor
 from expidite_rpi.sensors.sensor_bmp280 import BMP280, DEFAULT_BMP280_SENSOR_CFG
 from expidite_rpi.sensors.sensor_ltr390 import DEFAULT_LTR390_SENSOR_CFG, LTR390
+from expidite_rpi.sensors.sensor_no_op import DEFAULT_NO_OP_SENSOR_CFG, NoOp
 from expidite_rpi.sensors.sensor_rpicam_vid import (
     DEFAULT_RPICAM_SENSOR_CFG,
     RPICAM_STREAM_INDEX,
@@ -107,6 +108,18 @@ def create_adxl34x_device() -> list[DPtree]:
 def create_ltr390_device() -> list[DPtree]:
     cfg = DEFAULT_LTR390_SENSOR_CFG
     my_sensor = LTR390(cfg)
+    my_tree = DPtree(my_sensor)
+    return [my_tree]
+
+
+##############################################################################################################
+# Create no-op device.
+# Useful for when you want to run a device without sensors (because at least one sensor is required),  but
+# still get the default streams for device monitoring.
+##############################################################################################################
+def create_no_op_device() -> list[DPtree]:
+    cfg = DEFAULT_NO_OP_SENSOR_CFG
+    my_sensor = NoOp(cfg)
     my_tree = DPtree(my_sensor)
     return [my_tree]
 
