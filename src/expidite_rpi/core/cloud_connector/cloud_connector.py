@@ -453,7 +453,7 @@ class CloudConnector:
             try:
                 with open(dst_file, "wb") as my_file:
                     download_stream = blob_client.download_blob()
-                    my_file.write(download_stream.readall())  # type: ignore[invalid-argument-type]
+                    my_file.write(download_stream.readall())  # type: ignore[ty:invalid-argument-type]
                 return
             except ResourceModifiedError:
                 logger.info(f"ResourceModifiedError on {dst_file} attempt {attempt + 1}")
