@@ -316,8 +316,15 @@ class CloudConnector:
                         dst_file=tmp_file,
                     )
                     # Merge the dataframes
-                    orig_df = pd.read_csv(tmp_file)
                     append_df = pd.read_csv(io.StringIO("".join(lines_to_append)))
+                    try:
+                        orig_df = pd.read_csv(tmp_file)
+                    except pd.errors.EmptyDataError:
+                        logger.warning(
+                            f"{root_cfg.RAISE_WARN()}Remote append blob {dst_file} is empty; "
+                            "recreating with incoming headers"
+                        )
+                        orig_df = pd.DataFrame(columns=append_df.columns)
                     merged_df = pd.concat([orig_df, append_df], ignore_index=True)
 
                     # Generate the CSV data to append (including the headers)
