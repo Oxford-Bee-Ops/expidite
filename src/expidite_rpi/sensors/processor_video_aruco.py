@@ -3,13 +3,13 @@
 #
 # This class performs event detection to identify ARUCO markers in videos.
 ##############################################################################################################
-from array import array
 from dataclasses import dataclass, field
 from pathlib import Path
 
 import cv2
 import numpy as np
 import pandas as pd
+from cv2.typing import MatLike
 
 from expidite_rpi.core import api, file_naming
 from expidite_rpi.core import configuration as root_cfg
@@ -24,7 +24,7 @@ logger = root_cfg.setup_logger("expidite")
 @dataclass
 class MarkersData:
     for_csv: list[dict] = field(default_factory=list)
-    corner_sets: array = field(default_factory=lambda: array("f"))
+    corner_sets: list[MatLike] = field(default_factory=list)
 
 
 @dataclass
@@ -39,8 +39,8 @@ MARKER_INFO_REQD_COLUMNS: list[str] = [
     "marker_id",
     "centreX",
     "centreY",
-    "topEdgeMidX",
-    "topEdgeMidY",
+    # "topEdgeMidX",
+    # "topEdgeMidY",
     "topLeftX",
     "topLeftY",
     "topRightX",
@@ -68,7 +68,7 @@ ARUCO_MARKED_UP_VIDEOS_STREAM: Stream = Stream(
     index=ARUCO_MARKED_UP_VIDEOS_STREAM_INDEX,
     format=api.FORMAT.MP4,
     cloud_container="expidite-upload",
-    sample_probability="0.1",
+    sample_probability="1.0",
 )
 
 
@@ -155,12 +155,15 @@ class VideoArucoProcessor(DataProcessor):
 
             # Set up the detection parameters
             parameters: cv2.aruco.DetectorParameters = cv2.aruco.DetectorParameters()
-            parameters.cornerRefinementMethod = cv2.aruco.CORNER_REFINE_SUBPIX
-            parameters.minMarkerPerimeterRate = 0.03
-            parameters.adaptiveThreshWinSizeMin = 5
-            parameters.adaptiveThreshWinSizeStep = 6
+            parameters.adaptiveThreshWinSizeMin = 6
+            parameters.adaptiveThreshWinSizeStep = 4
             parameters.polygonalApproxAccuracyRate = 0.06
+
+            # Avoid overly small detections
+            parameters.minMarkerPerimeterRate = 0.13
+
             detector = cv2.aruco.ArucoDetector(tag_dictionary, parameters)
+
             frame_num = 1
             all_markers_full_info = []
             total_frame_count = video.get(cv2.CAP_PROP_FRAME_COUNT)
@@ -186,9 +189,21 @@ class VideoArucoProcessor(DataProcessor):
                 # green in 1 frame to orange in the next frame, because it only happens on actual aruco
                 # markers.
                 if save_marked_up_video:
-                    for corner_set in frame_markers.known_markers.corner_sets:
+                    for csv_data, corner_set in zip(
+                        frame_markers.known_markers.for_csv, frame_markers.known_markers.corner_sets
+                    ):
                         pts = np.array(corner_set).astype(int).reshape((-1, 1, 2))
                         cv2.polylines(frame, [pts], isClosed=True, color=(0, 255, 0), thickness=2)
+                        cv2.putText(
+                            frame,
+                            f"ID: {csv_data['marker_id']}",
+                            (pts[0][0][0], pts[0][0][1] - 10),
+                            cv2.FONT_HERSHEY_SIMPLEX,
+                            0.5,
+                            (0, 255, 0),
+                            2,
+                        )
+
                     for corner_set in frame_markers.unknown_markers.corner_sets:
                         pts = np.array(corner_set).astype(int).reshape((-1, 1, 2))
                         cv2.polylines(frame, [pts], isClosed=True, color=(0, 0, 255), thickness=2)
@@ -241,7 +256,7 @@ class VideoArucoProcessor(DataProcessor):
         unknown_marker_info = return_data.unknown_markers.for_csv
 
         def add_marker_info(
-            list_to_update: list[dict], corners_as_3d_array: array, marker_id: list[int] | None
+            list_to_update: list[dict], corners_as_3d_array: MatLike, marker_id: int | None
         ) -> None:
             # Note, a corner set from detectMarkers() is a 3D array, (1,4,2).
             # 4 = number of corners, 2 = x,y for each corner. Not sure why we need the extra dimension, but
@@ -291,16 +306,22 @@ class VideoArucoProcessor(DataProcessor):
         # Convert the frame to greyscale
         gray = cv2.cvtColor(frame, cv2.COLOR_RGB2GRAY)
         clahe = cv2.createCLAHE(clipLimit=2.0, tileGridSize=(8, 8))
-        cl1 = clahe.apply(gray)
-        gray = cv2.cvtColor(cl1, cv2.COLOR_GRAY2RGB)
+        gray = clahe.apply(gray)
+
+        # Slight sharpening
+        kernel = np.array([[0, -1, 0], [-1, 5, -1], [0, -1, 0]])
+        gray = cv2.filter2D(gray, -1, kernel)
+
+        gray = cv2.GaussianBlur(gray, (3,3), 0)
+        # gray = cv2.cvtColor(gray, cv2.COLOR_GRAY2RGB)
 
         # Detect markers in the frame, with and without known IDs
         # Note:
         # - known_ids can be None or a vector of vectors
         # - corner_sets are arrays (which can be empty but never None)
-        return_data.known_markers.corner_sets, known_ids, return_data.unknown_markers.corner_sets = (
-            detector.detectMarkers(frame)
-        )
+        known_corner_sets, known_ids, unknown_corner_sets = detector.detectMarkers(gray)
+        return_data.known_markers.corner_sets = list(known_corner_sets)
+        return_data.unknown_markers.corner_sets = list(unknown_corner_sets)
 
         for corner_set in return_data.unknown_markers.corner_sets:
             add_marker_info(
@@ -312,7 +333,7 @@ class VideoArucoProcessor(DataProcessor):
                 add_marker_info(
                     list_to_update=known_marker_info,
                     corners_as_3d_array=corner_set,
-                    marker_id=known_id_vector[0],
+                    marker_id=int(known_id_vector[0]),
                 )
 
         known_marker_count = len(known_marker_info)
