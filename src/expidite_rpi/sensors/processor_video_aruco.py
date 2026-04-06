@@ -77,14 +77,14 @@ class ArucoProcessorCfg(DataProcessorCfg):
     ##########################################################################################################
     # Add custom fields
     ##########################################################################################################
-    aruco_dict_name: str = "DICT_4X4_50"
+    aruco_dict_name: str = ""
     save_marked_up_video: bool = True  # Save the marked up video
 
 
 DEFAULT_AUROCO_PROCESSOR_CFG = ArucoProcessorCfg(
     description="WHOCAM video processor",
     outputs=[ARUCO_DATA_STREAM, ARUCO_MARKED_UP_VIDEOS_STREAM],
-    aruco_dict_name="DICT_4X4_50",
+    aruco_dict_name="DICT_4X4_100",
     save_marked_up_video=True,  # Save the marked up video
 )
 
@@ -160,7 +160,7 @@ class VideoArucoProcessor(DataProcessor):
             parameters.polygonalApproxAccuracyRate = 0.06
 
             # Avoid overly small detections
-            parameters.minMarkerPerimeterRate = 0.13
+            parameters.minMarkerPerimeterRate = 0.1
 
             detector = cv2.aruco.ArucoDetector(tag_dictionary, parameters)
 
@@ -196,7 +196,7 @@ class VideoArucoProcessor(DataProcessor):
                         cv2.polylines(frame, [pts], isClosed=True, color=(0, 255, 0), thickness=2)
                         cv2.putText(
                             frame,
-                            f"ID: {csv_data['marker_id']}",
+                            f"ID: {csv_data['marker_id']:.0f}",
                             (pts[0][0][0], pts[0][0][1] - 10),
                             cv2.FONT_HERSHEY_SIMPLEX,
                             0.5,
@@ -290,8 +290,6 @@ class VideoArucoProcessor(DataProcessor):
                     "marker_id": marker_id,
                     "centreX": float(centreX),
                     "centreY": float(centreY),
-                    # "topEdgeMidX": float(topEdgeMidX),
-                    # "topEdgeMidY": float(topEdgeMidY),
                     "topLeftX": float(top_left[x_col]),
                     "topLeftY": float(top_left[y_col]),
                     "topRightX": float(top_right[x_col]),
