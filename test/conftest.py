@@ -123,7 +123,7 @@ def inventory() -> list[DeviceCfg]:
 
 
 @pytest.fixture
-def rpi_emulator(inventory: list[DeviceCfg]) -> Generator[RpiEmulator, None, None]:
+def rpi_emulator(inventory: list[DeviceCfg]) -> Generator[RpiEmulator]:
     """Pytest fixture that provides an RpiEmulator instance with mocked timers.
 
     Automatically applies mock_timers to the provided inventory.
