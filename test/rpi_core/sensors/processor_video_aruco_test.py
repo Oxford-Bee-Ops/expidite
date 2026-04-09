@@ -21,7 +21,7 @@ class Test_video_aruco_processor:
         logger.info("Run test_aruco_processor_basic test")
         src_dir = Path(__file__).parent / "resources"
         file = (
-            #src_dir / "V3_TRAPCAM_88a29e5945fd_00_00_20260321T114558780_20260321T114624905.mp4"
+            # src_dir / "V3_TRAPCAM_88a29e5945fd_00_00_20260321T114558780_20260321T114624905.mp4"
             src_dir / "V3_TRAPCAM_88a29e5945fd_00_00_20260324T140945267_20260324T140954267.mp4"
         ).resolve()
 

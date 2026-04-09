@@ -310,7 +310,7 @@ class VideoArucoProcessor(DataProcessor):
         kernel = np.array([[0, -1, 0], [-1, 5, -1], [0, -1, 0]])
         gray = cv2.filter2D(gray, -1, kernel)
 
-        gray = cv2.GaussianBlur(gray, (3,3), 0)
+        gray = cv2.GaussianBlur(gray, (3, 3), 0)
         # gray = cv2.cvtColor(gray, cv2.COLOR_GRAY2RGB)
 
         # Detect markers in the frame, with and without known IDs

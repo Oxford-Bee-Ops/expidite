@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "expidite"
-version = "0.1.184"
+version = "0.1.185"
 description = "Python module to support using Raspberry Pi for scientific data collection"
 readme = "README.md"
 requires-python = ">=3.11"
@@ -21,17 +21,17 @@ dependencies = [
     "adafruit-platformdetect==3.88",
     "azure-storage-blob==12.28.0",
     "bottleneck==1.6.0", # Required by pandas.
-    "click==8.3.1",
+    "click==8.3.2",
     "python-crontab==3.3.0",
     "gpiozero==2.0.1",
     "numexpr==2.14.1", # Required by pandas.
     "numpy==1.26.4; python_version < '3.13' and sys_platform == 'linux'",
     "numpy==2.4.2; python_version >= '3.13' or sys_platform == 'win32'",
     'opencv-python==4.13.0.92; sys_platform == "win32"',
-    "pandas==3.0.1",
+    "pandas==3.0.2",
     "psutil==7.2.2",
     "pydantic-settings==2.13.1",
-    "PyGithub==2.8.1",
+    "PyGithub==2.9.0",
     "PyYAML==6.0.3",
     "smbus2==0.6.0",
     "sensirion_i2c_sht4x==1.1.0",
@@ -43,15 +43,15 @@ dependencies = [
 dev = [
     "codespell==2.4.2",
     "deadcode==2.4.1",
-    "mypy==1.19.1",
+    "mypy==1.20.0",
     "pandas-stubs==3.0.0.260204",
     "pyright==1.1.408",
-    "pytest==9.0.2",
+    "pytest==9.0.3",
     "pytest-socket==0.7.0",
-    "ruff==0.15.8",
+    "ruff==0.15.9",
     "ty==0.0.26",
-    "types-psutil==7.2.2.20260130",
-    "types-PyYAML==6.0.12.20250915",
+    "types-psutil==7.2.2.20260408",
+    "types-PyYAML==6.0.12.20260408",
 ]
 
 [project.scripts]
