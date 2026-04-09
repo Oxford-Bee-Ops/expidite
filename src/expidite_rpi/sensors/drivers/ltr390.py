@@ -11,9 +11,11 @@ from adafruit_register.i2c_struct import ROUnaryStruct, Struct
 
 try:
     import board
+    import busio
 except (ImportError, NotImplementedError):
     # Running on non-CircuitPython environment (Windows/standard Python)
     board = None
+    busio = None
 
 """
 The MIT License (MIT)
@@ -325,7 +327,7 @@ class LTR390Driver:  # pylint:disable=too-many-instance-attributes
     def __init__(self, address: int = _DEFAULT_I2C_ADDR) -> None:
         if board is not None:
             # CircuitPython/Raspberry Pi with Blinka
-            i2c = board.I2C()
+            i2c = busio.I2C(board.SCL, board.SDA)
         else:
             # Alternative implementation or raise appropriate error
             raise RuntimeError("Board module not available - install adafruit-blinka for Raspberry Pi")

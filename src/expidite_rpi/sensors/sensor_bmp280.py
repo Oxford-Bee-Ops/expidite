@@ -10,9 +10,11 @@ from expidite_rpi.core.sensor import Sensor, SensorCfg
 try:
     # This is only needed for typing
     import board
+    import busio
 except (ImportError, NotImplementedError):
     # Running on non-CircuitPython environment (Windows/standard Python)
     board = None
+    busio = None
 
 logger = root_cfg.setup_logger("expidite")
 
@@ -55,7 +57,7 @@ class BMP280(Sensor):
 
     # Separate thread to log data
     def run(self) -> None:
-        i2c = board.I2C()
+        i2c = busio.I2C(board.SCL, board.SDA)
         sensor = adafruit_bmp280.Adafruit_BMP280_I2C(i2c, address=BMP280_SENSOR_INDEX)
 
         while self.continue_recording():

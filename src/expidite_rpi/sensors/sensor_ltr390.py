@@ -11,11 +11,12 @@ from expidite_rpi.core.dp_config_objects import Stream
 from expidite_rpi.core.sensor import Sensor, SensorCfg
 
 try:
-    # This is only needed for typing
     import board
+    import busio
 except (ImportError, NotImplementedError):
     # Running on non-CircuitPython environment (Windows/standard Python)
     board = None
+    busio = None
 
 logger = root_cfg.setup_logger("expidite")
 
@@ -57,7 +58,7 @@ class LTR390(Sensor):
         self.config = config
 
     def run(self) -> None:
-        i2c = board.I2C()
+        i2c = busio.I2C(board.SCL, board.SDA)
         sensor = adafruit_ltr390.LTR390(i2c)
         current_gain = 4  # This is the index for 18x gain
         sensor.gain = current_gain

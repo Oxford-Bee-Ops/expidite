@@ -36,9 +36,11 @@ from micropython import const
 try:
     # This is only needed for typing
     import board
+    import busio
 except (ImportError, NotImplementedError):
     # Running on non-CircuitPython environment (Windows/standard Python)
     board = None
+    busio = None
 
 __version__ = "0.0.0+auto.0"
 __repo__ = "https://github.com/adafruit/Adafruit_CircuitPython_ADXL34x.git"
@@ -180,7 +182,7 @@ class ADXL345:
     def __init__(self, address: int = _ADXL345_DEFAULT_ADDRESS) -> None:
         if board is not None:
             # CircuitPython/Raspberry Pi with Blinka
-            i2c = board.I2C()
+            i2c = busio.I2C(board.SCL, board.SDA)
         else:
             # Alternative implementation or raise appropriate error
             raise RuntimeError("Board module not available - install adafruit-blinka for Raspberry Pi")
