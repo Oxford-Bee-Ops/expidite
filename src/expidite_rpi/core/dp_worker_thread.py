@@ -114,12 +114,13 @@ class DPworker(Thread):
 
         while not self._stop_requested.is_set():
             start_time = api.utc_now()
+            dp: DataProcessor | None = None
 
             for edge in self.dp_tree.get_edges():
                 try:
                     exec_start_time = api.utc_now()
                     assert isinstance(edge.sink, DataProcessor)
-                    dp: DataProcessor = edge.sink
+                    dp = edge.sink
                     stream = edge.stream
 
                     ##########################################################################################
