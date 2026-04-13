@@ -32,7 +32,7 @@ class DPnode:
     """Base class for nodes in the DPtree. Sensor and DataProcessor inherit from this class."""
 
     # Special Datastream for recording sample count / duration from the data pipeline.
-    _selftracker: "DPnode | None"
+    _selftracker: "DPnode | None" = None
 
     def __init__(self, config: DPtreeNodeCfg, sensor_index: int) -> None:
         """Initializes a DPtreeNode with the given configuration.
