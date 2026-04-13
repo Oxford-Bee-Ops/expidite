@@ -66,12 +66,9 @@ class _CloudJournalManager:
             - journal: CloudJournal to which data should be added
             - data: list[dict] of data to add
         """
-        jqueue: Queue
-        if journal not in self._journals:
-            jqueue = Queue()
-            with self._journals_dict_lock:
-                self._journals[journal] = jqueue
-        else:
+        with self._journals_dict_lock:
+            if journal not in self._journals:
+                self._journals[journal] = Queue()
             jqueue = self._journals[journal]
         jqueue.put(data)
 
