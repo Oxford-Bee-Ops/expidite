@@ -40,45 +40,25 @@ class CloudConnector:
         """We use a factory pattern to offer up alternative types of CloudConnector for accessing different
         cloud storage providers and / or the local emulator.
         """
-        match cloud_type:
-            case CloudType.AZURE:
-                from expidite_rpi.core.cloud_connector.async_cloud_connector import AsyncCloudConnector
+        from expidite_rpi.core.cloud_connector.async_cloud_connector import AsyncCloudConnector
+        from expidite_rpi.core.cloud_connector.local_cloud_connector import LocalCloudConnector
+        from expidite_rpi.core.cloud_connector.sync_cloud_connector import SyncCloudConnector
 
-                if CloudConnector._instance is None:
-                    CloudConnector._instance = AsyncCloudConnector()
-                elif not isinstance(CloudConnector._instance, AsyncCloudConnector):
-                    logger.warning(
-                        f"{root_cfg.RAISE_WARN()}Replacing CloudConnector instance with AsyncCloudConnector"
-                    )
-                    CloudConnector._instance.shutdown()
-                    CloudConnector._instance = AsyncCloudConnector()
-                return CloudConnector._instance
+        connector_map: dict[CloudType, type[CloudConnector]] = {
+            CloudType.AZURE: AsyncCloudConnector,
+            CloudType.LOCAL_EMULATOR: LocalCloudConnector,
+            CloudType.SYNC_AZURE: SyncCloudConnector,
+        }
+        desired_class = connector_map[cloud_type]
 
-            case CloudType.LOCAL_EMULATOR:
-                from expidite_rpi.core.cloud_connector.local_cloud_connector import LocalCloudConnector
-
-                if CloudConnector._instance is None:
-                    CloudConnector._instance = LocalCloudConnector()
-                elif not isinstance(CloudConnector._instance, LocalCloudConnector):
-                    logger.warning(
-                        f"{root_cfg.RAISE_WARN()}Replacing CloudConnector instance with LocalCloudConnector"
-                    )
-                    CloudConnector._instance.shutdown()
-                    CloudConnector._instance = LocalCloudConnector()
-                return CloudConnector._instance
-
-            case CloudType.SYNC_AZURE:
-                from expidite_rpi.core.cloud_connector.sync_cloud_connector import SyncCloudConnector
-
-                if CloudConnector._instance is None:
-                    CloudConnector._instance = SyncCloudConnector()
-                elif not isinstance(CloudConnector._instance, SyncCloudConnector):
-                    logger.warning(
-                        f"{root_cfg.RAISE_WARN()}Replacing CloudConnector instance with SyncCloudConnector"
-                    )
-                    CloudConnector._instance.shutdown()
-                    CloudConnector._instance = SyncCloudConnector()
-                return CloudConnector._instance
+        if not isinstance(CloudConnector._instance, desired_class):
+            if CloudConnector._instance is not None:
+                logger.warning(
+                    f"{root_cfg.RAISE_WARN()}Replacing CloudConnector instance with {desired_class.__name__}"
+                )
+                CloudConnector._instance.shutdown()
+            CloudConnector._instance = desired_class()
+        return CloudConnector._instance
 
     def set_keys(self, keys_file: Path | None = None, key: str | None = None) -> None:
         """Sets the cloud storage key for the CloudConnector from either a file or directly from a string."""
