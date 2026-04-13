@@ -62,8 +62,6 @@ class EdgeOrchestrator:
     _instance = None
     _status_lock = threading.RLock()  # Re-entrant lock to ensure thread-safety
 
-    root_cfg.set_mode(root_cfg.Mode.EDGE)
-
     def __init__(self) -> None:
         logger.info(f"Initialising EdgeOrchestrator {self!r}")
 
@@ -333,7 +331,7 @@ class EdgeOrchestrator:
                 logger.info(f"Datastream thread {dpe} already stopped")
 
         # Trigger a flush_all on the CloudJournals so we save collected information before we kill everything
-        jp = JournalPool.get(root_cfg.Mode.EDGE)
+        jp = JournalPool.get()
         jp.flush_journals()
         jp.stop()
         # jp.stop will also stop the cloud connector threadpool

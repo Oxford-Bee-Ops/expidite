@@ -33,10 +33,7 @@ from expidite_rpi.example.my_sensor_example import (
 # the number of bees identified.
 # DataProcessors act in a chain, with data being passed from one to the next.
 # The DataProcessors associated with a Datastream are defined on the DatastreamCfg as lists of
-# DataProcessorCfg objects.
-# There are two lists:
-# - EdgeProcessors that act on the device
-# - CloudProcessors that act as part of a subsequent ETL on a server or in the cloud.
+# DataProcessorCfg objects. These are EdgeProcessors that act on the device.
 #
 # DeviceCfg (1 per physical device)
 # -> sensor_ds_list: list[SensorDsCfg] - 1 per Sensor)

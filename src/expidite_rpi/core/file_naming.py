@@ -219,11 +219,7 @@ def increment_filename(fname: Path) -> Path:
 
 def get_cloud_journal_filename(type_id: str, day: datetime) -> Path:
     """Filenaming for cloud journals based on date."""
-    if root_cfg.get_mode() == root_cfg.Mode.EDGE:
-        processing_dir = root_cfg.EDGE_PROCESSING_DIR
-    else:
-        processing_dir = root_cfg.ETL_PROCESSING_DIR
-
+    processing_dir = root_cfg.EDGE_PROCESSING_DIR
     return processing_dir.joinpath(f"V3_{type_id}_{root_cfg.my_device_id}_{day.strftime('%Y%m%d')}.csv")
 
 

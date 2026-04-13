@@ -214,16 +214,12 @@ class DPnode:
             end_time:datetime
                 The time that the recording ended.
         """
-        # If on EDGE, files are either saved to the root_cfg.EDGE_PROCESSING_DIR if there are DPs registered,
-        # or to the root_cfg.EDGE_UPLOAD_DIR if not.
-        # On the ETL, files are saved to the root_cfg.ETL_PROCESSING_DIR
-        if root_cfg.get_mode() == root_cfg.Mode.EDGE:
-            if self.is_leaf(stream_index):
-                save_dir = root_cfg.EDGE_UPLOAD_DIR
-            else:
-                save_dir = root_cfg.EDGE_PROCESSING_DIR
+        # Files are either saved to the root_cfg.EDGE_PROCESSING_DIR if there are DPs registered, or to the
+        # root_cfg.EDGE_UPLOAD_DIR if not.
+        if self.is_leaf(stream_index):
+            save_dir = root_cfg.EDGE_UPLOAD_DIR
         else:
-            raise AssertionError("save_recording() should not be called in ETL mode")
+            save_dir = root_cfg.EDGE_PROCESSING_DIR
 
         # Logged in _save_recording()
         return self._save_recording(
@@ -270,17 +266,12 @@ class DPnode:
         """
         suffix = self.get_stream(stream_index).format
 
-        # We save the recording to the EDGE|ETL_PROCESSING_DIR if there are more DPs to run, otherwise we save
-        # it to the EDGE|ETL_UPLOAD_DIR
-        if root_cfg.get_mode() == root_cfg.Mode.EDGE:
-            if self.is_leaf(stream_index):
-                save_dir = root_cfg.EDGE_UPLOAD_DIR
-            else:
-                save_dir = root_cfg.EDGE_PROCESSING_DIR
-        elif self.is_leaf(stream_index):
-            save_dir = root_cfg.ETL_PROCESSING_DIR
+        # We save the recording to the EDGE_PROCESSING_DIR if there are more DPs to run, otherwise we save it
+        # to the EDGE_UPLOAD_DIR.
+        if self.is_leaf(stream_index):
+            save_dir = root_cfg.EDGE_UPLOAD_DIR
         else:
-            save_dir = root_cfg.ETL_ARCHIVE_DIR
+            save_dir = root_cfg.EDGE_PROCESSING_DIR
 
         # Logged in _save_recording()
         return self._save_recording(
@@ -616,5 +607,5 @@ class DPnode:
         don't need the JournalPool.
         """
         if self.journal_pool is None:
-            self.journal_pool = JournalPool.get(mode=root_cfg.get_mode())
+            self.journal_pool = JournalPool.get()
         return self.journal_pool

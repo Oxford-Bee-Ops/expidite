@@ -8,10 +8,8 @@ import pandas as pd
 
 from expidite_rpi.core import api, file_naming
 from expidite_rpi.core import configuration as root_cfg
-from expidite_rpi.core.configuration import Mode
 from expidite_rpi.core.dp_config_objects import Stream
 from expidite_rpi.utils.cloud_journal import CloudJournal
-from expidite_rpi.utils.journal import Journal
 
 logger = root_cfg.setup_logger("expidite")
 
@@ -22,21 +20,17 @@ class JournalPool(ABC):
     The JournalPool is a singleton shared by all DPtreeNode instances and should be retrieved using
     JournalPool.get().
 
-    The internal implementation of the JournalPool is different for EDGE and ETL modes.
-    On the EDGE, there is a "Journal" in the JournalPool per DPtreeNode type_id.
-    On the ETL, we use "CloudJournal" objects to manage the data, with 1 Journal per DPtreeNode type_id
-    per day.
-    In both cases, data is stored based on its bapi.RECORD_ID.DS_TYPE_ID and bapi.RECORD_ID.TIMESTAMP in the
-    appropriate CJ.
+    There is a "Journal" in the JournalPool per DPtreeNode type_id. Data is stored based on its
+    bapi.RECORD_ID.DS_TYPE_ID and bapi.RECORD_ID.TIMESTAMP in the CJ.
     """
 
     _instance: JournalPool | None = None
 
     @staticmethod
-    def get(mode: Mode) -> JournalPool:
+    def get() -> JournalPool:
         """Get the singleton instance of the JournalPool."""
         if JournalPool._instance is None:
-            logger.debug(f"Creating JournalPool instance for mode: {mode}")
+            logger.debug("Creating JournalPool instance")
             JournalPool._instance = CloudJournalPool()
         return JournalPool._instance
 
@@ -68,7 +62,7 @@ class JournalPool(ABC):
 
 
 class CloudJournalPool(JournalPool):
-    """The CloudJournalPool is a concrete implementation of a JournalPool for running in ETL mode.
+    """The CloudJournalPool is a concrete implementation of a JournalPool for running in EDGE mode.
 
     It is based on a pool of CloudJournal instances.
     """
@@ -144,77 +138,3 @@ class CloudJournalPool(JournalPool):
         else:
             cj = self._cj_pool[fname.name]
         return cj
-
-
-class LocalJournalPool(JournalPool):
-    """The LocalJournalPool is a concrete implementation of a JournalPool for running in EDGE mode.
-
-    It is based on a pool of Journal instances.
-    """
-
-    def __init__(self) -> None:
-        self._jpool: dict[str, Journal] = {}
-        self.jlock = RLock()
-
-    def add_rows(self, stream: Stream, data: list[dict], timestamp: datetime | None = None) -> None:
-        """Add data to the appropriate Journal, which will auto-upload to the cloud."""
-        with self.jlock:
-            j = self._get_journal(stream)
-            j.add_rows(data)
-
-    def add_rows_from_df(self, stream: Stream, data: pd.DataFrame, timestamp: datetime | None = None) -> None:
-        """Add data to the appropriate Journal, which will auto-sync to the cloud."""
-        with self.jlock:
-            j = self._get_journal(stream)
-            j.add_rows_from_df(data)
-
-    def flush_journals(self) -> None:
-        """Called by the EdgeOrchestrator.upload_to_container function to flush all journals to disk and
-        onwards to archive.
-        """
-        logger.debug("Flushing all journals to disk")
-
-        with self.jlock:
-            for j in self._jpool.values():
-                # Save the cached data to disk
-                fname = j.save()
-
-                # If there was no data, no file will have been created
-                if not fname.exists():
-                    logger.info(f"No data in {j.fname} when flushed")
-                    continue
-
-                # Move the file to the upload directory and append the timestamp
-                ts = api.utc_to_fname_str()
-                # We need a unique filename, so we append a number if the file already exists
-                # We only hit this in testing, because there's usually half an hour between runs!
-                i = 1
-                target_fname = root_cfg.EDGE_UPLOAD_DIR.joinpath(f"{fname.stem}_{ts}{fname.suffix}")
-                while target_fname.exists():
-                    target_fname.replace(
-                        target_fname.parent.joinpath(f"{target_fname.stem}{i!s}{target_fname.suffix}")
-                    )
-                    i += 1
-
-                fname.rename(target_fname)
-                # Delete the cached data from the Journal object
-                j.delete()
-
-    def stop(self) -> None:
-        """Stop the LocalJournalPool, flush all data and exit any threads."""
-        self.flush_journals()
-        # No threads to stop
-
-    def _get_journal(self, stream: Stream) -> Journal:
-        """Generate the Journal filename for a DPtreeNodeCfg."""
-        fname = file_naming.get_journal_filename(stream.type_id)
-        if fname.name not in self._jpool:
-            reqd_cols: list[str] = api.ALL_RECORD_ID_FIELDS
-            if stream.fields:
-                reqd_cols.extend(stream.fields)
-            j = Journal(fname, cached=True, reqd_columns=reqd_cols)
-            self._jpool[fname.name] = j
-        else:
-            j = self._jpool[fname.name]
-
-        return j

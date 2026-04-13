@@ -146,9 +146,6 @@ TMP_FLAGS_DIR: Path = TMP_DIR / "tmp_flags"  # For transient flags
 EDGE_PROCESSING_DIR = ROOT_WORKING_DIR / "processing"  # Awaiting DP processing
 EDGE_STAGING_DIR = ROOT_WORKING_DIR / "staging"  # Journals awaiting flush
 EDGE_UPLOAD_DIR = ROOT_WORKING_DIR / "upload"  # Any file awaiting upload
-ETL_UNZIP_DIR = ROOT_WORKING_DIR / "unzip"  # Where zip files are downloaded to
-ETL_PROCESSING_DIR = ROOT_WORKING_DIR / "processing"  # Awaiting ETL DP processing
-ETL_ARCHIVE_DIR = ROOT_WORKING_DIR / "etl_archive"  # Awaiting archive by Datastream
 dirs = [
     TMP_DIR,
     LOG_DIR,
@@ -158,9 +155,6 @@ dirs = [
     EDGE_PROCESSING_DIR,
     EDGE_STAGING_DIR,
     EDGE_UPLOAD_DIR,
-    ETL_UNZIP_DIR,
-    ETL_PROCESSING_DIR,
-    ETL_ARCHIVE_DIR,
 ]
 for d in dirs:
     if not d.exists():
@@ -170,27 +164,6 @@ KEYS_FILE: Path = CFG_DIR / "keys.env"
 SYSTEM_CFG_FILE: Path = CFG_DIR / "system.cfg"
 EXPIDITE_VERSION_FILE: Path = CFG_DIR / "expidite_code_version"
 USER_CODE_VERSION_FILE: Path = CFG_DIR / "user_code_version"
-
-
-##############################################################################################################
-# Mode of operation
-# Set by the EdgeOrchestrator or the ETL orchestrator
-##############################################################################################################
-class Mode(Enum):
-    EDGE = "edge"
-    ETL = "etl"
-
-
-_mode = Mode.EDGE
-
-
-def get_mode() -> Mode:
-    return _mode
-
-
-def set_mode(mode: Mode) -> None:
-    global _mode
-    _mode = mode
 
 
 ##############################################################################################################
