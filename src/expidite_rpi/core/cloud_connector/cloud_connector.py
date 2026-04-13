@@ -436,7 +436,7 @@ class CloudConnector:
     def _download_blob(self, blob_client: BlobClient, dst_file: Path) -> None:
         # If the file changed on Azure while downloading, we'll get ResourceModifiedError. This is expected
         # occasionally for journals that get appended regularly.
-        for attempt in range(2):
+        for attempt in range(3):
             try:
                 with open(dst_file, "wb") as my_file:
                     download_stream = blob_client.download_blob()
