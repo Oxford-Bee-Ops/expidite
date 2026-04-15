@@ -16,6 +16,7 @@ logger = root_cfg.setup_logger("expidite")
 
 def main() -> None:
     """Run RpiCore as defined in the system.cfg file."""
+    sc = None
     try:
         # Configure the RpiCore with the fleet configuration
         # This will load the configuration and check for errors
@@ -40,10 +41,11 @@ def main() -> None:
 
     except KeyboardInterrupt:
         logger.exception("Keyboard interrupt => stopping RpiCore... this may take up to 180s.")
-        sc.stop()
     except Exception:
         logger.exception("Error")
-        sc.stop()
+    finally:
+        if sc:
+            sc.stop()
 
 
 if __name__ == "__main__":
