@@ -546,24 +546,34 @@ class InteractiveMenu:
                 if root_cfg.running_on_windows:
                     click.echo("This command only works on Linux. Exiting...")
                     return
+
                 # Check whether the script is already running
                 if utils.is_already_running(my_start_script):
                     click.echo(f"{my_start_script} is already running.")
                     return
-                cmd = (
-                    f"bash -c 'source {root_cfg.HOME_DIR}/{root_cfg.system_cfg.venv_dir}/bin/activate && "
-                    f"nohup python -m {my_start_script} 2>&1 | /usr/bin/logger -t EXPIDITE &'"
-                )
-                click.echo(f"Running command: {cmd}")
-                run_cmd_live_echo(cmd)
+
+                if root_cfg.running_on_rpi and root_cfg.system_cfg.auto_start == "Yes":
+                    run_cmd_live_echo("sudo systemctl start expidite.service")
+                else:
+                    cmd = (
+                        f"bash -c 'source {root_cfg.HOME_DIR}/{root_cfg.system_cfg.venv_dir}/bin/activate && "
+                        f"nohup python -m {my_start_script} 2>&1 | /usr/bin/logger -t EXPIDITE &'"
+                    )
+                    click.echo(f"Running command: {cmd}")
+                    run_cmd_live_echo(cmd)
 
         click.echo("RpiCore started.")
 
     def stop_rpi_core(self, pkill: bool) -> None:
         """Stop the RpiCore service."""
-        click.echo("Stopping RpiCore... this may take up to 180s to complete.")
-        # We just need to "touch" the stop file to stop the service
+        click.echo("Stopping RpiCore... this may take up to 3 minutes to complete.")
+        # Touch the stop file so the process shuts down gracefully.
         root_cfg.STOP_EXPIDITE_FLAG.touch()
+
+        # Prevent the process from automatically restarting. This will be reverted, the next time
+        # rpi_installer.sh runs, or by manually restarting the process from BCLI.
+        if root_cfg.running_on_rpi and root_cfg.system_cfg.auto_start == "Yes":
+            run_cmd_live_echo("sudo systemctl stop expidite.service")
 
         if pkill and root_cfg.system_cfg:
             run_cmd(f"sudo pkill -f 'python -m {root_cfg.system_cfg.my_start_script}'")

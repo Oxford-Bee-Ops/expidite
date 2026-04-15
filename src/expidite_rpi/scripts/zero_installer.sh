@@ -33,6 +33,12 @@
 # This script can be called with an os_update=yes argument to trigger an OS update. Otherwise, OS update is
 # skipped.
 #
+# Robustness:
+# - systemd automatically restarts the RpiCore process on exit (if auto-start is enabled).
+# - systemd automatically restarts the RpiCore process if it stops sending regular pings to systemd (if
+#   auto-start is enabled).
+# - RpiCore regularly checks internet connectivity and takes recovery actions, and eventually triggers a
+#   reboot to attempt to recover.
 ##############################################################################################################
 if [ "$1" == "os_update" ]; then
     os_update="yes"
@@ -40,8 +46,29 @@ else
     os_update="no"
 fi
 
+SERVICE_USER="bee-ops"
 # Resolve this script path for self-referential cron persistence.
 INSTALLER_PATH="$(readlink -f "${BASH_SOURCE[0]}")"
+
+##############################################################################################################
+# Prevent the Expidite RpiCore process from running while rpi_installer runs.
+##############################################################################################################
+stop_expidite_service() {
+  echo_header
+  # Stop the service if it is currently running.
+  if systemctl is-active --quiet expidite.service; then
+      sudo systemctl kill --signal=SIGKILL expidite.service || echo "Warning: failed to kill expidite.service"
+  fi
+}
+
+##############################################################################################################
+# On reboot, os_update is set to "no".
+# Sleep for 10 seconds to allow the system to settle down after booting
+##############################################################################################################
+sleep_for_ten_seconds() {
+    echo_header
+    sleep 10
+}
 
 # Function to check pre-requisites
 check_prerequisites() {
@@ -683,14 +710,14 @@ create_mount() {
     if [ ! -d "$mountpoint" ]; then
         echo "Creating $mountpoint"
         sudo mkdir -p $mountpoint
-        sudo chown -R $USER:$USER $mountpoint
+        sudo chown -R $SERVICE_USER:$SERVICE_USER $mountpoint
     fi
 
     # The diagnostics mountpoint is always on disk, so that it survives reboot. This is OK because its use is
     # very limited - only for when diagnostics are saved when rebooting as a recovery action.
     diags_mountpoint="/expidite-diags"
     sudo mkdir -p $diags_mountpoint
-    sudo chown -R $USER:$USER $diags_mountpoint
+    sudo chown -R $SERVICE_USER:$SERVICE_USER $diags_mountpoint
 
     # Are we mounting on SSD or RAM disk?
     if grep -qs "/dev/sda" /etc/mtab; then
@@ -716,7 +743,7 @@ create_mount() {
             sudo sed -i '/^tmpfs \/expidite/d' /etc/fstab
 
             # ...and then add the new lines
-            fstab_entry="tmpfs $mountpoint tmpfs defaults,size=$mount_size,uid=$USER,gid=$USER 0 0"
+            fstab_entry="tmpfs $mountpoint tmpfs defaults,size=$mount_size,uid=$SERVICE_USER,gid=$SERVICE_USER 0 0"
             echo $fstab_entry
 
             # Create the mount
@@ -851,22 +878,99 @@ wait_for_ntp_sync() {
 }
 
 ##############################################################################################################
+# Install expidite as a systemd service for automatic restart on failure.
+# The service file is generated here (not a static template) because it needs venv_dir and my_start_script
+# values from system.cfg.
+##############################################################################################################
+install_expidite_service() {
+    SERVICE_FILE="/etc/systemd/system/expidite.service"
+    SERVICE_USER="bee-ops"
+    SERVICE_HOME="/home/$SERVICE_USER"
+    PYTHON_BIN="$SERVICE_HOME/$venv_dir/bin/python"
+
+    sudo tee "$SERVICE_FILE" > /dev/null << EOF
+[Unit]
+Description=Expidite
+# Wait for NTP before starting, so timestamped filenames and logs are correct.
+After=time-sync.target
+# If it crashes 5 times within 10 minutes, stop restarting to prevent a boot loop.
+# systemd will log a warning; manual intervention or a hardware reboot will clear the limit.
+StartLimitIntervalSec=600
+StartLimitBurst=5
+
+[Service]
+User=$SERVICE_USER
+WorkingDirectory=$SERVICE_HOME/.expidite
+Environment="HOME=$SERVICE_HOME"
+ExecStart=$PYTHON_BIN -m $my_start_script
+# Watchdog: systemd kills and restarts if the process doesn't notify within this time.
+WatchdogSec=60s
+NotifyAccess=main
+# Restart after failure or if killed by a signal (e.g. pkill -9).
+Restart=always
+RestartSec=30
+# Give the process up to 60s to start (e.g. if NTP sync is unavailable because there is no network).
+TimeoutStartSec=60
+# Give the process up to 4 minutes to clean up on shutdown (graceful stop can take ~3 minutes).
+TimeoutStopSec=240
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=EXPIDITE
+
+[Install]
+WantedBy=multi-user.target
+EOF
+
+    sudo systemctl daemon-reload
+    sudo systemctl enable expidite.service
+    echo "expidite.service installed and enabled."
+}
+
+##############################################################################################################
+# Remove expidite as a systemd service.
+##############################################################################################################
+remove_expidite_service() {
+    echo_header
+
+    SERVICE_FILE="/etc/systemd/system/expidite.service"
+
+    if [ ! -f "$SERVICE_FILE" ]; then
+        echo "expidite.service is not installed; nothing to remove."
+        return
+    fi
+
+    # Stop the service if it is currently running.
+    if systemctl is-active --quiet expidite.service; then
+        sudo systemctl stop expidite.service || echo "Warning: failed to stop expidite.service"
+    fi
+
+    # Disable the service so it no longer starts automatically.
+    sudo systemctl disable expidite.service || echo "Warning: failed to disable expidite.service"
+
+    # Remove the service file and reload the daemon.
+    sudo rm -f "$SERVICE_FILE"
+    sudo systemctl daemon-reload
+    echo "expidite.service removed."
+}
+
+##############################################################################################################
 # Autostart if requested in system.cfg
+#
+# Note that this service is also started and stopped from bcli when the user manually starts/stops it.
 ##############################################################################################################
 auto_start_if_requested() {
     echo_header
-    if [ "$auto_start" == "Yes" ]; then
-        echo "Auto-starting Expidite RpiCore..."
 
-        # Check the script is not already running
-        if pgrep -f "$my_start_script" > /dev/null; then
-            echo "Expidite RpiCore is already running."
-            return
-        fi
-        echo "Calling $my_start_script in $HOME/$venv_dir"
-        nohup python -m $my_start_script 2>&1 | /usr/bin/logger -t EXPIDITE &
+    if [ "$auto_start" == "Yes" ]; then
+        install_expidite_service
+
+        # start is idempotent (no-op if already running).
+        echo "Auto-starting Expidite RpiCore..."
+        sudo systemctl start expidite.service && echo "Expidite RpiCore started (or already running)." \
+            || echo "Warning: systemctl start expidite.service failed; check 'journalctl -u expidite'"
     else
         echo "Auto-start is not enabled in system.cfg or not appropriate to this install type."
+        remove_expidite_service
     fi
 }
 
@@ -974,9 +1078,8 @@ echo_header() {
 #
 ##############################################################################################################
 echo_header "Starting Zero installer.  (os_update=$os_update)"
-# On reboot, os_update is set to "no".
-# Sleep for 10 seconds to allow the system to settle down after booting
-sleep 10
+stop_expidite_service
+sleep_for_ten_seconds
 check_prerequisites
 cd "$HOME/.expidite" || { echo "Failed to change directory to $HOME/.expidite"; exit 1; }
 export_system_cfg

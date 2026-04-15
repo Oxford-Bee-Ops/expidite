@@ -1,3 +1,4 @@
+import signal
 from pathlib import Path
 from threading import Thread
 
@@ -12,8 +13,8 @@ logger = root_cfg.setup_logger("expidite")
 ##############################################################################################################
 # RpiCore provides the public interface to the rpi_core module.
 # It is the entry point for users to configure and start the rpi.
-# Since the RpiCore may already be running (for example from boot in crontab), we can't assume that this is
-# the only instance of RpiCore on this device.
+# Since the RpiCore may already be running (for example from systemd), we can't assume that this is the only
+# instance of RpiCore on this device.
 # Therefore, all actions need to be taken indirectly via file flags or system calls.
 ##############################################################################################################
 
@@ -26,6 +27,9 @@ class RpiCore:
     KEYS_FILE: Path = root_cfg.KEYS_FILE
 
     def __init__(self, inventory: list[DeviceCfg] | None = None) -> None:
+        # Swallow SIGTERM from systemd. We use the STOP_EXPIDITE_FLAG file to request a graceful shutdown.
+        signal.signal(signal.SIGTERM, lambda _sig, _frame: logger.info("Received SIGTERM"))
+
         self._orchestrator_thread: Thread | None = None
         if inventory:
             self.configure(inventory)
@@ -110,7 +114,7 @@ class RpiCore:
     def start(self) -> None:
         """Start the rpi_core to begin data collection.
 
-        This is non-blocking. The callers can call wait() to block until the orchestrator exits, or poll
+        This is non-blocking. The caller can call wait() to block until the orchestrator exits, or poll
         is_running() in a loop (e.g. to call status() periodically).
 
         Raises:
