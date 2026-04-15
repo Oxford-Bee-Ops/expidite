@@ -239,18 +239,15 @@ class InteractiveMenu:
         click.echo(f"\n{dash_line}")
         click.echo("# Sensors & datastreams")
         click.echo(f"{dash_line}\n")
-        edge_orch = EdgeOrchestrator.get_instance()
-        if edge_orch is not None:
-            edge_orch.load_config()
-            for i, dptree in enumerate(edge_orch.dp_trees):
-                sensor_cfg = dptree.sensor.config
-                click.echo(
-                    f"{i}> {sensor_cfg.sensor_type} {sensor_cfg.sensor_index}  {sensor_cfg.sensor_model}"
-                )
-                streams = dptree.sensor.config.outputs
-                if streams is not None:
-                    for stream in streams:
-                        click.echo(f"  {stream.type_id}: - {stream.description}")
+        orchestrator = EdgeOrchestrator.get_instance()
+        orchestrator.load_config()
+        for i, dptree in enumerate(orchestrator.dp_trees):
+            sensor_cfg = dptree.sensor.config
+            click.echo(f"{i}> {sensor_cfg.sensor_type} {sensor_cfg.sensor_index}  {sensor_cfg.sensor_model}")
+            streams = dptree.sensor.config.outputs
+            if streams is not None:
+                for stream in streams:
+                    click.echo(f"  {stream.type_id}: - {stream.description}")
 
         # Display system.cfg
         if root_cfg.system_cfg:
@@ -793,12 +790,11 @@ class InteractiveMenu:
 
             # Check that the devices configured are working
             sensors: dict[str, list[int]] = {}
-            edge_orch = EdgeOrchestrator.get_instance()
-            edge_orch.load_config()
-            if edge_orch is not None:
-                for _i, dptree in enumerate(edge_orch.dp_trees):
-                    sensor_cfg = dptree.sensor.config
-                    sensors.setdefault(sensor_cfg.sensor_type.value, []).append(sensor_cfg.sensor_index)
+            orchestrator = EdgeOrchestrator.get_instance()
+            orchestrator.load_config()
+            for _i, dptree in enumerate(orchestrator.dp_trees):
+                sensor_cfg = dptree.sensor.config
+                sensors.setdefault(sensor_cfg.sensor_type.value, []).append(sensor_cfg.sensor_index)
             if sensors:
                 click.echo("\nSensors configured:")
                 for sensor_type, indices in sensors.items():

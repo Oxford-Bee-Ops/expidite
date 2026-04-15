@@ -144,16 +144,15 @@ class RpiCore:
 
         # Display the orchestrator status
         orchestrator = EdgeOrchestrator.get_instance()
-        if orchestrator is not None:
-            display_message += f"\n\nRpiCore running: {orchestrator.watchdog_file_alive()}\n"
+        display_message += f"\n\nRpiCore running: {orchestrator.watchdog_file_alive()}\n"
 
-            if verbose:
-                status = orchestrator.status()
-                if status:
-                    display_message += "\n\n# SENSOR CORE STATUS\n"
-                    for key, value in status.items():
-                        # Left pad the key to 24 characters
-                        display_message += f"  {key:<24} {value}\n"
+        if verbose:
+            status = orchestrator.status()
+            if status:
+                display_message += "\n\n# SENSOR CORE STATUS\n"
+                for key, value in status.items():
+                    # Left pad the key to 24 characters
+                    display_message += f"  {key:<24} {value}\n"
 
         # Get the device health
         health = DeviceHealth().get_health()
