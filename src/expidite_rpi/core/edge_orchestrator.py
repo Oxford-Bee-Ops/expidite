@@ -250,11 +250,13 @@ class EdgeOrchestrator:
             self._status = OrchestratorStatus.RUNNING
 
     @staticmethod
-    def start_all_with_watchdog() -> None:
+    def start_all_with_watchdog() -> threading.Thread:
         """This function starts the orchestrator and maintains it with a watchdog.
 
-        This is a non-blocking function that starts a new thread and returns.
-        It calls the edge_orchestrator main() function.
+        This is a non-blocking function that starts a new EdgeOrchestrator thread and returns it so that the
+        caller can join it.
+
+        The thread calls the edge_orchestrator main() function.
         """
         logger.debug("Start orchestrator with watchdog")
         orchestrator_thread = threading.Thread(target=main, name="EdgeOrchestrator")
@@ -262,6 +264,7 @@ class EdgeOrchestrator:
         # Block for long enough for the main thread to be scheduled
         # So we avoid race conditions with subsequent calls to stop_all()
         sleep(1)
+        return orchestrator_thread
 
     def stop_all(self, restart: bool | None = False) -> None:
         """Stop all Sensor, Datastream and observability threads.
@@ -334,10 +337,15 @@ class EdgeOrchestrator:
         jp = JournalPool.get()
         jp.flush_journals()
         jp.stop()
-        # jp.stop will also stop the cloud connector threadpool
 
         # Clear our thread lists
         self.reset_orchestrator_state()
+
+        # Unconditionally shut down the cloud connector singleton. jp.stop() only reaches
+        # AsyncCloudConnector.shutdown() if CloudJournals were created during this run. If they weren't, the
+        # do_work thread would block forever on queue.get().
+        if CloudConnector._instance is not None:
+            CloudConnector._instance.shutdown()
 
         with EdgeOrchestrator._status_lock:
             self._status = OrchestratorStatus.STOPPED

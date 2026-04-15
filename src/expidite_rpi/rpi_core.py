@@ -1,4 +1,5 @@
 from pathlib import Path
+from threading import Thread
 
 from expidite_rpi.core import config_validator
 from expidite_rpi.core import configuration as root_cfg
@@ -25,6 +26,7 @@ class RpiCore:
     KEYS_FILE: Path = root_cfg.KEYS_FILE
 
     def __init__(self, inventory: list[DeviceCfg] | None = None) -> None:
+        self._orchestrator_thread: Thread | None = None
         if inventory:
             self.configure(inventory)
 
@@ -108,6 +110,9 @@ class RpiCore:
     def start(self) -> None:
         """Start the rpi_core to begin data collection.
 
+        This is non-blocking. The callers can call wait() to block until the orchestrator exits, or poll
+        is_running() in a loop (e.g. to call status() periodically).
+
         Raises:
         - Exception: If the RpiCore is not configured.
         """
@@ -116,17 +121,35 @@ class RpiCore:
 
         logger.info("Starting RpiCore")
 
-        # Start the orchestrator, which will start the sensors
+        # Start the orchestrator, which will start the sensors.
         # This will run the sensors in the current process, so it will exit when the process exits.
-        EdgeOrchestrator.start_all_with_watchdog()
+        self._orchestrator_thread = EdgeOrchestrator.start_all_with_watchdog()
+
+    def wait(self, timeout: float | None = None) -> bool:
+        """Block until the EdgeOrchestrator exits, or until timeout seconds have elapsed.
+
+        Returns True if the orchestrator has stopped, False if the timeout expired first.
+        Pass timeout=None to wait indefinitely.
+
+        Typical usage::
+
+            sc = RpiCore()
+            sc.start()
+            while not sc.wait(timeout=1800):
+                logger.info(sc.status())
+        """
+        if self._orchestrator_thread is not None:
+            self._orchestrator_thread.join(timeout=timeout)
+        return not self.is_running()
+
+    def is_running(self) -> bool:
+        """Return True if the EdgeOrchestrator thread is still alive."""
+        return self._orchestrator_thread is not None and self._orchestrator_thread.is_alive()
 
     def stop(self) -> None:
-        """Stop RpiCore.
-
-        And remove any crontab entries added by make_my_script_persistent.
-        """
+        """Stop RpiCore."""
         # Ask the EdgeOrchestrator to stop all sensors
-        print(f"RpiCore stopping - this may take up to {root_cfg.my_device.max_recording_timer}s.")
+        logger.info(f"RpiCore stopping - this may take up to {root_cfg.my_device.max_recording_timer}s.")
         EdgeOrchestrator.get_instance().stop_all()
 
     def status(self, verbose: bool = True) -> str:
@@ -178,10 +201,6 @@ class RpiCore:
             display_message += f"\nStorage account: {root_cfg.keys.get_storage_account()}\n"
 
         return display_message
-
-    def _is_running(self) -> bool:
-        """Check if an instance of RpiCore is running."""
-        return EdgeOrchestrator.watchdog_file_alive()
 
     @staticmethod
     def _is_configured() -> bool:

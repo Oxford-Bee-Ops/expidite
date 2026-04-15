@@ -6,7 +6,6 @@
 # - loads the fleet configuration specified in system_cfg.my_fleet_config
 # - starts the RpiCore
 ##############################################################################################################
-from time import sleep
 
 from expidite_rpi import RpiCore
 from expidite_rpi.core import configuration as root_cfg
@@ -35,9 +34,8 @@ def main() -> None:
         # Start the RpiCore and begin data collection
         logger.info("Starting RpiCore...")
         sc.start()
-        while True:
+        while not sc.wait(timeout=1800):
             logger.info(sc.status())
-            sleep(1800)
 
     except KeyboardInterrupt:
         logger.exception("Keyboard interrupt => stopping RpiCore... this may take up to 180s.")
