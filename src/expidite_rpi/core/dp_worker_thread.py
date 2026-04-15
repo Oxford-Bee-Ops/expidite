@@ -8,7 +8,6 @@ import pandas as pd
 
 from expidite_rpi import DataProcessor, DPtree, SensorCfg, Stream, api
 from expidite_rpi.core import configuration as root_cfg
-from expidite_rpi.core.cloud_connector import CloudConnector
 from expidite_rpi.core.dp_node import DPnode
 
 logger = root_cfg.setup_logger("expidite")
@@ -33,7 +32,6 @@ class DPworker(Thread):
         logger.debug(f"Initialising DPworker {self}")
 
         self._stop_requested = Event()
-        self.cc: CloudConnector = CloudConnector.get_instance(root_cfg.CLOUD_TYPE)
 
         # sensor_cfg is a SensorCfg object describing the sensor that produces this datastream.
         self.dp_tree: DPtree = dp_tree
