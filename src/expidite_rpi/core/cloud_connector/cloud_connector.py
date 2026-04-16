@@ -459,18 +459,16 @@ class CloudConnector:
 
         Create the container if it does not already exist.
         """
-        container_client = ContainerClient.from_connection_string(
-            conn_str=self._get_connection_string(), container_name=container
-        )
-
-        # Only do an external check if we haven't already validated this container
-        if container_client.container_name not in self._validated_containers:
+        if container not in self._validated_containers:
+            container_client = ContainerClient.from_connection_string(
+                conn_str=self._get_connection_string(), container_name=container
+            )
             if not container_client.exists():
                 logger.info(f"Creating container {container}")
                 container_client.create_container()
-            self._validated_containers[container_client.container_name] = container_client
+            self._validated_containers[container] = container_client
 
-        return container_client
+        return self._validated_containers[container]
 
     def _get_connection_string(self) -> str:
         return self._connection_string
