@@ -138,8 +138,7 @@ class CloudConnector:
             folder_prefix_len: Optional; first n characters of the file name to use as a subfolder
             files: Optional; list of files to download from src_container; if None, all files in the container
                 will be downloaded; useful for chunking downloads
-            overwrite: Optional; if False, function will skip downloading files that already existing in
-                dst_dir
+            overwrite: Optional; if False, function will skip downloading files that already exist in dst_dir
         """
         download_container = self._validate_container(src_container)
         original_dst_dir = dst_dir
@@ -148,10 +147,10 @@ class CloudConnector:
             for blob in download_container.list_blobs():
                 blob_client = download_container.get_blob_client(blob.name)
                 if folder_prefix_len is not None:
-                    dst_dir = original_dst_dir.joinpath(blob.name[:folder_prefix_len])
+                    dst_dir = original_dst_dir / blob.name[:folder_prefix_len]
                     if not dst_dir.exists():
                         dst_dir.mkdir(parents=True, exist_ok=True)
-                self._download_blob(blob_client, dst_dir.joinpath(blob.name))
+                self._download_blob(blob_client, dst_dir / blob.name)
         else:
             files_downloaded = 0
             # Create a pool of threads to download the files
@@ -160,14 +159,14 @@ class CloudConnector:
                 for blob_name in files:
                     blob_client = download_container.get_blob_client(blob_name)
                     if folder_prefix_len is not None:
-                        dst_dir = original_dst_dir.joinpath(blob_name[:folder_prefix_len])
-                    dst_file = dst_dir.joinpath(blob_name)
+                        dst_dir = original_dst_dir / blob_name[:folder_prefix_len]
+                    dst_file = dst_dir / blob_name
                     if not overwrite and dst_file.exists():
                         logger.debug(f"File {dst_file} already exists; skipping download")
                         continue
                     futures.append(executor.submit(self._download_file, blob_client, dst_file))
-                    if len(futures) > 10000:
-                        logger.info("Working on batch of 10000 files")
+                    if len(futures) > 10_000:
+                        logger.info("Working on batch of 10,000 files")
                         for future in as_completed(futures, timeout=600):
                             future.result()
                             files_downloaded += 1
@@ -430,28 +429,106 @@ class CloudConnector:
         self._validated_containers.clear()
         CloudConnector._instance = None
 
+    def download_container_deltas(
+        self,
+        src_container: str,
+        dst_dir: Path,
+        files_with_offsets: dict[str, int],
+    ) -> None:
+        """Download files from src_container, using byte-range requests for partially-downloaded files.
+
+        This function is similar to download_container. It it only for append-only files, and is optimised to
+        minimise bytes transferred, by only downloading the additional portion of each file that exists on
+        Azure Blob Storage, but not in the local copy.
+
+        Parameters:
+            src_container: source container
+            dst_dir: destination directory
+            file_offsets: mapping of {blob_name: local_byte_offset}; offset=0 means full download,
+                offset>0 means append only the bytes from that offset onwards.
+                For files that already exist locally, pass the current local file size as the offset so that
+                only the new bytes are transferred. For files that don't exist locally, pass offset 0 so that
+                the file is downloaded in full.
+        """
+        download_container = self._validate_container(src_container)
+        files_downloaded = 0
+
+        # Create a pool of threads to download the files
+        with ThreadPoolExecutor(max_workers=8) as executor:
+            futures = []
+            for blob_name, offset in files_with_offsets.items():
+                blob_client = download_container.get_blob_client(blob_name)
+                dst_file = dst_dir / blob_name
+                futures.append(executor.submit(self._download_file, blob_client, dst_file, offset))
+                if len(futures) > 10_000:
+                    logger.info("Working on batch of 10,000 files")
+                    for future in as_completed(futures, timeout=600):
+                        future.result()
+                        files_downloaded += 1
+                    futures = []
+            logger.info(f"Downloading remaining {len(futures)} files")
+            for future in as_completed(futures, timeout=600):
+                future.result()
+                files_downloaded += 1
+        logger.info(f"Completed download of {files_downloaded} files")
+
     ##########################################################################################################
     # Private utility methods
     ##########################################################################################################
     def _download_blob(self, blob_client: BlobClient, dst_file: Path) -> None:
-        # If the file changed on Azure while downloading, we'll get ResourceModifiedError. This is expected
-        # occasionally for journals that get appended regularly.
+        """Download a blob file from Azure.
+
+        If the file changed on Azure while downloading, we'll get ResourceModifiedError. This is expected
+        occasionally for journals that get appended regularly.
+        """
         for attempt in range(3):
             try:
                 with open(dst_file, "wb") as my_file:
                     download_stream = blob_client.download_blob()
-                    my_file.write(download_stream.readall())  # type: ignore[ty:invalid-argument-type]
+                    file_bytes = download_stream.readall()
+                    my_file.write(file_bytes)  # type: ignore[ty:invalid-argument-type]
+                logger.info(f"Downloaded {dst_file.name}, {len(file_bytes):,} bytes")
                 return
             except ResourceModifiedError:
                 logger.info(f"ResourceModifiedError on {dst_file} attempt {attempt + 1}")
                 if attempt == 2:
                     raise
 
-    def _download_file(self, blob_client: BlobClient, dst_file: Path) -> str:
-        """Download a single file."""
+    def _download_blob_delta(self, blob_client: BlobClient, dst_file: Path, offset: int) -> None:
+        """Download additional bytes from a blob file on Azure, where we already have a partial local copy.
+
+        Downloads from offset onwards and appends to dst_file.
+
+        If the file changed on Azure while downloading, we'll get ResourceModifiedError. This is expected
+        occasionally for journals that get appended regularly. In this case, fall back to a full download.
+        """
+        try:
+            with open(dst_file, "ab") as my_file:
+                download_stream = blob_client.download_blob(offset=offset)
+                file_bytes = download_stream.readall()
+                my_file.write(file_bytes)  # type: ignore[ty:invalid-argument-type]
+            logger.info(f"Downloaded {dst_file.name}, {len(file_bytes):,} additional bytes")
+        except ResourceModifiedError:
+            # The blob was appended to during download; the local file may be partially written.
+            # Fall back to a full re-download to restore a consistent state.
+            logger.info(f"ResourceModifiedError (partial) on {dst_file}, falling back to full download")
+            try:
+                self._download_blob(blob_client, dst_file)
+            except Exception:
+                # Full download also failed; truncate back to the known-good offset so the file is not left in
+                # a corrupted state.
+                with open(dst_file, "ab") as f:
+                    f.truncate(offset)
+                raise
+
+    def _download_file(self, blob_client: BlobClient, dst_file: Path, offset: int = 0) -> str:
+        """Download a single file, using a range request if offset > 0."""
         if not dst_file.parent.exists():
             dst_file.parent.mkdir(parents=True, exist_ok=True)
-        self._download_blob(blob_client, dst_file)
+        if offset > 0:
+            self._download_blob_delta(blob_client, dst_file, offset)
+        else:
+            self._download_blob(blob_client, dst_file)
         return dst_file.name
 
     def _validate_container(self, container: str) -> ContainerClient:
