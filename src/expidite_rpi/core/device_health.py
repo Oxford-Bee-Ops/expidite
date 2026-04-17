@@ -1,13 +1,14 @@
 import os
 import socket
 import subprocess
-from datetime import datetime
+from datetime import UTC, datetime, time, timedelta
 from typing import Any
 
 import psutil
 
 from expidite_rpi.core import api
 from expidite_rpi.core import configuration as root_cfg
+from expidite_rpi.core.cloud_connector import CloudConnector
 from expidite_rpi.core.device_manager import DeviceManager
 from expidite_rpi.core.diagnostics_bundle import DiagnosticsBundle
 from expidite_rpi.core.dp_config_objects import SensorCfg, Stream
@@ -184,6 +185,8 @@ class DeviceHealth(Sensor):
                 # Log the warning data
                 self.log_warnings()
 
+                self.check_azure_connection()
+
                 # Set timer for next run
                 self.last_ran = api.utc_now()
                 self.log_counter += 1
@@ -212,6 +215,38 @@ class DeviceHealth(Sensor):
                     self.log(WARNING_STREAM_INDEX, log)
                 elif log["priority"] <= 3:
                     self.log(WARNING_STREAM_INDEX, log)
+
+    def check_azure_connection(self) -> None:
+        """Check that the Azure connection is working, and reboot the device if not.
+
+        This check is quite conservative to avoid disrupting normal data collection during brief internet
+        outages. We check that:
+        - we have connectivity to Azure blob storage right now,
+        - and that we have uploaded a HEART file for this device in the last 6 hours,
+        - but we only perform this check between midnight and 2am to avoid rebooting during the day.
+
+        If this check fails, reboot the device.
+        """
+        time_now = datetime.now(tz=UTC)
+        if not (time(0, 0) <= time_now.time() < time(2, 0)):
+            # return
+            logger.info("NICKB DEBUG: REINSTATE")
+
+        cc = CloudConnector.get_instance(root_cfg.CLOUD_TYPE)
+        last_heart_update_time = cc.get_last_file_modified_time(
+            dst_container=root_cfg.my_device.cc_for_system_records,
+            file_prefix=f"V3_HEART_{self.device_id}",
+        )
+
+        age = time_now - last_heart_update_time
+
+        if age >= timedelta(hours=6):
+            msg = (
+                f"Latest HEART file on Azure is {age} old (last modified {last_heart_update_time}), rebooting"
+            )
+            logger.error(f"{root_cfg.RAISE_WARN()}{msg}")
+            DiagnosticsBundle.collect(msg)
+            utils.run_cmd("sudo reboot", ignore_errors=True)
 
     ##########################################################################################################
     # Diagnostics utility functions

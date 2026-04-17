@@ -1,12 +1,12 @@
 import csv
 import io
 from concurrent.futures import ThreadPoolExecutor, as_completed
-from datetime import UTC, datetime
+from datetime import UTC, datetime, timedelta
 from pathlib import Path
 from typing import Optional
 
 import pandas as pd
-from azure.core.exceptions import ResourceModifiedError
+from azure.core.exceptions import ResourceModifiedError, ResourceNotFoundError
 from azure.storage.blob import BlobClient, ContainerClient
 
 from expidite_rpi.core import api, file_naming
@@ -471,6 +471,33 @@ class CloudConnector:
                 future.result()
                 files_downloaded += 1
         logger.info(f"Completed download of {files_downloaded} files")
+
+    def get_last_file_modified_time(
+        self,
+        dst_container: str,
+        file_prefix: str,
+    ) -> datetime:
+        """Get the last modified time for the most recently modified file beginning with file_prefix.
+
+        Parameters:
+            dst_dir: destination directory
+            file_prefix: Must be all the prefix except for the <date>.csv, for example`V3_HEART_<device_id>`
+
+        Checks for the current day file and then the previous day file. For performance, it does not check
+        further back than the previous day.
+        """
+        target_container = self._validate_container(dst_container)
+
+        today = datetime.now(tz=UTC).date()
+        for day in (today, today - timedelta(days=1)):
+            name = f"{file_prefix}_{day:%Y%m%d}.csv"
+            try:
+                props = target_container.get_blob_client(name).get_blob_properties()
+            except ResourceNotFoundError:
+                continue
+            return props.last_modified
+
+        return datetime.min.replace(tzinfo=UTC)
 
     ##########################################################################################################
     # Private utility methods
