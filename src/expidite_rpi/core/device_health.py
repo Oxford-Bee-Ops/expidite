@@ -229,8 +229,7 @@ class DeviceHealth(Sensor):
         """
         time_now = datetime.now(tz=UTC)
         if not (time(0, 0) <= time_now.time() < time(2, 0)):
-            # return
-            logger.info("NICKB DEBUG: REINSTATE")
+            return
 
         cc = CloudConnector.get_instance(root_cfg.CLOUD_TYPE)
         last_heart_update_time = cc.get_last_file_modified_time(
