@@ -39,6 +39,9 @@
 #   auto-start is enabled).
 # - RpiCore regularly checks internet connectivity and takes recovery actions, and eventually triggers a
 #   reboot to attempt to recover.
+# - We use systemd's NRestarts counter to generate diagnostics after an abormal failure (Python exception,
+#   stopped sending watchdog to systemd, process killed, etc). DeviceHealth checks the NRestarts value on
+#   startup. And we reset the value here and in BCLI when stopping the service or during a normal restart.
 ##############################################################################################################
 if [ "$1" == "os_update" ]; then
     os_update="yes"
@@ -57,8 +60,11 @@ stop_expidite_service() {
   echo_header
   # Stop the service if it is currently running.
   if systemctl is-active --quiet expidite.service; then
-      sudo systemctl kill --signal=SIGKILL expidite.service || echo "Warning: failed to kill expidite.service"
+      sudo systemctl kill --signal=SIGKILL --kill-whom=all expidite.service || echo "Warning: failed to kill expidite.service"
+      sudo systemctl stop expidite.service || echo "Warning: failed to stop expidite.service"
   fi
+  # Reset the restart counter so the upgrade isn't mistaken for an abnormal restart.
+  sudo systemctl reset-failed expidite.service 2>/dev/null || true
 }
 
 ##############################################################################################################

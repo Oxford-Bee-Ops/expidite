@@ -507,6 +507,9 @@ class InteractiveMenu:
     def start_rpi_core(self) -> None:
         """Start the RpiCore service."""
         click.echo("Starting RpiCore...")
+        if root_cfg.running_on_rpi:
+            # Reset the restart counter so this isn't mistaken for an abnormal restart.
+            run_cmd("sudo systemctl reset-failed expidite.service")
 
         # If my_start_script is a resolvable module in this environment, then we use that to start the service
         # using that user-provided script.

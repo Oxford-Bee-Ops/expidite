@@ -6,7 +6,9 @@ from expidite_rpi.core import config_validator
 from expidite_rpi.core import configuration as root_cfg
 from expidite_rpi.core.device_config_objects import DeviceCfg
 from expidite_rpi.core.device_health import DeviceHealth
+from expidite_rpi.core.diagnostics_bundle import DiagnosticsBundle
 from expidite_rpi.core.edge_orchestrator import EdgeOrchestrator
+from expidite_rpi.utils import utils
 
 logger = root_cfg.setup_logger("expidite")
 
@@ -123,6 +125,8 @@ class RpiCore:
         if not self._is_configured() or root_cfg.system_cfg is None:
             raise ValueError("RpiCore must be configured before starting.")
 
+        RpiCore._check_for_abnormal_restart()
+
         logger.info("Starting RpiCore")
 
         # Start the orchestrator, which will start the sensors.
@@ -216,3 +220,18 @@ class RpiCore:
     def update_my_device_id(new_device_id: str) -> None:
         """Function used in testing to change the device_id."""
         root_cfg.update_my_device_id(new_device_id)
+
+    @staticmethod
+    def _check_for_abnormal_restart() -> None:
+        """If systemd has restarted this service since it was first started, collect diagnostics."""
+        if not root_cfg.running_on_rpi or root_cfg.system_cfg.auto_start != "Yes":
+            return
+        try:
+            result = utils.run_cmd("systemctl show -p NRestarts --value expidite.service", ignore_errors=True)
+            n_restarts = int(result)
+            if n_restarts > 0:
+                msg = f"Abnormal restart detected (NRestarts={n_restarts})"
+                logger.error(f"{root_cfg.RAISE_WARN()}{msg}")
+                DiagnosticsBundle.collect(msg)
+        except Exception:
+            logger.exception("Failed to check for abnormal restart")
