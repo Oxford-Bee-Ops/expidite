@@ -275,10 +275,7 @@ class AsyncCloudConnector(CloudConnector):
         """Process the upload queue."""
         while not self._stop_requested.is_set():
             try:
-                if block:
-                    queue_item = self._upload_queue.get()
-                else:
-                    queue_item = self._upload_queue.get(timeout=1)
+                queue_item = self._upload_queue.get(block=block, timeout=None if block else 1)
 
                 if isinstance(queue_item, AsyncAppend):
                     self._worker_pool.submit(self._async_append, queue_item)

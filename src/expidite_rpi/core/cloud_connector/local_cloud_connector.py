@@ -252,10 +252,7 @@ class LocalCloudConnector(CloudConnector):
         """
         container_client = self.local_cloud / container
 
-        if prefix is not None:
-            query = f"{prefix}*"
-        else:
-            query = "*"
+        query = f"{prefix}*" if prefix is not None else "*"
         file_paths = list(container_client.glob(query))
         files = [f.name for f in file_paths]
 
