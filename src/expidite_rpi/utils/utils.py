@@ -4,7 +4,6 @@
 import datetime as dt
 import os
 import subprocess
-import time
 from datetime import UTC
 from pathlib import Path
 from threading import Timer
@@ -194,25 +193,6 @@ def check_running_processes(search_string: str = "core") -> set:
         except (psutil.NoSuchProcess, psutil.AccessDenied, psutil.ZombieProcess):
             pass
     return processes
-
-
-##############################################################################################################
-# List all files in a directory that match a search string and are older than the specified age
-##############################################################################################################
-def list_files_older_than(search_string: Path, age_in_seconds: float) -> list[Path]:
-    now = time.time()
-
-    # List files matching the search string
-    all_files = list(search_string.parent.glob(search_string.name))
-
-    # Now check the age of each file
-    old_files: list[Path] = []
-    for file in all_files:
-        if now - file.stat().st_mtime > age_in_seconds:
-            old_files.append(file)
-
-    # Remove directories from the list
-    return [x for x in old_files if not x.is_dir()]
 
 
 def list_all_large_dirs(path: str, recursion: int = 0) -> int:
