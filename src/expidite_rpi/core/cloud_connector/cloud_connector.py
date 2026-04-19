@@ -3,6 +3,7 @@ import io
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from datetime import UTC, datetime, timedelta
 from pathlib import Path
+from threading import Lock
 from typing import Optional
 
 import pandas as pd
@@ -33,6 +34,8 @@ class CloudConnector:
 
         self._connection_string = root_cfg.keys.cloud_storage_key
         self._validated_containers: dict[str, ContainerClient] = {}
+        self._append_locks: dict[str, Lock] = {}
+        self._append_locks_lock = Lock()
         self._validated_append_files: set[str] = set()
 
     @staticmethod
@@ -259,6 +262,13 @@ class CloudConnector:
             logger.exception(f"{root_cfg.RAISE_WARN()}Failed to append data to {src_file}")
             return False
 
+    def _get_append_lock(self, dst_file: str) -> Lock:
+        """Prevent multiple threads from updating the same file in cloud storage simultaneously."""
+        with self._append_locks_lock:
+            if dst_file not in self._append_locks:
+                self._append_locks[dst_file] = Lock()
+            return self._append_locks[dst_file]
+
     def _append_data_to_blob(
         self,
         dst_container: str,
@@ -270,36 +280,39 @@ class CloudConnector:
             target_container = self._validate_container(dst_container)
             blob_client = target_container.get_blob_client(dst_file)
 
-            if not blob_client.exists():
-                # Create the blob and include the Headers.
-                blob_client.create_append_blob()
-                data_to_append = "".join(lines_to_append[:])
-            elif dst_file in self._validated_append_files:
-                # Drop the Headers in the first line so we don't have repeat header rows.
-                data_to_append = "".join(lines_to_append[1:])
-            # It's our first time writing to this file since reboot. Validate that the headers match.
-            elif self._headers_match(blob_client, lines_to_append[0]):
-                logger.debug(f"Headers match for {blob_client.blob_name}, appending data")
-                # Drop the Headers in the first line so we don't have repeat header rows.
-                data_to_append = "".join(lines_to_append[1:])
-            else:
-                logger.warning(
-                    f"{root_cfg.RAISE_WARN()}Headers do not match for {dst_file}, "
-                    "downloading remote file to merge headers"
-                )
-                data_to_append = self._merge_local_and_remote(
-                    dst_container, dst_file, lines_to_append, col_order
-                )
+            # Prevent multiple threads from updating the same file in cloud storage simultaneously.
+            with self._get_append_lock(dst_file):
+                if not blob_client.exists():
+                    # Create the blob and include the Headers.
+                    blob_client.create_append_blob()
+                    data_to_append = "".join(lines_to_append[:])
+                elif dst_file in self._validated_append_files:
+                    # Drop the Headers in the first line so we don't have repeat header rows.
+                    data_to_append = "".join(lines_to_append[1:])
+                # It's our first time writing to this file since reboot. Validate that the headers match.
+                elif self._headers_match(blob_client, lines_to_append[0]):
+                    logger.debug(f"Headers match for {blob_client.blob_name}, appending data")
+                    # Drop the Headers in the first line so we don't have repeat header rows.
+                    data_to_append = "".join(lines_to_append[1:])
+                else:
+                    logger.warning(
+                        f"{root_cfg.RAISE_WARN()}Headers do not match for {dst_file}, "
+                        "downloading remote file to merge headers"
+                    )
+                    data_to_append = self._merge_local_and_remote(
+                        dst_container, dst_file, lines_to_append, col_order
+                    )
 
-                if blob_client.get_blob_properties().size == 0:
-                    blob_client.delete_blob()
-                blob_client.create_append_blob()
+                    # Re-create the append_blob - this replaces the existing file.
+                    if blob_client.get_blob_properties().size == 0:
+                        blob_client.delete_blob()
+                    blob_client.create_append_blob()
 
-            # Append the data
-            blob_client.append_block(data_to_append)
+                # Append the data
+                blob_client.append_block(data_to_append)
 
-            # Record that we've validated this file (might already be true).
-            self._validated_append_files.add(dst_file)
+                # Record that we've validated this file (might already be true).
+                self._validated_append_files.add(dst_file)
 
             return True
         except Exception:
