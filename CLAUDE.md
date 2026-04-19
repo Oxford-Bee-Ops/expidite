@@ -54,7 +54,6 @@ src/
     example/        # Template code for custom sensors/processors
     bcli.py         # CLI entry point (bcli command)
     rpi_core.py     # Public API (RpiCore class)
-  expidite_etl/     # ETL utilities for data post-processing
 ```
 
 ### Core Data Flow
