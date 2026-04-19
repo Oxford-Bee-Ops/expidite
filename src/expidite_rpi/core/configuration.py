@@ -212,7 +212,6 @@ ST_MODE: SOFTWARE_TEST_MODE = SOFTWARE_TEST_MODE.LIVE
 #
 # There is update code at the end of this file that sets the level once we've loaded config.
 ##############################################################################################################
-TEST_LOG = LOG_DIR / "test.log"
 _DEFAULT_LOG: Path | None = None
 _LOG_LEVEL = logging.INFO
 
