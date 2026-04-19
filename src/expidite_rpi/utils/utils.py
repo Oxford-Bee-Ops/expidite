@@ -187,38 +187,6 @@ def run_cmd(cmd: str, ignore_errors: bool = False, grep_strs: list[str] | None =
         raise
 
 
-# Get entries from the journalctl log
-def save_journald_log_entries(output_file_name: Path, grep_str: str = "", since_minutes: int = 31) -> None:
-    if root_cfg.running_on_windows:
-        logger.warning("save_journald_log_entries not supported on Windows")
-    else:
-        import systemd.journal  # type: ignore
-
-    # Calculate the start time for entries
-    start_time = api.utc_now() - dt.timedelta(minutes=since_minutes)
-
-    # Create a journal reader
-    j = systemd.journal.Reader()
-    j.this_boot()  # Optional: only entries from the current boot
-    j.log_level(systemd.journal.LOG_INFO)  # Equivalent to --priority=6
-
-    # Set the time range for entries
-    j.seek_realtime(start_time)
-
-    # Filter by log prefix (case-insensitive)
-    j.add_match(MESSAGE=grep_str)
-
-    # Open the log file for writing
-    with open(output_file_name, "w") as log_file:
-        # Read and process entries
-        for entry in j:
-            # Format the entry as 'short-iso-precise' equivalent
-            timestamp = entry["__REALTIME_TIMESTAMP"].isoformat()
-            message = entry["MESSAGE"]
-            # Write to file
-            log_file.write(f"{timestamp} {message}\n")
-
-
 ##############################################################################################################
 # Timer class that repeats
 ##############################################################################################################
