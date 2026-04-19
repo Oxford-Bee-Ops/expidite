@@ -122,7 +122,7 @@ class CloudJournal:
     The CloudJournal is a thick API for the CloudJournalManager which does the work.
     """
 
-    def __init__(self, local_fname: Path, cloud_container: str, reqd_columns: list[str] | None) -> None:
+    def __init__(self, local_fname: Path, cloud_container: str, reqd_columns: list[str]) -> None:
         """Creates a CloudJournal instance uniquely identified by the local fname Path and the
         remote CloudContainer which contains the master data.
 
@@ -133,10 +133,8 @@ class CloudJournal:
             - local_fname: The local file name to use for the journal. Must be an absolute path.
             - cloud_container: The CloudContainer where the cloud file resides.
             - reqd_columns: A list of column names to save to the CSV file in the order specified.
-                If None, the order of the columns in the csv is undefined.
         """
         assert local_fname.is_absolute()
-        assert reqd_columns is not None
         assert len(reqd_columns) > 0
 
         self.manager = _CloudJournalManager.get(cloud_container)
