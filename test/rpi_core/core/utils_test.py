@@ -5,7 +5,6 @@ import pytest
 
 from expidite_rpi.core import api
 from expidite_rpi.core import configuration as root_cfg
-from expidite_rpi.utils import utils
 
 logger = root_cfg.setup_logger("expidite")
 
@@ -46,23 +45,3 @@ class Test_utils:
         logmsg = root_cfg.RAISE_WARN() + "This is a test error message"
         logger.error(logmsg)
         assert logmsg.startswith(api.RAISE_WARN_TAG)
-
-    @pytest.mark.unittest
-    def test_is_sampling_period(self) -> None:
-        logger.info("Run test_is_sampling_period test")
-        assert (utils.is_sampling_period(0.5, 180, datetime(2023, 7, 27, 10, 0, 1, tzinfo=UTC))) == (
-            utils.is_sampling_period(0.5, 180, datetime(2023, 7, 27, 10, 0, 2, tzinfo=UTC))
-        )
-        assert (utils.is_sampling_period(0.5, 180, datetime(2023, 7, 27, 10, 0, 0, tzinfo=UTC))) == (
-            utils.is_sampling_period(0.5, 180, datetime(2023, 7, 27, 10, 0, 2, tzinfo=UTC))
-        )
-
-        assert utils.is_sampling_period(0.5, 180, datetime(2023, 7, 27, 11, 0, 14, tzinfo=UTC)) is False
-        assert utils.is_sampling_period(0.5, 180, datetime(2023, 7, 27, 1, 0, 27, tzinfo=UTC)) is True
-        # Sampling outside sampling window == False; would normally be True as per test above
-        assert (
-            utils.is_sampling_period(
-                0.5, 180, datetime(2023, 7, 27, 1, 0, 27, tzinfo=UTC), ("06:00", "18:00")
-            )
-            is False
-        )

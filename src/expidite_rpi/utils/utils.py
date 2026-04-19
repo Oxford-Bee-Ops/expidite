@@ -4,12 +4,11 @@
 import datetime as dt
 import hashlib
 import os
-import random
 import shutil
 import subprocess
 import time
 import zipfile
-from datetime import UTC, datetime
+from datetime import UTC
 from pathlib import Path
 from threading import Timer
 
@@ -61,71 +60,6 @@ def failing_to_keep_up() -> bool:
         last_check_outcome = False
 
     return last_check_outcome
-
-
-def is_sampling_period(
-    sample_probability: float,
-    period_len: int,
-    timestamp: dt.datetime | None = None,
-    sampling_window: tuple[str, str] | None = None,
-) -> bool:
-    """Used to synchronise sampling between sensors, the function returns True/False based
-    on the time, periodicity of sampling and probability requested.
-
-    In this context, "sampling" is not about recording normal periodic data (eg recording 180s
-    of audio every hour, anaysing it for sounds, and saving numerical results). Instead, it is
-    about choosing to save a full sample of that audio *intact* to enable offline validation of
-    the analysis process. In this case it is useful to have samples from all the different sensors
-    at the same time, so that we can compare the results between audio & video, for example.
-
-    It is assumed that sensors record data at a fixed periodicity (eg every 180s), aligned to
-    the start of the day (00:00:00). This segments the day into a fixed number of periods.
-    The number of segments that should be sampled is a function of the sample_probability.
-
-    Sensors that want to synchronise their sampling can call this function to determine if
-    they should save a sample at a specified time. The outcome is randomly distributed but
-    deterministic so that any sensor calling with the same periodicity and sample_probability
-    will get the same answer for a given sampling period.
-
-    Parameters:
-        sample_probability: float
-            The probability of sampling in a given period. This is a float between 0 and 1.
-        period_len: int
-            The length of the sampling period in seconds. This should be a factor of 86400.
-        timestamp: datetime
-            The timestamp to check for sampling. api.utc_now() if not specified.
-        sampling_window: tuple(datetime, datetime)
-            The start and end of the sampling window. If the timestamp is outside this window, return False.
-            Useful for sensors that only sample during daylight hours.
-
-    Returns:
-        bool
-            True if the sensor should sample at this time, False otherwise.
-    """
-    if timestamp is None:
-        timestamp = api.utc_now()
-
-    # Check if the timestamp is within the sampling window
-    if sampling_window is not None:
-        # Convert the sampling_window elements from "HH:MM" to a datetime object
-        start_time = datetime.strptime(sampling_window[0], "%H:%M").replace(tzinfo=UTC)
-        end_time = datetime.strptime(sampling_window[1], "%H:%M").replace(tzinfo=UTC)
-        timestamp_time = timestamp.time()
-        if not start_time.time() <= timestamp_time <= end_time.time():
-            return False
-
-    # Calculate the period number for the timestamp
-    period_num = (timestamp.hour * 3600 + timestamp.minute * 60 + timestamp.second) // period_len
-
-    # Seed the generator so that it is deterministic based on today's date and the period_num.
-    random.seed(str(timestamp.date()) + str(period_num))
-
-    if random.random() < sample_probability:
-        sample_this_period = True
-    else:
-        sample_this_period = False
-
-    return sample_this_period
 
 
 ##############################################################################################################
