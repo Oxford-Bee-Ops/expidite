@@ -3,10 +3,8 @@
 ##############################################################################################################
 import datetime as dt
 import os
-import shutil
 import subprocess
 import time
-import zipfile
 from datetime import UTC
 from pathlib import Path
 from threading import Timer
@@ -196,19 +194,6 @@ def check_running_processes(search_string: str = "core") -> set:
         except (psutil.NoSuchProcess, psutil.AccessDenied, psutil.ZombieProcess):
             pass
     return processes
-
-
-##############################################################################################################
-# Utility to extract a zip file to a directory but flattening all hierarchies
-##############################################################################################################
-def extract_zip_to_flat(zip_path: Path, dest_path: Path) -> None:
-    with zipfile.ZipFile(zip_path, "r") as zip_ref:
-        for member in zip_ref.namelist():
-            # Extract only the specific file
-            filename = os.path.basename(member)
-
-            with zip_ref.open(member) as source, open(dest_path / filename, "wb") as target:
-                shutil.copyfileobj(source, target)
 
 
 ##############################################################################################################
