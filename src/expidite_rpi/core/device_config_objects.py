@@ -186,8 +186,6 @@ class SystemCfg(BaseSettings):
     # Do you want RpiCore to start automatically after running the rpi_installer.sh script?
     # Anything other than "Yes" will disable auto-start.
     auto_start: str = "Yes"
-    # Enable the UFW firewall
-    enable_firewall: str = "Yes"
     # Enable use of predictable network interface names
     enable_predictable_interface_names: str = "Yes"
     # Enable the I2C interface on the Raspberry Pi
