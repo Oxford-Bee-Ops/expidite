@@ -209,17 +209,17 @@ class LocalCloudConnector(CloudConnector):
     def container_exists(self, container: str) -> bool:
         """Check if the specified container exists."""
         # We always return true in the emulator; creating the container if it doesn't exist
-        containerClient = self.local_cloud / container
-        if not containerClient.exists():
-            containerClient.mkdir(parents=True, exist_ok=True)
+        container_client = self.local_cloud / container
+        if not container_client.exists():
+            container_client.mkdir(parents=True, exist_ok=True)
         return True
 
     def create_container(self, container: str) -> None:
         """Create the specified container."""
-        containerClient = self.local_cloud / container
-        if not containerClient.exists():
+        container_client = self.local_cloud / container
+        if not container_client.exists():
             logger.info(f"Creating container {container}")
-            containerClient.mkdir(parents=True, exist_ok=True)
+            container_client.mkdir(parents=True, exist_ok=True)
 
     def exists(self, src_container: str, blob_name: str) -> bool:
         """Check if the specified blob exits."""
@@ -249,13 +249,13 @@ class LocalCloudConnector(CloudConnector):
         The current backend implementation is the Azure Blobstore which only supports prefix search
         and tag search.
         """
-        containerClient = self.local_cloud / container
+        container_client = self.local_cloud / container
 
         if prefix is not None:
             query = f"{prefix}*"
         else:
             query = "*"
-        file_paths = list(containerClient.glob(query))
+        file_paths = list(container_client.glob(query))
         files = [f.name for f in file_paths]
 
         if suffix is not None:
@@ -269,8 +269,8 @@ class LocalCloudConnector(CloudConnector):
 
     def get_blob_modified_time(self, container: str, blob_name: str) -> datetime:
         """Get the last modified time of the specified blob."""
-        containerClient = self.local_cloud / container
-        blob_client = containerClient / blob_name
+        container_client = self.local_cloud / container
+        blob_client = container_client / blob_name
         if blob_client.exists():
             last_modified = blob_client.stat().st_mtime
             # The Azure timezone is UTC but it's not explicitly set; set it

@@ -341,8 +341,8 @@ class CloudConnector:
 
     def container_exists(self, container: str) -> bool:
         """Check if the specified container exists."""
-        containerClient = self._validate_container(container)
-        return containerClient.exists()
+        container_client = self._validate_container(container)
+        return container_client.exists()
 
     def create_container(self, container: str) -> None:
         """Create the specified container."""
@@ -350,14 +350,14 @@ class CloudConnector:
 
     def exists(self, src_container: str, blob_name: str) -> bool:
         """Check if the specified blob exits."""
-        containerClient = self._validate_container(src_container)
-        blob_client = containerClient.get_blob_client(blob_name)
+        container_client = self._validate_container(src_container)
+        blob_client = container_client.get_blob_client(blob_name)
         return blob_client.exists()
 
     def delete(self, container: str, blob_name: str) -> None:
         """Delete specified blob."""
-        containerClient = self._validate_container(container)
-        blob_client = containerClient.get_blob_client(blob_name)
+        container_client = self._validate_container(container)
+        blob_client = container_client.get_blob_client(blob_name)
         blob_client.delete_blob()
 
     def list_cloud_files(
@@ -382,13 +382,13 @@ class CloudConnector:
             f"list_cloud_files() called with prefix={prefix}, suffix={suffix}, "
             f"more_recent_than={more_recent_than}"
         )
-        containerClient = self._validate_container(container)
+        container_client = self._validate_container(container)
 
         files = []
         if prefix is not None:
-            files = list(containerClient.list_blob_names(name_starts_with=prefix))
+            files = list(container_client.list_blob_names(name_starts_with=prefix))
         else:
-            files = list(containerClient.list_blob_names())
+            files = list(container_client.list_blob_names())
 
         if suffix is not None:
             files = [f for f in files if f.endswith(suffix)]
@@ -424,8 +424,8 @@ class CloudConnector:
 
     def get_blob_modified_time(self, container: str, blob_name: str) -> datetime:
         """Get the last modified time of the specified blob."""
-        containerClient = self._validate_container(container)
-        blob_client = containerClient.get_blob_client(blob_name)
+        container_client = self._validate_container(container)
+        blob_client = container_client.get_blob_client(blob_name)
         if blob_client.exists():
             last_modified = blob_client.get_blob_properties().last_modified
             # The Azure timezone is UTC but it's not explicitly set; set it
