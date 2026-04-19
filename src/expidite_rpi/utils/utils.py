@@ -321,7 +321,7 @@ def extract_zip_to_flat(zip_path: Path, dest_path: Path) -> None:
             # Extract only the specific file
             filename = os.path.basename(member)
 
-            with zip_ref.open(member) as source, open(dest_path.joinpath(filename), "wb") as target:
+            with zip_ref.open(member) as source, open(dest_path / filename, "wb") as target:
                 shutil.copyfileobj(source, target)
 
 

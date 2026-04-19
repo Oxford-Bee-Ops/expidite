@@ -212,7 +212,7 @@ ST_MODE: SOFTWARE_TEST_MODE = SOFTWARE_TEST_MODE.LIVE
 #
 # There is update code at the end of this file that sets the level once we've loaded config.
 ##############################################################################################################
-TEST_LOG = LOG_DIR.joinpath("test.log")
+TEST_LOG = LOG_DIR / "test.log"
 _DEFAULT_LOG: Path | None = None
 _LOG_LEVEL = logging.INFO
 
@@ -263,7 +263,7 @@ def setup_logger(name: str, level: int | None = None, filename: str | Path | Non
 
         if filename is None:
             if _DEFAULT_LOG is None:
-                _DEFAULT_LOG = LOG_DIR.joinpath("default_" + api.utc_to_fname_str() + ".log")
+                _DEFAULT_LOG = LOG_DIR / f"default_{api.utc_to_fname_str()}.log"
             if not _DEFAULT_LOG.parent.exists():
                 _DEFAULT_LOG.parent.mkdir(parents=True, exist_ok=True)
             if file_handler_count == 0:

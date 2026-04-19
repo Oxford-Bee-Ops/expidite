@@ -220,12 +220,12 @@ def increment_filename(fname: Path) -> Path:
 def get_cloud_journal_filename(type_id: str, day: datetime) -> Path:
     """Filenaming for cloud journals based on date."""
     processing_dir = root_cfg.EDGE_PROCESSING_DIR
-    return processing_dir.joinpath(f"V3_{type_id}_{root_cfg.my_device_id}_{day.strftime('%Y%m%d')}.csv")
+    return processing_dir / f"V3_{type_id}_{root_cfg.my_device_id}_{day.strftime('%Y%m%d')}.csv"
 
 
 def get_journal_filename(type_id: str) -> Path:
     """Filenaming for live journals that are in use; they get renamed with a timestamp when closed."""
-    return root_cfg.EDGE_STAGING_DIR.joinpath(f"V3_{type_id}_{root_cfg.my_device_id}.csv")
+    return root_cfg.EDGE_STAGING_DIR / f"V3_{type_id}_{root_cfg.my_device_id}.csv"
 
 
 def parse_journal_filename(fname: Path | str) -> dict:
@@ -279,12 +279,12 @@ def parse_journal_filename(fname: Path | str) -> dict:
 def get_temporary_filename(file_format: api.FORMAT) -> Path:
     """Generate a temporary filename in the TMP_DIR with the specified suffix."""
     suffix = file_format.value
-    return root_cfg.TMP_DIR.joinpath(f"tmp_{api.utc_to_fname_str()}_{random():.4g}.{suffix}")
+    return root_cfg.TMP_DIR / f"tmp_{api.utc_to_fname_str()}_{random():.4g}.{suffix}"
 
 
 def get_temporary_dir() -> Path:
     """Generate a temporary subdirectory in the TMP_DIR."""
-    tmp_dir = root_cfg.TMP_DIR.joinpath(f"tmp_{api.utc_to_fname_str()}_{random():.4g}")
+    tmp_dir = root_cfg.TMP_DIR / f"tmp_{api.utc_to_fname_str()}_{random():.4g}"
     tmp_dir.mkdir(parents=True, exist_ok=True)
     return tmp_dir
 

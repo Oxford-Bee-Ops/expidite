@@ -45,7 +45,7 @@ class Journal:
                 fname = Path(fname)
             self.fname = fname
             if not fname.is_absolute():
-                self.fname = root_cfg.EDGE_STAGING_DIR.joinpath(fname)
+                self.fname = root_cfg.EDGE_STAGING_DIR / fname
             if fname.exists():
                 self._data = self.load()
 

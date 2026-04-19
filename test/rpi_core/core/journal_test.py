@@ -15,7 +15,7 @@ class Test_journal:
     def test_journal_basics(self) -> None:
         logger.info("Run test_journal_basics test")
         tmp_dir = root_cfg.TMP_DIR
-        test_file = tmp_dir.joinpath("test.csv")
+        test_file = tmp_dir / "test.csv"
         if test_file.exists():
             os.remove(test_file)
         test_input = {"key1": "value1", "key2": "value2"}
@@ -71,7 +71,7 @@ class Test_journal:
     @pytest.mark.unittest
     def test_journal_existing(self) -> None:
         tmp_dir = root_cfg.TMP_DIR
-        test_file = tmp_dir.joinpath("test.csv")
+        test_file = tmp_dir / "test.csv"
         if test_file.exists():
             os.remove(test_file)
         test_input = {"key1": "value1", "key2": "value2"}

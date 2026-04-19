@@ -28,7 +28,7 @@ class Test_CloudJournal:
         # Create test data
         reqd_columns = ["field1", "field2", "field3"]
         test_data = {"field1": 1, "field2": 2, "field3": 3}
-        test_journal_path = root_cfg.TMP_DIR.joinpath("test.csv")
+        test_journal_path = root_cfg.TMP_DIR / "test.csv"
 
         # Delete any old files locally and in the cloud
         if test_journal_path.exists():
