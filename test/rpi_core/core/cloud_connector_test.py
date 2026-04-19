@@ -9,6 +9,8 @@ from expidite_rpi.core.cloud_connector import AsyncCloudConnector, CloudConnecto
 
 logger = root_cfg.setup_logger("expidite", level=logging.DEBUG)
 
+DST_CONTAINER = "expidite-upload"
+
 
 class TestCloudConnector:
     """CloudConnector defines the following methods:
@@ -62,6 +64,11 @@ class TestCloudConnector:
 
         # Run the standard set of tests for the CloudConnector
         self.set_of_cc_tests(cc)
+
+        # Run additional tests for function only implemented in the production CloudConnector.
+        self._test_zero_byte_file_in_cloud(cc)
+        self._test_mismatched_headers_in_cloud(cc)
+
         cc.shutdown()
 
     def test_local_cloud_connector(self) -> None:
@@ -75,6 +82,8 @@ class TestCloudConnector:
         # Run the standard set of tests for the CloudConnector
         self.set_of_cc_tests(cc)
 
+        cc.shutdown()
+
     def set_of_cc_tests(self, cc: CloudConnector) -> None:
         """Standard set of actions that should work on any type of CloudConnector."""
         logger.info("Running standard set of CloudConnector tests")
@@ -83,26 +92,25 @@ class TestCloudConnector:
         src_file = file_naming.get_temporary_filename(api.FORMAT.TXT)
         with open(src_file, "w") as f:
             f.write("This is a test file.")
-        dst_container = "expidite-upload"
-        cc.upload_to_container(dst_container, [src_file], delete_src=False)
+        cc.upload_to_container(DST_CONTAINER, [src_file], delete_src=False)
 
         # Upload is asynchronous, so we need to wait for it to complete
         sleep(1)
 
         # List files in the container to verify upload
-        files = cc.list_cloud_files(dst_container)
-        logger.debug(f"Files in container {dst_container}: {len(files)}")
+        files = cc.list_cloud_files(DST_CONTAINER)
+        logger.debug(f"Files in container {DST_CONTAINER}: {len(files)}")
         assert len(files) > 0, "No files found in cloud container after upload"
 
         # Test exists()
-        assert cc.exists(dst_container, src_file.name), "File does not exist in cloud container"
+        assert cc.exists(DST_CONTAINER, src_file.name), "File does not exist in cloud container"
 
         # Test container_exists()
-        assert cc.container_exists(dst_container), "Container does not exist in cloud"
+        assert cc.container_exists(DST_CONTAINER), "Container does not exist in cloud"
 
         # Test download_from_container()
         dst_file = file_naming.get_temporary_filename(api.FORMAT.TXT)
-        cc.download_from_container(dst_container, src_file.name, dst_file)
+        cc.download_from_container(DST_CONTAINER, src_file.name, dst_file)
         assert dst_file.exists(), "Downloaded file does not exist"
 
         # Test append_to_cloud()
@@ -111,29 +119,29 @@ class TestCloudConnector:
         df = pd.DataFrame({"col1": [1, 2], "col2": [3, 4]})
         df.to_csv(append_file, index=False)
         assert append_file.exists(), "Append file does not exist"
-        cc.append_to_cloud(dst_container, append_file, delete_src=False)
+        cc.append_to_cloud(DST_CONTAINER, append_file, delete_src=False)
         sleep(1)
-        assert cc.exists(dst_container, append_file.name), "Appended file does not exist in cloud container"
+        assert cc.exists(DST_CONTAINER, append_file.name), "Appended file does not exist in cloud container"
         assert append_file.exists(), "Append file does not exist after append"
 
         # Test get_blob_modified_time
-        modified_time = cc.get_blob_modified_time(dst_container, append_file.name)
+        modified_time = cc.get_blob_modified_time(DST_CONTAINER, append_file.name)
         assert modified_time is not None, "Modified time is None"
 
         # Append to the same file again
-        cc.append_to_cloud(dst_container, append_file, delete_src=True)
+        cc.append_to_cloud(DST_CONTAINER, append_file, delete_src=True)
         sleep(1)
-        assert cc.exists(dst_container, append_file.name), "Appended file does not exist in cloud container"
+        assert cc.exists(DST_CONTAINER, append_file.name), "Appended file does not exist in cloud container"
         assert not append_file.exists(), "Append file exists after second append despre delete_src=True"
 
         # Check the modified time again
-        modified_time2 = cc.get_blob_modified_time(dst_container, append_file.name)
+        modified_time2 = cc.get_blob_modified_time(DST_CONTAINER, append_file.name)
         assert modified_time2 is not None, "Modified time is None after second append"
         assert modified_time2 > modified_time, "Modified time did not change after second append"
 
         # Download the appended file to verify its contents
         downloaded_file = file_naming.get_temporary_filename(api.FORMAT.CSV)
-        cc.download_from_container(dst_container, append_file.name, downloaded_file)
+        cc.download_from_container(DST_CONTAINER, append_file.name, downloaded_file)
         assert downloaded_file.exists(), "Downloaded appended file does not exist"
 
         # Read the downloaded file and check its contents
@@ -142,7 +150,73 @@ class TestCloudConnector:
         assert len(downloaded_df) == 4, f"Downloaded appended file has insufficient rows {len(downloaded_df)}"
 
         # Delete the test file in the cloud and check it is gone
-        cc.delete(dst_container, src_file.name)
-        assert not cc.exists(dst_container, src_file.name), "File still exists after delete"
+        cc.delete(DST_CONTAINER, src_file.name)
+        assert not cc.exists(DST_CONTAINER, src_file.name), "File still exists after delete"
 
+    def _test_zero_byte_file_in_cloud(self, cc: CloudConnector) -> None:
+        # Test append_to_cloud() with a zero-byte file already in cloud storage
+        zero_file = file_naming.get_temporary_filename(api.FORMAT.CSV)
+        zero_file.touch()
+        cc.upload_to_container(DST_CONTAINER, [zero_file], delete_src=True)
+        sleep(1)
+        assert cc.exists(DST_CONTAINER, zero_file.name), "Zero-byte file does not exist in cloud"
+
+        # Write CSV data to the same local path and append to the zero-byte cloud blob
+        df_zero = pd.DataFrame({"col1": [10, 20], "col2": [30, 40]})
+        df_zero.to_csv(zero_file, index=False)
+        cc.append_to_cloud(DST_CONTAINER, zero_file, delete_src=True)
+        sleep(1)
+        assert cc.exists(DST_CONTAINER, zero_file.name), "File does not exist after append to zero-byte blob"
+
+        # Download and verify the result has headers and data
+        dl_zero = file_naming.get_temporary_filename(api.FORMAT.CSV)
+        cc.download_from_container(DST_CONTAINER, zero_file.name, dl_zero)
+        assert dl_zero.exists(), "Downloaded zero-byte append file does not exist"
+        dl_zero_df = pd.read_csv(dl_zero)
+
+        assert not dl_zero_df.empty, "Appended data to zero-byte blob is empty"
+        assert len(dl_zero_df) == 2, f"Expected 2 rows after append to zero-byte blob, got {len(dl_zero_df)}"
+        assert list(dl_zero_df.columns) == ["col1", "col2"], "Headers missing after append to zero-byte blob"
+
+        cc.delete(DST_CONTAINER, zero_file.name)
+
+        sleep(1)
+
+    def _test_mismatched_headers_in_cloud(self, cc: CloudConnector) -> None:
+        # Test append_to_cloud() when the cloud file has different headers than the local file.
+        mismatch_file = file_naming.get_temporary_filename(api.FORMAT.CSV)
+        df_original = pd.DataFrame({"col_a": [1, 2], "col_b": [3, 4]})
+        df_original.to_csv(mismatch_file, index=False)
+        cc.append_to_cloud(DST_CONTAINER, mismatch_file, delete_src=False)
+        sleep(1)
+        assert cc.exists(DST_CONTAINER, mismatch_file.name), "Original file does not exist in cloud"
+
+        # Append data with different headers to the same cloud blob. Need to force a new instance of
+        # CloudConnector to simulate restarting after an upgrade.
+        cc.shutdown()
+        cc = CloudConnector.get_instance(root_cfg.CloudType.AZURE)
+
+        df_new = pd.DataFrame({"col_b": [5, 6], "col_c": [7, 8]})
+        df_new.to_csv(mismatch_file, index=False)
+        cc.append_to_cloud(DST_CONTAINER, mismatch_file, delete_src=True)
+        sleep(1)
+        assert cc.exists(DST_CONTAINER, mismatch_file.name), "File does not exist after mismatched append"
+
+        # Download and verify the result has merged headers and all data.
+        dl_mismatch = file_naming.get_temporary_filename(api.FORMAT.CSV)
+        cc.download_from_container(DST_CONTAINER, mismatch_file.name, dl_mismatch)
+        assert dl_mismatch.exists(), "Downloaded mismatched-header file does not exist"
+        dl_mismatch_df = pd.read_csv(dl_mismatch)
+
+        assert not dl_mismatch_df.empty, "Merged data is empty"
+        assert len(dl_mismatch_df) == 4, (
+            f"Expected 4 rows after mismatched-header append, got {len(dl_mismatch_df)}"
+        )
+        assert "col_a" in dl_mismatch_df.columns, "col_a missing from merged headers"
+        assert "col_b" in dl_mismatch_df.columns, "col_b missing from merged headers"
+        assert "col_c" in dl_mismatch_df.columns, "col_c missing from merged headers"
+
+        cc.delete(DST_CONTAINER, mismatch_file.name)
+
+        cc.shutdown()
         sleep(1)

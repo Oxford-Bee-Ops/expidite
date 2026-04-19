@@ -173,6 +173,7 @@ class LocalCloudConnector(CloudConnector):
         It the responsibility of the calling function to ensure that the columns & headers in the
         CSV data are consistent between local and remote files
         """
+        blob_client = self.local_cloud / dst_container / src_file.name
         try:
             logger.debug(f"LocalCC.append_to_cloud() with delete_src={delete_src} for {src_file}")
 
@@ -182,9 +183,6 @@ class LocalCloudConnector(CloudConnector):
                 if len(local_lines) == 1:
                     return False  # No data beyond headers
 
-            # Get the blob client
-            blob_client = self.local_cloud / dst_container / src_file.name
-
             if not blob_client.exists():
                 # Include the Headers
                 data_to_append = "".join(local_lines[:])
@@ -192,7 +190,7 @@ class LocalCloudConnector(CloudConnector):
                 blob_client.parent.mkdir(parents=True, exist_ok=True)
                 blob_client.touch()
             else:
-                # Drop the Headers in the first line so we don't have repeat header rows
+                # Drop the Headers in the first line so we don't have repeat header rows.
                 data_to_append = "".join(local_lines[1:])
 
             # Append the data to the local file

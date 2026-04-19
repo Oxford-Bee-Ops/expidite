@@ -271,63 +271,73 @@ class CloudConnector:
             blob_client = target_container.get_blob_client(dst_file)
 
             if not blob_client.exists():
-                # Create the blob and include the Headers
+                # Create the blob and include the Headers.
                 blob_client.create_append_blob()
                 data_to_append = "".join(lines_to_append[:])
-                self._validated_append_files.add(dst_file)
-            elif dst_file not in self._validated_append_files:
-                # It's our first time writing to this file since reboot
-                # Validate that the headers match
-                if self._headers_match(blob_client, lines_to_append[0]):
-                    logger.debug(f"Headers match for {blob_client.blob_name}, appending data")
-                    # Drop the Headers in the first line so we don't have repeat header rows
-                    data_to_append = "".join(lines_to_append[1:])
-                else:
-                    logger.warning(
-                        f"{root_cfg.RAISE_WARN()}Headers do not match for {dst_file}, "
-                        "downloading remote file to merge headers"
-                    )
-                    # Download the remote file
-                    tmp_file = file_naming.get_temporary_filename(api.FORMAT.CSV)
-                    self.download_from_container(
-                        src_container=dst_container,
-                        src_file=dst_file,
-                        dst_file=tmp_file,
-                    )
-                    # Merge the dataframes
-                    append_df = pd.read_csv(io.StringIO("".join(lines_to_append)))
-                    try:
-                        orig_df = pd.read_csv(tmp_file)
-                    except pd.errors.EmptyDataError:
-                        logger.warning(
-                            f"{root_cfg.RAISE_WARN()}Remote append blob {dst_file} is empty; "
-                            "recreating with incoming headers"
-                        )
-                        orig_df = pd.DataFrame(columns=append_df.columns)
-                    merged_df = pd.concat([orig_df, append_df], ignore_index=True)
-
-                    # Generate the CSV data to append (including the headers)
-                    csv_buffer = io.StringIO()
-                    merged_df.to_csv(csv_buffer, index=False, columns=col_order)
-                    data_to_append = csv_buffer.getvalue()
-                    tmp_file.unlink()  # Clean up the temporary file
-
-                    # Re-create the append_blob - this replaces the existing file
-                    blob_client.create_append_blob()
-
-                # Record that we've validated this file
-                self._validated_append_files.add(dst_file)
-            else:
-                # Drop the Headers in the first line so we don't have repeat header rows
+            elif dst_file in self._validated_append_files:
+                # Drop the Headers in the first line so we don't have repeat header rows.
                 data_to_append = "".join(lines_to_append[1:])
+            # It's our first time writing to this file since reboot. Validate that the headers match.
+            elif self._headers_match(blob_client, lines_to_append[0]):
+                logger.debug(f"Headers match for {blob_client.blob_name}, appending data")
+                # Drop the Headers in the first line so we don't have repeat header rows.
+                data_to_append = "".join(lines_to_append[1:])
+            else:
+                logger.warning(
+                    f"{root_cfg.RAISE_WARN()}Headers do not match for {dst_file}, "
+                    "downloading remote file to merge headers"
+                )
+                data_to_append = self._merge_local_and_remote(
+                    dst_container, dst_file, lines_to_append, col_order
+                )
+
+                if blob_client.get_blob_properties().size == 0:
+                    blob_client.delete_blob()
+                blob_client.create_append_blob()
 
             # Append the data
             blob_client.append_block(data_to_append)
+
+            # Record that we've validated this file (might already be true).
+            self._validated_append_files.add(dst_file)
 
             return True
         except Exception:
             logger.exception(f"{root_cfg.RAISE_WARN()}Failed to append data to {dst_file}")
             return False
+
+    def _merge_local_and_remote(
+        self,
+        dst_container: str,
+        dst_file: str,
+        lines_to_append: list[str],
+        col_order: list[str] | None = None,
+    ) -> str:
+        # Download the remote file.
+        tmp_file = file_naming.get_temporary_filename(api.FORMAT.CSV)
+        self.download_from_container(
+            src_container=dst_container,
+            src_file=dst_file,
+            dst_file=tmp_file,
+        )
+        # Merge the dataframes.
+        append_df = pd.read_csv(io.StringIO("".join(lines_to_append)))
+        try:
+            orig_df = pd.read_csv(tmp_file)
+        except pd.errors.EmptyDataError:
+            logger.warning(
+                f"{root_cfg.RAISE_WARN()}Remote append blob {dst_file} is empty; "
+                "recreating with incoming headers"
+            )
+            orig_df = pd.DataFrame(columns=append_df.columns)
+        merged_df = pd.concat([orig_df, append_df], ignore_index=True)
+
+        # Generate the CSV data to append (including the headers).
+        csv_buffer = io.StringIO()
+        merged_df.to_csv(csv_buffer, index=False, columns=col_order)
+        data_to_append = csv_buffer.getvalue()
+        tmp_file.unlink()  # Clean up the temporary file.
+        return data_to_append
 
     def container_exists(self, container: str) -> bool:
         """Check if the specified container exists."""
