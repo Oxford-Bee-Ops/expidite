@@ -214,6 +214,23 @@ ST_MODE: SOFTWARE_TEST_MODE = SOFTWARE_TEST_MODE.LIVE
 ##############################################################################################################
 _DEFAULT_LOG: Path | None = None
 _LOG_LEVEL = logging.INFO
+_MAX_LOG_MESSAGE_LENGTH = 16384
+
+
+class _TruncatingFormatter(logging.Formatter):
+    """Truncate log messages to prevent systemd journal from splitting them into multiple entries.
+
+    Systemd chunks log messages longer than 32KB, so if we don't truncate them here, then when we read them
+    back for sending as journals, we end up reading each 32KB chunk as a separate log message.
+
+    Limiting them to a smaller size than that limit also helps keep the log file more manageable and readable.
+    """
+
+    def format(self, record: logging.LogRecord) -> str:
+        result = super().format(record)
+        if len(result) > _MAX_LOG_MESSAGE_LENGTH:
+            return result[:_MAX_LOG_MESSAGE_LENGTH] + " ...[truncated]"
+        return result
 
 
 def set_log_level(level: int) -> None:
@@ -235,7 +252,7 @@ def setup_logger(name: str, level: int | None = None) -> logging.Logger:
         logger.setLevel(_LOG_LEVEL)
         if len(logger.handlers) == 0:
             handler = JournaldLogHandler(SYSLOG_IDENTIFIER=Path(sys.argv[0]).name)
-            handler.setFormatter(logging.Formatter("%(name)s %(levelname)-6s [%(thread)d] %(message)s"))
+            handler.setFormatter(_TruncatingFormatter("%(name)s %(levelname)-6s [%(thread)d] %(message)s"))
             logger.addHandler(handler)
     else:  # elif root_cfg.running_on_windows
         logger = logging.getLogger(name)
