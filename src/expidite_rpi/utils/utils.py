@@ -2,7 +2,6 @@
 # Execute environment dependent setup
 ##############################################################################################################
 import datetime as dt
-import hashlib
 import os
 import shutil
 import subprocess
@@ -128,21 +127,6 @@ class RepeatTimer(Timer):
     def run(self) -> None:
         while not self.finished.wait(self.interval):
             self.function(*self.args, **self.kwargs)
-
-
-##############################################################################################################
-# Compute MD5 hash locally
-# Used to compare whether files are the same
-##############################################################################################################
-def compute_local_md5(file_path: str) -> str:
-    if not os.path.exists(file_path):
-        return ""
-
-    with open(file_path, "rb") as file:
-        md5_hash = hashlib.md5(usedforsecurity=False)
-        while chunk := file.read(8192):
-            md5_hash.update(chunk)
-    return md5_hash.hexdigest()
 
 
 def get_current_user() -> str:
