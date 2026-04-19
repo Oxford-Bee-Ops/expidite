@@ -195,27 +195,6 @@ def check_running_processes(search_string: str = "core") -> set:
     return processes
 
 
-def list_all_large_dirs(path: str, recursion: int = 0) -> int:
-    """Walks the directory tree and logs all directories using more than 1GB of space."""
-    total = 0
-    if recursion == 0:
-        print("Large directories:")
-    recursion += 1
-    for entry in os.scandir(path):
-        if entry.is_dir(follow_symlinks=False):
-            try:
-                dir_size = list_all_large_dirs(entry.path, recursion)
-            except PermissionError:
-                dir_size = 0
-            if dir_size > 2**32:
-                recursion_padding = "-" * recursion
-                print(f"{recursion_padding}{entry.path!s} - {round(dir_size / 2**30, 1)}Gb")
-            total += dir_size
-        else:
-            total += entry.stat(follow_symlinks=False).st_size
-    return total
-
-
 ##############################################################################################################
 # Convert a file from H264 to MP4 format
 ##############################################################################################################
