@@ -9,8 +9,6 @@ from dataclasses import fields, is_dataclass
 from pathlib import Path
 from typing import Any
 
-from pydantic_settings import BaseSettings
-
 
 def create_root_working_dir(path: Path) -> None:
     """Create the root working directory if it doesn't exist.
@@ -92,23 +90,6 @@ def display_dataclass(obj: Any, indent: int = 0) -> str:  # noqa: ANN401
             # Display simple fields
             result += f"{fb(indent)}{field.name}={value!r}{bb(indent)}\n"
     return result
-
-
-def save_settings_to_env(settings: BaseSettings, file_path: str | Path) -> None:
-    """Save a Pydantic BaseSettings object to a .env file.
-
-    Parameters:
-        settings (BaseSettings): The Pydantic BaseSettings object to save.
-        file_path (Union[str, Path]): The path to the .env file.
-    """
-    file_path = Path(file_path)  # Ensure file_path is a Path object
-    with file_path.open("w", encoding="utf-8") as env_file:
-        for key, value in settings.model_dump().items():
-            if value is None:
-                continue
-
-            # Convert the value to a string and escape special characters if needed
-            env_file.write(f"{key}={value}\n")
 
 
 @contextmanager
