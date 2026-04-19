@@ -31,7 +31,7 @@ class TestCloudConnector:
         dst_dir: Path,
         folder_prefix_len: Optional[int] = None,
         files: Optional[list[str]] = None,
-        overwrite: Optional[bool] = True,
+        overwrite: bool = True,
     def move_between_containers(
         self,
         src_container: str,

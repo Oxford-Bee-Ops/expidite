@@ -225,7 +225,7 @@ def set_log_level(level: int) -> None:
     module_logger.debug("Debug logging enabled for expidite")
 
 
-def setup_logger(name: str, level: int | None = None, filename: str | Path | None = None) -> logging.Logger:
+def setup_logger(name: str, level: int | None = None) -> logging.Logger:
     global _DEFAULT_LOG
     if level is not None:
         set_log_level(level)
@@ -261,23 +261,16 @@ def setup_logger(name: str, level: int | None = None, filename: str | Path | Non
             console_handler.setFormatter(formatter)
             logger.addHandler(console_handler)
 
-        if filename is None:
-            if _DEFAULT_LOG is None:
-                _DEFAULT_LOG = LOG_DIR / f"default_{api.utc_to_fname_str()}.log"
-            if not _DEFAULT_LOG.parent.exists():
-                _DEFAULT_LOG.parent.mkdir(parents=True, exist_ok=True)
-            if file_handler_count == 0:
-                handler = logging.FileHandler(_DEFAULT_LOG)
-                handler.setLevel(_LOG_LEVEL)
-                handler.setFormatter(formatter)
-                logger.addHandler(handler)
-                print(f"Logging {name} to default file: {_DEFAULT_LOG} at level {_LOG_LEVEL}")
-        # Limit to 2 file loggers
-        elif file_handler_count <= 1:
-            handler = logging.FileHandler(filename)
+        if _DEFAULT_LOG is None:
+            _DEFAULT_LOG = LOG_DIR / f"default_{api.utc_to_fname_str()}.log"
+        if not _DEFAULT_LOG.parent.exists():
+            _DEFAULT_LOG.parent.mkdir(parents=True, exist_ok=True)
+        if file_handler_count == 0:
+            handler = logging.FileHandler(_DEFAULT_LOG)
+            handler.setLevel(_LOG_LEVEL)
             handler.setFormatter(formatter)
             logger.addHandler(handler)
-            print(f"Logging {name} to file: {filename} at level {_LOG_LEVEL}")
+            print(f"Logging {name} to default file: {_DEFAULT_LOG} at level {_LOG_LEVEL}")
 
     logging.getLogger("azure.core.pipeline.policies.http_logging_policy").setLevel(logging.WARNING)
     logging.getLogger("azure").setLevel(logging.WARNING)

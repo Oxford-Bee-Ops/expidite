@@ -143,8 +143,8 @@ class CloudJournal:
         self.cloud_container = cloud_container
         self.reqd_columns = reqd_columns
 
-    # Function to read a remote CSV file into a local journal
     def download(self) -> list[dict]:
+        """Function to read a remote CSV file into a local journal."""
         # Originally implemented with DictReader, but switched to Pandas to get auto-detect of numeric types
         try:
             # We get the instance locally rather than storing it in self because it avoids issues when we
@@ -157,40 +157,36 @@ class CloudJournal:
         except pd.errors.EmptyDataError:
             return []
 
-    # Save the queued additions to the master journal
     def flush_all(self) -> None:
+        """Save the queued additions to the master journal."""
         self.manager.flush_all()
 
-    # Stop the worker thread
     def stop(self) -> None:
+        """Stop the worker thread."""
         self.manager.stop()
 
-    # Add a row to the data list
     def add_row(self, row: dict) -> None:
+        """Add a row to the data list."""
         self.manager.add(self, [row])
 
-    # Add multiple rows to the data list
     def add_rows(self, rows: list[dict]) -> None:
+        """Add multiple rows to the data list."""
         self.manager.add(self, rows)
 
-    # Add multiple rows from a pandas dataframe
     def add_rows_from_df(self, df: pd.DataFrame) -> None:
+        """Add multiple rows from a pandas dataframe."""
         self.add_rows(df.to_dict(orient="records"))
 
-    # Access the data list
-    #
-    # Normally this is returned as a copy, but for performance on read-only operations, the copy can be
-    # disabled
-    def get_data(self, copy: bool = True) -> list[dict]:
-        if copy:
-            return self._data.copy()
-        return self._data
+    def get_data(self) -> list[dict]:
+        """Access the data list. This is returned as a copy."""
+        return self._data.copy()
 
-    # Access the data list as a dataframe
-    #
-    # Order the columns by providing a list of column names.
-    # Doesn't need to include all columns names; any columns not in the list will be appended
     def as_df(self, column_order: list[str] | None = None) -> pd.DataFrame:
+        """Access the data list as a dataframe.
+
+        Order the columns by providing a list of column names.
+        Doesn't need to include all columns names; any columns not in the list will be appended.
+        """
         df = pd.DataFrame(self._data)
         if column_order is not None:
             df = df[column_order + [col for col in df.columns if col not in column_order]]

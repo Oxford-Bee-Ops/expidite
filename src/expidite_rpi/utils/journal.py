@@ -99,14 +99,8 @@ class Journal:
             self.save()
         return self
 
-    def get_data(self, copy: bool = True) -> list[dict]:
-        """Access the data list.
-
-        Normally this is returned as a copy, but for performance on read-only operations, the copy can be
-        disabled.
-        """
-        if copy:
-            return self._data.to_dict(orient="records")
+    def get_data(self) -> list[dict]:
+        """Access the data list. This is returned as a copy."""
         return self._data.to_dict(orient="records")
 
     def as_df(self, column_order: list[str] | None = None) -> pd.DataFrame:

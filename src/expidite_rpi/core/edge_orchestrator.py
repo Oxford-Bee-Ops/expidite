@@ -267,7 +267,7 @@ class EdgeOrchestrator:
         sleep(1)
         return orchestrator_thread
 
-    def stop_all(self, restart: bool | None = False) -> None:
+    def stop_all(self, restart: bool = False) -> None:
         """Stop all Sensor, Datastream and observability threads.
 
         Blocks until all threads have exited.

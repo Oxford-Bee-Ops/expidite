@@ -91,7 +91,7 @@ class LocalCloudConnector(CloudConnector):
         dst_dir: Path,
         folder_prefix_len: int | None = None,
         files: list[str] | None = None,
-        overwrite: bool | None = True,
+        overwrite: bool = True,
     ) -> None:
         """Download all the files in the src_container to the dst_dir.
 
@@ -101,6 +101,7 @@ class LocalCloudConnector(CloudConnector):
             folder_prefix_len: Optional; first n characters of the file name to use as a subfolder
             files: Optional; list of files to download from src_container; if None, all files in the container
                 will be downloaded; useful for chunking downloads
+            overwrite: If False, function will skip downloading files that already exist in dst_dir
         """
         download_container = self.local_cloud / src_container
 

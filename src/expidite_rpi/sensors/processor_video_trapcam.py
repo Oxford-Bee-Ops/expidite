@@ -241,7 +241,7 @@ class TrapcamDp(DataProcessor):
 
             # PHASE 1: Identify all frames with movement
             logger.info("Phase 1: Scanning for movement frames")
-            movement_frames = self._detect_movement_frames(cap, min_blob_size, max_blob_size, total_frames)
+            movement_frames = self._detect_movement_frames(cap, min_blob_size, max_blob_size)
 
             if not movement_frames:
                 logger.info("No movement detected in video")
@@ -257,7 +257,7 @@ class TrapcamDp(DataProcessor):
             # PHASE 3: Write out the videos
             logger.info("Phase 3: Writing video segments")
             samples_saved = self._write_video_segments(
-                cap, video_path, segments, start_time, fps, fourcc, frame_width, frame_height
+                cap, segments, start_time, fps, fourcc, frame_width, frame_height
             )
 
             total_duration = sum((end - start) / fps for start, end in segments)
@@ -267,7 +267,7 @@ class TrapcamDp(DataProcessor):
             cap.release()
 
     def _detect_movement_frames(
-        self, cap: cv2.VideoCapture, min_blob_size: int, max_blob_size: int, total_frames: int
+        self, cap: cv2.VideoCapture, min_blob_size: int, max_blob_size: int
     ) -> list[int]:
         """Phase 1: Scan through video and identify frames with qualifying movement."""
         movement_frames = []
@@ -343,7 +343,6 @@ class TrapcamDp(DataProcessor):
     def _write_video_segments(
         self,
         cap: cv2.VideoCapture,
-        video_path: Path,
         segments: list[tuple[int, int]],
         start_time: datetime,
         fps: int,
