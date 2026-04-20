@@ -20,20 +20,19 @@ class _CloudJournalManager:
     It should only be instantiated or called by a CloudJournal object.
     We use a single worker thread and queues to ensure thread-safety of local processing."""
 
-    def __init__(self, cloud_container: str) -> None:
+    def __init__(self) -> None:
         super().__init__()
         self._journals: dict[CloudJournal, Queue] = {}
         self._journals_dict_lock = Lock()  # grab this lock when modifying the _journals dict
-        self.cloud_container = cloud_container
         self._stop_requested = Event()
         self._sync_timer = Timer(root_cfg.JOURNAL_SYNC_FREQUENCY, self.sync_run)
         self._sync_timer.start()
 
     @staticmethod
-    def get(cloud_container: str) -> "_CloudJournalManager":
+    def get() -> "_CloudJournalManager":
         """Get the singleton worker thread."""
         if _CloudJournalManager._instance is None:
-            _CloudJournalManager._instance = _CloudJournalManager(cloud_container)
+            _CloudJournalManager._instance = _CloudJournalManager()
         return _CloudJournalManager._instance
 
     def sync_run(self) -> None:
@@ -137,7 +136,7 @@ class CloudJournal:
         assert local_fname.is_absolute()
         assert len(reqd_columns) > 0
 
-        self.manager = _CloudJournalManager.get(cloud_container)
+        self.manager = _CloudJournalManager.get()
         self.local_fname = local_fname
         self.cloud_filename = local_fname.name
         self.cloud_container = cloud_container
