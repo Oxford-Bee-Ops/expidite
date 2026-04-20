@@ -478,7 +478,9 @@ class EdgeOrchestrator:
 # Main loop called from systemd on boot up
 ##############################################################################################################
 def main() -> None:
+    sdnotifier = sdnotify.SystemdNotifier()
     orchestrator = None
+
     try:
         # Provide diagnostics
         logger.info(root_cfg.my_device.display())
@@ -493,7 +495,6 @@ def main() -> None:
         # Start all the sensor threads
         orchestrator.start_all()
 
-        sdnotifier = sdnotify.SystemdNotifier()
         sdnotifier.notify("READY=1")
 
         # Keep the main thread alive
