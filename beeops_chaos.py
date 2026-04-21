@@ -22,6 +22,7 @@ import json
 import logging
 import os
 import random
+import socket
 import subprocess
 import sys
 import time
@@ -82,37 +83,52 @@ class FaultInjector:
         log.info("tc netem: %s", rule)
         # Try replace first (idempotent), fall back to add
         result = subprocess.run(
-            ["tc", "qdisc", "replace", "dev", self.iface, "root", "netem"] + rule.split(),
+            ["tc", "qdisc", "replace", "dev", self.iface, "root", "netem", *rule.split()],
             capture_output=True,
+            check=False,
         )
         if result.returncode != 0:
             subprocess.run(
-                ["tc", "qdisc", "add", "dev", self.iface, "root", "netem"] + rule.split(),
+                ["tc", "qdisc", "add", "dev", self.iface, "root", "netem", *rule.split()],
                 check=True,
             )
 
     def clear_netem(self) -> None:
         subprocess.run(
             ["tc", "qdisc", "del", "dev", self.iface, "root"],
-            capture_output=True,  # OK if already clear
-            check=True,
+            capture_output=True,
+            check=False,
         )
         log.info("tc netem: cleared")
 
     # -- iptables -------------------------------------------------------------
 
+    @staticmethod
+    def _resolve_ips(hostname: str) -> list[str]:
+        """Resolve a hostname to its IP addresses (iptables needs IPs, not hostnames)."""
+        try:
+            results = socket.getaddrinfo(hostname, None, socket.AF_INET)
+            return list({r[4][0] for r in results})
+        except socket.gaierror:
+            log.warning("Could not resolve %s — skipping", hostname)
+            return []
+
     def drop_azure(self) -> None:
         """Block outbound traffic to Azure endpoints."""
         for host in AZURE_ENDPOINTS:
-            rule = ["iptables", "-A", "OUTPUT", "-d", host, "-j", "DROP"]
-            subprocess.run(rule, check=True)
-            self._active_iptables.append(rule)
-            log.info("iptables DROP: %s", host)
+            ips = self._resolve_ips(host)
+            if not ips:
+                continue
+            for ip in ips:
+                rule = ["iptables", "-A", "OUTPUT", "-d", ip, "-j", "DROP"]
+                subprocess.run(rule, check=True)
+                self._active_iptables.append(rule)
+            log.info("iptables DROP: %s → %s", host, ips)
 
     def clear_iptables(self) -> None:
         for rule in self._active_iptables:
-            delete = ["iptables", "-D"] + rule[2:]  # -D instead of -A
-            subprocess.run(delete, capture_output=True, check=True)
+            delete = ["iptables", "-D", *rule[2:]]
+            subprocess.run(delete, capture_output=True, check=False)
         self._active_iptables.clear()
         log.info("iptables: cleared")
 
