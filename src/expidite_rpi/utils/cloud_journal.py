@@ -57,6 +57,7 @@ class _CloudJournalManager:
         cc = CloudConnector.get_instance(root_cfg.CLOUD_TYPE)
         if isinstance(cc, AsyncCloudConnector):
             cc.shutdown()
+        _CloudJournalManager._instance = None
 
     def add(self, journal: "CloudJournal", data: list[dict]) -> None:
         """Add data to the local data queue.
