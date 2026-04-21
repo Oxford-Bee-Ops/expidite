@@ -497,7 +497,7 @@ ALL_SCENARIOS = ["azure_outage", "packet_loss", "interface_flap", "high_latency"
 def main() -> int:
     parser = argparse.ArgumentParser(description="BeeOps network chaos harness")
     parser.add_argument("--iface", default="wlan0", help="Network interface (default: wlan0)")
-    parser.add_argument("--service", default="beeops", help="systemd service name (default: beeops)")
+    parser.add_argument("--service", default="expidite", help="systemd service name (default: expidite)")
     parser.add_argument(
         "--scenarios",
         default="azure_outage,packet_loss,interface_flap,high_latency",
@@ -506,7 +506,7 @@ def main() -> int:
     parser.add_argument(
         "--azure-connection-string", default=None, help="Azure Storage connection string for blob audit"
     )
-    parser.add_argument("--azure-container", default="beeops", help="Azure blob container name")
+    parser.add_argument("--azure-container", default="expidite", help="Azure blob container name")
     parser.add_argument(
         "--dry-run", action="store_true", help="Skip fault injection (test harness logic only)"
     )
