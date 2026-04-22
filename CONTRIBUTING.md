@@ -9,7 +9,7 @@ Clone the Repository:
 
 Create and activate the virtual environment (Linux/macOS)
 - `cd expidite`
-- `python3 -m venv .venv `
+- `python3 -m venv .venv`
 - `source .venv/bin/activate`
 
 Create the environment (Windows)
