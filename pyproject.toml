@@ -13,7 +13,7 @@ authors = [
   {name = "Stuart", email = "stuart@bee-ops.com"},
 ]
 dependencies = [
-    "adafruit-blinka==9.0.4",
+    "adafruit-blinka==9.1.0",
     "adafruit-circuitpython-ahtx0==1.0.29",
     "adafruit-circuitpython-busdevice==5.2.16",
     "adafruit-circuitpython-bmp280==3.3.11",
@@ -43,7 +43,7 @@ dependencies = [
 dev = [
     "codespell==2.4.2",
     "deadcode==2.4.1",
-    "mypy==1.20.1",
+    "mypy==1.20.2",
     "pandas-stubs==3.0.0.260204",
     "pyright==1.1.408",
     "pytest==9.0.3",
