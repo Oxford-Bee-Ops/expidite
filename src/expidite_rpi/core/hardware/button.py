@@ -32,7 +32,7 @@ class ButtonInput:
             self._gpio = gpio_module
             self._gpio.setmode(gpio_module.BCM)
             self._gpio.setup(self.pin, gpio_module.IN, pull_up_down=gpio_module.PUD_UP)
-            logger.info("Button initialized on GPIO %s", self.pin)
+            logger.info(f"Button initialized on GPIO {self.pin}")
         else:
             logger.warning("RPi.GPIO module could not be imported")
             raise ImportError("RPi.GPIO library is required for ButtonInput but is not installed.") from None
@@ -59,7 +59,7 @@ class ButtonInput:
         break_interval: float = root_cfg.my_device.max_recording_timer,
     ) -> bool:
         """Block until a debounced button press is detected or the break interval is exceeded."""
-        logger.info("Waiting for button press on GPIO %s", self.pin)
+        logger.info(f"Waiting for button press on GPIO {self.pin}")
         start_time = time.monotonic()
         while True:
             if self.is_pressed():

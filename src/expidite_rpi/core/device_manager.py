@@ -303,10 +303,8 @@ class DeviceManager:
         self.ping_failure_count_run += 1
         self.last_ping_was_ok = False
         logger.info(
-            "Ping failure count run: %s, all (good/bad): %s/%s",
-            str(self.ping_failure_count_run),
-            str(self.ping_success_count_all),
-            str(self.ping_failure_count_all),
+            f"Ping failure count run: {self.ping_failure_count_run}, all "
+            f"(good/bad): {self.ping_success_count_all}/{self.ping_failure_count_all}"
         )
 
         # Set ping status so that the LEDs reflect this change
@@ -399,10 +397,8 @@ class DeviceManager:
         self.ping_success_count_run += 1
         if self.ping_success_count_run % 30 == 0:
             logger.info(
-                "Ping successful count run: %s, all (good/bad): %s/%s",
-                str(self.ping_success_count_run),
-                str(self.ping_success_count_all),
-                str(self.ping_failure_count_all),
+                f"Ping successful count run: {self.ping_success_count_run}, all "
+                f"(good/bad): {self.ping_success_count_all}/{self.ping_failure_count_all}"
             )
 
         # Set ping status so that the LEDs reflect this change
