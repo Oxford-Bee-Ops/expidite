@@ -536,20 +536,20 @@ def main() -> int:
     results: list[ScenarioResult] = []
 
     try:
-        if "azure_outage" in scenarios:
-            results.append(scenario_azure_outage(injector, monitor, audit))
-
         if "packet_loss" in scenarios:
-            results.append(scenario_packet_loss(injector, monitor))
+            results.append(scenario_packet_loss(injector, monitor, duration_s=600))
 
         if "interface_flap" in scenarios:
-            results.append(scenario_interface_flap(injector, monitor))
+            results.append(scenario_interface_flap(injector, monitor, flaps=10, down_s=30, up_s=30))
 
         if "high_latency" in scenarios:
-            results.append(scenario_high_latency(injector, monitor))
+            results.append(scenario_high_latency(injector, monitor, duration_s=600))
 
         if "sustained_chaos" in scenarios:
-            results.append(scenario_sustained_chaos(injector, monitor))
+            results.append(scenario_sustained_chaos(injector, monitor, duration_s=600))
+
+        if "azure_outage" in scenarios:
+            results.append(scenario_azure_outage(injector, monitor, audit, outage_s=300))
 
     except KeyboardInterrupt:
         log.warning("Interrupted — cleaning up faults...")
