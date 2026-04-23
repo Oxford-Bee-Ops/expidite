@@ -45,7 +45,7 @@ dev = [
     "deadcode==2.4.1",
     "mypy==1.20.2",
     "pandas-stubs==3.0.0.260204",
-    "pyright==1.1.408",
+    "pyright==1.1.409",
     "pytest==9.0.3",
     "pytest-socket==0.7.0",
     "ruff==0.15.11",
