@@ -143,12 +143,37 @@ check_prerequisites() {
 
 }
 
-# Function to get the Git project name from the URL
-git_project_name() {
-    # Get the Git project name from the URL
-    local url="$1"
-    local project_name=$(basename "$url" .git)
-    echo "$project_name"
+# Get the pip package name for a package installed from a git repository URL. The pip package name (from
+# pyproject.toml) may differ from the git repo name. Falls back to the repo name extracted from the URL if no
+# match is found.
+get_pip_package_name() {
+    local repo_name
+    repo_name=$(basename "$1" .git)
+    if pip show "$repo_name" >/dev/null 2>&1; then
+        echo "$repo_name"
+        return
+    fi
+    local resolved
+    resolved=$(python3 -c "
+import importlib.metadata, re, sys
+repo = sys.argv[1].lower()
+repo_stripped = re.sub(r'[-_.]', '', repo)
+for dist in importlib.metadata.distributions():
+    try:
+        du = dist.read_text('direct_url.json')
+        if du and repo in du.lower():
+            print(dist.metadata['Name'])
+            sys.exit(0)
+    except Exception:
+        pass
+for dist in importlib.metadata.distributions():
+    name = re.sub(r'[-_.]', '', dist.metadata['Name'].lower())
+    if name == repo_stripped:
+        print(dist.metadata['Name'])
+        sys.exit(0)
+sys.exit(1)
+" "$repo_name" 2>/dev/null)
+    echo "${resolved:-$repo_name}"
 }
 
 ##############################################################################################################
@@ -497,7 +522,7 @@ install_user_code() {
 # Install user's code from a Python wheel in a GitHub release in a GitHub private repository.
 ##############################################################################################################
 install_user_code_from_package() {
-    project_name=$(git_project_name "$my_git_repo_url")
+    project_name=$(get_pip_package_name "$my_git_repo_url")
     current_version=$(pip show "$project_name" | grep Version)
 
     "$HOME/$venv_dir/scripts/github_installer.py"
@@ -570,7 +595,7 @@ install_user_code_from_git_clone() {
     ##########################################################################################################
     # [Re-]install the latest version of the user's code in the virtual environment
     # Extract the project name from the URL
-    project_name=$(git_project_name "$my_git_repo_url")
+    project_name=$(get_pip_package_name "$my_git_repo_url")
     current_version=$(pip show "$project_name" | grep Version)
 
     # If the current version is blank, remove any existing HASH_FILE which might be left over
@@ -646,6 +671,8 @@ install_user_code_from_git_clone() {
         echo "No changes on $my_git_branch ($REMOTE_HASH). Skipping install."
     fi
 
+    # Re-resolve package name after install (may not have been installed before).
+    project_name=$(get_pip_package_name "$my_git_repo_url")
     updated_version=$(pip show "$project_name" | grep Version)
     echo "User's code installation attempt completed. Current version: $updated_version"
 
