@@ -46,29 +46,29 @@ class Test_Orchestrator:
             sleep(10)
             orchestrator.stop_all()
             sleep(2)
-            # Check that we have data in the journals
+            # Check that we have data in the journals.
             # SCORE & SCORP & DUMML & DUMMF should contain data.
-            # DUMMD should be empty
-            # The files will have been pushed to the cloud, so we need to get
-            # the modified data on each journal.
+            # DUMMD should be empty.
+            # The files will have been pushed to the cloud, so we need to get the modified data on each
+            # journal.
             th.assert_records("expidite-journals", {"V3_DUMML*": 1, "V3_DUMMD*": 1})
             th.assert_records("expidite-upload", {"V3_DUMMF*": th.ONE_OR_MORE})
             th.assert_records("expidite-system-records", {"V3_SCORE*": 1, "V3_SCORP*": 1})
             th.assert_records("expidite-fair", {"V3_*": 1})
 
-            # Stop without start
+            # Stop without start.
             orchestrator.load_config()
             sleep(1)
             orchestrator.stop_all()
 
-            # Repeat runs of observability logging
+            # Repeat runs of observability logging.
             logger.info("sensor_test: # Repeat runs of observability logging")
             orchestrator.load_config()
             orchestrator.start_all()
             orchestrator.stop_all()
 
     def test_orchestrator_main(self) -> None:
-        # We reset cfg.my_device_id to override the computers mac_address
+        # We reset cfg.my_device_id to override the computers mac_address.
         # This is a test device defined to have a DummySensor.
         logger.info("Run test_orchestrator_main test")
         root_cfg.update_my_device_id("d01111111111")

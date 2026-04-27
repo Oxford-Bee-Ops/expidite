@@ -182,12 +182,11 @@ class VideoArucoProcessor(DataProcessor):
                 ):
                     all_markers_full_info.append(standard_columns | marker_csv_info)
 
-                # If requested, store a marked up version
-                # Color format is BGR
-                # Note - the red is quite orange (to my eyes). It also looks like some bad markers are red
-                # and some are orange, but I think that may be an optical effect when a marker changes from
-                # green in 1 frame to orange in the next frame, because it only happens on actual aruco
-                # markers.
+                # If requested, store a marked up version.
+                # Color format is BGR.
+                # Note - the red is quite orange (to my eyes). It also looks like some bad markers are red and
+                # some are orange, but I think that may be an optical effect when a marker changes from green
+                # in 1 frame to orange in the next frame, because it only happens on actual aruco markers.
                 if save_marked_up_video:
                     for csv_data, corner_set in zip(
                         frame_markers.known_markers.for_csv, frame_markers.known_markers.corner_sets
@@ -267,9 +266,8 @@ class VideoArucoProcessor(DataProcessor):
             # starting with top left).
             # So, the first corner is the top left corner, followed by the top right, bottom right and bottom
             # left."
-            # Note that this is top-left of the marker in the original
-            # printed version, not top-left of the detected square. i.e. if a marker is rotated, the marker
-            # top-left corner also rotates
+            # Note that this is top-left of the marker in the original printed version, not top-left of the
+            # detected square. i.e. if a marker is rotated, the marker top-left corner also rotates.
             corners_as_2d_array = corners_as_3d_array[0]
             top_left, top_right, bottom_right, bottom_left = corners_as_2d_array
             x_col = 0

@@ -16,7 +16,7 @@ from expidite_rpi import configuration as root_cfg
 ##############################################################################################################
 # Purpose: download and install the latest version of the user repo package from GitHub for the configured
 # branch.
-#############################################################################################################
+##############################################################################################################
 
 
 def _get_my_github_pat() -> str:

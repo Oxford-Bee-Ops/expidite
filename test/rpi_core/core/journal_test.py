@@ -76,7 +76,7 @@ class Test_journal:
             os.remove(test_file)
         test_input = {"key1": "value1", "key2": "value2"}
 
-        # Create journal object
+        # Create journal object.
         j = Journal(test_file, cached=False)
         j.add_row(test_input)
         assert len(j.get_data()) == 1
@@ -85,8 +85,8 @@ class Test_journal:
         j2.add_row(test_input)
         assert len(j2.get_data()) == 2
 
-        # We don't support having multiple instances of the same journal file
-        # open at the same time. We could, but we'd need to reload on every add_ operation
+        # We don't support having multiple instances of the same journal file open at the same time. We could,
+        # but we'd need to reload on every add_ operation.
         # So this test should return 2 (ie the original 1 row, plus the new row) not 3.
         j.add_row(test_input)
         assert len(j.get_data()) == 2

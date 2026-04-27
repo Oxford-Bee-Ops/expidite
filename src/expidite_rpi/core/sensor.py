@@ -172,7 +172,7 @@ class Sensor(Thread, DPnode, ABC):
         try:
             while self.continue_recording():
                 # Wait_for_press returns every so often to enable checking the continue_recording condition
-                # and clean shutdown.  If this is the case, rc will be false and we simply loop back and wait
+                # and clean shutdown. If this is the case, rc will be false and we simply loop back and wait
                 # again.
                 rc = button.wait_for_press()
                 if rc:

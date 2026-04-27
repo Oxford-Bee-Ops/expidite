@@ -453,10 +453,9 @@ class InteractiveMenu:
         click.echo(f"\n{dash_line}\n")
 
     def display_running_processes(self) -> None:
-        # Running processes
-        # Drop any starting / or . characters
-        # And convert the process list to a simple comma-seperated string with no {} or ' or "
-        # characters
+        # Running processes.
+        # Drop any starting / or . characters.
+        # And convert the process list to a simple comma-separated string with no {} or ' or " characters.
         if not root_cfg.system_cfg.is_valid:
             click.echo("System.cfg is not set. Please check your installation.")
             return
@@ -493,8 +492,8 @@ class InteractiveMenu:
             return
         scripts_dir = Path.home() / root_cfg.system_cfg.venv_dir / "scripts"
         if scripts_dir.exists():
-            # We need to trigger rpi_installer.sh if we're on a RPI,
-            # but trigger zero_installer.sh if we're on a Pi Zero.
+            # We need to trigger rpi_installer.sh if we're on a RPI, but trigger zero_installer.sh if we're on
+            # a Pi Zero.
             if root_cfg.running_on_pi_zero:
                 run_cmd_live_echo(f"sudo -u $USER {scripts_dir}/zero_installer.sh")
             else:

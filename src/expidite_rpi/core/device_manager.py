@@ -270,8 +270,8 @@ class DeviceManager:
             # -c 1 means ping once, -W 1 means timeout after 1 second
             ping_ok = os.system("ping -c 1 -W 1 8.8.8.8 1>/dev/null") == 0
             # Even if ICMP ping works, we still see situation where TCP can be failed (router issue).
-            # We can identify this by running ss -tpn and checking for connections in SYN_SENT state
-            # which indicates that the TCP handshake is not completing.
+            # We can identify this by running ss -tpn and checking for connections in SYN_SENT state which
+            # indicates that the TCP handshake is not completing.
             ss_ok = (
                 os.system("ss -tpn 2>/dev/null | grep SYN_SENT 1>/dev/null") != 0
             )  # OK if SYN_SENT not found.

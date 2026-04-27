@@ -49,8 +49,8 @@ class Test_example_device:
         # The example sensor produces:
         # - a stream of jpg files (EXAMPLE_FILE_DS_TYPE_ID)
         # - a stream of logs (EXAMPLE_LOG_DS_TYPE_ID).
-        # We save 100% of jpg file samples from the example sensor to expidite-upload
-        # but the originals all get deleted after processing by the example processor.
+        # We save 100% of jpg file samples from the example sensor to expidite-upload but the originals all
+        # get deleted after processing by the example processor.
         # The example processor takes the jpg files and saves:
         # - a df stream with "pixel_count" (EXAMPLE_DF_DS_TYPE_ID).
         rpi_emulator.assert_records("expidite-fair", {"V3_*": 1})

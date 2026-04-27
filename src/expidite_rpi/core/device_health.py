@@ -298,10 +298,10 @@ class DeviceHealth(Sensor):
                 usage = psutil.disk_usage(str(root_cfg.ROOT_WORKING_DIR))
                 sc_mount_size = f"{usage.total / (1024**3):.2f} GB"
 
-                # Running processes
-                # Drop any starting / or . characters
-                # And convert the process list to a simple comma-seperated string with no {} or ' or "
-                # characters
+                # Running processes.
+                # Drop any starting / or . characters.
+                # And convert the process list to a simple comma-separated string with no {} or ' or "
+                # characters.
                 if root_cfg.system_cfg:
                     process_set = utils.check_running_processes(
                         search_string=f"{root_cfg.system_cfg.my_start_script}"
@@ -448,8 +448,8 @@ class DeviceHealth(Sensor):
             output = utils.run_cmd(
                 cmd="nmcli -g SSID,IN-USE,SIGNAL device wifi | grep '*'", ignore_errors=True
             )
-            # The return output contains a string like "SSID:*:95". We need to strip out the ":*"
-            # and return just the SSID and the signal strength
+            # The return output contains a string like "SSID:*:95". We need to strip out the ":*" and return
+            # just the SSID and the signal strength.
             if output:
                 parts = output.split(":")
                 if len(parts) >= 3:

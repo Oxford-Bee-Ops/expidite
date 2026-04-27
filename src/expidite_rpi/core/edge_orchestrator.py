@@ -521,10 +521,10 @@ def main() -> None:
         logger.exception(f"{root_cfg.RAISE_WARN()}Sensor exception")
     finally:
         # To get here, we hit an exception on one thread or have been explicitly asked to stop.
-        # Notify systemd we are intentionally stopping — this disables the watchdog so systemd
-        # doesn't kill and restart the process during the graceful ~3-minute shutdown.
+        # Notify systemd we are intentionally stopping — this disables the watchdog so systemd doesn't kill
+        # and restart the process during the graceful ~3-minute shutdown.
         sdnotifier.notify("STOPPING=1")
-        # Tell all threads to terminate so we can cleanly restart all via cron
+        # Tell all threads to terminate so we can cleanly restart all via cron.
         if orchestrator is not None:
             logger.info("Edge orchestrator exiting; stopping all sensors and datastreams")
             orchestrator.stop_all()
@@ -534,7 +534,7 @@ def main() -> None:
 ##############################################################################################################
 # Main
 #
-# Use cfg to determine which sensors are installed on this device, and start the appropriate threads
+# Use cfg to determine which sensors are installed on this device, and start the appropriate threads.
 ##############################################################################################################
 # Main loop called from systemd on boot up
 if __name__ == "__main__":
