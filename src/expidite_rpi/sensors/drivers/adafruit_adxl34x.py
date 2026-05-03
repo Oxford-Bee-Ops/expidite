@@ -181,15 +181,16 @@ class ADXL345:
 
     def __init__(self, address: int = _ADXL345_DEFAULT_ADDRESS) -> None:
         if board is not None:
-            # CircuitPython/Raspberry Pi with Blinka
+            # CircuitPython/Raspberry Pi with Blinka.
             i2c = busio.I2C(board.SCL, board.SDA)
         else:
-            # Alternative implementation or raise appropriate error
-            raise RuntimeError("Board module not available - install adafruit-blinka for Raspberry Pi")
+            # Alternative implementation or raise appropriate error.
+            msg = "Board module not available - install adafruit-blinka for Raspberry Pi"
+            raise RuntimeError(msg)
 
         self._i2c = i2c_device.I2CDevice(i2c, address)
         self._buffer = bytearray(6)
-        # set the 'measure' bit in to enable measurement
+        # Set the 'measure' bit in to enable measurement.
         self._write_register_byte(_REG_POWER_CTL, 0x08)
         self._write_register_byte(_REG_INT_ENABLE, 0x0)
 
@@ -377,7 +378,8 @@ class ADXL345:
             self._write_register_byte(_REG_INT_ENABLE, active_interrupts)
             self._enabled_interrupts["tap"] = 2
         else:
-            raise ValueError("tap_count must be 1 for single tap or 2 for double tap")
+            msg = "tap_count must be 1 for single tap or 2 for double tap"
+            raise ValueError(msg)
 
     def disable_tap_detection(self) -> None:
         """Disable tap detection."""

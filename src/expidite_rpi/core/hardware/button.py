@@ -35,7 +35,8 @@ class ButtonInput:
             logger.info(f"Button initialized on GPIO {self.pin}")
         else:
             logger.warning("RPi.GPIO module could not be imported")
-            raise ImportError("RPi.GPIO library is required for ButtonInput but is not installed.") from None
+            msg = "RPi.GPIO library is required for ButtonInput but is not installed."
+            raise ImportError(msg) from None
 
     def is_pressed(self) -> bool:
         """Return True only on valid debounced press events."""

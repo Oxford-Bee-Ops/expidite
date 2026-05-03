@@ -96,7 +96,8 @@ class RpiCore:
         - Exception: If no configuration exists.
         """
         if not fleet_config:
-            raise ValueError("No configuration files provided.")
+            msg = "No configuration files provided."
+            raise ValueError(msg)
 
         success, error = root_cfg.check_keys()
         if not success:
@@ -123,7 +124,8 @@ class RpiCore:
         - Exception: If the RpiCore is not configured.
         """
         if not self._is_configured() or root_cfg.system_cfg is None:
-            raise ValueError("RpiCore must be configured before starting.")
+            msg = "RpiCore must be configured before starting."
+            raise ValueError(msg)
 
         RpiCore._check_for_abnormal_restart()
 

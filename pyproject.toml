@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "expidite"
-version = "0.1.211"
+version = "0.1.212"
 description = "Python module to support using Raspberry Pi for scientific data collection"
 readme = "README.md"
 requires-python = ">=3.13"
@@ -87,7 +87,6 @@ ignore = [
     # Rules that we don't want to enforce.
     "COM812",  # Little benefit.
     "D100", "D101", "D102", "D103", "D104", "D105", "D106", "D107",  # Public docstring.
-    "EM101",  # No benefit.
     "ERA",  # No benefit.
     "FBT",  # No benefit.
     "FIX",  # No benefit.
@@ -279,7 +278,7 @@ possibly-missing-attribute = "ignore"
 
 ##############################################################################################################
 # deadcode: unused code detection.
-# TODO: this tool generatea a lot of false positives - configuration is required to eliminate them.
+# TODO: this tool generates a lot of false positives - configuration is required to eliminate them.
 ##############################################################################################################
 [tool.deadcode]
 exclude = [".venv"]

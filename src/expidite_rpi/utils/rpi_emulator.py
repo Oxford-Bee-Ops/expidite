@@ -138,7 +138,8 @@ class RpiEmulator:
         else:
             cap = self.recording_cap
         if cap == -1:
-            raise ValueError("The recording cap is not set for that type_id. You'll be waiting forever!")
+            msg = "The recording cap is not set for that type_id. You'll be waiting forever!"
+            raise ValueError(msg)
         return self.recordings_saved.get(type_id, 0) >= cap
 
     @staticmethod

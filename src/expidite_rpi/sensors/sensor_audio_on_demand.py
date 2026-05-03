@@ -89,7 +89,8 @@ class AudioSensor(Sensor):
             # Find a USB audio device
             usb_str = utils.run_cmd("arecord -l | grep -i usb")
             if not usb_str:
-                raise RuntimeError("No USB audio device found for recording")
+                msg = "No USB audio device found for recording"
+                raise RuntimeError(msg)
             card_index = usb_str.split("card ")[1].split(":")[0].strip()
             device_index = usb_str.split("device ")[1].split(":")[0].strip()
             hw_index = f"hw:{card_index},{device_index}"

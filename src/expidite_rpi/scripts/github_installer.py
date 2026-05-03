@@ -27,7 +27,8 @@ def _get_my_github_pat() -> str:
         or len(root_cfg.keys.my_git_pat) == 0
         # or not isinstance(root_cfg.keys.my_git_pat, str)
     ):
-        raise ValueError("GitHub PAT missing from keys.env")
+        msg = "GitHub PAT missing from keys.env"
+        raise ValueError(msg)
     assert isinstance(root_cfg.keys.my_git_pat, str)
     return root_cfg.keys.my_git_pat
 
@@ -58,7 +59,8 @@ def _get_latest_user_repo_version(g: Github) -> tuple[str, GitRelease | None]:
     repo = g.get_repo(_get_repo_path())
     releases = repo.get_releases()
     if releases is None or releases.totalCount == 0:
-        raise RuntimeError("No releases found")
+        msg = "No releases found"
+        raise RuntimeError(msg)
 
     # Only interested in releases for the configured branch.
     my_git_branch = _get_my_git_banch()
@@ -89,7 +91,8 @@ def _download_and_install_package(release: GitRelease) -> None:
                     _run_package_post_install(local_wheel_path.stem.split("-")[0])
                     return
 
-    raise AssertionError("No user repo package found")
+    msg = "No user repo package found"
+    raise AssertionError(msg)
 
 
 def _install_package(local_wheel_path: Path) -> None:

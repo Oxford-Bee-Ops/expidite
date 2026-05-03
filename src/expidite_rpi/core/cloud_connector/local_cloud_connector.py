@@ -20,8 +20,9 @@ class LocalCloudConnector(CloudConnector):
         logger.debug("Creating LocalCloudConnector instance")
         super().__init__()
 
-        if root_cfg.my_device is None or root_cfg.system_cfg is None:
-            raise ValueError("System configuration not set; cannot connect to cloud")
+        if not root_cfg.system_cfg.is_valid:
+            msg = "System configuration not set; cannot connect to cloud"
+            raise ValueError(msg)
 
         self.local_cloud = (
             root_cfg.ROOT_WORKING_DIR

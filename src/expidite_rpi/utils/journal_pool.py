@@ -40,7 +40,8 @@ class JournalPool(ABC):
 
         The fields in each dictionary must match the DPtreeNodeCfg reqd_fields.
         """
-        raise AssertionError("Abstract method needs to be implemented")
+        msg = "Abstract method needs to be implemented"
+        raise AssertionError(msg)
 
     @abstractmethod
     def add_rows_from_df(self, stream: Stream, data: pd.DataFrame, timestamp: datetime | None = None) -> None:
@@ -48,17 +49,20 @@ class JournalPool(ABC):
 
         All data MUST relate to the same DAY as timestamp.
         """
-        raise AssertionError("Abstract method needs to be implemented")
+        msg = "Abstract method needs to be implemented"
+        raise AssertionError(msg)
 
     @abstractmethod
     def flush_journals(self) -> None:
         """Flush all journals to disk and onwards to archive."""
-        raise AssertionError("Abstract method needs to be implemented")
+        msg = "Abstract method needs to be implemented"
+        raise AssertionError(msg)
 
     @abstractmethod
     def stop(self) -> None:
         """Stop the JournalPool, flush all data and exit any threads."""
-        raise AssertionError("Abstract method needs to be implemented")
+        msg = "Abstract method needs to be implemented"
+        raise AssertionError(msg)
 
 
 class CloudJournalPool(JournalPool):

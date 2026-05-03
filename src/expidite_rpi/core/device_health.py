@@ -42,14 +42,11 @@ if root_cfg.running_on_rpi:
             logger.exception(f"{root_cfg.RAISE_WARN()}Failed to initialize journal reader")
             return logs
 
-        # Set filters
+        # Set filters.
         if since:
-            if isinstance(since, datetime):
-                reader.seek_realtime(since.timestamp())
-            else:
-                raise ValueError("The 'since' argument must be a datetime object.")
+            reader.seek_realtime(since.timestamp())
 
-        # Iterate through the logs
+        # Iterate through the logs.
         for entry in reader:
             priority = int(entry.get("PRIORITY", 9))
             message = entry.get("MESSAGE", "")

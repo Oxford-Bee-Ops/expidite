@@ -86,11 +86,10 @@ class DPtree:
         stream = src_node.get_stream(stream_index)
 
         if not self.sensor:
-            # New tree
+            # New tree.
             if not isinstance(src_node, Sensor):
-                raise ValueError(
-                    "The first connect() call must provide a Sensor object for the 'from' field."
-                )
+                msg = "The first connect() call must provide a Sensor object for the 'from' field."
+                raise ValueError(msg)
             self.sensor = src_node
         # The source should already exist in the tree.
         elif src_node not in self._nodes.values():

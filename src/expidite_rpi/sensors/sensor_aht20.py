@@ -68,7 +68,8 @@ class AHT20(Sensor):
     # Separate thread to log data
     def run(self) -> None:
         if board is None:
-            raise RuntimeError("AHT20 sensor requires the CircuitPython 'board' module on this device")
+            msg = "AHT20 sensor requires the CircuitPython 'board' module on this device"
+            raise RuntimeError(msg)
 
         i2c = board.I2C()
         sensor = adafruit_ahtx0.AHTx0(i2c, address=AHT20_SENSOR_INDEX)

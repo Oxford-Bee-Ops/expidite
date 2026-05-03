@@ -326,15 +326,17 @@ class LTR390Driver:  # pylint:disable=too-many-instance-attributes
 
     def __init__(self, address: int = _DEFAULT_I2C_ADDR) -> None:
         if board is not None:
-            # CircuitPython/Raspberry Pi with Blinka
+            # CircuitPython/Raspberry Pi with Blinka.
             i2c = busio.I2C(board.SCL, board.SDA)
         else:
-            # Alternative implementation or raise appropriate error
-            raise RuntimeError("Board module not available - install adafruit-blinka for Raspberry Pi")
+            # Alternative implementation or raise appropriate error.
+            msg = "Board module not available - install adafruit-blinka for Raspberry Pi"
+            raise RuntimeError(msg)
 
         self.i2c_device = i2c_device.I2CDevice(i2c, address)
         if self._id_reg != 0xB2:
-            raise RuntimeError("Unable to find LTR390; check your wiring")
+            msg = "Unable to find LTR390; check your wiring"
+            raise RuntimeError(msg)
 
         self._mode_cache: bool | None = None
         self.initialize()
@@ -346,7 +348,8 @@ class LTR390Driver:  # pylint:disable=too-many-instance-attributes
         self._reset()
         self._enable_bit = True
         if not self._enable_bit:
-            raise RuntimeError("Unable to enable sensor")
+            msg = "Unable to enable sensor"
+            raise RuntimeError(msg)
         self.set_mode(bool(UV))
         self.set_gain(Gain.GAIN_3X)  # type: ignore
 
@@ -378,7 +381,8 @@ class LTR390Driver:  # pylint:disable=too-many-instance-attributes
 
     def set_mode(self, value: bool) -> None:
         if value not in [ALS, UV]:
-            raise AttributeError("Mode must be ALS or UV")
+            msg = "Mode must be ALS or UV"
+            raise AttributeError(msg)
         if self._mode_cache != value:
             self._mode_bit = value
             self._mode_cache = value
@@ -414,7 +418,8 @@ class LTR390Driver:  # pylint:disable=too-many-instance-attributes
 
     def set_gain(self, value: int) -> None:
         if not Gain.is_valid(value):
-            raise AttributeError("gain must be a Gain")
+            msg = "gain must be a Gain"
+            raise AttributeError(msg)
         self._gain_bits = value
 
     @property
@@ -424,7 +429,8 @@ class LTR390Driver:  # pylint:disable=too-many-instance-attributes
 
     def set_resolution(self, value: int) -> None:
         if not Resolution.is_valid(value):
-            raise AttributeError("resolution must be a Resolution")
+            msg = "resolution must be a Resolution"
+            raise AttributeError(msg)
         self._resolution_bits = value
 
     def enable_alerts(self, enable: bool, source: bool, persistance: int) -> None:
@@ -442,7 +448,8 @@ class LTR390Driver:  # pylint:disable=too-many-instance-attributes
         elif source == UV:
             self._int_src_bits = 3
         else:
-            raise AttributeError("interrupt source must be UV or ALS")
+            msg = "interrupt source must be UV or ALS"
+            raise AttributeError(msg)
         self._int_persistance_bits = persistance
 
     @property
@@ -454,7 +461,8 @@ class LTR390Driver:  # pylint:disable=too-many-instance-attributes
 
     def set_measurement_delay(self, value: int) -> None:
         if not MeasurementDelay.is_valid(value):
-            raise AttributeError("measurement_delay must be a MeasurementDelay")
+            msg = "measurement_delay must be a MeasurementDelay"
+            raise AttributeError(msg)
         self._measurement_delay_bits = value
 
     @property
@@ -485,5 +493,6 @@ class LTR390Driver:  # pylint:disable=too-many-instance-attributes
 
     def set_window_factor(self, factor: float = 1) -> None:
         if factor < 1:
-            raise ValueError("window transmission factor must be a value of 1.0 or greater")
+            msg = "window transmission factor must be a value of 1.0 or greater"
+            raise ValueError(msg)
         self._window_factor = factor

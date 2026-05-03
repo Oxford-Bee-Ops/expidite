@@ -27,7 +27,8 @@ class ValidationRule(ABC):
             tuple: (bool, str) where the boolean indicates success (True) or failure (False),
                    and the string contains an error message if validation fails.
         """
-        raise NotImplementedError("Subclasses must implement the validate method.")
+        msg = "Subclasses must implement the validate method."
+        raise NotImplementedError(msg)
 
 
 ##############################################################################################################

@@ -26,11 +26,9 @@ class CloudConnector:
     _instance: Optional["CloudConnector"] = None
 
     def __init__(self) -> None:
-        if root_cfg.my_device is None:
-            raise ValueError("System configuration not set; cannot connect to cloud")
-
         if root_cfg.keys is None or root_cfg.keys.cloud_storage_key == root_cfg.FAILED_TO_LOAD:
-            raise ValueError("Cloud storage credentials not set; cannot connect to cloud")
+            msg = "Cloud storage credentials not set; cannot connect to cloud"
+            raise ValueError(msg)
 
         self._connection_string = root_cfg.keys.cloud_storage_key
         self._validated_containers: dict[str, ContainerClient] = {}

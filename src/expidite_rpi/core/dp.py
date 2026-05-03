@@ -56,4 +56,5 @@ class DataProcessor(DPnode, ABC):
 
         All DataProcessors must subclass this method.
         """
-        raise AssertionError("DataProcessor subclass must implement process_data()")
+        msg = "DataProcessor subclass must implement process_data()"
+        raise AssertionError(msg)

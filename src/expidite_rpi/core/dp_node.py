@@ -406,7 +406,7 @@ class DPnode:
             f"secondary_offset_index: {secondary_offset_index}, override_sampling: {override_sampling}"
         )
 
-        # Check that the file is present and not empty
+        # Check that the file is present and not empty.
         if not src_file.exists():
             msg = f"File {src_file} not found."
             raise FileNotFoundError(msg)
@@ -417,13 +417,7 @@ class DPnode:
             msg = f"File format {src_file.suffix} does not match expected suffix {suffix}."
             raise ValueError(msg)
 
-        # Check that the start_time and end_time are valid
-        if not isinstance(start_time, datetime):
-            raise TypeError("Start_time must be a valid datetime object.")
-        if end_time is not None and not isinstance(end_time, datetime):
-            raise TypeError("End_time must be a valid datetime object.")
-
-        # Check that the start_time and end_time are both timezone aware
+        # Check that the start_time and end_time are both timezone aware.
         if start_time.tzinfo is None:
             logger.warning(
                 f"{root_cfg.RAISE_WARN()}start_time must be timezone aware. "
