@@ -2,6 +2,7 @@
 # - Wifi
 # - LED indicator status
 import os
+import shlex
 from enum import IntEnum, auto
 from time import sleep
 
@@ -206,9 +207,9 @@ class DeviceManager:
             if client.ssid not in existing_connections:
                 logger.info(f"Adding client wifi connection {client.ssid} on {self.client_wlan}")
                 utils.run_cmd(
-                    f"sudo nmcli connection add con-name {client.ssid} "
-                    f"ifname {self.client_wlan} type wifi wifi.mode infrastructure wifi.ssid {client.ssid} "
-                    f"wifi-sec.key-mgmt wpa-psk wifi-sec.psk {client.pw} "
+                    f"sudo nmcli connection add con-name {shlex.quote(client.ssid)} "
+                    f"ifname {self.client_wlan} type wifi wifi.mode infrastructure wifi.ssid {shlex.quote(client.ssid)} "
+                    f"wifi-sec.key-mgmt wpa-psk wifi-sec.psk {shlex.quote(client.pw)} "
                     f"connection.autoconnect-priority {client.priority} "
                     f"ipv4.dns '8.8.8.8 8.8.4.4'"
                 )
@@ -377,7 +378,7 @@ class DeviceManager:
                 if client.ssid is not None and client.pw is not None:
                     logger.info(f"Connecting to {client.ssid}")
                     utils.run_cmd(
-                        f"sudo nmcli dev wifi connect {client.ssid} password {client.pw}",
+                        f"sudo nmcli dev wifi connect {shlex.quote(client.ssid)} password {shlex.quote(client.pw)}",
                         ignore_errors=True,
                     )
                     break
