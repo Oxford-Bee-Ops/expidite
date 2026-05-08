@@ -90,12 +90,12 @@ class Sensor(Thread, DPnode, ABC):
             Sensor.last_checked_review_mode = datetime.now(tz=UTC)
             Sensor.review_mode = root_cfg.REVIEW_MODE_FLAG.exists()
             if Sensor.review_mode:
-                # Check the timestamp of the flag file to ensure it is sufficiently recent
-                # We auto exit review mode if the flag file is stale (>30 mins)
+                # Check the timestamp of the flag file to ensure it is sufficiently recent.
+                # We auto exit review mode if the flag file is stale (>24 hours).
                 flag_age = datetime.now(tz=UTC) - datetime.fromtimestamp(
                     root_cfg.REVIEW_MODE_FLAG.stat().st_mtime, tz=UTC
                 )
-                if flag_age > timedelta(minutes=30):
+                if flag_age > timedelta(hours=24):
                     Sensor.review_mode = False
                     root_cfg.REVIEW_MODE_FLAG.unlink(missing_ok=True)
                     logger.info("Review mode flag file is stale; cleaning up")

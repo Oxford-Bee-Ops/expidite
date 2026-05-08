@@ -626,7 +626,7 @@ class InteractiveMenu:
         click.echo("For example, the video sensor saves images to the cloud every few seconds so that")
         click.echo("the user positioning a camera can see what the camera is seeing in near-real time. ")
         click.echo("I2C sensors will typically increase their logging frequency.")
-        click.echo("\nReview mode automatically exits after a timeout period (e.g. 30 minutes).")
+        click.echo("\nReview mode automatically exits after a timeout period (24 hours).")
         click.echo("However you would ideally exit review mode manually using this CLI.\n")
         click.echo(f"{dash_line}\n")
 
