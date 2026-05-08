@@ -52,6 +52,22 @@ fi
 SERVICE_USER="bee-ops"
 
 ##############################################################################################################
+# # Ensure passwordless sudo is configured (Raspberry Pi Imager does not do this automatically).
+##############################################################################################################
+ensure_passwordless_sudo() {
+  echo_header
+    if ! sudo -n true 2>/dev/null; then
+        echo "Passwordless sudo not configured. Setting up sudoers configuration..."
+        # This requires entering the password once to set up passwordless sudo.
+        echo "$SERVICE_USER ALL=(ALL) NOPASSWD: ALL" | sudo tee /etc/sudoers.d/010_pi-nopasswd > /dev/null
+        sudo chmod 440 /etc/sudoers.d/010_pi-nopasswd
+        echo "Passwordless sudo configured successfully."
+    else
+        echo "Passwordless sudo already configured."
+    fi
+}
+
+##############################################################################################################
 # Prevent the Expidite RpiCore process from running while rpi_installer runs.
 ##############################################################################################################
 stop_expidite_service() {
@@ -92,23 +108,6 @@ check_prerequisites() {
     if ! command -v sudo >/dev/null 2>&1; then
         echo "Error: sudo is not installed or not available"
         exit 1
-    fi
-
-    # Ensure passwordless sudo is configured (Raspberry Pi Imager v2.0.8+ no longer does this automatically)
-    if [ "$EUID" -eq 0 ]; then
-        # Script is running as root - we can set up passwordless sudo without prompting
-        echo "Running as root. Setting up passwordless sudo for $SERVICE_USER..."
-        echo "$SERVICE_USER ALL=(ALL) NOPASSWD: ALL" > /etc/sudoers.d/010_pi-nopasswd
-        chmod 440 /etc/sudoers.d/010_pi-nopasswd
-        echo "Passwordless sudo configured successfully."
-    elif ! sudo -n true 2>/dev/null; then
-        echo "Passwordless sudo not configured. Setting up sudoers configuration..."
-        # This requires entering password once to set up passwordless sudo
-        echo "$SERVICE_USER ALL=(ALL) NOPASSWD: ALL" | sudo tee /etc/sudoers.d/010_pi-nopasswd > /dev/null
-        sudo chmod 440 /etc/sudoers.d/010_pi-nopasswd
-        echo "Passwordless sudo configured successfully."
-    else
-        echo "Passwordless sudo already configured."
     fi
 
     # Check ssh is enabled
@@ -1085,6 +1084,7 @@ echo_header() {
 #
 ##############################################################################################################
 echo_header "Starting RPi installer.  (os_update=$os_update)"
+ensure_passwordless_sudo
 stop_expidite_service
 sleep_for_ten_seconds
 check_prerequisites
