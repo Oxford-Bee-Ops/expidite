@@ -445,7 +445,7 @@ class ADXL345:
         with self._i2c as i2c:
             i2c.write(self._buffer, start=0, end=1)
             i2c.readinto(self._buffer, start=0, end=length)
-            return self._buffer[0:length]
+            return bytes(self._buffer[0:length])
 
     def _write_register_byte(self, register: int, value: int) -> None:
         self._buffer[0] = register & 0xFF
