@@ -54,6 +54,22 @@ SERVICE_USER="bee-ops"
 INSTALLER_PATH="$(readlink -f "${BASH_SOURCE[0]}")"
 
 ##############################################################################################################
+# # Ensure passwordless sudo is configured (Raspberry Pi Imager does not do this automatically).
+##############################################################################################################
+ensure_passwordless_sudo() {
+  echo_header
+    if ! sudo -n true 2>/dev/null; then
+        echo "Passwordless sudo not configured. Setting up sudoers configuration..."
+        # This requires entering the password once to set up passwordless sudo.
+        echo "$SERVICE_USER ALL=(ALL) NOPASSWD: ALL" | sudo tee /etc/sudoers.d/010_pi-nopasswd > /dev/null
+        sudo chmod 440 /etc/sudoers.d/010_pi-nopasswd
+        echo "Passwordless sudo configured successfully."
+    else
+        echo "Passwordless sudo already configured."
+    fi
+}
+
+##############################################################################################################
 # Prevent the Expidite RpiCore process from running while rpi_installer runs.
 ##############################################################################################################
 stop_expidite_service() {
@@ -1111,6 +1127,7 @@ echo_header() {
 #
 ##############################################################################################################
 echo_header "Starting Zero installer.  (os_update=$os_update)"
+ensure_passwordless_sudo
 stop_expidite_service
 sleep_for_ten_seconds
 check_prerequisites

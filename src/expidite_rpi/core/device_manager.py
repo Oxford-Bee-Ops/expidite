@@ -106,16 +106,19 @@ class DeviceManager:
     ##########################################################################################################
     # LED management functions
     #
-    # LED stat FSM table
+    # LED state FSM table
     #
-    # State:            |Booting	 |Wifi up	    |Internet up	|Wifi failed
-    # LED  :            |Red*        |Green*	    |Green	        |Red**
-    # Input[WifiUp]	    |Wifi up	 |-	            |-              |Wifi up
-    # Input[GoodPing]   |-	         |Internet up	|-	            |-
-    # Input[PingFail] 	|-	         |-     	    |Wifi up	    |-
-    # Input[WifiDown]	|-	         |Wifi failed	|Wifi failed
+    # State:            |Booting	 |Wifi up	    |Internet up	|Wifi failed|
+    # LED  :            |Red*        |Green*	    |Green	        |Red**      |
+    # Input[WifiUp]	    |Wifi up	 |-	            |-              |Wifi up    |
+    # Input[GoodPing]   |-	         |Internet up	|-	            |-          |
+    # Input[PingFail] 	|-	         |-     	    |Wifi up	    |-          |
+    # Input[WifiDown]	|-	         |Wifi failed	|Wifi failed    |           |
     # *=blinking
     # **=slow blinking
+    #
+    # If, and only if, internet is up, then if device is in review mode, indicate that with a 3s on / 3s off
+    # blink of the red LED.
     ##########################################################################################################
 
     # This function gets called every second.
@@ -138,8 +141,12 @@ class DeviceManager:
                     # Red should be blinking
                     self.set_led_status("red", "blink:2.0:0.25")
                 case DeviceState.INTERNET_UP:
-                    # Happy status - blink once every 10s to show we're alive
-                    self.set_led_status("red", "blink:10.0:0.25")
+                    if root_cfg.REVIEW_MODE_FLAG.exists():
+                        # 3s on, 3s off, to indicate device is in review mode.
+                        self.set_led_status("red", "blink:6.0:3.0")
+                    else:
+                        # Happy status - blink once every 10s to show we're alive.
+                        self.set_led_status("red", "blink:10.0:0.25")
                 case DeviceState.WIFI_FAILED:
                     # Red should be on solid to indicate an issue
                     self.set_led_status("red", "blink:3.0:2.0")
@@ -157,8 +164,12 @@ class DeviceManager:
                     # Green should be blinking; red should be off
                     self.set_led_status("green", "blink:1.0:0.5")
                 case DeviceState.INTERNET_UP:
-                    # Green should be on; red should be off
-                    self.set_led_status("green", "on")
+                    if root_cfg.REVIEW_MODE_FLAG.exists():
+                        # 3s on, 3s off, to indicate device is in review mode.
+                        self.set_led_status("red", "blink:6.0:3.0")
+                    else:
+                        # Green should be on; red should be off.
+                        self.set_led_status("green", "on")
                 case DeviceState.WIFI_FAILED:
                     # Green should be off; red should be on
                     self.set_led_status("red", "on")
@@ -208,7 +219,8 @@ class DeviceManager:
                 wifi_security_args = self._get_wifi_security_args(client.pw)
                 utils.run_cmd(
                     f"sudo nmcli connection add con-name {shlex.quote(client.ssid)} "
-                    f"ifname {self.client_wlan} type wifi wifi.mode infrastructure wifi.ssid {shlex.quote(client.ssid)} "
+                    f"ifname {self.client_wlan} type wifi wifi.mode infrastructure "
+                    f"wifi.ssid {shlex.quote(client.ssid)} "
                     f"{wifi_security_args} "
                     f"connection.autoconnect-priority {client.priority} "
                     f"ipv4.dns '8.8.8.8 8.8.4.4'"
