@@ -2,9 +2,9 @@ from types import SimpleNamespace
 
 import pytest
 
-from expidite_rpi.core.device_config_objects import WifiClient
-from expidite_rpi.core import configuration as root_cfg
+import expidite_rpi.core.configuration as root_cfg
 from expidite_rpi.core import device_manager
+from expidite_rpi.core.device_config_objects import WifiClient
 
 logger = root_cfg.setup_logger("expidite")
 
@@ -23,6 +23,11 @@ class Test_device_manager:
 
         commands: list[str] = []
 
+        def run_cmd_mock(cmd: str, ignore_errors: bool = False, grep_strs: list[str] | None = None) -> str:
+            del ignore_errors, grep_strs
+            commands.append(cmd)
+            return ""
+
         monkeypatch.setattr(
             device_manager.root_cfg,
             "my_device",
@@ -31,7 +36,7 @@ class Test_device_manager:
         monkeypatch.setattr(
             device_manager.utils,
             "run_cmd",
-            lambda cmd, ignore_errors=False, grep_strs=None: commands.append(cmd) or "",
+            run_cmd_mock,
         )
 
         manager.inject_wifi_clients()
@@ -50,11 +55,16 @@ class Test_device_manager:
 
         commands: list[str] = []
 
+        def run_cmd_mock(cmd: str, ignore_errors: bool = False, grep_strs: list[str] | None = None) -> str:
+            del ignore_errors, grep_strs
+            commands.append(cmd)
+            return ""
+
         monkeypatch.setattr(device_manager, "sleep", lambda _: None)
         monkeypatch.setattr(
             device_manager.utils,
             "run_cmd",
-            lambda cmd, ignore_errors=False, grep_strs=None: commands.append(cmd) or "",
+            run_cmd_mock,
         )
 
         manager.attempt_wifi_recovery()
