@@ -198,7 +198,6 @@ class DeviceManager:
                 or client.pw is None
                 or client.ssid == ""
                 or client.priority == 0
-                or client.pw == ""
             ):
                 logger.warning(f"Skipping invalid wifi client: {client}")
                 continue
@@ -206,15 +205,21 @@ class DeviceManager:
             # Configure the wifi client
             if client.ssid not in existing_connections:
                 logger.info(f"Adding client wifi connection {client.ssid} on {self.client_wlan}")
+                wifi_security_args = self._get_wifi_security_args(client.pw)
                 utils.run_cmd(
                     f"sudo nmcli connection add con-name {shlex.quote(client.ssid)} "
                     f"ifname {self.client_wlan} type wifi wifi.mode infrastructure wifi.ssid {shlex.quote(client.ssid)} "
-                    f"wifi-sec.key-mgmt wpa-psk wifi-sec.psk {shlex.quote(client.pw)} "
+                    f"{wifi_security_args} "
                     f"connection.autoconnect-priority {client.priority} "
                     f"ipv4.dns '8.8.8.8 8.8.4.4'"
                 )
             else:
                 logger.info(f"Client wifi connection {client.ssid} already exists")
+
+    def _get_wifi_security_args(self, password: str) -> str:
+        if password == "":
+            return "wifi-sec.key-mgmt none"
+        return f"wifi-sec.key-mgmt wpa-psk wifi-sec.psk {shlex.quote(password)}"
 
     def set_wifi_status(self, wifi_up: bool) -> None:
         if wifi_up:
@@ -377,8 +382,9 @@ class DeviceManager:
             for client in self.wifi_clients:
                 if client.ssid is not None and client.pw is not None:
                     logger.info(f"Connecting to {client.ssid}")
+                    wifi_connect_args = self._get_wifi_connect_args(client.pw)
                     utils.run_cmd(
-                        f"sudo nmcli dev wifi connect {shlex.quote(client.ssid)} password {shlex.quote(client.pw)}",
+                        f"sudo nmcli dev wifi connect {shlex.quote(client.ssid)}{wifi_connect_args}",
                         ignore_errors=True,
                     )
                     break
@@ -388,6 +394,11 @@ class DeviceManager:
             logger.info("Restarting NetworkManager")
             utils.run_cmd("sudo systemctl restart NetworkManager", ignore_errors=True)
             sleep(1)
+
+    def _get_wifi_connect_args(self, password: str) -> str:
+        if password == "":
+            return ""
+        return f" password {shlex.quote(password)}"
 
     def action_on_ping_ok(self) -> None:
         # Track ping stats for logging purposes
