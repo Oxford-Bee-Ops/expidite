@@ -89,6 +89,8 @@ stop_web_service() {
   if systemctl is-active --quiet expidite-web.service; then
       sudo systemctl stop expidite-web.service || echo "Warning: failed to stop expidite-web.service"
   fi
+  # Reset the restart counter so the upgrade isn't mistaken for an abnormal restart.
+  sudo systemctl reset-failed expidite-web.service 2>/dev/null || true
 }
 
 ##############################################################################################################
@@ -1004,8 +1006,6 @@ EOF
 
     sudo systemctl daemon-reload
     sudo systemctl enable expidite-web.service
-    sudo systemctl start expidite-web.service && echo "expidite-web.service installed, enabled and started." \
-        || echo "Warning: failed to start expidite-web.service"
 }
 
 ##############################################################################################################
@@ -1040,13 +1040,15 @@ auto_start_if_requested() {
 
     if [ "$auto_start" == "Yes" ]; then
         install_expidite_service
+        install_web_service
 
         # start is idempotent (no-op if already running).
         echo "Auto-starting Expidite RpiCore..."
         sudo systemctl start expidite.service && echo "Expidite RpiCore started (or already running)." \
             || echo "Warning: systemctl start expidite.service failed; check 'journalctl -u expidite'"
 
-        install_web_service
+        sudo systemctl start expidite-web.service && echo "Expidite Web Service started (or already running)." \
+            || echo "Warning: failed to start expidite-web.service; check 'journalctl -u expidite-web"
     else
         echo "Auto-start is not enabled in system.cfg or not appropriate to this install type."
         remove_expidite_service
