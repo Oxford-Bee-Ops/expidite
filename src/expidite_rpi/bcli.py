@@ -654,7 +654,7 @@ class InteractiveMenu:
             click.echo("Do you want to enter review mode? (Y/N)")
             char = click.getchar().lower()
             if char == "y":
-                click.echo("Entering review mode..")
+                click.echo("Entering review mode...")
                 self.enter_review_mode()
                 click.echo("Review mode enabled.")
             else:
