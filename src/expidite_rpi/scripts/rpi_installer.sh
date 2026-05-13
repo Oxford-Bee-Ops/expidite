@@ -749,12 +749,28 @@ create_mount() {
 
     # Are we mounting on SSD or RAM disk?
     if grep -qs "/dev/sda" /etc/mtab; then
-        echo "Mounted on SSD; no further action reqd."
+        echo "Mounted on SSD; no further action required."
     else
         echo "Running on SD card. Mount the RAM disk."
-        # All devices have a minimum RAM of 4GB, so /dev/shm/ defaults to 2GB
-        # We reduce this to 500M and assign 1.5GB to /expidite
+        # We support Raspberry Pi with 2GB or more of RAM. Override the default /dev/shm/ allocation,
+        # depending on how much RAM the device has.
+
+        # TODO We reduce this to 500M and assign 1.5GB to /expidite
         mount_size="1200M"
+        total_ram_in_mb=$(free -m | awk '/^Mem:/{print $2}')
+
+        # Determine mount size based on RAM. The reported RAM value is usually slightly less than the
+        # advertised size, so we use thresholds for the comparison.
+        # In future we may want to allow more on higher RAM devices.
+        if [ "$total_ram_in_mb" -le 2100 ]; then
+            mount_size="1000M"
+        else
+            # NICKB CHANGE BACK TO mount_size="1200M"
+            mount_size="1400M"
+        fi
+
+        echo "Detected ${total_ram_in_mb}MB RAM. Setting mount_size to $mount_size."
+
         if grep -Eqs "$mountpoint.*$mount_size" /etc/fstab; then
             echo "The mount point already exists in fstab with the correct size."
         else
