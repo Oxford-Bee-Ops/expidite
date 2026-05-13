@@ -212,10 +212,14 @@ class InteractiveMenu:
 
     def __init__(self) -> None:
         self.sc = RpiCore()
+        logger.info("NICKB-001")
         inventory = root_cfg.load_configuration()
+        logger.info("NICKB-002")
         logger.debug(f"Inventory: {inventory}")
         if inventory:
+            logger.info("NICKB-003")
             self.sc.configure(inventory)
+            logger.info("NICKB-004")
 
     ##########################################################################################################
     # Main menu functions
@@ -919,7 +923,9 @@ class InteractiveMenu:
         # click.clear()
 
         # Check if we need to setup keys or git repo or inventory
+        logger.info("NICKB-IM-100")
         check_if_setup_required()
+        logger.info("NICKB-IM-101")
 
         # Display status
         click.echo(f"{dash_line}")
