@@ -408,18 +408,25 @@ my_device: DeviceCfg = DUMMY_DEVICE
 
 def load_configuration() -> list[DeviceCfg] | None:
     """Load the inventory using the my_fleet_config value defined in SystemCfg class."""
+    logger.info(f"NICKB-LC-001")
     inventory: list[DeviceCfg] = []
     if system_cfg and system_cfg.my_fleet_config and system_cfg.my_fleet_config != FAILED_TO_LOAD:
+        logger.info(f"NICKB-LC-002")
         # Try to load the fleet config by instantiating the class
         try:
+            logger.info(f"NICKB-LC-003")
             module_path, obj_name = system_cfg.my_fleet_config.rsplit(".", 1)
+            logger.info(f"NICKB-LC-004: {module_path}")
+            logger.info(f"NICKB-LC-005: {obj_name}")
             module = importlib.import_module(module_path)
+            logger.info(f"NICKB-LC-006: {module}")
             inventory = getattr(module, obj_name)
+            logger.info(f"NICKB-LC-007: {inventory}")
         except Exception:
             logger.exception(f"{RAISE_WARN()}Failed to load config from {system_cfg.my_fleet_config}")
     else:
         logger.error(f"{RAISE_WARN()}my_fleet_config not set in {SYSTEM_CFG_FILE}")
-
+    logger.info(f"NICKB-LC-009")
     return inventory
 
 
