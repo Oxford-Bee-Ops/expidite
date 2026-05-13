@@ -584,6 +584,11 @@ class InteractiveMenu:
         if pkill and root_cfg.system_cfg:
             run_cmd(f"sudo pkill -f 'python -m {root_cfg.system_cfg.my_start_script}'")
 
+    def restart_rpi_core(self, pkill: bool) -> None:
+        self.stop_rpi_core(pkill)
+        time.sleep(2)  # Give it a chance to exit.
+        self.start_rpi_core()
+
     def enable_rpi_connect(self) -> None:
         """Enable the RPi Connect service."""
         click.echo("Enabling RPi Connect service...")
@@ -602,13 +607,15 @@ class InteractiveMenu:
 
     def enter_review_mode(self) -> None:
         """Enter review mode by setting the current timestamp in the review mode flag file."""
-        # Write the current timestamp to the review mode flag file
+        # Write the current timestamp to the review mode flag file.
         root_cfg.REVIEW_MODE_FLAG.write_text(str(int(time.time())))
+        self.restart_rpi_core(pkill=True)
 
     def exit_review_mode(self) -> None:
         """Exit review mode by deleting the review mode flag file."""
         if root_cfg.REVIEW_MODE_FLAG.exists():
             root_cfg.REVIEW_MODE_FLAG.unlink()
+            self.restart_rpi_core(pkill=True)
 
     def review_mode(self) -> None:
         """Manage entering and exiting review mode.
@@ -618,11 +625,11 @@ class InteractiveMenu:
         name so that the user positioning a camera can see what the camera is seeing in near-real time.
         I2C sensors will typically increase their logging frequency to help with manual review.
 
-        Review mode automatically exits after a timeout period (e.g. 30 minutes) to avoid cases
-        where the device is unexpectedly left in review mode.
+        Review mode automatically exits after a timeout period (e.g. 24 hours) to avoid cases where the device
+        is unintentionally left in review mode.
 
-        Review mode is set via the BCLI. The BCLI also helps the user understand how to see the
-        output from the sensors in review mode.
+        Review mode is set via the BCLI. The BCLI also helps the user understand how to see the output from
+        the sensors in review mode.
         """
         click.echo(f"{dash_line}")
         click.echo("# REVIEW MODE")
@@ -648,21 +655,20 @@ class InteractiveMenu:
             click.echo("Do you want to enter review mode? (Y/N)")
             char = click.getchar().lower()
             if char == "y":
-                click.echo("Entering review mode")
+                click.echo("Entering review mode..")
                 self.enter_review_mode()
-                click.echo("Review mode may take up to ~10mins to become active.")
-                click.echo("As an alternative, you can restart the device to enter review mode immediately.")
+                click.echo("Review mode enabled.")
             else:
                 click.echo("Exiting without entering review mode.")
                 return
 
-        # Offer the user the option to watch the sensor logs in real time
+        # Offer the user the option to watch the sensor logs in real time.
         click.echo("Do you want to monitor the output from the sensors now they're in review mode? (Y/N)")
         char = click.getchar().lower()
         if char == "y":
             click.echo("Monitoring sensor output...")
-            # Start monitoring sensor output by calling the display_sensor_logs function
-            # Strip everything before "Save log:" and exclude SCORE and SCORP logs
+            # Start monitoring sensor output by calling the display_sensor_logs function.
+            # Strip everything before "Save log:" and exclude SCORE and SCORP logs.
             run_cmd_live_echo(
                 "journalctl -f | grep 'Save log:' | grep -v SCORE | grep -v SCORP | sed 's/.*Save log: //'"
             )
