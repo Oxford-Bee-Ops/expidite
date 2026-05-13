@@ -361,7 +361,7 @@ def _load_system_cfg() -> SystemCfg:
     try:
         # Use the Keys class to load the configuration
         logger.info(f"Loading {SYSTEM_CFG_FILE}...")
-        logger.info(f"NICKB-CONFIG-001")
+        logger.info("NICKB-CONFIG-001")
         cfg = SystemCfg(_env_file=SYSTEM_CFG_FILE, _env_file_encoding="utf-8")  # type: ignore
         # Everything else has defaults, so just check the mandatory fields have been loaded.
         cfg.is_valid = FAILED_TO_LOAD not in {cfg.my_git_repo_url, cfg.my_fleet_config, cfg.my_start_script}
@@ -408,13 +408,13 @@ my_device: DeviceCfg = DUMMY_DEVICE
 
 def load_configuration() -> list[DeviceCfg] | None:
     """Load the inventory using the my_fleet_config value defined in SystemCfg class."""
-    logger.info(f"NICKB-LC-001")
+    logger.info("NICKB-LC-001")
     inventory: list[DeviceCfg] = []
     if system_cfg and system_cfg.my_fleet_config and system_cfg.my_fleet_config != FAILED_TO_LOAD:
-        logger.info(f"NICKB-LC-002")
+        logger.info("NICKB-LC-002")
         # Try to load the fleet config by instantiating the class
         try:
-            logger.info(f"NICKB-LC-003")
+            logger.info("NICKB-LC-003")
             module_path, obj_name = system_cfg.my_fleet_config.rsplit(".", 1)
             logger.info(f"NICKB-LC-004: {module_path}")
             logger.info(f"NICKB-LC-005: {obj_name}")
@@ -426,7 +426,7 @@ def load_configuration() -> list[DeviceCfg] | None:
             logger.exception(f"{RAISE_WARN()}Failed to load config from {system_cfg.my_fleet_config}")
     else:
         logger.error(f"{RAISE_WARN()}my_fleet_config not set in {SYSTEM_CFG_FILE}")
-    logger.info(f"NICKB-LC-009")
+    logger.info("NICKB-LC-009")
     return inventory
 
 

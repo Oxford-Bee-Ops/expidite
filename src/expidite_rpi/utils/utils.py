@@ -12,7 +12,6 @@ import psutil
 
 from expidite_rpi.core import api
 from expidite_rpi.core import configuration as root_cfg
-from expidite_rpi.utils.rpi_emulator import RpiEmulator
 
 logger = root_cfg.setup_logger("expidite")
 
@@ -72,6 +71,8 @@ def run_cmd(cmd: str, ignore_errors: bool = False, grep_strs: list[str] | None =
     """
     # In test mode, we stub out commands so that we can run more realistic test scenarios.
     if root_cfg.ST_MODE == root_cfg.SOFTWARE_TEST_MODE.TESTING:
+        from expidite_rpi.utils.rpi_emulator import RpiEmulator
+
         harness = RpiEmulator.get_instance()
         return harness.run_cmd_test_stub(cmd, ignore_errors, grep_strs)
 

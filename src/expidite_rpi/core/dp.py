@@ -2,12 +2,14 @@ from __future__ import annotations
 
 from abc import ABC, abstractmethod
 from pathlib import Path
-
-import pandas as pd
+from typing import TYPE_CHECKING
 
 from expidite_rpi.core import configuration as root_cfg
 from expidite_rpi.core.dp_config_objects import DataProcessorCfg
 from expidite_rpi.core.dp_node import DPnode
+
+if TYPE_CHECKING:
+    import pandas as pd
 
 logger = root_cfg.setup_logger("expidite")
 
