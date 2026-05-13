@@ -95,18 +95,15 @@ class RpiCore:
         - Exception: If the RpiCore is running (and force_update is not set).
         - Exception: If no configuration exists.
         """
-        logger.info("NICKB-CONFIG-002")
         if not fleet_config:
             msg = "No configuration files provided."
             raise ValueError(msg)
 
         success, error = root_cfg.check_keys()
-        logger.info("NICKB-CONFIG-003")
         if not success:
             raise ValueError(error)
 
         # Find the config for this device
-        logger.info("NICKB-CONFIG-004")
         logger.info(f"TEST_CREATE of fleet config with {len(fleet_config)} devices.")
         is_valid, errors = self.test_configuration(fleet_config, root_cfg.my_device_id)
         if not is_valid:
@@ -115,9 +112,7 @@ class RpiCore:
         logger.info("Completed TEST_CREATE of fleet config.")
 
         # Load the configuration
-        logger.info("NICKB-CONFIG-005")
         root_cfg.set_inventory(fleet_config)
-        logger.info("NICKB-CONFIG-006")
 
     def start(self) -> None:
         """Start the rpi_core to begin data collection.
