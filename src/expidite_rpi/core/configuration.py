@@ -361,6 +361,7 @@ def _load_system_cfg() -> SystemCfg:
     try:
         # Use the Keys class to load the configuration
         logger.info(f"Loading {SYSTEM_CFG_FILE}...")
+        logger.info(f"NICKB-CONFIG-001")
         cfg = SystemCfg(_env_file=SYSTEM_CFG_FILE, _env_file_encoding="utf-8")  # type: ignore
         # Everything else has defaults, so just check the mandatory fields have been loaded.
         cfg.is_valid = FAILED_TO_LOAD not in {cfg.my_git_repo_url, cfg.my_fleet_config, cfg.my_start_script}
