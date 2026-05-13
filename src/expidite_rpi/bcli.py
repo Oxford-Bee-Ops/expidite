@@ -544,7 +544,7 @@ class InteractiveMenu:
                 click.echo("Exiting...")
                 return
             else:
-                click.echo(f"Found {my_start_script}. Starting RpiCore...")
+                click.echo(f"Starting RpiCore ({my_start_script})...")
                 if root_cfg.running_on_windows:
                     click.echo("This command only works on Linux. Exiting...")
                     return
