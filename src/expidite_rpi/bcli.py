@@ -25,7 +25,7 @@ from expidite_rpi.utils.utils_clean import disable_console_logging
 
 logger = root_cfg.setup_logger("expidite")
 
-dash_line = "########################################################"
+dash_line = "#" * 120
 header = dash_line + "\n\n"
 
 ##############################################################################################################
@@ -568,7 +568,10 @@ class InteractiveMenu:
 
     def stop_rpi_core(self, pkill: bool) -> None:
         """Stop the RpiCore service."""
-        click.echo("Stopping RpiCore... this may take up to 3 minutes to complete.")
+        if pkill:
+            click.echo("Stopping RpiCore...")
+        else:
+            click.echo("Stopping RpiCore... this may take up to 3 minutes to complete.")
         # Touch the stop file so the process shuts down gracefully.
         root_cfg.STOP_EXPIDITE_FLAG.touch()
 
