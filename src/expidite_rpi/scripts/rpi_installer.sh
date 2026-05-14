@@ -328,8 +328,8 @@ install_os_packages() {
         -o Dpkg::Options::="--force-confdef" \
         -o Dpkg::Options::="--force-confold" \
         install -y \
-        pip git libsystemd-dev ffmpeg python3-scipy python3-pandas \
-        libcamera-dev python3-picamera2 python3-smbus || { echo "Failed to install sensor packages"; }
+        pip git libsystemd-dev ffmpeg python3-scipy libcamera-dev python3-picamera2 \
+        python3-smbus || { echo "Failed to install sensor packages"; }
     # If we install the lite version (no desktop), we need to install the full version of rpicam-apps
     # Otherwise we get ERROR: *** Unable to find an appropriate H.264 codec ***
     sudo apt-get purge -y rpicam-apps-lite || { echo "Failed to remove rpicam-apps-lite"; }
