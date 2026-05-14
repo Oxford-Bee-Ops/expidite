@@ -1055,18 +1055,25 @@ auto_start_if_requested() {
 
     if [ "$auto_start" == "Yes" ]; then
         install_expidite_service
-        install_web_service
 
         # start is idempotent (no-op if already running).
         echo "Auto-starting Expidite RpiCore..."
         sudo systemctl start expidite.service && echo "Expidite RpiCore started (or already running)." \
             || echo "Warning: systemctl start expidite.service failed; check 'journalctl -u expidite'"
-
-        sudo systemctl start expidite-web.service && echo "Expidite Web Service started (or already running)." \
-            || echo "Warning: failed to start expidite-web.service; check 'journalctl -u expidite-web"
     else
         echo "Auto-start is not enabled in system.cfg or not appropriate to this install type."
         remove_expidite_service
+    fi
+
+    if [ "$auto_start_web_service" == "Yes" ]; then
+        install_web_service
+
+        # start is idempotent (no-op if already running).
+        echo "Auto-starting Expidite Web Service..."
+        sudo systemctl start expidite-web.service && echo "Expidite Web Service started (or already running)." \
+            || echo "Warning: failed to start expidite-web.service; check 'journalctl -u expidite-web"
+    else
+        echo "Auto-start Web Service is not enabled in system.cfg or not appropriate to this install type."
         remove_web_service
     fi
 }

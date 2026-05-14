@@ -151,6 +151,7 @@ KE=keys.env; SC=system.cfg; FC=Fleet config
 | Cloud storage access key | KE:`cloud_storage_key` | The Shared Access Signature that provides access to your Azure cloud storage
 | GitHub PAT | KE:`my_git_pat` | The GitHub PAT that provides access to GitHub releases for `my_git_repo_url`.
 | Auto-start RpiCore | SC:`auto_start` | Starts RpiCore automatically after reboot; unless manual mode invoked via CLI.
+| Auto-start web service | SC:`auto_start_web_service` | Starts a web server for device management automatically after reboot.
 | Git repo | SC:`my_git_repo_url` | "Not set" | URL of your Git repo containing your configuration and any custom code
 | Git branch | SC:`my_git_branch` | "main" | Name of the Git branch to use if not main
 | Python package name | SC:`my_package_name` | "" | By default, Expidite will use git clone to install the custom code repo. It is also possible for Expidite to install a Python package. Only set this if you know what you are doing.
