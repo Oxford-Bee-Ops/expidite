@@ -1,0 +1,48 @@
+##############################################################################################################
+# Expidite Web Server
+#
+# A lightweight Flask web server that exposes an HTTP interface for device management.
+# Designed to run as a systemd service alongside the main expidite service on a Raspberry Pi.
+#
+# Callers should provide user confirmation for disruptive actions.
+#
+# Endpoints:
+#   /reboot       - Reboot the device.
+##############################################################################################################
+from __future__ import annotations
+
+import subprocess
+
+from flask import Flask
+from flask.typing import ResponseReturnValue
+
+from expidite_rpi.core import configuration as root_cfg
+
+logger = root_cfg.setup_logger("expidite")
+
+app = Flask(__name__)
+
+
+##############################################################################################################
+# Reboot Device.
+
+
+@app.route("/reboot", methods=["POST"])
+def reboot() -> ResponseReturnValue:
+    logger.info("Reboot device")
+    if root_cfg.running_on_rpi:
+        subprocess.Popen(["sudo", "reboot"])
+    return "", 403
+
+
+##############################################################################################################
+# Entry point.
+
+
+def main() -> None:
+    logger.info("Starting Expidite web server on port 5000")
+    app.run(host="0.0.0.0", port=5000)  # noqa: S104
+
+
+if __name__ == "__main__":
+    main()
