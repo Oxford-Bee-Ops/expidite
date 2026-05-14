@@ -340,7 +340,6 @@ install_os_packages() {
     science_packages=(
         python3-scipy
         python3-pandas
-        python3-opencv
         libopenblas0-pthread
         libopenblas-dev
         build-essential
