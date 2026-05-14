@@ -12,7 +12,6 @@ from expidite_rpi.core import configuration as root_cfg
 from expidite_rpi.core.cloud_connector import CloudConnector
 from expidite_rpi.core.dp_config_objects import DPtreeNodeCfg, Stream
 from expidite_rpi.utils.journal_pool import JournalPool
-from expidite_rpi.utils.rpi_emulator import RpiEmulator
 
 logger = root_cfg.setup_logger("expidite")
 
@@ -447,6 +446,8 @@ class DPnode:
 
         # If we're in test mode, we may cap the number of recordings we save.
         if root_cfg.ST_MODE == root_cfg.SOFTWARE_TEST_MODE.TESTING:
+            from expidite_rpi.utils.rpi_emulator import RpiEmulator
+
             if not RpiEmulator.get_instance().ok_to_save_recording(stream.type_id):
                 logger.info(f"Test mode recording cap hit; deleting {src_file.name}")
                 if src_file.exists():
