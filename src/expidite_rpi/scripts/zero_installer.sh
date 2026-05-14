@@ -525,26 +525,26 @@ fix_my_git_repo() {
 }
 
 ##############################################################################################################
-# When expidite_git_branch is not main, pin the installed expidite version so that pip won't change it to main
-# when resolving user-code dependencies.
+# When expidite_git_branch is not main, reinstall expidite from that branch after user-code installation
+# in case pip resolved the user-code's expidite dependency back to main.
 ##############################################################################################################
-EXPIDITE_CONSTRAINT_FILE="/tmp/expidite-constraint.txt"
+_saved_expidite_version=""
 
-create_expidite_constraint() {
+save_expidite_version() {
+    _saved_expidite_version=$(pip show expidite 2>/dev/null | awk '/^Version:/{print $2}')
+}
+
+restore_expidite_if_overridden() {
     if [ "$expidite_git_branch" != "main" ]; then
         local exp_ver
         exp_ver=$(pip show expidite 2>/dev/null | awk '/^Version:/{print $2}')
-        if [ -n "$exp_ver" ]; then
-            echo "expidite==$exp_ver" > "$EXPIDITE_CONSTRAINT_FILE"
-            export PIP_CONSTRAINT="$EXPIDITE_CONSTRAINT_FILE"
-            echo "Pinning expidite==$exp_ver to prevent dependency override."
+        if [ -n "$_saved_expidite_version" ] && [ "$exp_ver" != "$_saved_expidite_version" ]; then
+            echo "Expidite was changed ($_saved_expidite_version -> $exp_ver) by user-code install."
+            echo "Restoring expidite from branch $expidite_git_branch..."
+            pip install "git+https://github.com/oxford-bee-ops/expidite.git@$expidite_git_branch" \
+                || echo "Warning: Failed to restore expidite from branch $expidite_git_branch"
         fi
     fi
-}
-
-remove_expidite_constraint() {
-    rm -f "$EXPIDITE_CONSTRAINT_FILE"
-    unset PIP_CONSTRAINT
 }
 
 install_user_code() {
@@ -564,9 +564,9 @@ install_user_code_from_package() {
     project_name=$(get_pip_package_name "$my_git_repo_url")
     current_version=$(pip show "$project_name" | grep Version)
 
-    create_expidite_constraint
+    save_expidite_version
     "$HOME/$venv_dir/scripts/github_installer.py"
-    remove_expidite_constraint
+    restore_expidite_if_overridden
 
     updated_version=$(pip show "$project_name" | grep Version)
 
@@ -675,7 +675,7 @@ install_user_code_from_git_clone() {
         # fail.
         install_success="false"
 
-        create_expidite_constraint
+        save_expidite_version
 
         # Use appropriate URL scheme based on access method
         if [ "$use_ssh" == "true" ]; then
@@ -698,7 +698,7 @@ install_user_code_from_git_clone() {
             fi
         fi
 
-        remove_expidite_constraint
+        restore_expidite_if_overridden
 
         # Only cache the new hash if installation was successful
         if [ "$install_success" == "true" ]; then
