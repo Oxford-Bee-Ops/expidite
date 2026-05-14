@@ -394,15 +394,14 @@ class RpiEmulator:
         logger.debug(f"Found match command {recordings is not None} for match command: {match_cmd}")
 
         if recordings:
-            # We have a recording so save that with the appropriate filename
+            # We have a recording so save that with the appropriate filename.
             recording = recordings[self.previous_recordings_index]
             self.previous_recordings_index += 1
             self.previous_recordings_index %= len(recordings)
             shutil.copy(recording, filename)
             logger.info(f"Recording {recording} saved to DS")
         else:
-            # No recording. Create a dummy video file.
-            # Use OpenCV to create a dummy video file
+            # No recording. Use OpenCV to create a dummy video file.
             match suffix:
                 case "h264":
                     fourcc = cv2.VideoWriter.fourcc(*"h264")
@@ -414,7 +413,7 @@ class RpiEmulator:
             out = cv2.VideoWriter(filename, fourcc, framerate, (width, height))
             num_frames = int(framerate * duration)
             for i in range(num_frames):
-                # Create a dummy frame (e.g., a solid color or gradient)
+                # Create a dummy frame (e.g., a solid color or gradient).
                 frame = np.zeros((height, width, 3), dtype=np.uint8)
                 frame[:] = (i % 256, (i * 2) % 256, (i * 3) % 256)  # Example gradient
                 out.write(frame)
