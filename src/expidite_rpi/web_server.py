@@ -28,7 +28,6 @@ from flask import Flask, request
 from flask_sock import Sock
 
 from expidite_rpi.core import configuration as root_cfg
-from expidite_rpi.core.edge_orchestrator import EdgeOrchestrator
 from expidite_rpi.rpi_core import RpiCore
 
 _PTY_SUPPORTED = False
@@ -96,7 +95,8 @@ def _page(title: str, body: str) -> str:
     )
 
 
-# ── Dashboard ───────────────────────────────────────────────────────────────────
+##############################################################################################################
+# Dashboard
 
 
 @app.route("/")
@@ -110,66 +110,13 @@ def index() -> str:
         "<h2>Terminal</h2>"
         "<a class='btn' href='/terminal'>Open Terminal (BCLI)</a>"
         "<h2>Quick Actions</h2>"
-        "<a class='btn' href='/status'>View Status</a>"
-        "<a class='btn' href='/config'>View Config</a>"
         "<a class='btn warn' href='/update'>Update Software</a>"
         "<a class='btn danger' href='/reboot'>Reboot Device</a>",
     )
 
 
-# ── View Status ─────────────────────────────────────────────────────────────────
-
-
-@app.route("/status")
-def status() -> str:
-    try:
-        sc = _get_rpi_core()
-        text = sc.status(verbose=True)
-    except Exception as exc:
-        text = f"Error retrieving status: {exc}"
-    return _page("Device Status", f"<pre>{html.escape(text)}</pre>")
-
-
-# ── View Config ─────────────────────────────────────────────────────────────────
-
-
-@app.route("/config")
-def config() -> str:
-    parts: list[str] = []
-    try:
-        orchestrator = EdgeOrchestrator.get_instance()
-        orchestrator.load_config()
-        parts.append("Sensors & Datastreams\n" + "=" * 40)
-        for i, dptree in enumerate(orchestrator.dp_trees):
-            sensor_cfg = dptree.sensor.config
-            parts.append(
-                f"{i}> {sensor_cfg.sensor_type} {sensor_cfg.sensor_index}  {sensor_cfg.sensor_model}"
-            )
-            if sensor_cfg.outputs:
-                parts.extend(f"  {stream.type_id}: - {stream.description}" for stream in sensor_cfg.outputs)
-    except Exception as exc:
-        parts.append(f"Error loading sensor config: {exc}")
-
-    if root_cfg.system_cfg:
-        parts.append("\nSystem Configuration\n" + "=" * 40)
-        expidite_version, user_code_version, python_version = root_cfg.get_version_info()
-        parts.append(f"Expidite version: {expidite_version}")
-        parts.append(f"User code version: {user_code_version}")
-        parts.append(f"Python version: {python_version}")
-        for field, value in root_cfg.system_cfg.model_dump().items():
-            parts.append(f"{field}: {value}")
-
-    try:
-        sc = _get_rpi_core()
-        parts.append("\nExpidite Configuration\n" + "=" * 40)
-        parts.append(sc.display_configuration())
-    except Exception as exc:
-        parts.append(f"Error loading expidite config: {exc}")
-
-    return _page("Device Configuration", f"<pre>{html.escape(chr(10).join(parts))}</pre>")
-
-
-# ── Update Software ─────────────────────────────────────────────────────────────
+##############################################################################################################
+# Update Software.
 
 
 @app.route("/update", methods=["GET", "POST"])
@@ -216,7 +163,8 @@ def update() -> str:
     )
 
 
-# ── Reboot Device ───────────────────────────────────────────────────────────────
+##############################################################################################################
+# Reboot Device.
 
 
 @app.route("/reboot", methods=["GET", "POST"])
@@ -241,7 +189,8 @@ def reboot() -> str:
     return _page("Reboot Device", "<pre>Rebooting now…</pre>")
 
 
-# ── Terminal (xterm.js + WebSocket + pty) ───────────────────────────────────────
+##############################################################################################################
+# Terminal (xterm.js + WebSocket + pty)
 
 _TERMINAL_HTML = """\
 <!DOCTYPE html>
@@ -389,7 +338,8 @@ def terminal_ws(ws: Any) -> None:  # noqa: ANN401
         reader_thread.join(timeout=2)
 
 
-# ── Entry point ─────────────────────────────────────────────────────────────────
+##############################################################################################################
+# Entry point.
 
 
 def main() -> None:

@@ -765,8 +765,7 @@ create_mount() {
         if [ "$total_ram_in_mb" -le 2100 ]; then
             mount_size="1000M"
         else
-            # NICKB CHANGE BACK TO mount_size="1200M"
-            mount_size="1400M"
+            mount_size="1200M"
         fi
 
         echo "Detected ${total_ram_in_mb}MB RAM. Setting mount_size to $mount_size."
