@@ -28,7 +28,6 @@ from flask import Flask, request
 from flask_sock import Sock
 
 from expidite_rpi.core import configuration as root_cfg
-from expidite_rpi.rpi_core import RpiCore
 
 _PTY_SUPPORTED = False
 try:
@@ -47,21 +46,21 @@ logger = root_cfg.setup_logger("expidite")
 app = Flask(__name__)
 sock = Sock(app)
 
-_init_lock = threading.Lock()
-_rpi_core: RpiCore | None = None
-
-
-def _get_rpi_core() -> RpiCore:
-    global _rpi_core
-    if _rpi_core is None:
-        with _init_lock:
-            if _rpi_core is None:
-                sc = RpiCore()
-                inventory = root_cfg.load_configuration()
-                if inventory:
-                    sc.configure(inventory)
-                _rpi_core = sc
-    return _rpi_core
+# _init_lock = threading.Lock()
+# _rpi_core: RpiCore | None = None
+#
+#
+# def _get_rpi_core() -> RpiCore:
+#     global _rpi_core
+#     if _rpi_core is None:
+#         with _init_lock:
+#             if _rpi_core is None:
+#                 sc = RpiCore()
+#                 inventory = root_cfg.load_configuration()
+#                 if inventory:
+#                     sc.configure(inventory)
+#                 _rpi_core = sc
+#     return _rpi_core
 
 
 def _page(title: str, body: str) -> str:
