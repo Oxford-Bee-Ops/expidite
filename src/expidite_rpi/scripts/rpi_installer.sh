@@ -506,6 +506,29 @@ fix_my_git_repo() {
     echo "$git_repo_url"
 }
 
+##############################################################################################################
+# When expidite_git_branch is not main, pin the installed expidite version so that pip won't change it to main
+# when resolving user-code dependencies.
+##############################################################################################################
+EXPIDITE_CONSTRAINT_FILE="/tmp/expidite-constraint.txt"
+
+create_expidite_constraint() {
+    if [ "$expidite_git_branch" != "main" ]; then
+        local exp_ver
+        exp_ver=$(pip show expidite 2>/dev/null | awk '/^Version:/{print $2}')
+        if [ -n "$exp_ver" ]; then
+            echo "expidite==$exp_ver" > "$EXPIDITE_CONSTRAINT_FILE"
+            export PIP_CONSTRAINT="$EXPIDITE_CONSTRAINT_FILE"
+            echo "Pinning expidite==$exp_ver to prevent dependency override."
+        fi
+    fi
+}
+
+remove_expidite_constraint() {
+    rm -f "$EXPIDITE_CONSTRAINT_FILE"
+    unset PIP_CONSTRAINT
+}
+
 install_user_code() {
     echo_header "Install user's code"
 
@@ -523,7 +546,9 @@ install_user_code_from_package() {
     project_name=$(get_pip_package_name "$my_git_repo_url")
     current_version=$(pip show "$project_name" 2>/dev/null | grep Version)
 
+    create_expidite_constraint
     "$HOME/$venv_dir/scripts/github_installer.py"
+    remove_expidite_constraint
 
     updated_version=$(pip show "$project_name" 2>/dev/null | grep Version)
 
@@ -636,6 +661,8 @@ install_user_code_from_git_clone() {
         # fail.
         install_success="false"
 
+        create_expidite_constraint
+
         # Use appropriate URL scheme based on access method
         if [ "$use_ssh" == "true" ]; then
             # For SSH URLs, pip expects git+ssh:// format
@@ -656,6 +683,8 @@ install_user_code_from_git_clone() {
                 echo "Failed to install $pip_url"
             fi
         fi
+
+        remove_expidite_constraint
 
         # Only cache the new hash if installation was successful
         if [ "$install_success" == "true" ]; then
