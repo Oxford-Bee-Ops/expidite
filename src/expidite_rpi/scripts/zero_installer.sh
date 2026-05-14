@@ -524,6 +524,29 @@ fix_my_git_repo() {
     echo "$git_repo_url"
 }
 
+##############################################################################################################
+# When expidite_git_branch is not main, reinstall expidite from that branch after user-code installation
+# in case pip resolved the user-code's expidite dependency back to main.
+##############################################################################################################
+_saved_expidite_version=""
+
+save_expidite_version() {
+    _saved_expidite_version=$(pip show expidite 2>/dev/null | awk '/^Version:/{print $2}')
+}
+
+restore_expidite_if_overridden() {
+    if [ "$expidite_git_branch" != "main" ]; then
+        local exp_ver
+        exp_ver=$(pip show expidite 2>/dev/null | awk '/^Version:/{print $2}')
+        if [ -n "$_saved_expidite_version" ] && [ "$exp_ver" != "$_saved_expidite_version" ]; then
+            echo "Expidite was changed ($_saved_expidite_version -> $exp_ver) by user-code install."
+            echo "Restoring expidite from branch $expidite_git_branch..."
+            pip install "git+https://github.com/oxford-bee-ops/expidite.git@$expidite_git_branch" \
+                || echo "Warning: Failed to restore expidite from branch $expidite_git_branch"
+        fi
+    fi
+}
+
 install_user_code() {
     echo_header "Install user's code"
 
@@ -541,7 +564,9 @@ install_user_code_from_package() {
     project_name=$(get_pip_package_name "$my_git_repo_url")
     current_version=$(pip show "$project_name" | grep Version)
 
+    save_expidite_version
     "$HOME/$venv_dir/scripts/github_installer.py"
+    restore_expidite_if_overridden
 
     updated_version=$(pip show "$project_name" | grep Version)
 
@@ -650,6 +675,8 @@ install_user_code_from_git_clone() {
         # fail.
         install_success="false"
 
+        save_expidite_version
+
         # Use appropriate URL scheme based on access method
         if [ "$use_ssh" == "true" ]; then
             # For SSH URLs, pip expects git+ssh:// format
@@ -670,6 +697,8 @@ install_user_code_from_git_clone() {
                 echo "Failed to install $pip_url"
             fi
         fi
+
+        restore_expidite_if_overridden
 
         # Only cache the new hash if installation was successful
         if [ "$install_success" == "true" ]; then
