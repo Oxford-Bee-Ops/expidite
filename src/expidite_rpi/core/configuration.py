@@ -411,14 +411,12 @@ def load_configuration() -> list[DeviceCfg] | None:
     if system_cfg and system_cfg.my_fleet_config and system_cfg.my_fleet_config != FAILED_TO_LOAD:
         # Try to load the fleet config by instantiating the class
         try:
-            logger.info("NICKB-LC-003")
             module_path, obj_name = system_cfg.my_fleet_config.rsplit(".", 1)
             logger.info(f"NICKB-LC-004: {module_path}")
             logger.info(f"NICKB-LC-005: {obj_name}")
             module = importlib.import_module(module_path)
             logger.info(f"NICKB-LC-006: {module}")
             inventory = getattr(module, obj_name)
-            logger.info(f"NICKB-LC-007: {inventory}")
         except Exception:
             logger.exception(f"{RAISE_WARN()}Failed to load config from {system_cfg.my_fleet_config}")
     else:
