@@ -44,22 +44,25 @@ def reboot() -> ResponseReturnValue:
 
 @app.route("/review_mode", methods=["GET"])
 def get_review_mode() -> ResponseReturnValue:
-    enabled = menu.is_review_mode_enabled()
-    return jsonify({"enabled": enabled})
+    return _review_mode_response(is_enabled=menu.is_review_mode_enabled())
 
 
 @app.route("/review_mode", methods=["POST"])
 def enter_review_mode() -> ResponseReturnValue:
     logger.info("Enter review mode")
     menu.enter_review_mode()
-    return jsonify({"enabled": True})
+    return _review_mode_response(is_enabled=True)
 
 
 @app.route("/review_mode", methods=["DELETE"])
 def exit_review_mode() -> ResponseReturnValue:
     logger.info("Exit review mode")
     menu.exit_review_mode()
-    return jsonify({"enabled": False})
+    return _review_mode_response(is_enabled=False)
+
+
+def _review_mode_response(is_enabled: bool) -> ResponseReturnValue:
+    return jsonify({"device_id": root_cfg.my_device_id, "enabled": is_enabled})
 
 
 ##############################################################################################################
