@@ -7,20 +7,23 @@
 # Callers should provide user confirmation for disruptive actions.
 #
 # Endpoints:
-#   /reboot       - Reboot the device.
+#   /reboot              - Reboot the device.
+#   /review_mode         - GET: check if review mode is enabled. POST: enter. DELETE: exit.
 ##############################################################################################################
 from __future__ import annotations
 
 import subprocess
 
-from flask import Flask
+from flask import Flask, jsonify
 from flask.typing import ResponseReturnValue
 
+from expidite_rpi.bcli import InteractiveMenu
 from expidite_rpi.core import configuration as root_cfg
 
 logger = root_cfg.setup_logger("expidite")
 
 app = Flask(__name__)
+menu = InteractiveMenu()
 
 
 ##############################################################################################################
@@ -33,6 +36,30 @@ def reboot() -> ResponseReturnValue:
     if root_cfg.running_on_rpi:
         subprocess.Popen(["sudo", "reboot"])
     return "", 403
+
+
+##############################################################################################################
+# Review Mode.
+
+
+@app.route("/review_mode", methods=["GET"])
+def get_review_mode() -> ResponseReturnValue:
+    enabled = menu.is_review_mode_enabled()
+    return jsonify({"enabled": enabled})
+
+
+@app.route("/review_mode", methods=["POST"])
+def enter_review_mode() -> ResponseReturnValue:
+    logger.info("Enter review mode")
+    menu.enter_review_mode()
+    return jsonify({"enabled": True})
+
+
+@app.route("/review_mode", methods=["DELETE"])
+def exit_review_mode() -> ResponseReturnValue:
+    logger.info("Exit review mode")
+    menu.exit_review_mode()
+    return jsonify({"enabled": False})
 
 
 ##############################################################################################################

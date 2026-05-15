@@ -616,6 +616,9 @@ class InteractiveMenu:
             root_cfg.REVIEW_MODE_FLAG.unlink()
             self.restart_rpi_core(pkill=True)
 
+    def is_review_mode_enabled(self) -> bool:
+        return root_cfg.REVIEW_MODE_FLAG.exists()
+
     def review_mode(self) -> None:
         """Manage entering and exiting review mode.
         The intent of review mode is to help with manual review of sensor data.
