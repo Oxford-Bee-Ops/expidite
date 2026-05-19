@@ -21,6 +21,7 @@ from expidite_rpi.core.device_manager import DeviceManager
 from expidite_rpi.core.dp_node import DPnode
 from expidite_rpi.core.dp_tree import DPtree
 from expidite_rpi.core.dp_worker_thread import DPworker
+from expidite_rpi.core.iot_hub_client import IoTHubClient
 from expidite_rpi.core.sensor import Sensor
 from expidite_rpi.core.stats_tracker import StatTracker
 from expidite_rpi.utils.journal_pool import JournalPool
@@ -99,6 +100,7 @@ class EdgeOrchestrator:
             self._sensorThreads.append(self.device_health)
             self._dpworkers.append(health_dpe)
 
+            self._iot_hub_client: IoTHubClient | None = None
             self.selftracker = StatTracker()
             tracker_dpe = DPworker(DPtree(self.selftracker))
             self._sensorThreads.append(self.selftracker)
@@ -251,6 +253,14 @@ class EdgeOrchestrator:
         with EdgeOrchestrator._status_lock:
             self._status = OrchestratorStatus.RUNNING
 
+        try:
+            self._iot_hub_client = IoTHubClient.get_instance()
+            if self._iot_hub_client is not None:
+                self._iot_hub_client.start()
+        except Exception:
+            logger.warning("IoT Hub client failed to start; continuing without it", exc_info=True)
+            self._iot_hub_client = None
+
     @staticmethod
     def start_all_with_watchdog() -> threading.Thread:
         """This function starts the orchestrator and maintains it with a watchdog.
@@ -334,6 +344,14 @@ class EdgeOrchestrator:
                 logger.info(f"Waiting over. Datastream thread {dpe} stopped")
             else:
                 logger.info(f"Datastream thread {dpe} already stopped")
+
+        # Disconnect IoT Hub client before flushing journals
+        if self._iot_hub_client is not None:
+            try:
+                self._iot_hub_client.stop()
+            except Exception:
+                logger.warning("IoT Hub client failed to stop cleanly", exc_info=True)
+            self._iot_hub_client = None
 
         # Trigger a flush_all on the CloudJournals so we save collected information before we kill everything
         jp = JournalPool.get()

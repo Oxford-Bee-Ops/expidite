@@ -137,6 +137,8 @@ class Keys(BaseSettings):
 
     cloud_storage_key: str = FAILED_TO_LOAD
     my_git_pat: str = FAILED_TO_LOAD
+    dps_scope_id: str = FAILED_TO_LOAD
+    dps_primary_key: str = FAILED_TO_LOAD
     model_config = SettingsConfigDict(extra="ignore")
 
     def get_storage_account(self) -> str:
