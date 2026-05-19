@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "expidite"
-version = "0.1.230"
+version = "0.1.231"
 description = "Python module to support using Raspberry Pi for scientific data collection"
 readme = "README.md"
 requires-python = ">=3.13"
@@ -114,7 +114,6 @@ ignore = [
     "PLR0912",
     "PLR0913",
     "PLR0915",
-    "PYI034",
     "S108",
     "S110",
     "S307",

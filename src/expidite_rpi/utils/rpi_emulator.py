@@ -15,6 +15,7 @@ from dataclasses import dataclass
 from pathlib import Path
 from threading import Event
 from types import TracebackType
+from typing import Self
 
 import pandas as pd
 
@@ -55,7 +56,7 @@ class RpiEmulator:
             RpiEmulator._is_available.set()
         return RpiEmulator._instance
 
-    def __enter__(self) -> RpiEmulator:
+    def __enter__(self) -> Self:
         """Enter the context manager."""
         logger.info("Entering RpiEmulator context.")
         # We want to avoid overlapping tests so we wait until the previous test has finished
