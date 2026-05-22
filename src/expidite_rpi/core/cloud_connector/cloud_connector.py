@@ -306,8 +306,8 @@ class CloudConnector:
                         blob_client.delete_blob()
                     blob_client.create_append_blob()
 
-                # Append the data
-                blob_client.append_block(data_to_append)
+                # Append the data.
+                blob_client.append_block(data_to_append.encode("utf-8"))
 
                 # Record that we've validated this file (might already be true).
                 self._validated_append_files.add(dst_file)
