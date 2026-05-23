@@ -186,11 +186,14 @@ class SystemCfg(BaseSettings):
     # Do you want RpiCore to start automatically after running the rpi_installer.sh script?
     # Anything other than "Yes" will disable auto-start.
     auto_start: str = "Yes"
-    # Enable the UFW firewall
+    # Do you want the device management web server to start automatically after running the rpi_installer.sh
+    # script? Anything other than "Yes" will disable auto-start.
+    auto_start_web_service: str = "Yes"
+    # Enable the UFW firewall.
     enable_firewall: str = "Yes"
-    # Enable use of predictable network interface names
+    # Enable use of predictable network interface names.
     enable_predictable_interface_names: str = "Yes"
-    # Enable the I2C interface on the Raspberry Pi
+    # Enable the I2C interface on the Raspberry Pi.
     enable_i2c: str = "Yes"
     # The location of the virtual environment relative to the $HOME directory.
     # (ie will expand to "$HOME/$venv_dir").

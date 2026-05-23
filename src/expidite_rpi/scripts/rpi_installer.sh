@@ -82,6 +82,18 @@ stop_expidite_service() {
 }
 
 ##############################################################################################################
+# Prevent the Expidite web server from running while rpi_installer runs.
+##############################################################################################################
+stop_web_service() {
+  echo_header
+  if systemctl is-active --quiet expidite-web.service; then
+      sudo systemctl stop expidite-web.service || echo "Warning: failed to stop expidite-web.service"
+  fi
+  # Reset the restart counter so the upgrade isn't mistaken for an abnormal restart.
+  sudo systemctl reset-failed expidite-web.service 2>/dev/null || true
+}
+
+##############################################################################################################
 # On reboot, os_update is set to "no".
 # Sleep for 10 seconds to allow the system to settle down after booting
 ##############################################################################################################
@@ -328,8 +340,8 @@ install_os_packages() {
         -o Dpkg::Options::="--force-confdef" \
         -o Dpkg::Options::="--force-confold" \
         install -y \
-        pip git libsystemd-dev ffmpeg python3-scipy python3-pandas python3-opencv \
-        libcamera-dev python3-picamera2 python3-smbus || { echo "Failed to install sensor packages"; }
+        pip git libsystemd-dev ffmpeg python3-scipy libcamera-dev python3-picamera2 \
+        python3-smbus || { echo "Failed to install sensor packages"; }
     # If we install the lite version (no desktop), we need to install the full version of rpicam-apps
     # Otherwise we get ERROR: *** Unable to find an appropriate H.264 codec ***
     sudo apt-get purge -y rpicam-apps-lite || { echo "Failed to remove rpicam-apps-lite"; }
@@ -369,6 +381,8 @@ install_ufw() {
     #sudo ufw allow 123
     # Allow HTTPS on 443
     sudo ufw allow 443
+    # Allow Expidite web server.
+    sudo ufw allow 5000
     # Re-enable the firewall
     sudo ufw --force enable
 }
@@ -492,6 +506,29 @@ fix_my_git_repo() {
     echo "$git_repo_url"
 }
 
+##############################################################################################################
+# When expidite_git_branch is not main, reinstall expidite from that branch after user-code installation
+# in case pip resolved the user-code's expidite dependency back to main.
+##############################################################################################################
+_saved_expidite_version=""
+
+save_expidite_version() {
+    _saved_expidite_version=$(pip show expidite 2>/dev/null | awk '/^Version:/{print $2}')
+}
+
+restore_expidite_if_overridden() {
+    if [ "$expidite_git_branch" != "main" ]; then
+        local exp_ver
+        exp_ver=$(pip show expidite 2>/dev/null | awk '/^Version:/{print $2}')
+        if [ -n "$_saved_expidite_version" ] && [ "$exp_ver" != "$_saved_expidite_version" ]; then
+            echo "Expidite was changed ($_saved_expidite_version -> $exp_ver) by user-code install."
+            echo "Restoring expidite from branch $expidite_git_branch..."
+            pip install "git+https://github.com/oxford-bee-ops/expidite.git@$expidite_git_branch" \
+                || echo "Warning: Failed to restore expidite from branch $expidite_git_branch"
+        fi
+    fi
+}
+
 install_user_code() {
     echo_header "Install user's code"
 
@@ -509,7 +546,9 @@ install_user_code_from_package() {
     project_name=$(get_pip_package_name "$my_git_repo_url")
     current_version=$(pip show "$project_name" 2>/dev/null | grep Version)
 
+    save_expidite_version
     "$HOME/$venv_dir/scripts/github_installer.py"
+    restore_expidite_if_overridden
 
     updated_version=$(pip show "$project_name" 2>/dev/null | grep Version)
 
@@ -622,6 +661,8 @@ install_user_code_from_git_clone() {
         # fail.
         install_success="false"
 
+        save_expidite_version
+
         # Use appropriate URL scheme based on access method
         if [ "$use_ssh" == "true" ]; then
             # For SSH URLs, pip expects git+ssh:// format
@@ -642,6 +683,8 @@ install_user_code_from_git_clone() {
                 echo "Failed to install $pip_url"
             fi
         fi
+
+        restore_expidite_if_overridden
 
         # Only cache the new hash if installation was successful
         if [ "$install_success" == "true" ]; then
@@ -960,6 +1003,61 @@ remove_expidite_service() {
 }
 
 ##############################################################################################################
+# Install the expidite web server as a systemd service.
+##############################################################################################################
+install_web_service() {
+    echo_header
+    WEB_SERVICE_FILE="/etc/systemd/system/expidite-web.service"
+    SERVICE_HOME="/home/$SERVICE_USER"
+    PYTHON_BIN="$SERVICE_HOME/$venv_dir/bin/python"
+
+    sudo tee "$WEB_SERVICE_FILE" > /dev/null << EOF
+[Unit]
+Description=Expidite Web Server
+After=network-online.target
+Wants=network-online.target
+[Service]
+User=$SERVICE_USER
+WorkingDirectory=$SERVICE_HOME/.expidite
+Environment="HOME=$SERVICE_HOME"
+ExecStart=$PYTHON_BIN -m expidite_rpi.web.server
+Restart=always
+RestartSec=10
+TimeoutStopSec=10
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=EXPIDITE-WEB
+[Install]
+WantedBy=multi-user.target
+EOF
+
+    sudo systemctl daemon-reload
+    sudo systemctl enable expidite-web.service
+}
+
+##############################################################################################################
+# Remove the expidite web server systemd service.
+##############################################################################################################
+remove_web_service() {
+    echo_header
+    WEB_SERVICE_FILE="/etc/systemd/system/expidite-web.service"
+
+    if [ ! -f "$WEB_SERVICE_FILE" ]; then
+        echo "expidite-web.service is not installed; nothing to remove."
+        return
+    fi
+
+    if systemctl is-active --quiet expidite-web.service; then
+        sudo systemctl stop expidite-web.service || echo "Warning: failed to stop expidite-web.service"
+    fi
+
+    sudo systemctl disable expidite-web.service || echo "Warning: failed to disable expidite-web.service"
+    sudo rm -f "$WEB_SERVICE_FILE"
+    sudo systemctl daemon-reload
+    echo "expidite-web.service removed."
+}
+
+##############################################################################################################
 # Autostart if requested in system.cfg
 #
 # Note that this service is also started and stopped from bcli when the user manually starts/stops it.
@@ -977,6 +1075,18 @@ auto_start_if_requested() {
     else
         echo "Auto-start is not enabled in system.cfg or not appropriate to this install type."
         remove_expidite_service
+    fi
+
+    if [ "$auto_start_web_service" == "Yes" ]; then
+        install_web_service
+
+        # start is idempotent (no-op if already running).
+        echo "Auto-starting Expidite Web Service..."
+        sudo systemctl start expidite-web.service && echo "Expidite Web Service started (or already running)." \
+            || echo "Warning: failed to start expidite-web.service; check 'journalctl -u expidite-web"
+    else
+        echo "Auto-start Web Service is not enabled in system.cfg or not appropriate to this install type."
+        remove_web_service
     fi
 }
 
@@ -1086,6 +1196,7 @@ echo_header() {
 echo_header "Starting RPi installer.  (os_update=$os_update)"
 ensure_passwordless_sudo
 stop_expidite_service
+stop_web_service
 sleep_for_ten_seconds
 check_prerequisites
 cd "$HOME/.expidite" || { echo "Failed to change directory to $HOME/.expidite"; exit 1; }

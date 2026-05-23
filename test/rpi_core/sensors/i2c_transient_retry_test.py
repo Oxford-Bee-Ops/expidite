@@ -1,5 +1,5 @@
 from types import TracebackType
-from typing import Literal, cast
+from typing import Literal, Self, cast
 
 import pytest
 
@@ -46,7 +46,7 @@ def test_sht20_startup_retries_after_transient_failures(monkeypatch: pytest.Monk
         def __init__(self, _device: str) -> None:
             pass
 
-        def __enter__(self) -> "FakeTransceiver":
+        def __enter__(self) -> Self:
             return self
 
         def __exit__(

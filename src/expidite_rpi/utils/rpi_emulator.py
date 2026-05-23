@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 ##############################################################################################################
 # The test harness enables thorough testing of the sensor code without RPi hardware.
 # It emulates / intercepts:
@@ -13,9 +15,8 @@ from dataclasses import dataclass
 from pathlib import Path
 from threading import Event
 from types import TracebackType
+from typing import Self
 
-import cv2
-import numpy as np
 import pandas as pd
 
 from expidite_rpi.core import api, file_naming
@@ -48,14 +49,14 @@ class RpiEmulator:
         self.inventory: list[DeviceCfg] = []
 
     @staticmethod
-    def get_instance() -> "RpiEmulator":
+    def get_instance() -> RpiEmulator:
         """Get the singleton instance of RpiEmulator."""
         if RpiEmulator._instance is None:
             RpiEmulator._instance = RpiEmulator()
             RpiEmulator._is_available.set()
         return RpiEmulator._instance
 
-    def __enter__(self) -> "RpiEmulator":
+    def __enter__(self) -> Self:
         """Enter the context manager."""
         logger.info("Entering RpiEmulator context.")
         # We want to avoid overlapping tests so we wait until the previous test has finished
@@ -357,6 +358,9 @@ class RpiEmulator:
         # - framerate taken from the --framerate parameter
         # - width taken from the --width parameter
         # - height taken from the --height parameter
+        import cv2
+        import numpy as np
+
         args = shlex.split(cmd, posix=False)
         if "-o" not in args or "-t" not in args:
             raise ValueError("Missing required arguments in command: " + cmd)
@@ -391,15 +395,14 @@ class RpiEmulator:
         logger.debug(f"Found match command {recordings is not None} for match command: {match_cmd}")
 
         if recordings:
-            # We have a recording so save that with the appropriate filename
+            # We have a recording so save that with the appropriate filename.
             recording = recordings[self.previous_recordings_index]
             self.previous_recordings_index += 1
             self.previous_recordings_index %= len(recordings)
             shutil.copy(recording, filename)
             logger.info(f"Recording {recording} saved to DS")
         else:
-            # No recording. Create a dummy video file.
-            # Use OpenCV to create a dummy video file
+            # No recording. Use OpenCV to create a dummy video file.
             match suffix:
                 case "h264":
                     fourcc = cv2.VideoWriter.fourcc(*"h264")
@@ -411,7 +414,7 @@ class RpiEmulator:
             out = cv2.VideoWriter(filename, fourcc, framerate, (width, height))
             num_frames = int(framerate * duration)
             for i in range(num_frames):
-                # Create a dummy frame (e.g., a solid color or gradient)
+                # Create a dummy frame (e.g., a solid color or gradient).
                 frame = np.zeros((height, width, 3), dtype=np.uint8)
                 frame[:] = (i % 256, (i * 2) % 256, (i * 3) % 256)  # Example gradient
                 out.write(frame)
