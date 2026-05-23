@@ -20,25 +20,30 @@ logger = root_cfg.setup_logger("expidite")
 ##############################################################################################################
 
 last_space_check = dt.datetime(1970, 1, 1, tzinfo=UTC)
+last_space_check_value = 0.0
 last_space_check_outcome = False
 last_temp_check = dt.datetime(1970, 1, 1, tzinfo=UTC)
 last_temp_check_outcome = False
-high_memory_usage_threshold = 80.0
+critical_memory_usage_threshold = 80.0
+high_memory_usage_threshold = 50.0
 high_temperature_threshold = 72.0
 
 
 def failing_to_keep_up() -> bool:
     """Function that allows us to back off intensive operations if we're running low on space."""
     # Cache the result for 30 seconds to avoid repeated disk checks
-    global last_space_check, last_space_check_outcome
+    global last_space_check, last_space_check_value, last_space_check_outcome
+
+    if not root_cfg.running_on_rpi:
+        return False
+
     now = api.utc_now()
-    if (now - last_space_check).seconds < 30:
+    if (now - last_space_check).total_seconds() < 30:
         return last_space_check_outcome
     last_space_check = now
 
-    if root_cfg.running_on_rpi and (
-        psutil.disk_usage(str(root_cfg.ROOT_WORKING_DIR)).percent > high_memory_usage_threshold
-    ):
+    last_space_check_value = psutil.disk_usage(str(root_cfg.ROOT_WORKING_DIR)).percent
+    if last_space_check_value > critical_memory_usage_threshold:
         logger.warning(f"{root_cfg.RAISE_WARN()} Failing to keep up due to low disk space")
         last_space_check_outcome = True
     else:
@@ -50,18 +55,26 @@ def failing_to_keep_up() -> bool:
 def reduce_load_advised() -> bool:
     """Function that allows us to back off intensive operations if we're running under high load."""
     global last_temp_check, last_temp_check_outcome
+    global last_space_check, last_space_check_value, last_space_check_outcome
 
     if not root_cfg.running_on_rpi:
         return False
 
     now = api.utc_now()
-    if (now - last_temp_check).seconds < 30:
+    if (now - last_temp_check).total_seconds() < 30:
         return last_temp_check_outcome
     last_temp_check = now
 
-    cpu_temp = psutil.sensors_temperatures()["cpu_thermal"][0].current  # type: ignore
-    if cpu_temp > high_temperature_threshold:
-        logger.warning(f"{root_cfg.RAISE_WARN()} Advising to reduce load due to high CPU usage")
+    if (now - last_space_check).total_seconds() > 30:
+        last_space_check = now
+        last_space_check_value = psutil.disk_usage(str(root_cfg.ROOT_WORKING_DIR)).percent
+        last_space_check_outcome = last_space_check_value > critical_memory_usage_threshold
+
+    cpu_readings = psutil.sensors_temperatures().get("cpu_thermal")  # type: ignore
+    cpu_temp = cpu_readings[0].current if cpu_readings else 0
+
+    if (cpu_temp > high_temperature_threshold) or (last_space_check_value > high_memory_usage_threshold):
+        logger.warning(f"{root_cfg.RAISE_WARN()} Advising to reduce load due to high CPU or memory")
         last_temp_check_outcome = True
     else:
         last_temp_check_outcome = False
