@@ -74,7 +74,7 @@ class Sensor(Thread, DPnode, ABC):
     def reducing_load_advised(self) -> bool:
         """Sensor subclasses can call this function to check if they should reduce their load.
 
-        This is advisory only and does not hold up the thread like failing_to_keep_up, but it can be used
+        This is advisory only and does not hold up the thread like continue_recording, but it can be used
         by sensors to decide, for example, to skip sensing cycles or reduce frequency or resolution.
         """
         return utils.reduce_load_advised()
