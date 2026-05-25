@@ -24,9 +24,9 @@ last_space_check_value = 0.0
 last_space_check_outcome = False
 last_temp_check = dt.datetime(1970, 1, 1, tzinfo=UTC)
 last_temp_check_outcome = False
-critical_memory_usage_threshold = 80.0
-high_memory_usage_threshold = 50.0
-high_temperature_threshold = 72.0
+critical_expidite_mount_threshold = 75.0
+high_expidite_mount_threshold = 25.0
+high_temperature_threshold = 70.0
 
 
 def failing_to_keep_up() -> bool:
@@ -43,7 +43,7 @@ def failing_to_keep_up() -> bool:
     last_space_check = now
 
     last_space_check_value = psutil.disk_usage(str(root_cfg.ROOT_WORKING_DIR)).percent
-    if last_space_check_value > critical_memory_usage_threshold:
+    if last_space_check_value > critical_expidite_mount_threshold:
         logger.warning(f"{root_cfg.RAISE_WARN()} Failing to keep up due to low disk space")
         last_space_check_outcome = True
     else:
@@ -68,12 +68,12 @@ def reduce_load_advised() -> bool:
     if (now - last_space_check).total_seconds() > 30:
         last_space_check = now
         last_space_check_value = psutil.disk_usage(str(root_cfg.ROOT_WORKING_DIR)).percent
-        last_space_check_outcome = last_space_check_value > critical_memory_usage_threshold
+        last_space_check_outcome = last_space_check_value > critical_expidite_mount_threshold
 
     cpu_readings = psutil.sensors_temperatures().get("cpu_thermal")  # type: ignore
     cpu_temp = cpu_readings[0].current if cpu_readings else 0
 
-    if (cpu_temp > high_temperature_threshold) or (last_space_check_value > high_memory_usage_threshold):
+    if (cpu_temp > high_temperature_threshold) or (last_space_check_value > high_expidite_mount_threshold):
         logger.warning(f"{root_cfg.RAISE_WARN()} Advising to reduce load due to high CPU or memory")
         last_temp_check_outcome = True
     else:

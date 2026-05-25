@@ -951,6 +951,7 @@ StartLimitBurst=5
 User=$SERVICE_USER
 WorkingDirectory=$SERVICE_HOME/.expidite
 Environment="HOME=$SERVICE_HOME"
+Environment="OMP_WAIT_POLICY=PASSIVE"
 ExecStart=$PYTHON_BIN -m $my_start_script
 # Watchdog: systemd kills and restarts if the process doesn't notify within this time.
 WatchdogSec=60s

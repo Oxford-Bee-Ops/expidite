@@ -349,17 +349,17 @@ class DeviceHealth(Sensor):
             total_memory = psutil.virtual_memory().total
             total_memory_gb = round(total_memory / (1024**3), 2)
 
-            # Memory usage - if greater than 75% then generate some diagnostics
+            # Memory usage - if greater than threshold then generate some diagnostics
             memory_usage = psutil.virtual_memory().percent
             if check_memory_usage and memory_usage > 75:
                 if root_cfg.running_on_rpi:
                     DeviceHealth.log_top_memory_processes()
                     # Running low on free RAM can cause any OS process to be killed to free up memory, and can
-                    # cause performance degradation. Triggering a controlled reboot at 90% memory usage is
+                    # cause performance degradation. Triggering a controlled reboot at 95% memory usage is
                     # generally considered good practice to recover before performance degrades.
-                    if memory_usage > 90:
-                        logger.error(f"{root_cfg.RAISE_WARN()}Memory usage >90%, rebooting")
-                        DiagnosticsBundle.collect("Memory usage >90%, rebooting")
+                    if memory_usage > 95:
+                        logger.error(f"{root_cfg.RAISE_WARN()}Memory usage >95%, rebooting")
+                        DiagnosticsBundle.collect("Memory usage >95%, rebooting")
                         utils.run_cmd("sudo reboot", ignore_errors=True)
 
             # Get the expidite version and user code version from the files
