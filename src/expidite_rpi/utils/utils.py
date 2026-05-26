@@ -74,7 +74,10 @@ def reduce_load_advised() -> bool:
     cpu_temp = cpu_readings[0].current if cpu_readings else 0
 
     if (cpu_temp > high_temperature_threshold) or (last_space_check_value > high_expidite_mount_threshold):
-        logger.warning(f"{root_cfg.RAISE_WARN()} Advising to reduce load due to high CPU or memory")
+        logger.warning(
+            f"{root_cfg.RAISE_WARN()} Advising to reduce load due to high CPU {cpu_temp} "
+            f"or memory {last_space_check_value}"
+        )
         last_temp_check_outcome = True
     else:
         last_temp_check_outcome = False
