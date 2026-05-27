@@ -186,9 +186,6 @@ class SystemCfg(BaseSettings):
     # Do you want RpiCore to start automatically after running the rpi_installer.sh script?
     # Anything other than "Yes" will disable auto-start.
     auto_start: str = "Yes"
-    # Do you want the device management web server to start automatically after running the rpi_installer.sh
-    # script? Anything other than "Yes" will disable auto-start.
-    auto_start_web_service: str = "Yes"
     # Enable the UFW firewall.
     enable_firewall: str = "Yes"
     # Enable use of predictable network interface names.

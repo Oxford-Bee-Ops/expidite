@@ -84,18 +84,6 @@ stop_expidite_service() {
 }
 
 ##############################################################################################################
-# Prevent the Expidite web server from running while rpi_installer runs.
-##############################################################################################################
-stop_web_service() {
-  echo_header
-  if systemctl is-active --quiet expidite-web.service; then
-      sudo systemctl stop expidite-web.service || echo "Warning: failed to stop expidite-web.service"
-  fi
-  # Reset the restart counter so the upgrade isn't mistaken for an abnormal restart.
-  sudo systemctl reset-failed expidite-web.service 2>/dev/null || true
-}
-
-##############################################################################################################
 # On reboot, os_update is set to "no".
 # Sleep for 10 seconds to allow the system to settle down after booting
 ##############################################################################################################
@@ -1045,61 +1033,6 @@ remove_expidite_service() {
 }
 
 ##############################################################################################################
-# Install the expidite web server as a systemd service.
-##############################################################################################################
-install_web_service() {
-    echo_header
-    WEB_SERVICE_FILE="/etc/systemd/system/expidite-web.service"
-    SERVICE_HOME="/home/$SERVICE_USER"
-    PYTHON_BIN="$SERVICE_HOME/$venv_dir/bin/python"
-
-    sudo tee "$WEB_SERVICE_FILE" > /dev/null << EOF
-[Unit]
-Description=Expidite Web Server
-After=network-online.target
-Wants=network-online.target
-[Service]
-User=$SERVICE_USER
-WorkingDirectory=$SERVICE_HOME/.expidite
-Environment="HOME=$SERVICE_HOME"
-ExecStart=$PYTHON_BIN -m expidite_rpi.web.server
-Restart=always
-RestartSec=10
-TimeoutStopSec=10
-StandardOutput=journal
-StandardError=journal
-SyslogIdentifier=EXPIDITE-WEB
-[Install]
-WantedBy=multi-user.target
-EOF
-
-    sudo systemctl daemon-reload
-    sudo systemctl enable expidite-web.service
-}
-
-##############################################################################################################
-# Remove the expidite web server systemd service.
-##############################################################################################################
-remove_web_service() {
-    echo_header
-    WEB_SERVICE_FILE="/etc/systemd/system/expidite-web.service"
-
-    if [ ! -f "$WEB_SERVICE_FILE" ]; then
-        echo "expidite-web.service is not installed; nothing to remove."
-        return
-    fi
-
-    if systemctl is-active --quiet expidite-web.service; then
-        sudo systemctl stop expidite-web.service || echo "Warning: failed to stop expidite-web.service"
-    fi
-
-    sudo systemctl disable expidite-web.service || echo "Warning: failed to disable expidite-web.service"
-    sudo rm -f "$WEB_SERVICE_FILE"
-    sudo systemctl daemon-reload
-    echo "expidite-web.service removed."
-}
-
-##############################################################################################################
 # Autostart if requested in system.cfg
 #
 # Note that this service is also started and stopped from bcli when the user manually starts/stops it.
@@ -1117,18 +1050,6 @@ auto_start_if_requested() {
     else
         echo "Auto-start is not enabled in system.cfg or not appropriate to this install type."
         remove_expidite_service
-    fi
-
-    if [ "$auto_start_web_service" == "Yes" ]; then
-        install_web_service
-
-        # start is idempotent (no-op if already running).
-        echo "Auto-starting Expidite Web Service..."
-        sudo systemctl start expidite-web.service && echo "Expidite Web Service started (or already running)." \
-            || echo "Warning: failed to start expidite-web.service; check 'journalctl -u expidite-web"
-    else
-        echo "Auto-start Web Service is not enabled in system.cfg or not appropriate to this install type."
-        remove_web_service
     fi
 }
 
@@ -1238,7 +1159,6 @@ echo_header() {
 echo_header "Starting Zero installer.  (os_update=$os_update)"
 ensure_passwordless_sudo
 stop_expidite_service
-stop_web_service
 sleep_for_ten_seconds
 check_prerequisites
 cd "$HOME/.expidite" || { echo "Failed to change directory to $HOME/.expidite"; exit 1; }
