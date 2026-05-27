@@ -181,13 +181,17 @@ Azure IoT Hub is another option for remote management of your devices. To use th
 an Azure IoT Hub and Azure Device Provisioning Service in the Azure Portal, then link them. You will also 
 need to configure the Device ID of each device in the Device Provisioning Service.
 
-On each device you will need to:
-- Set auto_start_management_service="Yes" in system.cfg.
-- Set dps_scope_id in keys.env. In the Azure Portal, go to Device Provisioning Service > Overview. The ID 
-  Scope is displayed on the top right (looks like 0ne00XXXXXX).
-- Set dps_primary_key in keys.env. Go to Device Provisioning Service > Settings > Manage enrollments > Add 
-  enrollment group. Create a group enrollment with: 
+For each device, go to Azure Portal and:
+- Go to the Azure IoT Hub instance, Device Management -> Devices -> Add Device. Enter the Device ID and 
+  leave everything else as default.
+- Go to the Device Provisioning Service instance, Settings > Manage enrollments > Add enrollment group. Create a group enrollment with: 
   - Attestation type: Symmetric Key.
   - Group name: whatever you want (e.g. expidite-fleet).
   - Let Azure auto-generate the keys.
 
+On each device:
+- Set auto_start_management_service="Yes" in system.cfg.
+- Set dps_scope_id in keys.env. In the Azure Portal, go to Device Provisioning Service > Overview. The ID 
+  Scope is displayed on the top right (looks like 0ne00XXXXXX). This will be the same value for all devices.
+- Set dps_primary_key in keys.env to the primary key value from the DPS enrollment you created earlier. This 
+  will be the same value for all devices. 
