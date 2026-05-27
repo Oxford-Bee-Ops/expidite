@@ -177,17 +177,20 @@ it from the BCLI menu. You can then access your devices via the Raspberry Pi Con
 
 #### Azure IoT Hub
 
-Azure IoT Hub is another option for remote management of your devices. To use this, you need to configure 
-an Azure IoT Hub and Azure Device Provisioning Service in the Azure Portal, then link them. You will also 
-need to configure the Device ID of each device in the Device Provisioning Service.
+Azure IoT Hub is another option for remote management of your devices.
 
-For each device, go to Azure Portal and:
-- Go to the Azure IoT Hub instance, Device Management -> Devices -> Add Device. Enter the Device ID and 
-  leave everything else as default.
+One-off setup:
+- Configure an Azure IoT Hub instance in the Azure Portal.
+- Configure an Azure Device Provisioning Service (DPS) instance in the Azure Portal
+- Link the two together. 
 - Go to the Device Provisioning Service instance, Settings > Manage enrollments > Add enrollment group. Create a group enrollment with: 
   - Attestation type: Symmetric Key.
   - Group name: whatever you want (e.g. expidite-fleet).
   - Let Azure auto-generate the keys.
+
+For each device, go to Azure Portal and:
+- Go to the Azure IoT Hub instance, Device Management -> Devices -> Add Device. Enter the Device ID and 
+  leave everything else as default.
 
 On each device:
 - Set auto_start_management_service="Yes" in system.cfg.
