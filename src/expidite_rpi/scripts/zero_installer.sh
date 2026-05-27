@@ -1033,6 +1033,61 @@ remove_expidite_service() {
 }
 
 ##############################################################################################################
+# Install the expidite management service (IoT Hub) as a systemd service.
+##############################################################################################################
+install_management_service() {
+    echo_header
+    MGMT_SERVICE_FILE="/etc/systemd/system/expidite-management.service"
+    SERVICE_HOME="/home/$SERVICE_USER"
+    PYTHON_BIN="$SERVICE_HOME/$venv_dir/bin/python"
+
+    sudo tee "$MGMT_SERVICE_FILE" > /dev/null << EOF
+[Unit]
+Description=Expidite Management Service
+After=network-online.target
+Wants=network-online.target
+[Service]
+User=$SERVICE_USER
+WorkingDirectory=$SERVICE_HOME/.expidite
+Environment="HOME=$SERVICE_HOME"
+ExecStart=$PYTHON_BIN -m expidite_rpi.management.management_service
+Restart=always
+RestartSec=10
+TimeoutStopSec=10
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=EXPIDITE-MGMT
+[Install]
+WantedBy=multi-user.target
+EOF
+
+    sudo systemctl daemon-reload
+    sudo systemctl enable expidite-management.service
+}
+
+##############################################################################################################
+# Remove the expidite management service systemd service.
+##############################################################################################################
+remove_management_service() {
+    echo_header
+    MGMT_SERVICE_FILE="/etc/systemd/system/expidite-management.service"
+
+    if [ ! -f "$MGMT_SERVICE_FILE" ]; then
+        echo "expidite-management.service is not installed; nothing to remove."
+        return
+    fi
+
+    if systemctl is-active --quiet expidite-management.service; then
+        sudo systemctl stop expidite-management.service || echo "Warning: failed to stop expidite-management.service"
+    fi
+
+    sudo systemctl disable expidite-management.service || echo "Warning: failed to disable expidite-management.service"
+    sudo rm -f "$MGMT_SERVICE_FILE"
+    sudo systemctl daemon-reload
+    echo "expidite-management.service removed."
+}
+
+##############################################################################################################
 # Autostart if requested in system.cfg
 #
 # Note that this service is also started and stopped from bcli when the user manually starts/stops it.
@@ -1050,6 +1105,17 @@ auto_start_if_requested() {
     else
         echo "Auto-start is not enabled in system.cfg or not appropriate to this install type."
         remove_expidite_service
+    fi
+
+    if [ "$auto_start_management_service" == "Yes" ]; then
+        install_management_service
+
+        echo "Auto-starting Expidite Management Service..."
+        sudo systemctl start expidite-management.service && echo "Expidite Management Service started (or already running)." \
+            || echo "Warning: failed to start expidite-management.service; check 'journalctl -u expidite-management'"
+    else
+        echo "Auto-start Management Service is not enabled in system.cfg or not appropriate to this install type."
+        remove_management_service
     fi
 }
 

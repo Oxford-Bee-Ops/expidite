@@ -146,23 +146,48 @@ KE=keys.env; SC=system.cfg; FC=Fleet config
 
 ### System setup
 
-| Function                      | Config control | Default | Notes |
-|-------------------------------| ------------- | ------------- | ------------- |
-| Cloud storage access key      | KE:`cloud_storage_key` | The Shared Access Signature that provides access to your Azure cloud storage
-| GitHub PAT                    | KE:`my_git_pat` | The GitHub PAT that provides access to GitHub releases for `my_git_repo_url`.
-| Auto-start RpiCore            | SC:`auto_start` | Starts RpiCore automatically after reboot; unless manual mode invoked via CLI.
-| Git repo                      | SC:`my_git_repo_url` | "Not set" | URL of your Git repo containing your configuration and any custom code
-| Git branch                    | SC:`my_git_branch` | "main" | Name of the Git branch to use if not main
-| Python package name           | SC:`my_package_name` | "" | By default, Expidite will use git clone to install the custom code repo. It is also possible for Expidite to install a Python package. Only set this if you know what you are doing.
-| SSH keys                      | SC:`my_git_ssh_private_key_file` | "Not set" | The name of the SSH key file in the .expidite directory that gives access to the Git repo if it is private. This field can be left commented out if the repo is public.
-| Fleet config                  | SC:`my_fleet_config` | | The fully-qualified object name of the fleet config inventory. For example "my_project.my_fleet_config.INVENTORY".
-| Start-up script               | SC:`my_start_script` | | The fully-qualified module name to call to start the device. For example "my_project.my_start_script". This is called on reboot or when expidite is started via bcli.
-| SD card wear                  | SC:`enable_volatile_logs` | "Yes" | Make logging volatile so that it is written to memory rather than the SD card to reduce wear; logs will be lost over reboot as a result but important logs are streamed to cloud storage in real time. 
-| Install a virtual environment | SC:`venv_dir` | "venv" | Uses uv to install a venv unless one already exists at this location
-| Firewall                      | SC:`enable_firewall` | "Yes" | Installs and configures UFW (Uncomplicated Firewall)
-| Manage LEDs                   | SC:`manage_leds` | "Yes" | Manage the LED status indicator; set to "No" if you want to manage LEDs differently
-| Enable I2C                    | SC:`enable_i2c` | "Yes" | Enables the I2C interfaces for connecting I2C-based sensors
+| Function                      | Config control                                  | Default | Notes |
+|-------------------------------|-------------------------------------------------| ------------- | ------------- |
+| Cloud storage access key      | KE:`cloud_storage_key`                          | The Shared Access Signature that provides access to your Azure cloud storage
+| GitHub PAT                    | KE:`my_git_pat`                                 | The GitHub PAT that provides access to GitHub releases for `my_git_repo_url`.
+| Auto-start RpiCore            | SC:`auto_start`                                 | Starts RpiCore automatically after reboot; unless manual mode invoked via CLI.
+| Auto-start Management Service | SC:`auto_start_management_service`              | Starts the remote management service automatically after reboot. Also requires config in keys.env.
+| Git repo                      | SC:`my_git_repo_url`                            | "Not set" | URL of your Git repo containing your configuration and any custom code
+| Git branch                    | SC:`my_git_branch`                              | "main" | Name of the Git branch to use if not main
+| Python package name           | SC:`my_package_name`                            | "" | By default, Expidite will use git clone to install the custom code repo. It is also possible for Expidite to install a Python package. Only set this if you know what you are doing.
+| SSH keys                      | SC:`my_git_ssh_private_key_file`                | "Not set" | The name of the SSH key file in the .expidite directory that gives access to the Git repo if it is private. This field can be left commented out if the repo is public.
+| Fleet config                  | SC:`my_fleet_config`                            | | The fully-qualified object name of the fleet config inventory. For example "my_project.my_fleet_config.INVENTORY".
+| Start-up script               | SC:`my_start_script`                            | | The fully-qualified module name to call to start the device. For example "my_project.my_start_script". This is called on reboot or when expidite is started via bcli.
+| SD card wear                  | SC:`enable_volatile_logs`                       | "Yes" | Make logging volatile so that it is written to memory rather than the SD card to reduce wear; logs will be lost over reboot as a result but important logs are streamed to cloud storage in real time. 
+| Install a virtual environment | SC:`venv_dir`                                   | "venv" | Uses uv to install a venv unless one already exists at this location
+| Firewall                      | SC:`enable_firewall`                            | "Yes" | Installs and configures UFW (Uncomplicated Firewall)
+| Manage LEDs                   | SC:`manage_leds`                                | "Yes" | Manage the LED status indicator; set to "No" if you want to manage LEDs differently
+| Enable I2C                    | SC:`enable_i2c`                                 | "Yes" | Enables the I2C interfaces for connecting I2C-based sensors
 | Interface naming              | SC:`enable_predictable_network_interface_names` | "Yes" | Forces Raspberry Pi to use predictable interface names (eg wlan0)
 
 ### Fleet configuration options
 See the examples (`src/expidite_rpi/example/my_fleet_config.py`) and object definition for `DeviceCfg` in `/src/expidite_rpi/core/device_config_objects.py`.
+
+### Remote management
+
+#### Raspberry Pi Connect
+
+Raspberry Pi Connect is one option for remote management of your devices. To use this, you need to enable 
+it from the BCLI menu. You can then access your devices via the Raspberry Pi Connect dashboard at https://connect.raspberrypi.com/
+
+#### Azure IoT Hub
+
+Azure IoT Hub is another option for remote management of your devices. To use this, you need to configure 
+an Azure IoT Hub and Azure Device Provisioning Service in the Azure Portal, then link them. You will also 
+need to configure the Device ID of each device in the Device Provisioning Service.
+
+On each device you will need to:
+- Set auto_start_management_service="Yes" in system.cfg.
+- Set dps_scope_id in keys.env. In the Azure Portal, go to Device Provisioning Service > Overview. The ID 
+  Scope is displayed on the top right (looks like 0ne00XXXXXX).
+- Set dps_primary_key in keys.env. Go to Device Provisioning Service > Settings > Manage enrollments > Add 
+  enrollment group. Create a group enrollment with: 
+  - Attestation type: Symmetric Key.
+  - Group name: whatever you want (e.g. expidite-fleet).
+  - Let Azure auto-generate the keys.
+

@@ -137,6 +137,8 @@ class Keys(BaseSettings):
 
     cloud_storage_key: str = FAILED_TO_LOAD
     my_git_pat: str = FAILED_TO_LOAD
+    dps_scope_id: str = FAILED_TO_LOAD
+    dps_primary_key: str = FAILED_TO_LOAD
     model_config = SettingsConfigDict(extra="ignore")
 
     def get_storage_account(self) -> str:
@@ -186,6 +188,9 @@ class SystemCfg(BaseSettings):
     # Do you want RpiCore to start automatically after running the rpi_installer.sh script?
     # Anything other than "Yes" will disable auto-start.
     auto_start: str = "Yes"
+    # Do you want the management service (IoT Hub) to start automatically after running the rpi_installer.sh
+    # script? Anything other than "Yes" will disable auto-start.
+    auto_start_management_service: str = "Yes"
     # Enable the UFW firewall.
     enable_firewall: str = "Yes"
     # Enable use of predictable network interface names.

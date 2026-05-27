@@ -19,13 +19,14 @@ from expidite_rpi.core import api, device_health
 from expidite_rpi.core import configuration as root_cfg
 from expidite_rpi.core.cloud_connector import AsyncCloudConnector, CloudConnector
 from expidite_rpi.core.edge_orchestrator import EdgeOrchestrator
+from expidite_rpi.management.common import DASH_LINE, check_if_setup_required, check_keys_env
 from expidite_rpi.rpi_core import RpiCore
 from expidite_rpi.utils import utils
 from expidite_rpi.utils.utils_clean import disable_console_logging
 
 logger = root_cfg.setup_logger("expidite")
 
-dash_line = "#" * 120
+dash_line = DASH_LINE
 header = dash_line + "\n\n"
 
 ##############################################################################################################
@@ -120,91 +121,6 @@ def _parse_log_dict_with_fallback(log_dict_str: str) -> dict:
 
         msg = f"Parsed log payload is not a dictionary: {type(parsed)}"
         raise ValueError(msg) from err
-
-
-def check_if_setup_required() -> None:
-    """Check if setup is required by verifying keys and device inventory."""
-    attempts = 0
-    max_attempts = 3
-    while not check_keys_env():
-        attempts += 1
-        if attempts >= max_attempts:
-            click.echo("Setup not completed. Exiting...")
-            sys.exit(1)
-        click.echo("Press any key to retry setup...")
-        click.getchar()
-
-    # Check if device is found in inventory
-    check_device_in_inventory()
-
-
-def check_keys_env() -> bool:
-    """Check if the keys.env exists in ./rpi_core and is not empty.
-
-    Returns:
-        True if the keys.env file exists and is valid, False otherwise.
-    """
-    success, error = root_cfg.check_keys()
-    if success:
-        return True
-
-    # Help the user setup keys
-    click.echo(f"{dash_line}")
-    click.echo(f"# {error}")
-    click.echo("# ")
-    click.echo(f"# Create a file called {root_cfg.KEYS_FILE} in {root_cfg.CFG_DIR}.")
-    click.echo("# Add a key called 'cloud_storage_key'.")
-    click.echo("# The value should be the Shared Access Signature for your Azure storage account.")
-    click.echo("# You'll find this in portal.azure.com > Storage accounts > Security + networking.")
-    click.echo("# ")
-    click.echo("# The final line will look like:")
-    click.echo(
-        '# cloud_storage_key="DefaultEndpointsProtocol=https;AccountName=mystorageprod;'
-        "AccountKey=UnZzSivXKjXl0NffCODRGqNDFGCwSBHDG1UcaIeGOdzo2zfFs45GXTB9JjFfD/"
-        'ZDuaLH8m3tf6+ASt2HoD+w==;EndpointSuffix=core.windows.net;"'
-    )
-    click.echo("# ")
-    click.echo("# Press any key to continue once you have done so")
-    click.echo("# ")
-    click.echo(f"{dash_line}")
-    return False
-
-
-def check_device_in_inventory() -> None:
-    """Check if this device's ID is found in the fleet configuration inventory."""
-    try:
-        # Check if the current device is in the already-loaded inventory
-        if root_cfg.my_device_id not in root_cfg.INVENTORY:
-            click.echo(f"{dash_line}")
-            click.echo("# DEVICE NOT FOUND IN INVENTORY")
-            click.echo("# ")
-            click.echo(
-                f"# This device ID ({root_cfg.my_device_id}) is not configured in your fleet inventory."
-            )
-            click.echo(
-                f"# Fleet inventory: "
-                f"{root_cfg.system_cfg.my_fleet_config if root_cfg.system_cfg else 'NOT SET'}"
-            )
-            click.echo("# ")
-            click.echo("# This typically means one of:")
-            click.echo("# 1. The device's MAC address has not been added to your fleet configuration")
-            click.echo("# 2. The fleet configuration module is not accessible or has errors")
-            click.echo("# 3. The system.cfg file points to an incorrect fleet configuration")
-            click.echo("# ")
-            click.echo("# To fix this:")
-            click.echo("# 1. Get this device's MAC address: cat /sys/class/net/wlan0/address")
-            click.echo(f"#    (This device's MAC-based ID: {root_cfg.my_device_id})")
-            click.echo("# 2. Add the device configuration to your fleet config file")
-            click.echo("# 3. Update your git repository with the new configuration")
-            click.echo("# 4. Run 'Update Software' from the Maintenance menu")
-            click.echo("# ")
-            click.echo("# You can continue to use the CLI for maintenance and debugging,")
-            click.echo("# but RpiCore will not start properly until this device is configured.")
-            click.echo("# ")
-            click.echo(f"{dash_line}")
-    except Exception as e:
-        logger.debug(f"Error checking device inventory: {e}")
-        # Don't show this error to user as it may be normal during setup
 
 
 class InteractiveMenu:
@@ -612,7 +528,7 @@ class InteractiveMenu:
 
     def exit_review_mode(self) -> None:
         """Exit review mode by deleting the review mode flag file."""
-        if root_cfg.REVIEW_MODE_FLAG.exists():
+        if self.is_review_mode_enabled():
             root_cfg.REVIEW_MODE_FLAG.unlink()
             self.restart_rpi_core(pkill=True)
 

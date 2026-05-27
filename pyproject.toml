@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "expidite"
-version = "0.1.237"
+version = "0.1.238"
 description = "Python module to support using Raspberry Pi for scientific data collection"
 readme = "README.md"
 requires-python = ">=3.13"
@@ -19,6 +19,7 @@ dependencies = [
     "adafruit-circuitpython-bmp280==3.3.12",
     "adafruit-circuitpython-ltr390==1.1.24",
     "adafruit-platformdetect==3.88",
+    "azure-iot-device==2.14.0",
     "azure-storage-blob==12.29.0",
     "bottleneck==1.6.0", # Required by pandas.
     "click==8.4.1",
@@ -55,7 +56,8 @@ dev = [
 ]
 
 [project.scripts]
-bcli = "expidite_rpi.bcli:main"
+bcli = "expidite_rpi.management.bcli:main"
+management-service = "expidite_rpi.management.management_service:main"
 
 [tool.setuptools.packages.find]
 where = ["src"]
@@ -145,6 +147,7 @@ ignore = [
 "test/rpi_core/core/cloud_journal_test.py" = ["SLF001"]
 "test/rpi_core/core/review_mode_test.py" = ["ANN001"]
 "test/rpi_core/core/orchestrator_test.py" = ["SLF001"]
+"test/rpi_core/management/iot_hub_client_test.py" = ["PT019", "SLF001"]
 
 fixable = ["ALL"]
 
@@ -200,7 +203,7 @@ module = [
     "expidite_rpi.core.device_health",
     "expidite_rpi.core.config_validator",
     "expidite_rpi.core.edge_orchestrator",
-    "expidite_rpi.bcli",
+    "expidite_rpi.management.bcli",
 ]
 disallow_any_generics = false
 [[tool.mypy.overrides]]
