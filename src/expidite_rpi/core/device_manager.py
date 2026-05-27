@@ -1,8 +1,8 @@
 # Class to optionally manage:
 # - Wifi
 # - LED indicator status
-import os
 import shlex
+import subprocess
 from enum import IntEnum, auto
 from time import sleep
 
@@ -286,16 +286,40 @@ class DeviceManager:
             logger.debug("Wifi timer callback")
             # Test that internet connectivity is UP and working by pinging google DNS servers
             # -c 1 means ping once, -W 1 means timeout after 1 second
-            ping_ok = os.system("ping -c 1 -W 1 8.8.8.8 1>/dev/null") == 0
+            ping_ok = (
+                subprocess.run(
+                    ["ping", "-c", "1", "-W", "1", "8.8.8.8"],
+                    check=False,
+                    stdout=subprocess.DEVNULL,
+                    stderr=subprocess.DEVNULL,
+                ).returncode
+                == 0
+            )
             # Even if ICMP ping works, we still see situation where TCP can be failed (router issue).
             # We can identify this by running ss -tpn and checking for connections in SYN_SENT state which
             # indicates that the TCP handshake is not completing.
             ss_ok = (
-                os.system("ss -tpn 2>/dev/null | grep SYN_SENT 1>/dev/null") != 0
+                subprocess.run(
+                    "ss -tpn 2>/dev/null | grep SYN_SENT",
+                    shell=True,
+                    check=False,
+                    stdout=subprocess.DEVNULL,
+                    stderr=subprocess.DEVNULL,
+                ).returncode
+                != 0
             )  # OK if SYN_SENT not found.
             if not ss_ok:
                 logger.warning("Ping succeeded but ss check failed; re-running ss check to confirm")
-                estab_ok = os.system("ss -tpn 2>/dev/null | grep ESTAB 1>/dev/null") == 0  # OK if ESTAB found
+                estab_ok = (
+                    subprocess.run(
+                        "ss -tpn 2>/dev/null | grep ESTAB",
+                        shell=True,
+                        check=False,
+                        stdout=subprocess.DEVNULL,
+                        stderr=subprocess.DEVNULL,
+                    ).returncode
+                    == 0
+                )  # OK if ESTAB found
                 if estab_ok:
                     ss_ok = True
 
