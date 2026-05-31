@@ -5,13 +5,9 @@ from unittest.mock import MagicMock, patch
 import pytest
 
 import expidite_rpi.core.configuration as root_cfg
-from expidite_rpi.core.api import LedsInstalled
-from expidite_rpi.core.device_config_objects import DeviceCfg, WifiClient
 from expidite_rpi.management.iot_hub_client import (
     IoTHubClient,
     _derive_device_key,
-    device_cfg_to_twin_dict,
-    wifi_clients_from_twin,
 )
 
 logger = root_cfg.setup_logger("expidite")
@@ -35,51 +31,6 @@ class TestDeriveDeviceKey:
         assert key_a != key_b
 
 
-class TestWifiClientsFromTwin:
-    @pytest.mark.unittest
-    def test_deserialize(self) -> None:
-        raw = [
-            {"ssid": "MyWifi", "priority": 100, "pw": "secret"},
-            {"ssid": "Backup", "priority": 50, "pw": "other"},
-        ]
-        result = wifi_clients_from_twin(raw)
-        assert len(result) == 2
-        assert result[0] == WifiClient(ssid="MyWifi", priority=100, pw="secret")
-        assert result[1] == WifiClient(ssid="Backup", priority=50, pw="other")
-
-    @pytest.mark.unittest
-    def test_empty_list(self) -> None:
-        assert wifi_clients_from_twin([]) == []
-
-
-class TestDeviceCfgToTwinDict:
-    @pytest.mark.unittest
-    def test_excludes_callables(self) -> None:
-        cfg = DeviceCfg(dp_trees_create_method=lambda: None)
-        result = device_cfg_to_twin_dict(cfg)
-        assert "dp_trees_create_method" not in result
-        assert "dp_trees_create_kwargs" not in result
-
-    @pytest.mark.unittest
-    def test_serializes_enum(self) -> None:
-        cfg = DeviceCfg(leds_installed=LedsInstalled.RED_AND_GREEN)
-        result = device_cfg_to_twin_dict(cfg)
-        assert result["leds_installed"] == LedsInstalled.RED_AND_GREEN.value
-
-    @pytest.mark.unittest
-    def test_serializes_wifi_clients(self) -> None:
-        cfg = DeviceCfg(wifi_clients=[WifiClient("net", 10, "pw")])
-        result = device_cfg_to_twin_dict(cfg)
-        assert result["wifi_clients"] == [{"ssid": "net", "priority": 10, "pw": "pw"}]
-
-    @pytest.mark.unittest
-    def test_includes_basic_fields(self) -> None:
-        cfg = DeviceCfg(name="test-device", heart_beat_frequency=120)
-        result = device_cfg_to_twin_dict(cfg)
-        assert result["name"] == "test-device"
-        assert result["heart_beat_frequency"] == 120
-
-
 class TestDirectMethodHandlers:
     """Test direct method handlers by calling them directly (bypassing SDK dispatch)."""
 
@@ -87,7 +38,6 @@ class TestDirectMethodHandlers:
         """Create an IoTHubClient without DPS provisioning."""
         client = IoTHubClient.__new__(IoTHubClient)
         client._hub_client = MagicMock()
-        client._report_timer = None
         client.im = MagicMock()
         return client
 
@@ -126,131 +76,3 @@ class TestDirectMethodHandlers:
             mock_mr.create_from_method_request.assert_called_once()
             call_args = mock_mr.create_from_method_request.call_args
             assert call_args[0][1] == 404
-
-
-class TestTwinPatch:
-    def _make_client(self, monkeypatch: pytest.MonkeyPatch) -> IoTHubClient:
-        client = IoTHubClient.__new__(IoTHubClient)
-        client._hub_client = MagicMock()
-        client._report_timer = None
-        cfg = DeviceCfg(
-            name="test",
-            device_id="d01111111111",
-            heart_beat_frequency=600,
-            log_level=20,
-        )
-        monkeypatch.setattr(root_cfg, "my_device", cfg)
-        monkeypatch.setattr(root_cfg, "running_on_rpi", False)
-        return client
-
-    @pytest.mark.unittest
-    def test_apply_simple_fields(self, monkeypatch: pytest.MonkeyPatch) -> None:
-        client = self._make_client(monkeypatch)
-        applied = client._apply_config_patch(
-            {
-                "heart_beat_frequency": 300,
-                "log_level": 10,
-            }
-        )
-        assert "heart_beat_frequency" in applied
-        assert "log_level" in applied
-        assert root_cfg.my_device.heart_beat_frequency == 300
-        assert root_cfg.my_device.log_level == 10
-
-    @pytest.mark.unittest
-    def test_apply_wifi_clients(
-        self, monkeypatch: pytest.MonkeyPatch, tmp_path: pytest.TempPathFactory
-    ) -> None:
-        client = self._make_client(monkeypatch)
-        restart_flag = tmp_path / "RESTART_FLAG"  # type: ignore[operator]
-        with patch.object(root_cfg, "RESTART_EXPIDITE_FLAG", restart_flag):
-            applied = client._apply_config_patch(
-                {
-                    "wifi_clients": [{"ssid": "NewNet", "priority": 100, "pw": "pass123"}],
-                }
-            )
-        assert "wifi_clients" in applied
-        assert len(root_cfg.my_device.wifi_clients) == 1
-        assert root_cfg.my_device.wifi_clients[0].ssid == "NewNet"
-        assert restart_flag.exists()
-
-    @pytest.mark.unittest
-    def test_apply_leds_installed(self, monkeypatch: pytest.MonkeyPatch) -> None:
-        client = self._make_client(monkeypatch)
-        applied = client._apply_config_patch(
-            {
-                "leds_installed": LedsInstalled.RED_ONLY.value,
-            }
-        )
-        assert "leds_installed" in applied
-        assert root_cfg.my_device.leds_installed == LedsInstalled.RED_ONLY
-
-    @pytest.mark.unittest
-    def test_ignores_excluded_fields(self, monkeypatch: pytest.MonkeyPatch) -> None:
-        client = self._make_client(monkeypatch)
-        applied = client._apply_config_patch(
-            {
-                "dp_trees_create_method": "should_be_ignored",
-                "device_id": "should_be_ignored",
-            }
-        )
-        assert len(applied) == 0
-
-    @pytest.mark.unittest
-    def test_ignores_dollar_prefix_keys(self, monkeypatch: pytest.MonkeyPatch) -> None:
-        client = self._make_client(monkeypatch)
-        applied = client._apply_config_patch(
-            {
-                "$version": 3,
-                "heart_beat_frequency": 120,
-            }
-        )
-        assert "$version" not in applied
-        assert "heart_beat_frequency" in applied
-
-    @pytest.mark.unittest
-    def test_restart_required_fields_touch_flag(
-        self, monkeypatch: pytest.MonkeyPatch, tmp_path: pytest.TempPathFactory
-    ) -> None:
-        client = self._make_client(monkeypatch)
-        restart_flag = tmp_path / "RESTART_FLAG"  # type: ignore[operator]
-        with patch.object(root_cfg, "RESTART_EXPIDITE_FLAG", restart_flag):
-            client._apply_config_patch({"review_mode_frequency": 10})
-        assert restart_flag.exists()
-
-    @pytest.mark.unittest
-    def test_non_restart_fields_dont_touch_flag(
-        self, monkeypatch: pytest.MonkeyPatch, tmp_path: pytest.TempPathFactory
-    ) -> None:
-        client = self._make_client(monkeypatch)
-        restart_flag = tmp_path / "RESTART_FLAG"  # type: ignore[operator]
-        with patch.object(root_cfg, "RESTART_EXPIDITE_FLAG", restart_flag):
-            client._apply_config_patch({"heart_beat_frequency": 120})
-        assert not restart_flag.exists()
-
-
-class TestReportCurrentState:
-    @pytest.mark.unittest
-    def test_reports_properties(
-        self, monkeypatch: pytest.MonkeyPatch, tmp_path: pytest.TempPathFactory
-    ) -> None:
-        client = IoTHubClient.__new__(IoTHubClient)
-        client._hub_client = MagicMock()
-        client._report_timer = None
-        cfg = DeviceCfg(name="test", device_id="d01111111111")
-        monkeypatch.setattr(root_cfg, "my_device", cfg)
-        monkeypatch.setattr(root_cfg, "get_version_info", lambda: ("1.0", "2.0", "3.13"))
-
-        client._report_current_state()
-        client._hub_client.patch_twin_reported_properties.assert_called_once()
-        reported = client._hub_client.patch_twin_reported_properties.call_args[0][0]
-        assert reported["name"] == "test"
-        assert reported["expidite_version"] == "1.0"
-        assert "last_reported" in reported
-
-    @pytest.mark.unittest
-    def test_no_op_when_hub_client_is_none(self) -> None:
-        client = IoTHubClient.__new__(IoTHubClient)
-        client._hub_client = None
-        client._report_timer = None
-        client._report_current_state()  # Should not raise

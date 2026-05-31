@@ -7,8 +7,6 @@ import hmac
 import subprocess
 import threading
 import time
-from dataclasses import fields as dc_fields
-from enum import Enum
 from pathlib import Path
 from typing import TYPE_CHECKING, Any
 
@@ -20,49 +18,12 @@ from azure.iot.device import (
 if TYPE_CHECKING:
     from azure.iot.device import MethodRequest  # pyright: ignore[reportPrivateImportUsage]
 from expidite_rpi.core import configuration as root_cfg
-from expidite_rpi.core.api import LedsInstalled
-from expidite_rpi.core.device_config_objects import (
-    FAILED_TO_LOAD,
-    DeviceCfg,
-    WifiClient,
-)
+from expidite_rpi.core.device_config_objects import FAILED_TO_LOAD
 from expidite_rpi.management.bcli import InteractiveMenu
-from expidite_rpi.utils import utils
 
 logger = root_cfg.setup_logger("expidite")
 
 DPS_HOST = "global.azure-devices-provisioning.net"
-
-TWIN_UPDATABLE_FIELDS: set[str] = {
-    "heart_beat_frequency",
-    "env_sensor_frequency",
-    "review_mode_frequency",
-    "max_recording_timer",
-    "log_level",
-    "attempt_wifi_recovery",
-    "leds_installed",
-    "wifi_clients",
-    "tags",
-    "notes",
-    "cc_for_upload",
-    "cc_for_journals",
-    "cc_for_system_records",
-    "cc_for_fair",
-    "cc_for_fair_latest",
-    "cc_for_system_test",
-    "cc_for_diagnostics_bundles",
-}
-
-RESTART_REQUIRED_FIELDS: set[str] = {
-    "review_mode_frequency",
-    "max_recording_timer",
-    "leds_installed",
-}
-
-EXCLUDED_REPORTED_FIELDS: set[str] = {
-    "dp_trees_create_method",
-    "dp_trees_create_kwargs",
-}
 
 
 def _derive_device_key(group_key: str, registration_id: str) -> str:
@@ -72,34 +33,8 @@ def _derive_device_key(group_key: str, registration_id: str) -> str:
     return base64.b64encode(signed_hmac.digest()).decode("utf-8")
 
 
-def device_cfg_to_twin_dict(cfg: DeviceCfg) -> dict[str, Any]:
-    """Serialize a DeviceCfg to a JSON-compatible dict for twin reported properties.
-
-    Excludes non-serializable fields (Callables) and converts enums/dataclasses.
-    """
-    result: dict[str, Any] = {}
-    for field in dc_fields(cfg):
-        if field.name in EXCLUDED_REPORTED_FIELDS:
-            continue
-        value = getattr(cfg, field.name)
-        if isinstance(value, list) and value and hasattr(value[0], "__dataclass_fields__"):
-            result[field.name] = [{f.name: getattr(item, f.name) for f in dc_fields(item)} for item in value]
-        elif isinstance(value, Enum):
-            result[field.name] = value.value
-        elif callable(value):
-            continue
-        else:
-            result[field.name] = value
-    return result
-
-
-def wifi_clients_from_twin(raw: list[dict[str, Any]]) -> list[WifiClient]:
-    """Deserialize a list of dicts from twin desired properties into WifiClient objects."""
-    return [WifiClient(ssid=w["ssid"], priority=w["priority"], pw=w["pw"]) for w in raw]
-
-
 class IoTHubClient:
-    """Azure IoT Hub client for remote commands (direct methods) and fleet config (device twins).
+    """Azure IoT Hub client for remote commands (direct methods).
 
     Uses DPS symmetric key group enrollment. Designed to run as a standalone service
     process, communicating with the main EdgeOrchestrator via filesystem flags.
@@ -107,7 +42,6 @@ class IoTHubClient:
 
     def __init__(self) -> None:
         self._hub_client: IoTHubDeviceClient | None = None
-        self._report_timer: utils.RepeatTimer | None = None
         # Use the BCLI object for some commands. Ideally these would be extracted into a separate module.
         self.im = InteractiveMenu()
 
@@ -148,24 +82,12 @@ class IoTHubClient:
             device_id=device_id,
         )
         self._hub_client.connect()
-
         self._hub_client.on_method_request_received = self._on_method_request
-        self._hub_client.on_twin_desired_properties_patch_received = self._on_twin_desired_properties_patch
-
-        self._report_current_state()
-
-        report_interval = float(root_cfg.my_device.heart_beat_frequency)
-        self._report_timer = utils.RepeatTimer(report_interval, self._report_current_state)
-        self._report_timer.start()
 
         logger.info("IoT Hub: Connected and handlers registered")
 
     def stop(self) -> None:
         """Disconnect from IoT Hub and clean up."""
-        if self._report_timer is not None:
-            self._report_timer.cancel()
-            self._report_timer = None
-
         if self._hub_client is not None:
             try:
                 self._hub_client.shutdown()
@@ -257,70 +179,3 @@ class IoTHubClient:
         threading.Thread(target=_delayed_update_software, daemon=True).start()
 
         return {"status": "update_started"}
-
-    # ---- Device twin handlers ----
-
-    def _on_twin_desired_properties_patch(self, patch: dict[str, Any]) -> None:
-        """Handle desired property updates from IoT Hub."""
-        logger.info(f"IoT Hub: Received twin desired property patch with keys: {list(patch.keys())}")
-        applied = self._apply_config_patch(patch)
-        if applied:
-            logger.info(f"IoT Hub: Applied twin properties: {applied}")
-            self._report_current_state()
-
-    def _apply_config_patch(self, patch: dict[str, Any]) -> dict[str, str]:
-        """Apply a desired property patch to the running DeviceCfg.
-
-        Returns a dict of field_name -> str(value) for the fields that were applied.
-        """
-        applied: dict[str, str] = {}
-        needs_restart = False
-
-        for key, raw_value in patch.items():
-            if key.startswith("$"):
-                continue
-            if key not in TWIN_UPDATABLE_FIELDS:
-                logger.warning(f"IoT Hub: Ignoring non-updatable twin property '{key}'")
-                continue
-
-            coerced_value: Any
-            if key == "wifi_clients":
-                coerced_value = wifi_clients_from_twin(raw_value)
-                needs_restart = True
-            elif key == "leds_installed":
-                coerced_value = LedsInstalled(raw_value)
-            else:
-                coerced_value = raw_value
-
-            root_cfg.my_device.update_field(key, coerced_value)
-            applied[key] = str(coerced_value)
-
-            if key in RESTART_REQUIRED_FIELDS:
-                needs_restart = True
-
-            if key == "log_level":
-                root_cfg.setup_logger("expidite", level=int(raw_value))
-
-        if needs_restart:
-            logger.info("IoT Hub: Twin patch requires restart; setting RESTART flag")
-            root_cfg.RESTART_EXPIDITE_FLAG.touch()
-
-        return applied
-
-    def _report_current_state(self) -> None:
-        """Send current device config and runtime info as twin reported properties."""
-        if self._hub_client is None:
-            return
-
-        reported = device_cfg_to_twin_dict(root_cfg.my_device)
-
-        expidite_version, user_code_version, python_version = root_cfg.get_version_info()
-        reported["expidite_version"] = expidite_version
-        reported["user_code_version"] = user_code_version
-        reported["python_version"] = python_version
-        reported["last_reported"] = time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime())
-
-        try:
-            self._hub_client.patch_twin_reported_properties(reported)
-        except Exception:
-            logger.warning("IoT Hub: Failed to report twin properties", exc_info=True)
