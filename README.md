@@ -190,7 +190,7 @@ One-off setup:
 
 For each device, go to Azure Portal and:
 - Go to the Azure IoT Hub instance, Device Management -> Devices -> Add Device. Enter the Device ID and 
-  leave everything else as default.
+  leave everything else as default. Recommended to add tags Location and Name.
 
 On each device:
 - Set auto_start_management_service="Yes" in system.cfg.
