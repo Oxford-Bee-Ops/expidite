@@ -132,3 +132,23 @@ gunicorn `gthread` worker on App Service), and the SSH client is **`paramiko`** 
 socket-like adapter that wraps the WebSocket. This is a deliberate choice over `asyncssh`, which
 would require an async event loop bridged into the synchronous request — more moving parts for no
 benefit here.
+
+## Interactive terminal (portal-internal)
+
+This part does not affect the Pi↔portal wire contract above; it is how the operator drives the
+shell from a browser.
+
+When the device dials back, the portal authenticates, opens an interactive shell channel
+(PTY), and registers it in memory keyed by `sessionId`, then keeps the tunnel open. The operator's
+browser opens a **separate** WebSocket to the same instance (ARR affinity routes it there) and
+attaches to that shell:
+
+- The initiation response returns a one-time **browser token** (distinct from the device `token`)
+  and the terminal page URL.
+- The browser presents the browser token as the **first message** on its terminal WebSocket
+  (never in a URL); the portal validates it (constant-time) and allows a single attach.
+- Terminal input is sent as binary frames; control messages (`auth`, `resize`) are JSON text.
+- The session stays open until the operator closes the terminal, the shell exits, or a configurable
+  hard cap (`SSH_TUNNEL_MAX_SESSION_SECONDS`, default 8h) is reached. If no browser attaches within
+  `SSH_TUNNEL_BROWSER_ATTACH_SECONDS` (default 60s), the tunnel is torn down.
+- Server-side WebSocket keepalive pings (~25s) keep both connections under App Service's idle cut.
