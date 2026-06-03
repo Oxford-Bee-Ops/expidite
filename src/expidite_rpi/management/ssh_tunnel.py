@@ -84,7 +84,12 @@ def _default_ws_connect(wss_url: str, headers: dict[str, str]) -> WebSocketLike:
 
 
 def _default_sock_connect(host: str, port: int) -> SocketLike:
-    return socket.create_connection((host, port), timeout=LOCAL_CONNECT_TIMEOUT_SECONDS)
+    sock = socket.create_connection((host, port), timeout=LOCAL_CONNECT_TIMEOUT_SECONDS)
+    # create_connection leaves its connect timeout on the socket; clear it so the bidirectional
+    # pump uses blocking reads. Otherwise sock.recv() raises socket.timeout after an idle gap (an
+    # interactive shell with no output) and the tunnel is torn down mid-session.
+    sock.settimeout(None)
+    return sock
 
 
 def _pump_ws_to_sock(

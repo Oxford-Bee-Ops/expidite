@@ -152,3 +152,66 @@ attaches to that shell:
   hard cap (`SSH_TUNNEL_MAX_SESSION_SECONDS`, default 8h) is reached. If no browser attaches within
   `SSH_TUNNEL_BROWSER_ATTACH_SECONDS` (default 60s), the tunnel is torn down.
 - Server-side WebSocket keepalive pings (~25s) keep both connections under App Service's idle cut.
+
+## Deployment (portal App Service)
+
+The interactive terminal has a hard requirement: the device's tunnel WebSocket and the operator's
+browser WebSocket must be handled **in the same Python process**, because they rendezvous through an
+in-memory registry (`ACTIVE_TERMINALS`) and the pending-session store (`SESSION_STORE`). ARR
+affinity pins both to the same *instance (VM)*, but **not** to the same gunicorn *worker process*.
+
+So the portal must run as a **single gunicorn worker** with a thread/async worker class that can
+serve many concurrent connections in that one process. A startup command such as:
+
+```
+gunicorn --workers 1 --threads 50 --worker-class gthread --timeout 0 <wsgi_module>:app
+```
+
+- `--workers 1` — one process, so the in-memory registry/session store is shared by every
+  connection on the instance. (Scale out across *instances*, not worker processes; ARR affinity +
+  the affinity cookie keep each session's two WebSockets on one instance.)
+- `--threads 50` (or more) — `flask-sock` runs on the `gthread` worker; each live WebSocket holds a
+  thread for its lifetime, so size this for the max concurrent tunnels + terminals you expect. (A
+  `gevent`/`eventlet` worker is an alternative that scales connections more cheaply.)
+- `--timeout 0` — disables gunicorn's worker timeout so a long-lived WebSocket isn't killed.
+
+App Service settings (Portal: **Configuration → General settings**; or `az` as shown):
+
+- **WebSockets: On** (`az webapp config set --web-sockets-enabled true`). Required.
+- **ARR affinity / Session affinity: On** for multi-instance plans
+  (`az webapp update --client-affinity-enabled true`) — when scaled out, it keeps a session's two
+  WebSockets on one instance. The affinity cookie name is `ARRAffinity` (or `ARRAffinitySameSite`);
+  set `SSH_TUNNEL_AFFINITY_COOKIE_NAME` to match, and the device payload's `affinity.value` is
+  derived from `WEBSITE_INSTANCE_ID`. **On a single-instance plan (e.g. Free tier) this is a no-op**
+  for routing — the cross-*process* `--workers 1` requirement above is what matters there.
+- **Always On: recommended but optional** — *not available on Free/Shared (F1/D1)*. The feature
+  still works without it: a live terminal is an open WebSocket, which is continuous activity, so an
+  in-progress session won't be idle-unloaded. The only cost is a cold start on the first request
+  after the app has been idle.
+
+Required environment variables (secrets via Key Vault references):
+
+- `AZURE_IOT_HUB_CONNECTION_STRING` — service-side IoT Hub access to invoke the direct method.
+- `SSH_TUNNEL_SSH_USER` — SSH account on the Pis (default `bee-ops`). The password is supplied by
+  the operator per connection, never stored.
+- `WEBSITE_HOSTNAME` — provided automatically by App Service; used to build `wssUrl`.
+- `SSH_TUNNEL_KNOWN_HOSTS_DIR` — set to a **persistent** path, e.g. `/home/ssh_known_hosts`. The
+  default is relative/ephemeral, so on a tier without Always On the pinned host keys would be lost
+  on each unload and the portal would silently re-trust (TOFU) the device on the next connect.
+- Optional tuning: `SSH_TUNNEL_AFFINITY_COOKIE_NAME`, `SSH_TUNNEL_TTL_SECONDS`,
+  `SSH_TUNNEL_TARGET_PORT`, `SSH_TUNNEL_BROWSER_ATTACH_SECONDS`, `SSH_TUNNEL_MAX_SESSION_SECONDS`.
+
+> If the tunnel authenticates but the browser terminal shows no prompt, the usual cause is multiple
+> worker processes: the browser WebSocket landed on a different process than the device's tunnel and
+> can't find the registered shell. Confirm `--workers 1`.
+
+### Worker count trade-off
+
+`--workers 1 --threads N` keeps concurrency (the portal is mostly I/O-bound, which threads serve
+well) while guaranteeing the two WebSockets share one process. On a single-core plan this is
+effectively free and uses *less* memory than several worker processes (which each load
+pandas/numpy/polars). The case where multiple workers genuinely help is a **multi-core paid plan
+with CPU-heavy concurrent requests** (Python's GIL means CPU-bound work doesn't parallelise across
+threads) — revisit then. The alternative that removes the single-worker constraint entirely is to
+move `SESSION_STORE`/`ACTIVE_TERMINALS` into an external shared store (e.g. Redis); that is extra
+complexity and only worth it on a scaled-out deployment.
