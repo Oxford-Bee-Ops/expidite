@@ -12,7 +12,7 @@ Pis connect **outbound** to Azure IoT Hub. They sit behind NAT and are **not** r
 the public internet — no inbound port is ever opened on the Pi. An operator nevertheless needs
 to open an interactive SSH session to a chosen Pi from the portal.
 
-The design reuses the existing IoT Hub direct-method channel **only to trigger** the tunnel.
+The design uses the IoT Hub direct-method channel **only to trigger** the tunnel.
 The SSH bytes themselves travel inside a **WebSocket that the Pi opens outbound** to the portal.
 
 **Key invariant:** the Pi only ever makes *outbound* connections. The portal never connects to
@@ -39,9 +39,6 @@ the Pi.
 ## Direct method
 
 - **Name:** `open_ssh_tunnel`
-
-  (snake_case, matching the existing methods in both repos: `reboot`, `update_software`,
-  `enter_review_mode`, `exit_review_mode`, `get_review_mode`.)
 
 ### Payload (portal → Pi)
 
