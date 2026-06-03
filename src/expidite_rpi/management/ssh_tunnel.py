@@ -60,13 +60,6 @@ WsConnect = Callable[[str, dict[str, str]], WebSocketLike]
 SockConnect = Callable[[str, int], SocketLike]
 
 
-def _parse_allowed_hosts(raw: str) -> set[str]:
-    """Parse the comma-separated allowlist from config into a set of lowercase hostnames."""
-    if not raw or raw == root_cfg.FAILED_TO_LOAD:
-        return set()
-    return {h.strip().lower() for h in raw.split(",") if h.strip()}
-
-
 def _parse_expires_at(raw: str) -> datetime | None:
     """Parse an ISO-8601 UTC timestamp; return None if unparseable."""
     try:
@@ -167,7 +160,7 @@ def run_bridge(ws: WebSocketLike, sock: SocketLike, session_id: str) -> None:
 
 
 class SshTunnelManager:
-    """Tracks active SSH tunnel sessions and enforces the per-device limits/allowlist.
+    """Tracks active SSH tunnel sessions and enforces the per-device limits.
 
     A single instance is owned by the IoTHubClient. Validation is synchronous (so the direct-method
     ack can report acceptance), while the dial-out and byte pump run on a daemon thread.
@@ -184,10 +177,6 @@ class SshTunnelManager:
         self._active: dict[str, threading.Thread] = {}
 
     @property
-    def _allowed_hosts(self) -> set[str]:
-        return _parse_allowed_hosts(root_cfg.system_cfg.ssh_tunnel_allowed_hosts)
-
-    @property
     def _max_sessions(self) -> int:
         try:
             return int(root_cfg.system_cfg.ssh_tunnel_max_sessions)
@@ -202,13 +191,9 @@ class SshTunnelManager:
         if not session_id or not token or not wss_url:
             return False, "missing sessionId, token or wssUrl"
 
-        allowed_hosts = self._allowed_hosts
-        if not allowed_hosts:
-            return False, "ssh tunnel not enabled on this device"
-
-        host = (urlparse(wss_url).hostname or "").lower()
-        if host not in allowed_hosts:
-            return False, "wssUrl host not in allowlist"
+        # Require TLS: the device must never be downgraded to a plaintext ws:// connection.
+        if urlparse(wss_url).scheme != "wss":
+            return False, "wssUrl must use the wss:// (TLS) scheme"
 
         expires_at = _parse_expires_at(payload.get("expiresAt", ""))
         if expires_at is None or expires_at <= datetime.now(UTC):

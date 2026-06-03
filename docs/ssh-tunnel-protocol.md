@@ -71,9 +71,8 @@ asynchronously *after* this response is sent.
 }
 ```
 
-Reasons the Pi may decline (`accepted: false`): malformed payload, `wssUrl` host not in the
-device allowlist, the session is already expired (`expiresAt` in the past), or the device is at
-its concurrent-session cap.
+Reasons the Pi may decline (`accepted: false`): malformed payload, the session is already expired
+(`expiresAt` in the past), or the device is at its concurrent-session cap.
 
 ## WebSocket connect (Pi → portal)
 
@@ -120,8 +119,11 @@ for private use).
 - The portal pins each device's SSH host key on first connect and refuses on later mismatch
   (per-device known-hosts). With password auth this matters especially: it stops a spoofed
   endpoint from harvesting the operator's password.
-- The Pi validates `wssUrl`'s host against a configurable allowlist, so a malformed/hostile
-  payload cannot make the device dial an arbitrary host.
+- The Pi dials out to whatever `wssUrl` the `open_ssh_tunnel` payload specifies, but **only over
+  TLS** — a `wssUrl` that isn't `wss://` is rejected, so a payload cannot downgrade the device to a
+  plaintext connection. There is no host allowlist on the device: invoking the direct method
+  already requires privileged IoT Hub service access, and the device supports multiple portal
+  instances without per-device config.
 
 ## Implementation note: portal SSH stack
 

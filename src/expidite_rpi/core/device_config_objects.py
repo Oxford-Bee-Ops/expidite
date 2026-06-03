@@ -211,10 +211,6 @@ class SystemCfg(BaseSettings):
     ##########################################################################################################
     # On-demand SSH tunnel settings (see docs/ssh-tunnel-protocol.md)
     ##########################################################################################################
-    # Comma-separated allowlist of portal hostnames the device is permitted to dial out to for the SSH
-    # tunnel WebSocket. A malformed/hostile open_ssh_tunnel payload cannot make the device connect to a
-    # host outside this list. Leave at FAILED_TO_LOAD to disable the tunnel entirely.
-    ssh_tunnel_allowed_hosts: str = FAILED_TO_LOAD
     # Maximum number of concurrent SSH tunnel sessions on the device.
     ssh_tunnel_max_sessions: str = "3"
     # The local sshd port to bridge to (the portal may override per-session via the payload targetPort).

@@ -9,7 +9,6 @@ import pytest
 import expidite_rpi.core.configuration as root_cfg
 from expidite_rpi.management.ssh_tunnel import (
     SshTunnelManager,
-    _parse_allowed_hosts,
     _parse_expires_at,
     run_bridge,
 )
@@ -36,8 +35,7 @@ def _valid_payload(**overrides: object) -> dict[str, Any]:
 
 @pytest.fixture(autouse=True)
 def enable_tunnel(monkeypatch: pytest.MonkeyPatch) -> None:
-    """Allow the test portal host and a default session cap unless a test overrides it."""
-    monkeypatch.setattr(root_cfg.system_cfg, "ssh_tunnel_allowed_hosts", "portal.example.net")
+    """Set a default session cap and target port unless a test overrides them."""
     monkeypatch.setattr(root_cfg.system_cfg, "ssh_tunnel_max_sessions", "3")
     monkeypatch.setattr(root_cfg.system_cfg, "ssh_tunnel_default_port", "22")
 
@@ -46,15 +44,6 @@ def enable_tunnel(monkeypatch: pytest.MonkeyPatch) -> None:
 
 
 class TestParsing:
-    @pytest.mark.unittest
-    def test_parse_allowed_hosts_normalises(self) -> None:
-        assert _parse_allowed_hosts("A.com, b.com ,") == {"a.com", "b.com"}
-
-    @pytest.mark.unittest
-    def test_parse_allowed_hosts_empty_or_unset(self) -> None:
-        assert _parse_allowed_hosts("") == set()
-        assert _parse_allowed_hosts(root_cfg.FAILED_TO_LOAD) == set()
-
     @pytest.mark.unittest
     def test_parse_expires_at_handles_z_suffix(self) -> None:
         parsed = _parse_expires_at("2030-01-01T00:00:00Z")
@@ -85,19 +74,11 @@ class TestValidation:
         assert reason is not None
 
     @pytest.mark.unittest
-    def test_rejects_when_disabled(self, monkeypatch: pytest.MonkeyPatch) -> None:
-        monkeypatch.setattr(root_cfg.system_cfg, "ssh_tunnel_allowed_hosts", root_cfg.FAILED_TO_LOAD)
+    def test_rejects_non_tls_scheme(self) -> None:
         mgr = SshTunnelManager()
-        accepted, reason = mgr._validate(_valid_payload())
+        accepted, reason = mgr._validate(_valid_payload(wssUrl="ws://portal.example.net/internal/ssh-tunnel"))
         assert accepted is False
-        assert reason is not None
-
-    @pytest.mark.unittest
-    def test_rejects_host_not_in_allowlist(self) -> None:
-        mgr = SshTunnelManager()
-        accepted, reason = mgr._validate(_valid_payload(wssUrl="wss://evil.example.com/x"))
-        assert accepted is False
-        assert reason == "wssUrl host not in allowlist"
+        assert reason == "wssUrl must use the wss:// (TLS) scheme"
 
     @pytest.mark.unittest
     def test_rejects_expired(self) -> None:
