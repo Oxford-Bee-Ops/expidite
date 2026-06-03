@@ -164,7 +164,7 @@ So the portal must run as a **single gunicorn worker** with a thread/async worke
 serve many concurrent connections in that one process. A startup command such as:
 
 ```
-gunicorn --workers 1 --threads 50 --worker-class gthread --timeout 0 <wsgi_module>:app
+gunicorn --workers 1 --threads 50 --worker-class gthread <wsgi_module>:app
 ```
 
 - `--workers 1` — one process, so the in-memory registry/session store is shared by every
@@ -173,7 +173,12 @@ gunicorn --workers 1 --threads 50 --worker-class gthread --timeout 0 <wsgi_modul
 - `--threads 50` (or more) — `flask-sock` runs on the `gthread` worker; each live WebSocket holds a
   thread for its lifetime, so size this for the max concurrent tunnels + terminals you expect. (A
   `gevent`/`eventlet` worker is an alternative that scales connections more cheaply.)
-- `--timeout 0` — disables gunicorn's worker timeout so a long-lived WebSocket isn't killed.
+- **Worker timeout:** with the `gthread` worker you do **not** need `--timeout 0`. gunicorn's
+  `--timeout` is a worker *heartbeat* timeout; the gthread worker's main thread heartbeats
+  independently of the request threads, so a long-lived WebSocket is not killed. Keep the default
+  (30s) so a genuinely hung worker can still be auto-restarted (important with a single worker). If
+  you ever observe sessions dropping at ~30s, raise it (e.g. `--timeout 120`) rather than disabling
+  it. `--timeout 0` would only be needed with the plain `sync` worker, which we are not using.
 
 App Service settings (Portal: **Configuration → General settings**; or `az` as shown):
 
