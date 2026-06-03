@@ -25,6 +25,8 @@ if TYPE_CHECKING:
 
 logger = root_cfg.setup_logger("expidite")
 
+# The local sshd port. Fixed (not configurable, not taken from the payload) so a tunnel can only
+# ever reach sshd, never an arbitrary loopback service.
 DEFAULT_TARGET_PORT = 22
 # Ping well under App Service's ~230s idle timeout (see docs/ssh-tunnel-protocol.md).
 PING_INTERVAL_SECONDS = 30
@@ -245,7 +247,9 @@ class SshTunnelManager:
         token = str(payload["token"])
         wss_url = str(payload["wssUrl"])
         affinity = payload.get("affinity") or {}
-        target_port = int(payload.get("targetPort") or root_cfg.system_cfg.ssh_tunnel_default_port)
+        # The device always bridges to its local sshd. The port is fixed (not taken from the
+        # payload) so a tunnel can never be pointed at an arbitrary loopback service.
+        target_port = DEFAULT_TARGET_PORT
 
         headers = {
             "X-Tunnel-Session": session_id,

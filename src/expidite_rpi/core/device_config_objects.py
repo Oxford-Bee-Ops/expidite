@@ -213,8 +213,6 @@ class SystemCfg(BaseSettings):
     ##########################################################################################################
     # Maximum number of concurrent SSH tunnel sessions on the device.
     ssh_tunnel_max_sessions: str = "3"
-    # The local sshd port to bridge to (the portal may override per-session via the payload targetPort).
-    ssh_tunnel_default_port: str = "22"
 
     ##########################################################################################################
     # System test and re-processor settings

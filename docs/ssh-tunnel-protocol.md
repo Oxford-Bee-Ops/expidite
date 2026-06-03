@@ -51,7 +51,6 @@ the Pi.
     "name": "ARRAffinitySameSite",   // or "ARRAffinity"; derived from the portal's config
     "value": "<WEBSITE_INSTANCE_ID>"
   },
-  "targetPort": 22,                  // optional, default 22 — local sshd port on the Pi
   "expiresAt": "2026-06-03T12:34:56Z"  // ISO-8601 UTC; the session is invalid after this
 }
 ```
@@ -121,6 +120,10 @@ for private use).
   plaintext connection. There is no host allowlist on the device: invoking the direct method
   already requires privileged IoT Hub service access, and the device supports multiple portal
   instances without per-device config.
+- The local end of the bridge is **fixed to `127.0.0.1:22`** (sshd) on the device — it is not
+  configurable and is not taken from the payload. This keeps the tunnel bounded to sshd rather than
+  letting a payload bridge to an arbitrary loopback service, so a leaked IoT Hub service credential
+  cannot be turned into a general-purpose port-forward into each Pi's loopback interface.
 
 ## Implementation note: portal SSH stack
 

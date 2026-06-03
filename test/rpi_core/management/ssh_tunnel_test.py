@@ -26,7 +26,6 @@ def _valid_payload(**overrides: object) -> dict[str, Any]:
         "token": "secret-token",
         "wssUrl": "wss://portal.example.net/internal/ssh-tunnel",
         "affinity": {"name": "ARRAffinity", "value": "inst-123"},
-        "targetPort": 22,
         "expiresAt": _future_iso(),
     }
     payload.update(overrides)
@@ -35,9 +34,8 @@ def _valid_payload(**overrides: object) -> dict[str, Any]:
 
 @pytest.fixture(autouse=True)
 def enable_tunnel(monkeypatch: pytest.MonkeyPatch) -> None:
-    """Set a default session cap and target port unless a test overrides them."""
+    """Set a default session cap unless a test overrides it."""
     monkeypatch.setattr(root_cfg.system_cfg, "ssh_tunnel_max_sessions", "3")
-    monkeypatch.setattr(root_cfg.system_cfg, "ssh_tunnel_default_port", "22")
 
 
 # ---- Helper parsing ----
@@ -86,6 +84,16 @@ class TestValidation:
         accepted, reason = mgr._validate(_valid_payload(expiresAt=_future_iso(seconds=-10)))
         assert accepted is False
         assert reason == "missing, invalid, or expired expiresAt"
+
+    @pytest.mark.unittest
+    def test_ignores_payload_target_port(self) -> None:
+        # targetPort is no longer part of the contract: a payload that smuggles one in is still
+        # accepted, and the bridge always connects to the fixed local sshd port (asserted in
+        # test_open_accepted_starts_and_completes_session).
+        mgr = SshTunnelManager()
+        accepted, reason = mgr._validate(_valid_payload(targetPort=2375))
+        assert accepted is True
+        assert reason is None
 
     @pytest.mark.unittest
     def test_rejects_at_max_sessions(self, monkeypatch: pytest.MonkeyPatch) -> None:
