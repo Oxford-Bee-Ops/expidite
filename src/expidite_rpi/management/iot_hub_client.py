@@ -20,6 +20,7 @@ if TYPE_CHECKING:
 from expidite_rpi.core import configuration as root_cfg
 from expidite_rpi.core.device_config_objects import FAILED_TO_LOAD
 from expidite_rpi.management.bcli import InteractiveMenu
+from expidite_rpi.management.ssh_tunnel import SshTunnelManager
 
 logger = root_cfg.setup_logger("expidite")
 
@@ -44,6 +45,7 @@ class IoTHubClient:
         self._hub_client: IoTHubDeviceClient | None = None
         # Use the BCLI object for some commands. Ideally these would be extracted into a separate module.
         self.im = InteractiveMenu()
+        self.ssh_tunnel_manager = SshTunnelManager()
 
     def start(self) -> None:
         """Provision via DPS and connect to IoT Hub."""
@@ -88,6 +90,7 @@ class IoTHubClient:
 
     def stop(self) -> None:
         """Disconnect from IoT Hub and clean up."""
+        self.ssh_tunnel_manager.close_all()
         if self._hub_client is not None:
             try:
                 self._hub_client.shutdown()
@@ -113,6 +116,7 @@ class IoTHubClient:
             "enter_review_mode": self._handle_enter_review_mode,
             "exit_review_mode": self._handle_exit_review_mode,
             "update_software": self._handle_update_software,
+            "open_ssh_tunnel": self._handle_open_ssh_tunnel,
         }
 
         handler = handlers.get(method_name)
@@ -179,3 +183,17 @@ class IoTHubClient:
         threading.Thread(target=_delayed_update_software, daemon=True).start()
 
         return {"status": "update_started"}
+
+    def _handle_open_ssh_tunnel(self, payload: dict[str, Any]) -> dict[str, Any]:
+        """Open an on-demand outbound SSH tunnel to the portal.
+
+        Validation is synchronous so the ack reports acceptance; the dial-out and byte pump run on a
+        daemon thread. See docs/ssh-tunnel-protocol.md. The token is never logged.
+        """
+        session_id = payload.get("sessionId", "<unknown>")
+        logger.info(f"IoT Hub: open_ssh_tunnel requested for session {session_id}")
+        accepted, reason = self.ssh_tunnel_manager.open(payload)
+        response: dict[str, Any] = {"accepted": accepted}
+        if reason is not None:
+            response["reason"] = reason
+        return response

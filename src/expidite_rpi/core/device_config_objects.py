@@ -209,6 +209,12 @@ class SystemCfg(BaseSettings):
     manage_leds: str = "Yes"
 
     ##########################################################################################################
+    # On-demand SSH tunnel settings (see docs/ssh-tunnel-protocol.md)
+    ##########################################################################################################
+    # Maximum number of concurrent SSH tunnel sessions on the device.
+    ssh_tunnel_max_sessions: str = "3"
+
+    ##########################################################################################################
     # System test and re-processor settings
     ##########################################################################################################
     # Use local cloud storage for testing if set to "Yes"

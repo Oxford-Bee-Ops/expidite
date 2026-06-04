@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "expidite"
-version = "0.1.241"
+version = "0.1.242"
 description = "Python module to support using Raspberry Pi for scientific data collection"
 readme = "README.md"
 requires-python = ">=3.13"
@@ -37,6 +37,7 @@ dependencies = [
     "sensirion_i2c_sht4x==1.1.0",
     "sensirion_i2c_sht==0.4.0",
     "smbus2==0.6.1",
+    "websockets==16.0",
     'systemd-python==235; sys_platform != "win32"',
 ]
 
@@ -148,6 +149,7 @@ ignore = [
 "test/rpi_core/core/review_mode_test.py" = ["ANN001"]
 "test/rpi_core/core/orchestrator_test.py" = ["SLF001"]
 "test/rpi_core/management/iot_hub_client_test.py" = ["PT019", "SLF001"]
+"test/rpi_core/management/ssh_tunnel_test.py" = ["SLF001"]
 
 fixable = ["ALL"]
 
