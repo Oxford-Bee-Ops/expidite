@@ -119,6 +119,12 @@ WARNING_FIELDS = [
 
 HEART_STREAM_INDEX = 0
 WARNING_STREAM_INDEX = 1
+
+# How stale the latest HEART file on Azure must be before check_azure_connection() treats it as a local fault
+# and reboots. The same threshold is applied to device uptime: the device is only held responsible for HEART
+# staleness that accrued while it was up and able to upload, so we reboot only when the file has been stale
+# for this long AND the device has been up at least this long (see check_azure_connection()).
+HEART_STALE_THRESHOLD = timedelta(hours=6)
 DEVICE_HEALTH_CFG = SensorCfg(
     sensor_type=api.SENSOR_TYPE.SYS,
     sensor_index=0,
@@ -219,15 +225,31 @@ class DeviceHealth(Sensor):
         This check is quite conservative to avoid disrupting normal data collection during brief internet
         outages. We check that:
         - we have connectivity to Azure blob storage right now,
-        - and that we have uploaded a HEART file for this device in the last 6 hours,
-        - but we only perform this check between midnight and 2am to avoid rebooting during the day.
+        - and that we have uploaded a HEART file for this device within HEART_STALE_THRESHOLD,
+        - but we only perform this check between midnight and 2am to avoid rebooting during the day,
+        - and only once the device has been up at least HEART_STALE_THRESHOLD.
 
         We only reboot when we can reach Azure but our own HEART uploads are stale, which points at a local
         fault that a reboot may clear. If we cannot reach Azure at all (likely an internet outage) or no HEART
         file exists yet, we log and take no further action.
+
+        The uptime gate matters because the device is only responsible for HEART staleness that accrued
+        while it was up and able to upload. A device that was powered off (or has only just booted) has not
+        had the chance to refresh the file, so its stale file is expected, not a fault. This also makes the
+        remediation loop-safe: HEART rows upload asynchronously (queued by log(), flushed to Azure only every
+        JOURNAL_SYNC_FREQUENCY seconds), so a device that reboots on a stale file would otherwise re-run this
+        check on its first loop iteration, see the same stale file, and reboot again. Because a freshly
+        rebooted device cannot reach HEART_STALE_THRESHOLD of uptime again within the 2am window, it reboots
+        at most once per window.
         """
         time_now = datetime.now(tz=UTC)
         if not (time(0, 0) <= time_now.time() < time(2, 0)):
+            return
+
+        uptime = time_now - datetime.fromtimestamp(psutil.boot_time(), tz=UTC)
+        if uptime < HEART_STALE_THRESHOLD:
+            # The device has not been up long enough to be held responsible for a stale HEART file (and has
+            # not necessarily had time to flush a fresh one) - skip so we don't reboot on expected staleness.
             return
 
         cc = CloudConnector.get_instance(root_cfg.CLOUD_TYPE)
@@ -255,7 +277,7 @@ class DeviceHealth(Sensor):
 
         age = time_now - last_heart_update_time
 
-        if age >= timedelta(hours=6):
+        if age >= HEART_STALE_THRESHOLD:
             msg = (
                 f"Latest HEART file on Azure is {age} old (last modified {last_heart_update_time}), rebooting"
             )
