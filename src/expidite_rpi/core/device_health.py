@@ -222,17 +222,36 @@ class DeviceHealth(Sensor):
         - and that we have uploaded a HEART file for this device in the last 6 hours,
         - but we only perform this check between midnight and 2am to avoid rebooting during the day.
 
-        If this check fails, reboot the device.
+        We only reboot when we can reach Azure but our own HEART uploads are stale, which points at a local
+        fault that a reboot may clear. If we cannot reach Azure at all (likely an internet outage) or no HEART
+        file exists yet, we log and take no further action.
         """
         time_now = datetime.now(tz=UTC)
         if not (time(0, 0) <= time_now.time() < time(2, 0)):
             return
 
         cc = CloudConnector.get_instance(root_cfg.CLOUD_TYPE)
-        last_heart_update_time = cc.get_last_file_modified_time(
-            dst_container=root_cfg.my_device.cc_for_system_records,
-            file_prefix=f"V3_HEART_{self.device_id}",
-        )
+        try:
+            last_heart_update_time = cc.get_last_file_modified_time(
+                dst_container=root_cfg.my_device.cc_for_system_records,
+                file_prefix=f"V3_HEART_{self.device_id}",
+            )
+        except Exception:
+            # We could not reach Azure - treat as a transient outage rather than a local fault and do not
+            # reboot.
+            logger.warning(
+                f"{root_cfg.RAISE_WARN()}Could not reach Azure to check HEART file freshness; "
+                "skipping connectivity reboot check"
+            )
+            return
+
+        if last_heart_update_time is None:
+            # We can reach Azure but no HEART file exists yet for this device. Log and take no further action.
+            logger.warning(
+                f"{root_cfg.RAISE_WARN()}No HEART file found on Azure for {self.device_id}; "
+                "skipping connectivity reboot check"
+            )
+            return
 
         age = time_now - last_heart_update_time
 

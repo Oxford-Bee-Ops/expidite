@@ -497,7 +497,7 @@ class CloudConnector:
         self,
         dst_container: str,
         file_prefix: str,
-    ) -> datetime:
+    ) -> datetime | None:
         """Get the last modified time for the most recently modified file beginning with file_prefix.
 
         Parameters:
@@ -506,6 +506,9 @@ class CloudConnector:
 
         Checks for the current day file and then the previous day file. For performance, it does not check
         further back than the previous day.
+
+        Returns None if no matching file is found (within the current/previous day window). This is distinct
+        from a connectivity failure, which propagates as an exception from the underlying Azure call.
         """
         target_container = self._validate_container(dst_container)
 
@@ -518,7 +521,7 @@ class CloudConnector:
                 continue
             return props.last_modified
 
-        return datetime.min.replace(tzinfo=UTC)
+        return None
 
     ##########################################################################################################
     # Private utility methods
