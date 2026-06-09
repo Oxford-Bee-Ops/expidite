@@ -178,6 +178,7 @@ class DeviceHealth(Sensor):
 
     def run(self) -> None:
         """Main loop for the DeviceHealth sensor.
+
         This method is called when the thread is started.
         It runs in a loop, logging health data and warnings at regular intervals.
         """
@@ -185,9 +186,15 @@ class DeviceHealth(Sensor):
             logger.info(f"Starting DeviceHealth thread {self!r}")
 
             while not self.stop_requested.is_set():
-                self.log_health()
-                self.log_warnings()
-                self.check_azure_connection()
+                try:
+                    self.log_health()
+                    self.log_warnings()
+                    self.check_azure_connection()
+                except Exception:
+                    # A failure in a single iteration (e.g. a transient telemetry or journal error) must not
+                    # kill the health monitor; log it and carry on so heartbeats keep flowing. The wait below
+                    # is outside this handler so a persistent error can't spin the loop tightly.
+                    logger.exception(f"{root_cfg.RAISE_WARN()}Error in DeviceHealth loop")
 
                 # Set timer for next run.
                 self.log_counter += 1
