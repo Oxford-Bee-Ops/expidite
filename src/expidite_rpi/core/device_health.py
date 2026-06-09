@@ -214,7 +214,7 @@ class DeviceHealth(Sensor):
                 if str(log["message"]).startswith(api.RAISE_WARN_TAG):
                     log["priority"] = int(log.get("priority", 4)) - 1
                     self.log(WARNING_STREAM_INDEX, log)
-                elif log["priority"] <= 3:
+                elif int(log.get("priority", 4)) <= 3:
                     self.log(WARNING_STREAM_INDEX, log)
 
     def check_azure_connection(self) -> None:
