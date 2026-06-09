@@ -444,9 +444,15 @@ class DeviceHealth(Sensor):
         # we need to be careful about this
         processes = []
         for proc in psutil.process_iter(attrs=["pid", "name", "memory_info", "cmdline"]):
-            # The memory_info is in a pmem object, so we need to extract the rss value
-            rss = proc.info["memory_info"].rss
-            processes.append((rss, proc.info))
+            try:
+                # The memory_info is in a pmem object, so we need to extract the rss value. It can be None if
+                # the process has gone away between listing and reading it, so we skip those.
+                mem_info = proc.info["memory_info"]
+                if mem_info is None:
+                    continue
+                processes.append((mem_info.rss, proc.info))
+            except (psutil.NoSuchProcess, psutil.AccessDenied, psutil.ZombieProcess):
+                continue
 
         # Sort the list of processes by memory usage (rss) in descending order
         all_processes = sorted(processes, key=lambda x: x[0], reverse=True)
@@ -454,13 +460,14 @@ class DeviceHealth(Sensor):
 
         # Format the information for the top processes
         log_string = f"Memory at {psutil.virtual_memory().percent}%; top processes: "
-        for _, info in top_processes:
-            # Combine the command line arguments into a single string, but drop any words starting with "-"
+        for rss, info in top_processes:
+            # Combine the command line arguments into a single string, but drop any words starting with "-".
+            # cmdline can be None (e.g. for kernel threads), so default to an empty list.
             if root_cfg.running_on_rpi:
-                cmd_line = " ".join([arg for arg in info["cmdline"] if not arg.startswith("-")])
+                cmd_line = " ".join([arg for arg in (info.get("cmdline") or []) if not arg.startswith("-")])
             else:
                 cmd_line = info["name"]
-            log_string += f"[{cmd_line}]({info['pid']})={info['memory_info'].rss / (1024**2):.2f}MB, "
+            log_string += f"[{cmd_line}]({info['pid']})={rss / (1024**2):.2f}MB, "
         logger.warning(log_string)
 
     @staticmethod
