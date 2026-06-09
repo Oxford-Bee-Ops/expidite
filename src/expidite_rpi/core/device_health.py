@@ -42,29 +42,32 @@ if root_cfg.running_on_rpi:
             logger.exception(f"{root_cfg.RAISE_WARN()}Failed to initialize journal reader")
             return logs
 
-        # Set filters.
-        if since:
-            reader.seek_realtime(since.timestamp())
+        try:
+            # Set filters.
+            if since:
+                reader.seek_realtime(since.timestamp())
 
-        # Iterate through the logs.
-        for entry in reader:
-            priority = int(entry.get("PRIORITY", 9))
-            message = entry.get("MESSAGE", "")
-            if (min_priority is None or priority <= min_priority or api.RAISE_WARN_TAG in message) and (
-                grep_str is None or all(s in message for s in grep_str)
-            ):
-                time_logged: datetime = entry.get("__REALTIME_TIMESTAMP")
-                log_entry = {
-                    "time_logged": time_logged,
-                    "message": entry.get("MESSAGE", "No message"),
-                    "process_id": entry.get("_PID"),
-                    "process_name": entry.get("_COMM"),
-                    "executable_path": entry.get("_EXE"),
-                    "priority": entry.get("PRIORITY"),
-                }
-                logs.append(log_entry)
-                if len(logs) >= max_logs:
-                    break
+            # Iterate through the logs.
+            for entry in reader:
+                priority = int(entry.get("PRIORITY", 9))
+                message = entry.get("MESSAGE", "")
+                if (min_priority is None or priority <= min_priority or api.RAISE_WARN_TAG in message) and (
+                    grep_str is None or all(s in message for s in grep_str)
+                ):
+                    time_logged: datetime = entry.get("__REALTIME_TIMESTAMP")
+                    log_entry = {
+                        "time_logged": time_logged,
+                        "message": entry.get("MESSAGE", "No message"),
+                        "process_id": entry.get("_PID"),
+                        "process_name": entry.get("_COMM"),
+                        "executable_path": entry.get("_EXE"),
+                        "priority": entry.get("PRIORITY"),
+                    }
+                    logs.append(log_entry)
+                    if len(logs) >= max_logs:
+                        break
+        finally:
+            reader.close()
         logger.info(f"Fetched {len(logs)} logs from the journal.")
 
         return logs
@@ -182,16 +185,11 @@ class DeviceHealth(Sensor):
             logger.info(f"Starting DeviceHealth thread {self!r}")
 
             while not self.stop_requested.is_set():
-                # Log the health data
                 self.log_health()
-
-                # Log the warning data
                 self.log_warnings()
-
                 self.check_azure_connection()
 
-                # Set timer for next run
-                self.last_ran = api.utc_now()
+                # Set timer for next run.
                 self.log_counter += 1
                 sleep_time = root_cfg.my_device.heart_beat_frequency
                 self.stop_requested.wait(sleep_time)
