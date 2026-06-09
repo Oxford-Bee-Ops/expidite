@@ -199,7 +199,9 @@ class DeviceHealth(Sensor):
                 # Set timer for next run.
                 self.log_counter += 1
                 sleep_time = root_cfg.my_device.heart_beat_frequency
-                self.stop_requested.wait(sleep_time)
+                # NICKB NO COMMIT!!!
+                # self.stop_requested.wait(sleep_time)
+                self.stop_requested.wait(60)
         except Exception:
             logger.exception(f"{root_cfg.RAISE_WARN()}Error in DeviceHealth thread")
 
@@ -410,6 +412,9 @@ class DeviceHealth(Sensor):
             # Get the expidite version and user code version from the files
             # Stored in .expidite/user_code_version and .expidite/expidite_code_version
             expidite_version, user_code_version, python_version = root_cfg.get_version_info()
+
+            if self.log_counter == 3:
+                x: int = 17 /0
 
             health = {
                 "boot_time": api.utc_to_iso_str(psutil.boot_time()),
