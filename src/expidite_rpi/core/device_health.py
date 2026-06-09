@@ -298,7 +298,6 @@ class DeviceHealth(Sensor):
 
         check_memory_usage Set False to prevent recursion when used for diagnostics collection.
         """
-        health: dict[str, Any] = {}
         try:
             cpu_temp: str = ""
             bytes_written = 0
@@ -440,6 +439,10 @@ class DeviceHealth(Sensor):
 
         except Exception:
             logger.exception(f"{root_cfg.RAISE_WARN()}Failed to get telemetry")
+            # Return a complete, but empty dict because log() rejects a row that is missing any declared
+            # field, so a partial dict here would raise in log_health() and (per the loop handler in run()),
+            # cost us that heartbeat.
+            health = dict.fromkeys(HEART_FIELDS, "")
 
         return health
 
