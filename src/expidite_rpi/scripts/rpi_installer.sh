@@ -15,6 +15,9 @@
 #   if using a private repository
 #
 # This script will:
+# - exit_if_run_as_root
+# - ensure_passwordless_sudo
+# - stop_expidite_service
 # - install_ssh_keys for accessing the user's code repository
 # - create_and_activate_venv
 # - install_os_packages required for RpiCore
@@ -50,6 +53,27 @@ else
 fi
 
 SERVICE_USER="bee-ops"
+
+##############################################################################################################
+# Refuse to run as root / under sudo.
+#
+# This script must run as the unprivileged service user ($SERVICE_USER); it escalates with `sudo` internally
+# only for the specific steps that need it. Running the whole script as root (e.g. `sudo rpi_installer.sh`)
+# breaks the install because $HOME resolves to /root: the venv, ~/.expidite config, SSH keys, crontab and the
+# systemd User= settings all end up associated with the wrong user.
+##############################################################################################################
+exit_if_run_as_root() {
+    echo_header
+    if [ "$(id -u)" -eq 0 ]; then
+        echo "ERROR: rpi_installer.sh must NOT be run as root or with sudo." >&2
+        echo "It runs as the '$SERVICE_USER' user and uses sudo internally only where required." >&2
+        echo "Re-run it without sudo, for example:" >&2
+        echo "    ./rpi_installer.sh" >&2
+        echo "or, from a root shell, run it as the service user:" >&2
+        echo "    sudo -u $SERVICE_USER ./rpi_installer.sh" >&2
+        exit 1
+    fi
+}
 
 ##############################################################################################################
 # # Ensure passwordless sudo is configured (Raspberry Pi Imager does not do this automatically).
@@ -1180,6 +1204,7 @@ echo_header() {
 #
 ##############################################################################################################
 echo_header "Starting RPi installer.  (os_update=$os_update)"
+exit_if_run_as_root
 ensure_passwordless_sudo
 stop_expidite_service
 sleep_for_ten_seconds
