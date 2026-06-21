@@ -178,7 +178,13 @@ class IoTHubClient:
                 script = scripts_dir / "rpi_installer.sh"
 
             logger.info(f"IoT Hub: Update software via {script}, with user {getpass.getuser()}")
-            subprocess.Popen(["sudo", "-u", getpass.getuser(), str(script)])
+            # The installer self-logs to syslog (tee -> logger, tag EXPIDITE), so we discard the inherited
+            # stdout/stderr here to avoid duplicating every line into this service's journal.
+            subprocess.Popen(
+                ["sudo", "-u", getpass.getuser(), str(script)],
+                stdout=subprocess.DEVNULL,
+                stderr=subprocess.DEVNULL,
+            )
 
         threading.Thread(target=_delayed_update_software, daemon=True).start()
 

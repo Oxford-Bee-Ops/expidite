@@ -411,8 +411,10 @@ class InteractiveMenu:
             # We need to trigger rpi_installer.sh if we're on a RPI, but trigger zero_installer.sh if we're on
             # a Pi Zero.
             if root_cfg.running_on_pi_zero:
+                logger.info("Run zero_installer.sh from bcli")
                 run_cmd_live_echo(f"sudo -u $USER {scripts_dir}/zero_installer.sh")
             else:
+                logger.info("Run rpi_installer.sh from bcli")
                 run_cmd_live_echo(f"sudo -u $USER {scripts_dir}/rpi_installer.sh")
         else:
             click.echo(

@@ -46,6 +46,18 @@
 #   stopped sending watchdog to systemd, process killed, etc). DeviceHealth checks the NRestarts value on
 #   startup. And we reset the value here and in BCLI when stopping the service or during a normal restart.
 ##############################################################################################################
+
+##############################################################################################################
+# Mirror all output to syslog as well as stdout.
+
+# `tee` duplicates the combined stdout/stderr to the original stream (terminal or caller) and to `logger`,
+# which writes to syslog under the EXPIDITE tag. We skip the redirect when `logger` is unavailable (e.g. on a
+# dev workstation).
+##############################################################################################################
+if command -v logger >/dev/null 2>&1; then
+    exec > >(tee >(/usr/bin/logger -t EXPIDITE)) 2>&1
+fi
+
 if [ "$1" == "os_update" ]; then
     os_update="yes"
 else
@@ -1106,8 +1118,10 @@ auto_start_if_requested() {
 make_persistent() {
     echo_header
     if [ "$auto_start" == "Yes" ]; then
-        rpi_installer_cmd="/bin/bash $HOME/$venv_dir/scripts/rpi_installer.sh 2>&1 | /usr/bin/logger -t EXPIDITE"
-        rpi_cmd_os_update="/bin/bash $HOME/$venv_dir/scripts/rpi_installer.sh os_update 2>&1 | /usr/bin/logger -t EXPIDITE"
+        # The script self-logs to syslog (see the logging redirect near the top), so the cron entries do not
+        # need to pipe through `logger`.
+        rpi_installer_cmd="/bin/bash $HOME/$venv_dir/scripts/rpi_installer.sh"
+        rpi_cmd_os_update="/bin/bash $HOME/$venv_dir/scripts/rpi_installer.sh os_update"
 
         # Delete and re-add any lines containing "rpi_installer" from crontab
         crontab -l | grep -v "rpi_installer" | crontab -
