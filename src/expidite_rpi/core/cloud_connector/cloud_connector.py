@@ -16,6 +16,12 @@ from expidite_rpi.core.configuration import CloudType
 
 logger = root_cfg.setup_logger("expidite")
 
+# Chunk size for delta (append-only) downloads. Each chunk is fetched as a single ranged GET, which keeps
+# the Azure SDK from issuing follow-up requests that carry an If-Match condition - and it is that condition
+# that aborts a download when the blob is appended to mid-transfer. Must stay at or below the SDK's
+# max_single_get_size (default 32 MiB) so each request stays a single GET. See _download_blob_delta.
+_DELTA_CHUNK_BYTES = 8 * 1024 * 1024
+
 
 ##############################################################################################################
 # Default implementation of the CloudConnector class and interface definition.
@@ -480,7 +486,9 @@ class CloudConnector:
             for blob_name, offset in files_with_offsets.items():
                 blob_client = download_container.get_blob_client(blob_name)
                 dst_file = dst_dir / blob_name
-                futures.append(executor.submit(self._download_file, blob_client, dst_file, offset))
+                futures.append(
+                    executor.submit(self._download_file, blob_client, dst_file, offset, append_only=True)
+                )
                 if len(futures) > 10_000:
                     logger.info("Working on batch of 10,000 files")
                     for future in as_completed(futures, timeout=600):
@@ -546,37 +554,56 @@ class CloudConnector:
                     raise
 
     def _download_blob_delta(self, blob_client: BlobClient, dst_file: Path, offset: int) -> None:
-        """Download additional bytes from a blob file on Azure, where we already have a partial local copy.
+        """Download an append-only blob into dst_file, fetching only the bytes we don't already have.
 
-        Downloads from offset onwards and appends to dst_file.
+        Pass offset=0 to download the whole blob, or offset=<local file size> to append only the new tail
+        to an existing partial copy.
 
-        If the file changed on Azure while downloading, we'll get ResourceModifiedError. This is expected
-        occasionally for journals that get appended regularly. In this case, fall back to a full download.
+        These blobs are append-only (see download_container_deltas), so the bytes in [offset, size) never
+        change once written, even while the blob keeps growing. We snapshot the blob's current size and
+        fetch [offset, size) as a sequence of single-GET chunks. Because each chunk is a single request,
+        the Azure SDK never applies its cross-chunk If-Match consistency check, so a concurrent append
+        cannot abort the download - there is no need to discard progress and re-download the whole file
+        just because the blob grew while we were reading it. This applies equally to a from-scratch
+        download (offset=0) of a large, actively-appended blob.
         """
-        try:
-            with open(dst_file, "ab") as my_file:
-                download_stream = blob_client.download_blob(offset=offset)
-                file_bytes = download_stream.readall()
-                my_file.write(file_bytes)  # type: ignore[ty:invalid-argument-type]
-            logger.info(f"Downloaded {dst_file.name}, {len(file_bytes):,} additional bytes")
-        except ResourceModifiedError:
-            # The blob was appended to during download; the local file may be partially written.
-            # Fall back to a full re-download to restore a consistent state.
-            logger.info(f"ResourceModifiedError (partial) on {dst_file}, falling back to full download")
-            try:
-                self._download_blob(blob_client, dst_file)
-            except Exception:
-                # Full download also failed; truncate back to the known-good offset so the file is not left in
-                # a corrupted state.
-                with open(dst_file, "ab") as f:
-                    f.truncate(offset)
-                raise
+        size = blob_client.get_blob_properties().size
+        if size < offset:
+            # The blob is smaller than our local copy, so it was truncated or rewritten rather than
+            # appended to. The append-only assumption no longer holds, so re-download the whole blob.
+            logger.info(f"{dst_file.name} is smaller than local copy ({size:,} < {offset:,}); re-downloading")
+            offset = 0
+        if size == offset and offset > 0:
+            return  # Existing local copy is already complete; nothing new on Azure.
 
-    def _download_file(self, blob_client: BlobClient, dst_file: Path, offset: int = 0) -> str:
-        """Download a single file, using a range request if offset > 0."""
+        # offset == 0 means we have nothing usable locally: truncate/create the file and download in full.
+        # Otherwise keep the partial copy and append only the new tail.
+        mode = "wb" if offset == 0 else "ab"
+        written = 0
+        with open(dst_file, mode) as my_file:
+            cursor = offset
+            while cursor < size:
+                length = min(_DELTA_CHUNK_BYTES, size - cursor)
+                file_bytes = blob_client.download_blob(offset=cursor, length=length).readall()
+                my_file.write(file_bytes)  # type: ignore[ty:invalid-argument-type]
+                cursor += len(file_bytes)
+                written += len(file_bytes)
+        descriptor = "bytes" if offset == 0 else "additional bytes"
+        logger.info(f"Downloaded {dst_file.name}, {written:,} {descriptor}")
+
+    def _download_file(
+        self, blob_client: BlobClient, dst_file: Path, offset: int = 0, append_only: bool = False
+    ) -> str:
+        """Download a single file.
+
+        For append-only files (append_only=True, the download_container_deltas path), the whole download -
+        including the from-scratch case (offset=0) - goes via the chunked delta path, which is immune to a
+        concurrent append aborting the transfer. For general files, a rewrite mid-download must invalidate
+        the transfer, so only a true partial copy (offset > 0) uses the delta path.
+        """
         if not dst_file.parent.exists():
             dst_file.parent.mkdir(parents=True, exist_ok=True)
-        if offset > 0:
+        if offset > 0 or append_only:
             self._download_blob_delta(blob_client, dst_file, offset)
         else:
             self._download_blob(blob_client, dst_file)
