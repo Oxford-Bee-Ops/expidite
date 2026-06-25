@@ -102,7 +102,7 @@ class VideoOnDemandSensor(Sensor):
             logger.info(f"Recording video with command: {cmd}")
 
             # Start the video recording process
-            rc = utils.run_cmd(cmd)
+            rc = utils.run_video_cmd(cmd)
             logger.info(f"Video recording completed with rc={rc}")
 
             # Save the video file to the datastream

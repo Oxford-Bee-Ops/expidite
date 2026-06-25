@@ -105,7 +105,7 @@ class RpicamSensor(Sensor):
             config = cast(RpicamSensorCfg, self.config)
 
             # Run recording process
-            utils.run_cmd(config.review_mode_cmd.replace("FILENAME", str(filename)))
+            utils.run_video_cmd(config.review_mode_cmd.replace("FILENAME", str(filename)))
             logger.info("Review mode image captured")
             self.save_recording(RPICAM_REVIEW_MODE_STREAM_INDEX, filename, start_time=api.utc_now())
 
@@ -145,7 +145,7 @@ class RpicamSensor(Sensor):
                 logger.info(f"Recording video with command: {cmd}")
 
                 # Start the video recording process
-                rc = utils.run_cmd(cmd)
+                rc = utils.run_video_cmd(cmd)
                 logger.info(f"Video recording completed with rc={rc}")
 
                 # Save the video file to the datastream

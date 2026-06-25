@@ -5,6 +5,7 @@ import pytest
 
 from expidite_rpi.core import api
 from expidite_rpi.core import configuration as root_cfg
+from expidite_rpi.utils import utils
 
 logger = root_cfg.setup_logger("expidite")
 
@@ -45,3 +46,40 @@ class Test_utils:
         logmsg = root_cfg.RAISE_WARN() + "This is a test error message"
         logger.error(logmsg)
         assert logmsg.startswith(api.RAISE_WARN_TAG)
+
+    @pytest.mark.unittest
+    def test_run_video_cmd_uses_command_duration(self, monkeypatch: pytest.MonkeyPatch) -> None:
+        """run_video_cmd should derive its timeout from the command's own -t (milliseconds)."""
+        captured: dict[str, float | None] = {}
+
+        def fake_run_cmd(
+            cmd: str,
+            ignore_errors: bool = False,
+            grep_strs: list[str] | None = None,
+            timeout: float | None = None,
+        ) -> str:
+            captured["timeout"] = timeout
+            return ""
+
+        monkeypatch.setattr(utils, "run_cmd", fake_run_cmd)
+        utils.run_video_cmd("rpicam-vid -o out.mp4 -t 180000", margin_s=60.0)
+        # 180000ms = 180s, plus the 60s margin.
+        assert captured["timeout"] == pytest.approx(240.0)
+
+    @pytest.mark.unittest
+    def test_run_video_cmd_falls_back_to_default_when_no_t(self, monkeypatch: pytest.MonkeyPatch) -> None:
+        """Commands without a -t (e.g. rpicam-still review frames) get a bounded default timeout."""
+        captured: dict[str, float | None] = {}
+
+        def fake_run_cmd(
+            cmd: str,
+            ignore_errors: bool = False,
+            grep_strs: list[str] | None = None,
+            timeout: float | None = None,
+        ) -> str:
+            captured["timeout"] = timeout
+            return ""
+
+        monkeypatch.setattr(utils, "run_cmd", fake_run_cmd)
+        utils.run_video_cmd("rpicam-still -o out.jpg", default_duration_s=10.0, margin_s=60.0)
+        assert captured["timeout"] == pytest.approx(70.0)
