@@ -1,6 +1,6 @@
 import shutil
 from concurrent.futures import ThreadPoolExecutor
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from pathlib import Path
 from queue import Empty, Queue
 from threading import Event, Lock
@@ -8,7 +8,7 @@ from time import perf_counter, sleep
 
 from expidite_rpi.core import api, file_naming
 from expidite_rpi.core import configuration as root_cfg
-from expidite_rpi.core.cloud_connector.cloud_connector import CloudConnector
+from expidite_rpi.core.cloud_connector.cloud_connector import CloudConnector, log_cloud_failure
 
 logger = root_cfg.setup_logger("expidite")
 
@@ -28,6 +28,9 @@ class AsyncUpload:
     delete_src: bool
     storage_tier: api.StorageTier = api.StorageTier.HOT
     iteration: int = 0
+    # Monotonic time this action was first queued; used to escalate a persistently-failing upload to a
+    # fault based on how long it has been failing (see log_cloud_failure). Survives re-queues.
+    first_attempt_monotonic: float = field(default_factory=perf_counter)
 
 
 @dataclass
@@ -40,6 +43,9 @@ class AsyncAppend:
     data: list[str]
     iteration: int = 0
     col_order: list[str] | None = None
+    # Monotonic time this action was first queued; used to escalate a persistently-failing append to a
+    # fault based on how long it has been failing (see log_cloud_failure). Survives re-queues.
+    first_attempt_monotonic: float = field(default_factory=perf_counter)
 
 
 class AsyncCloudConnector(CloudConnector):
@@ -165,9 +171,10 @@ class AsyncCloudConnector(CloudConnector):
                     logger.error(f"{root_cfg.RAISE_WARN()}Temporary directory {tmp_dir} does not exist")
         except Exception as e:
             # Check all the src_files still exist and drop any that don't
-            logger.warning(
-                f"{root_cfg.RAISE_WARN()}Upload failed for {action.src_files} on iter "
-                f"{action.iteration}: {e!s}"
+            log_cloud_failure(
+                f"Upload failed for {action.src_files} on iteration {action.iteration}",
+                e,
+                elapsed_seconds=perf_counter() - action.first_attempt_monotonic,
             )
             verified_files = []
             for file in action.src_files:
@@ -205,12 +212,14 @@ class AsyncCloudConnector(CloudConnector):
                 dst_file=action.src_fname,
                 lines_to_append=action.data,
                 col_order=action.col_order,
+                elapsed_seconds=perf_counter() - action.first_attempt_monotonic,
             )
 
         except Exception as e:
-            logger.warning(
-                f"{root_cfg.RAISE_WARN()}Upload failed for {action.src_fname} on iter "
-                f"{action.iteration}: {e!s}"
+            log_cloud_failure(
+                f"Upload failed for {action.src_fname} on iteration {action.iteration}",
+                e,
+                elapsed_seconds=perf_counter() - action.first_attempt_monotonic,
             )
         finally:
             if not succeeded:

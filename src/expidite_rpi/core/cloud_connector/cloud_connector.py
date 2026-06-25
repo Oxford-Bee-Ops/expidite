@@ -7,7 +7,12 @@ from threading import Lock
 from typing import Optional
 
 import pandas as pd
-from azure.core.exceptions import ResourceModifiedError, ResourceNotFoundError
+from azure.core.exceptions import (
+    ResourceModifiedError,
+    ResourceNotFoundError,
+    ServiceRequestError,
+    ServiceResponseError,
+)
 from azure.storage.blob import BlobClient, ContainerClient
 
 from expidite_rpi.core import api, file_naming
@@ -15,6 +20,59 @@ from expidite_rpi.core import configuration as root_cfg
 from expidite_rpi.core.configuration import CloudType
 
 logger = root_cfg.setup_logger("expidite")
+
+
+def is_transient_network_error(exc: BaseException) -> bool:
+    """Return True if exc is a transient connectivity failure rather than a real fault.
+
+    A temporary loss of internet on the device surfaces as a network-level Azure error - most commonly a
+    DNS resolution failure (ServiceRequestError, e.g. "Temporary failure in name resolution") or the
+    service failing to respond in time (ServiceResponseError). These are expected during brief outages
+    and the data is retried, so they should not be reported to customers as faults.
+    """
+    return isinstance(exc, (ServiceRequestError, ServiceResponseError))
+
+
+# How long a transient network failure must keep failing before it stops being treated as a brief,
+# self-healing outage and is escalated to a customer-facing fault. Escalation is by elapsed wall-clock
+# time, not retry count, because the time per retry varies wildly: Azure Storage retries each request
+# internally 3 times with ~15-24s exponential backoff (~60s total), there is up to a 20s TCP connect
+# timeout per attempt, and our own async back-off sleeps sleep(2 * iteration) between retries. A fixed
+# retry count would therefore map to an unpredictable wall-clock time (tens of minutes).
+_ESCALATE_AFTER_SECONDS = 600.0  # 10 minutes
+
+
+def log_cloud_failure(message: str, exc: Exception, *, elapsed_seconds: float = 0.0) -> None:
+    """Log a failed cloud operation, distinguishing a brief outage from a persistent fault.
+
+    A transient network failure (e.g. a DNS resolution failure while the device briefly has no internet)
+    is expected and is retried, so while it is still brief we log it as a concise warning - no stack
+    trace, no RAISE_WARN tag - and it is not surfaced to customers as a fault. ``elapsed_seconds`` is how
+    long this operation has been failing (across all retries); once it reaches _ESCALATE_AFTER_SECONDS the
+    failure has clearly not resolved on its own and is escalated.
+
+    A persistent transient failure, or any non-transient error, is escalated to a customer-facing fault.
+    This is logged as two separate records so a stack trace is never attached to a RAISE_WARN line:
+    - a clean RAISE_WARN line (ERROR), with no stack trace, which DeviceHealth surfaces to customers;
+    - the full stack trace at WARNING with no RAISE_WARN tag, which stays in the local device log for
+      engineers but is NOT forwarded to the customer-facing WARNING datastream (see
+      device_health.log_warnings, which only forwards RAISE_WARN-tagged or priority<=3 logs).
+    """
+    if is_transient_network_error(exc) and elapsed_seconds < _ESCALATE_AFTER_SECONDS:
+        # Brief, self-healing outage: a concise warning with no stack trace and no RAISE_WARN tag, so it is
+        # not surfaced to customers as a fault. The data is retried.
+        logger.warning(f"Temporary network failure: {message}: ({exc!s})")
+        return
+
+    detail = "Persistent network failure: " if is_transient_network_error(exc) else ""
+
+    # Customer-facing fault: includes the one-line exception message ({exc!s}) but never the stack trace -
+    # a stack trace is only ever attached via exc_info, which this line does not use.
+    logger.error(f"{root_cfg.RAISE_WARN()}{detail}{message}: ({exc!s})")
+    # Engineer-facing detail: the full stack trace, kept in the local device log only (WARNING level, no
+    # RAISE_WARN tag) so it is not forwarded to the customer-facing WARNING datastream.
+    logger.warning("Stack trace follows for debugging", exc_info=exc)
+
 
 # Chunk size for delta (append-only) downloads. Each chunk is fetched as a single ranged GET, which keeps
 # the Azure SDK from issuing follow-up requests that carry an If-Match condition - and it is that condition
@@ -262,8 +320,8 @@ class CloudConnector:
                 src_file.unlink()
 
             return result
-        except Exception:
-            logger.exception(f"{root_cfg.RAISE_WARN()}Failed to append data to {src_file}")
+        except Exception as e:
+            log_cloud_failure(f"Failed to append data to {src_file}", e)
             return False
 
     def _get_append_lock(self, dst_file: str) -> Lock:
@@ -279,6 +337,7 @@ class CloudConnector:
         dst_file: str,
         lines_to_append: list[str],
         col_order: list[str] | None = None,
+        elapsed_seconds: float = 0.0,
     ) -> bool:
         try:
             target_container = self._validate_container(dst_container)
@@ -319,8 +378,8 @@ class CloudConnector:
                 self._validated_append_files.add(dst_file)
 
             return True
-        except Exception:
-            logger.exception(f"{root_cfg.RAISE_WARN()}Failed to append data to {dst_file}")
+        except Exception as e:
+            log_cloud_failure(f"Failed to append data to {dst_file}", e, elapsed_seconds=elapsed_seconds)
             return False
 
     def _merge_local_and_remote(
