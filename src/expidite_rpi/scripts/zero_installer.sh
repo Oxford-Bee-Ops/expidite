@@ -1081,6 +1081,10 @@ install_management_service() {
 Description=Expidite Management Service
 After=network-online.target
 Wants=network-online.target
+# Prefer to start after the clock is NTP-synced: IoT Hub auth uses time-based SAS tokens that a wrong
+# clock would invalidate. This is only an ordering hint (so time-sync.target is reached early and cannot
+# block boot); the IoT Hub client also retries on its own, so a not-yet-synced clock is self-healing.
+After=time-sync.target
 [Service]
 User=$SERVICE_USER
 WorkingDirectory=$SERVICE_HOME/.expidite

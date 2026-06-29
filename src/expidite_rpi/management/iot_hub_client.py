@@ -41,62 +41,143 @@ class IoTHubClient:
     process, communicating with the main EdgeOrchestrator via filesystem flags.
     """
 
+    # Backoff bounds for the connect-retry loop (seconds).
+    _CONNECT_RETRY_INITIAL_SECONDS = 10
+    _CONNECT_RETRY_MAX_SECONDS = 300
+
     def __init__(self) -> None:
         self._hub_client: IoTHubDeviceClient | None = None
         # Use the BCLI object for some commands. Ideally these would be extracted into a separate module.
         self.im = InteractiveMenu()
         self.ssh_tunnel_manager = SshTunnelManager()
+        self._stop_event = threading.Event()
+        self._connect_thread: threading.Thread | None = None
 
     def start(self) -> None:
-        """Provision via DPS and connect to IoT Hub."""
+        """Begin connecting to IoT Hub in the background, retrying until successful.
+
+        Provisioning and the initial connect can fail transiently: there may be no network yet just after a
+        reboot, DPS may be briefly unavailable, or the system clock may not yet be NTP-synced (so the
+        time-based SAS tokens are rejected). Rather than give up on the first failure - which would leave the
+        device unreachable via IoT Hub until the next reboot - we retry with backoff on a daemon thread so the
+        device recovers on its own. A wrong clock is therefore self-healing: it simply fails an attempt and is
+        retried once NTP catches up. Once the initial connect succeeds, the azure-iot SDK's own
+        connection_retry handles transient MQTT drops.
+        """
         keys = root_cfg.keys
         assert keys is not None
         if FAILED_TO_LOAD in {keys.dps_scope_id, keys.dps_primary_key}:
             logger.info("IoT Hub: DPS credentials not configured; cannot start")
             return
 
+        self._connect_thread = threading.Thread(
+            target=self._connect_with_retry, name="iot-hub-connect", daemon=True
+        )
+        self._connect_thread.start()
+
+    def _connect_with_retry(self) -> None:
+        """Provision and connect, retrying with exponential backoff until it succeeds or stop is asked."""
+        backoff = self._CONNECT_RETRY_INITIAL_SECONDS
+        while not self._stop_event.is_set():
+            try:
+                self._provision_and_connect()
+            except Exception:
+                logger.warning(f"IoT Hub: connect attempt failed; retrying in {backoff}s", exc_info=True)
+            else:
+                # _provision_and_connect clears _hub_client again if stop() raced in during the attempt;
+                # only announce success if a live client actually remains.
+                if self._hub_client is not None:
+                    logger.info("IoT Hub: Connected and handlers registered")
+                return
+            # Sleep for the backoff period, but wake immediately if asked to stop.
+            if self._stop_event.wait(backoff):
+                return
+            backoff = min(backoff * 2, self._CONNECT_RETRY_MAX_SECONDS)
+
+    def _provision_and_connect(self) -> None:
+        """Provision via DPS and connect to IoT Hub. Raises on any failure so the caller can retry."""
+        keys = root_cfg.keys
+        assert keys is not None
+
         device_id = root_cfg.my_device_id
         device_key = _derive_device_key(keys.dps_primary_key, device_id)
 
         logger.info(f"IoT Hub: Provisioning device {device_id} via DPS...")
+        # websockets=True tunnels the connection over port 443 instead of MQTT's default 8883. Raspberry Pi
+        # Connect also uses 443, so this matches its reachability on networks that block 8883 outbound.
         provisioning_client = ProvisioningDeviceClient.create_from_symmetric_key(
             provisioning_host=DPS_HOST,
             registration_id=device_id,
             id_scope=keys.dps_scope_id,
             symmetric_key=device_key,
+            websockets=True,
         )
         result = provisioning_client.register()
 
         if result.status != "assigned":
-            logger.warning(f"IoT Hub: DPS registration failed with status '{result.status}'")
-            return
-
+            msg = f"DPS registration failed with status '{result.status}'"
+            raise RuntimeError(msg)
         if result.registration_state is None:
-            logger.warning("IoT Hub: DPS registration returned no registration state")
-            return
+            msg = "DPS registration returned no registration state"
+            raise RuntimeError(msg)
 
         assigned_hub = result.registration_state.assigned_hub
         logger.info(f"IoT Hub: Device assigned to {assigned_hub}")
 
-        self._hub_client = IoTHubDeviceClient.create_from_symmetric_key(
+        hub_client = IoTHubDeviceClient.create_from_symmetric_key(
             symmetric_key=device_key,
             hostname=assigned_hub,
             device_id=device_id,
+            websockets=True,
         )
-        self._hub_client.connect()
-        self._hub_client.on_method_request_received = self._on_method_request
+        try:
+            hub_client.connect()
+            hub_client.on_method_request_received = self._on_method_request
+        except Exception:
+            # Tear down the half-built client so a failed attempt doesn't leak the SDK's MQTT background
+            # threads; a fresh client is constructed on the next retry.
+            try:
+                hub_client.shutdown()
+            except Exception:
+                logger.debug("IoT Hub: error tearing down client after failed connect", exc_info=True)
+            raise
 
-        logger.info("IoT Hub: Connected and handlers registered")
+        self._hub_client = hub_client
+
+        # If stop() ran while this attempt was in flight, it may have passed its own shutdown step before
+        # this client existed. Tear it down now rather than leave a live connection behind.
+        if self._stop_event.is_set():
+            self._shutdown_hub_client()
+
+    def _shutdown_hub_client(self) -> None:
+        """Shut down and clear the live hub client.
+
+        Tolerant of being called from stop() and the connect thread concurrently: whichever nulls the
+        reference first wins and the other becomes a no-op.
+        """
+        hub_client = self._hub_client
+        self._hub_client = None
+        if hub_client is None:
+            return
+        try:
+            hub_client.shutdown()
+        except Exception:
+            logger.warning("IoT Hub: Error during shutdown", exc_info=True)
 
     def stop(self) -> None:
         """Disconnect from IoT Hub and clean up."""
+        self._stop_event.set()
+        if self._connect_thread is not None:
+            # Keep the join short: stop() must finish within the unit's TimeoutStopSec (10s) and this is
+            # only one of several teardown steps. _stop_event can't interrupt a blocking register()/connect(),
+            # so an offline device will hit this timeout; the connect thread is a daemon and dies with the
+            # process, and a connect that lands after the join is cleaned up by the stop re-check in
+            # _provision_and_connect.
+            self._connect_thread.join(timeout=5)
+            self._connect_thread = None
+
         self.ssh_tunnel_manager.close_all()
-        if self._hub_client is not None:
-            try:
-                self._hub_client.shutdown()
-            except Exception:
-                logger.warning("IoT Hub: Error during shutdown", exc_info=True)
-            self._hub_client = None
+        self._shutdown_hub_client()
 
         logger.info("IoT Hub: Disconnected")
 
