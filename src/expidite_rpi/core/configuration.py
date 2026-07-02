@@ -23,6 +23,15 @@ DP_FREQUENCY: float = 60
 JOURNAL_SYNC_FREQUENCY: float = 60 * 3
 # Seconds between polls of is_stop_requested / touch is_running flag in EdgeOrchestrator
 WATCHDOG_FREQUENCY: float = 1
+# See also DeviceCfg class for:
+# Frequency of health monitor heart beat logs
+# - heart_beat_frequency: int = 60 * 10
+# Default environmental sensor logging frequency in seconds
+# - env_sensor_frequency: int = 60 * 10
+# Max recording timer in seconds
+# This limits how quickly the system will cleanly shutdown as we wait for all recording threads to complete.
+# It also limits the duration of any recordings
+# - max_recording_timer
 
 ##############################################################################################################
 # Disk spool tuning (see cloud_connector/spool.py and AsyncCloudConnector)
@@ -47,16 +56,6 @@ SPOOL_MIN_DISK_FREE_BYTES: int = 1024**3
 # At shutdown, how long to keep trying to flush the upload queue over the network before spilling the
 # remainder to the disk spool. Must fit inside systemd's TimeoutStopSec budget alongside sensor shutdown.
 SPOOL_SHUTDOWN_FLUSH_SECONDS: float = 30.0
-# See also DeviceCfg class for:
-# Frequency of health monitor heart beat logs
-# - heart_beat_frequency: int = 60 * 10
-# Default environmental sensor logging frequency in seconds
-# - env_sensor_frequency: int = 60 * 10
-# Max recording timer in seconds
-# This limits how quickly the system will cleanly shutdown as we wait for all recording threads to complete.
-# It also limits the duration of any recordings
-# - max_recording_timer
-
 
 ##############################################################################################################
 #

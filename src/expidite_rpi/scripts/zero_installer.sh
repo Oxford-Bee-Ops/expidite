@@ -111,13 +111,16 @@ stop_expidite_service() {
   echo_header
   # Stop the service if it is currently running.
   # `systemctl stop` sends SIGTERM, which RpiCore turns into a graceful shutdown (flushing journals and
-  # spilling unsent uploads to the disk spool), and blocks until the service exits; systemd escalates to
-  # SIGKILL itself after TimeoutStopSec. SIGKILL here is only the fallback if the stop fails outright.
+  # spilling unsent uploads to the disk spool), and blocks until every process in the service cgroup has
+  # exited; systemd escalates to SIGKILL itself after TimeoutStopSec. So the installer never proceeds
+  # while RpiCore is still running. SIGKILL here is only the fallback if the stop fails outright; it is
+  # followed by another blocking stop because `systemctl kill` returns without waiting for process exit.
   if systemctl is-active --quiet expidite.service; then
       echo "Stopping expidite.service gracefully (may take a few minutes to flush data)..."
       if ! sudo systemctl stop expidite.service; then
           echo "Warning: failed to stop expidite.service; killing it"
           sudo systemctl kill --signal=SIGKILL --kill-whom=all expidite.service || echo "Warning: failed to kill expidite.service"
+          sudo systemctl stop expidite.service || echo "Warning: failed to stop expidite.service after kill"
       fi
   fi
   # Reset the restart counter so the upgrade isn't mistaken for an abnormal restart.
