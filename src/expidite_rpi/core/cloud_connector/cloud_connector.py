@@ -338,7 +338,11 @@ class CloudConnector:
         lines_to_append: list[str],
         col_order: list[str] | None = None,
         elapsed_seconds: float = 0.0,
+        swallow_exceptions: bool = True,
     ) -> bool:
+        """swallow_exceptions=False re-raises failures instead of logging them, so the AsyncCloudConnector
+        can classify the exception (transient network outage vs real fault) and divert to the disk spool.
+        """
         try:
             target_container = self._validate_container(dst_container)
             blob_client = target_container.get_blob_client(dst_file)
@@ -379,6 +383,8 @@ class CloudConnector:
 
             return True
         except Exception as e:
+            if not swallow_exceptions:
+                raise
             log_cloud_failure(f"Failed to append data to {dst_file}", e, elapsed_seconds=elapsed_seconds)
             return False
 

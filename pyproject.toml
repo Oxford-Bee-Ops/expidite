@@ -148,6 +148,7 @@ ignore = [
 "test/rpi_core/core/cloud_connector_delta_test.py" = ["SLF001"]
 "test/rpi_core/core/cloud_connector_transient_test.py" = ["SLF001"]
 "test/rpi_core/core/cloud_journal_test.py" = ["SLF001"]
+"test/rpi_core/core/disk_spool_test.py" = ["SLF001"]
 "test/rpi_core/core/review_mode_test.py" = ["ANN001"]
 "test/rpi_core/core/orchestrator_test.py" = ["SLF001"]
 "test/rpi_core/management/iot_hub_client_test.py" = ["PT019", "SLF001"]

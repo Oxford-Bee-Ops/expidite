@@ -29,12 +29,25 @@ class RpiCore:
     KEYS_FILE: Path = root_cfg.KEYS_FILE
 
     def __init__(self, inventory: list[DeviceCfg] | None = None) -> None:
-        # Swallow SIGTERM from systemd. We use the STOP_EXPIDITE_FLAG file to request a graceful shutdown.
-        signal.signal(signal.SIGTERM, lambda _sig, _frame: logger.info("Received SIGTERM"))
+        # Translate SIGTERM into the STOP_EXPIDITE_FLAG graceful-shutdown mechanism. Python's default
+        # SIGTERM action would kill the process with no cleanup, losing all queued upload data; instead the
+        # flag makes the EdgeOrchestrator main loop (which polls it every second) stop cleanly - flushing
+        # journals and spilling unsent uploads to the disk spool. This makes `systemctl stop` and the
+        # system-wide SIGTERM sent by systemd during `sudo reboot` flush-safe. A stale flag cannot prevent
+        # the next start: EdgeOrchestrator.start_all() clears it.
+        signal.signal(signal.SIGTERM, RpiCore._handle_sigterm)
 
         self._orchestrator_thread: Thread | None = None
         if inventory:
             self.configure(inventory)
+
+    @staticmethod
+    def _handle_sigterm(_sig: int, _frame: object) -> None:
+        logger.info("Received SIGTERM; requesting graceful stop via STOP_EXPIDITE_FLAG")
+        try:
+            root_cfg.STOP_EXPIDITE_FLAG.touch()
+        except OSError:
+            logger.exception(f"{root_cfg.RAISE_WARN()}Failed to set STOP_EXPIDITE_FLAG on SIGTERM")
 
     def load_configuration(self) -> list[DeviceCfg] | None:
         """Load the configuration specified in the system.cfg file found in $HOME/.rpi.

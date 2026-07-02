@@ -6,7 +6,7 @@ import subprocess
 from enum import IntEnum, auto
 from time import sleep
 
-from expidite_rpi.core import api
+from expidite_rpi.core import api, reboot
 from expidite_rpi.core import configuration as root_cfg
 from expidite_rpi.core.diagnostics_bundle import DiagnosticsBundle
 from expidite_rpi.utils import utils
@@ -388,11 +388,12 @@ class DeviceManager:
             self.ping_check_interval * 120
         )  # Retry recovery action set every 10s*120=1200s=20mins
 
-        # Reboot after 2 hours.
+        # Reboot after 2 hours. The managed reboot flushes queued data to the disk spool first - we are
+        # offline, so everything queued since the outage began is in RAM and would otherwise be lost.
         if self.ping_failure_count_run == int((2 * 3600) / self.ping_check_interval):
-            logger.error(f"{root_cfg.RAISE_WARN()}Rebooting device due to no internet for >2 hours")
-            DiagnosticsBundle.collect("Rebooting device due to no internet for >2 hours")
-            utils.run_cmd("sudo reboot")
+            reboot.request_managed_reboot(
+                "Rebooting device due to no internet for >2 hours", collect_diagnostics=True
+            )
 
         elif self.ping_failure_count_run % retry_frequency == 10:
             logger.info("Restarting client wifi interface")

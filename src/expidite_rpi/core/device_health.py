@@ -6,11 +6,10 @@ from typing import Any
 
 import psutil
 
-from expidite_rpi.core import api
+from expidite_rpi.core import api, reboot
 from expidite_rpi.core import configuration as root_cfg
 from expidite_rpi.core.cloud_connector import CloudConnector
 from expidite_rpi.core.device_manager import DeviceManager
-from expidite_rpi.core.diagnostics_bundle import DiagnosticsBundle
 from expidite_rpi.core.dp_config_objects import SensorCfg, Stream
 from expidite_rpi.core.sensor import Sensor
 from expidite_rpi.utils import utils
@@ -286,9 +285,7 @@ class DeviceHealth(Sensor):
             msg = (
                 f"Latest HEART file on Azure is {age} old (last modified {last_heart_update_time}), rebooting"
             )
-            logger.error(f"{root_cfg.RAISE_WARN()}{msg}")
-            DiagnosticsBundle.collect(msg)
-            utils.run_cmd("sudo reboot", ignore_errors=True)
+            reboot.request_managed_reboot(msg, collect_diagnostics=True)
 
     ##########################################################################################################
     # Diagnostics utility functions
@@ -402,10 +399,12 @@ class DeviceHealth(Sensor):
                     # Running low on free RAM can cause any OS process to be killed to free up memory, and can
                     # cause performance degradation. Triggering a controlled reboot at 95% memory usage is
                     # generally considered good practice to recover before performance degrades.
+                    # This should be rare: the AsyncCloudConnector spills its queue to the disk spool at
+                    # SPOOL_AT_MEMORY_PERCENT, well before we get here.
                     if memory_usage > 95:
-                        logger.error(f"{root_cfg.RAISE_WARN()}Memory usage >95%, rebooting")
-                        DiagnosticsBundle.collect("Memory usage >95%, rebooting")
-                        utils.run_cmd("sudo reboot", ignore_errors=True)
+                        reboot.request_managed_reboot(
+                            "Memory usage >95%, rebooting", collect_diagnostics=True
+                        )
 
             # Get the expidite version and user code version from the files
             # Stored in .expidite/user_code_version and .expidite/expidite_code_version

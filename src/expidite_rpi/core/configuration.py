@@ -23,6 +23,30 @@ DP_FREQUENCY: float = 60
 JOURNAL_SYNC_FREQUENCY: float = 60 * 3
 # Seconds between polls of is_stop_requested / touch is_running flag in EdgeOrchestrator
 WATCHDOG_FREQUENCY: float = 1
+
+##############################################################################################################
+# Disk spool tuning (see cloud_connector/spool.py and AsyncCloudConnector)
+#
+# During a network outage, data queued for upload would otherwise accumulate in RAM (the upload queue holds
+# append data in memory, and upload files sit in TMP_DIR which is a tmpfs on SD-card devices). The spool
+# diverts that data to persistent disk (SPOOL_DIR) so it survives reboots and doesn't exhaust memory.
+##############################################################################################################
+# How long cloud uploads must fail continuously with transient network errors before the AsyncCloudConnector
+# enters offline mode and diverts uploads to the disk spool instead of retrying in memory.
+SPOOL_OFFLINE_AFTER_SECONDS: float = 600.0
+# Seconds between attempts to drain the spool back to the cloud (also the offline probe interval).
+SPOOL_DRAIN_INTERVAL: float = 60.0
+# Spill the in-memory upload queue to the disk spool when system memory usage exceeds this percentage.
+# Must be comfortably below the 95% at which DeviceHealth reboots the device. Only applied on RPi.
+SPOOL_AT_MEMORY_PERCENT: float = 80.0
+# Maximum total size of the disk spool. When exceeded, the oldest spooled video files are deleted first
+# (videos are orders of magnitude larger than other data, so binning them preserves everything else).
+SPOOL_MAX_BYTES: int = 16 * 1024**3
+# Never let spooling reduce free disk space below this floor.
+SPOOL_MIN_DISK_FREE_BYTES: int = 1024**3
+# At shutdown, how long to keep trying to flush the upload queue over the network before spilling the
+# remainder to the disk spool. Must fit inside systemd's TimeoutStopSec budget alongside sensor shutdown.
+SPOOL_SHUTDOWN_FLUSH_SECONDS: float = 30.0
 # See also DeviceCfg class for:
 # Frequency of health monitor heart beat logs
 # - heart_beat_frequency: int = 60 * 10
@@ -106,6 +130,9 @@ if running_on_windows:
     # on the same machine
     ROOT_WORKING_DIR: Path = Path(tempfile.gettempdir()) / "expidite" / api.utc_to_fname_str()
     DIAGS_DIR: Path = HOME_DIR / "expidite-diags"
+    # In development mode persistence doesn't matter; keep the spool inside the per-run working dir so
+    # concurrent test runs stay isolated.
+    SPOOL_DIR: Path = ROOT_WORKING_DIR / "spool"
     assert HOME_DIR is not None, f"No 'code' directory found in path {Path.cwd()}"
 
 elif running_on_rpi:
@@ -116,6 +143,9 @@ elif running_on_rpi:
     CFG_DIR = HOME_DIR / ".expidite"  # In the base user directory on the RPi
     ROOT_WORKING_DIR = Path("/expidite")
     DIAGS_DIR = Path("/expidite-diags")
+    # On persistent storage (created by rpi_installer.sh) so spooled data survives reboot; /expidite is a
+    # tmpfs on SD-card devices.
+    SPOOL_DIR = Path("/expidite-spool")
     utils_clean.create_root_working_dir(ROOT_WORKING_DIR)
 
 elif running_on_linux:
@@ -126,6 +156,7 @@ elif running_on_linux:
     CFG_DIR = Path("/run/secrets")
     ROOT_WORKING_DIR = Path("/expidite")
     DIAGS_DIR = Path("/expidite-diags")  # Deliberately separate, so that it survives reboot.
+    SPOOL_DIR = Path("/expidite-spool")  # Deliberately separate, so that it survives reboot.
     utils_clean.create_root_working_dir(ROOT_WORKING_DIR)
 else:
     raise NotImplementedError("Unknown platform: " + platform.platform())

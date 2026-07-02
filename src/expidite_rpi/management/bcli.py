@@ -15,7 +15,7 @@ from pathlib import Path
 import click
 from crontab import CronTab
 
-from expidite_rpi.core import api, device_health
+from expidite_rpi.core import api, device_health, reboot
 from expidite_rpi.core import configuration as root_cfg
 from expidite_rpi.core.cloud_connector import AsyncCloudConnector, CloudConnector
 from expidite_rpi.core.edge_orchestrator import EdgeOrchestrator
@@ -620,7 +620,11 @@ class InteractiveMenu:
             click.echo("Reboot cancelled.")
             return
         click.echo("Rebooting the device...")
-        run_cmd_live_echo("sudo reboot")
+        click.echo("If RpiCore is running, we first stop it gracefully so queued data is flushed to the")
+        click.echo("cloud / disk spool - this may take a few minutes.")
+        # background=False: BCLI is a separate process from the RpiCore service, so it can (and should)
+        # block here while the service flushes; the flag files it watches are shared via the filesystem.
+        reboot.request_managed_reboot("Reboot requested via BCLI", background=False)
 
     def update_storage_key(self) -> None:
         """Update the storage key in ~/.expidite/keys.env."""
