@@ -1,6 +1,8 @@
 import shutil
+import time
 import uuid
 from dataclasses import dataclass
+from enum import Enum
 from pathlib import Path
 from threading import Lock
 
@@ -16,6 +18,23 @@ _VIDEO_SUFFIXES = {f".{api.FORMAT.MP4.value}", f".{api.FORMAT.AVI.value}", f".{a
 # Suffix for files that are still being written; renamed away on completion so a crash mid-write never
 # leaves a half-file that the drain would upload.
 _PART_SUFFIX = ".part"
+
+# Only .part files at least this old are cleaned up at construction. The spool directory is shared between
+# processes, so a freshly-written .part may belong to a live write in another process and must be left alone.
+_PART_CLEANUP_AGE_SECONDS = 3600.0
+
+
+class SpoolResult(Enum):
+    """Outcome of an attempt to persist an upload to the spool.
+
+    BINNED is a deliberate policy decision (video over budget) - the data is intentionally sacrificed and
+    the caller must not retry. FAILED means the spool could not take the data (disk full/unwritable) but
+    the caller may still hold it and should fall back to another path rather than lose it.
+    """
+
+    SPOOLED = "spooled"
+    BINNED = "binned"
+    FAILED = "failed"
 
 
 @dataclass
@@ -63,10 +82,25 @@ class DiskSpool:
         self._append_dir = self.root / "append"
         self._upload_dir.mkdir(parents=True, exist_ok=True)
         self._append_dir.mkdir(parents=True, exist_ok=True)
-        # Clean up half-written files from a previous run that crashed mid-spool.
-        for part in self.root.rglob(f"*{_PART_SUFFIX}"):
-            part.unlink(missing_ok=True)
-        self._size_bytes = sum(f.stat().st_size for f in self.root.rglob("*") if f.is_file())
+        # Clean up half-written files from a previous run that crashed mid-spool. Age-gated because the
+        # spool root is shared between processes (the RpiCore service, bcli, the management service all
+        # construct connectors): an unconditional sweep here would delete a .part file another process is
+        # writing *right now*, losing that record. In-progress files are seconds old; anything older than
+        # the gate is crash debris. Young debris is invisible to the drain (listings exclude .part) and is
+        # swept once it ages past the gate.
+        cutoff = time.time() - _PART_CLEANUP_AGE_SECONDS
+        self._size_bytes = 0
+        for f in self.root.rglob("*"):
+            if not f.is_file():
+                continue
+            if f.suffix == _PART_SUFFIX:
+                try:
+                    if f.stat().st_mtime < cutoff:
+                        f.unlink(missing_ok=True)
+                except OSError:
+                    continue
+            else:
+                self._size_bytes += int(self._safe_stat(f, "st_size"))
 
     @staticmethod
     def _create_root(root: Path | None) -> Path:
@@ -105,26 +139,32 @@ class DiskSpool:
     ##########################################################################################################
     def spool_upload(
         self, dst_container: str, src_file: Path, storage_tier: api.StorageTier, move: bool
-    ) -> bool:
+    ) -> SpoolResult:
         """Persist one block-blob upload to the spool.
 
         move=True transfers ownership of src_file to the spool (the caller wanted delete_src semantics);
         move=False leaves the caller's file untouched and spools a copy.
 
-        Returns False if the file was binned instead of spooled (video over budget, or disk full).
+        Returns SPOOLED on success, BINNED if the data was deliberately sacrificed (video over budget - the
+        source is consumed when move=True), or FAILED if the spool could not take the data (the caller
+        should fall back to another path; the source file is left in place where possible).
         """
         try:
             nbytes = src_file.stat().st_size
         except OSError:
             logger.exception(f"{root_cfg.RAISE_WARN()}Cannot spool {src_file}; file not accessible")
-            return False
+            return SpoolResult.FAILED
 
         is_video = src_file.suffix.lower() in _VIDEO_SUFFIXES
         if not self._make_room(nbytes, is_video):
+            if not is_video:
+                # Disk physically full - not a policy bin. Leave the file with the caller to fall back.
+                logger.error(f"{root_cfg.RAISE_WARN()}Spool cannot make room for {src_file.name}")
+                return SpoolResult.FAILED
             self._record_binned(src_file)
             if move:
                 src_file.unlink(missing_ok=True)
-            return False
+            return SpoolResult.BINNED
 
         dst_dir = self._upload_dir / dst_container / storage_tier.name
         dst_dir.mkdir(parents=True, exist_ok=True)
@@ -147,9 +187,9 @@ class DiskSpool:
                 self._size_bytes += nbytes
         except OSError:
             logger.exception(f"{root_cfg.RAISE_WARN()}Failed to spool {src_file} to disk")
-            return False
+            return SpoolResult.FAILED
         logger.debug(f"Spooled upload {dst} ({nbytes:,} bytes) for container {dst_container}")
-        return True
+        return SpoolResult.SPOOLED
 
     def spool_append(self, dst_container: str, dst_fname: str, data: list[str]) -> bool:
         """Persist one block of append data (a complete CSV including headers) to the spool.

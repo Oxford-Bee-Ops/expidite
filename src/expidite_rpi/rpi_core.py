@@ -1,4 +1,5 @@
 import signal
+import threading
 from pathlib import Path
 from threading import Thread
 
@@ -29,17 +30,32 @@ class RpiCore:
     KEYS_FILE: Path = root_cfg.KEYS_FILE
 
     def __init__(self, inventory: list[DeviceCfg] | None = None) -> None:
-        # Translate SIGTERM into the STOP_EXPIDITE_FLAG graceful-shutdown mechanism. Python's default
-        # SIGTERM action would kill the process with no cleanup, losing all queued upload data; instead the
-        # flag makes the EdgeOrchestrator main loop (which polls it every second) stop cleanly - flushing
-        # journals and spilling unsent uploads to the disk spool. This makes `systemctl stop` and the
-        # system-wide SIGTERM sent by systemd during `sudo reboot` flush-safe. A stale flag cannot prevent
-        # the next start: EdgeOrchestrator.start_all() clears it.
-        signal.signal(signal.SIGTERM, RpiCore._handle_sigterm)
-
         self._orchestrator_thread: Thread | None = None
         if inventory:
             self.configure(inventory)
+
+    @staticmethod
+    def _install_sigterm_handler() -> None:
+        """Translate SIGTERM into the STOP_EXPIDITE_FLAG graceful-shutdown mechanism.
+
+        Python's default SIGTERM action would kill the process with no cleanup, losing all queued upload
+        data; instead the flag makes the EdgeOrchestrator main loop (which polls it every second) stop
+        cleanly - flushing journals and spilling unsent uploads to the disk spool. This makes
+        `systemctl stop` and the system-wide SIGTERM sent by systemd during `sudo reboot` flush-safe.
+        A stale flag cannot prevent the next start: EdgeOrchestrator.start_all() clears it.
+
+        Deliberately called from start() and NOT from __init__: bcli and the management service also
+        construct RpiCore (for configure/status), and installing this handler in those processes would make
+        a SIGTERM to them (e.g. `systemctl stop expidite-management.service`) stop the main data-collection
+        service as collateral damage - and, in the management service, override its own SIGTERM handler.
+        Only the process that actually runs the orchestrator may own this handler.
+        """
+        if threading.current_thread() is not threading.main_thread():
+            # signal.signal() raises ValueError off the main thread; the handler is then simply not
+            # installed (e.g. tests driving start() from a worker thread).
+            logger.warning("Not on main thread; SIGTERM handler not installed")
+            return
+        signal.signal(signal.SIGTERM, RpiCore._handle_sigterm)
 
     @staticmethod
     def _handle_sigterm(_sig: int, _frame: object) -> None:
@@ -141,6 +157,8 @@ class RpiCore:
             raise ValueError(msg)
 
         RpiCore._check_for_abnormal_restart()
+
+        RpiCore._install_sigterm_handler()
 
         logger.info("Starting RpiCore")
 

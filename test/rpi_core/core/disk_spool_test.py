@@ -17,7 +17,7 @@ from expidite_rpi.core import configuration as root_cfg
 from expidite_rpi.core.cloud_connector import AsyncCloudConnector
 from expidite_rpi.core.cloud_connector.async_cloud_connector import AsyncAppend, AsyncUpload
 from expidite_rpi.core.cloud_connector.cloud_connector import CloudConnector
-from expidite_rpi.core.cloud_connector.spool import DiskSpool
+from expidite_rpi.core.cloud_connector.spool import DiskSpool, SpoolResult
 
 logger = root_cfg.setup_logger("expidite", level=logging.DEBUG)
 
@@ -38,7 +38,7 @@ class TestDiskSpool:
         spool = DiskSpool(tmp_path / "spool")
         src = make_file(tmp_path, "V3_d01111111111_test.txt")
 
-        assert spool.spool_upload(CONTAINER, src, api.StorageTier.COOL, move=True)
+        assert spool.spool_upload(CONTAINER, src, api.StorageTier.COOL, move=True) is SpoolResult.SPOOLED
         assert not src.exists(), "move=True should transfer ownership of the file to the spool"
         assert spool.has_data()
 
@@ -57,7 +57,7 @@ class TestDiskSpool:
         spool = DiskSpool(tmp_path / "spool")
         src = make_file(tmp_path, "V3_d01111111111_test.txt")
 
-        assert spool.spool_upload(CONTAINER, src, api.StorageTier.HOT, move=False)
+        assert spool.spool_upload(CONTAINER, src, api.StorageTier.HOT, move=False) is SpoolResult.SPOOLED
         assert src.exists(), "move=False should leave the caller's file untouched"
         assert len(spool.pending_uploads()) == 1
 
@@ -69,8 +69,8 @@ class TestDiskSpool:
         src1 = make_file(tmp_path / "a", "V3_d01111111111_test.txt", nbytes=10)
         src2 = make_file(tmp_path / "b", "V3_d01111111111_test.txt", nbytes=30)
 
-        assert spool.spool_upload(CONTAINER, src1, api.StorageTier.HOT, move=True)
-        assert spool.spool_upload(CONTAINER, src2, api.StorageTier.HOT, move=True)
+        assert spool.spool_upload(CONTAINER, src1, api.StorageTier.HOT, move=True) is SpoolResult.SPOOLED
+        assert spool.spool_upload(CONTAINER, src2, api.StorageTier.HOT, move=True) is SpoolResult.SPOOLED
         items = spool.pending_uploads()
         assert len(items) == 1
         assert items[0].path.stat().st_size == 30
@@ -105,19 +105,21 @@ class TestDiskSpool:
         new_video = make_file(tmp_path, "V3_new.mp4", nbytes=1000)
         csv_file = make_file(tmp_path, "V3_data.csv", nbytes=100)
 
-        assert spool.spool_upload(CONTAINER, old_video, api.StorageTier.HOT, move=True)
+        assert spool.spool_upload(CONTAINER, old_video, api.StorageTier.HOT, move=True) is SpoolResult.SPOOLED
         # Backdate the first video so eviction ordering by mtime is deterministic.
         spooled_old = spool.pending_uploads()[0].path
         past = time.time() - 1000
         os.utime(spooled_old, (past, past))
 
-        assert spool.spool_upload(CONTAINER, new_video, api.StorageTier.HOT, move=True)
-        assert spool.spool_upload(CONTAINER, csv_file, api.StorageTier.HOT, move=True)
+        assert spool.spool_upload(CONTAINER, new_video, api.StorageTier.HOT, move=True) is SpoolResult.SPOOLED
+        assert spool.spool_upload(CONTAINER, csv_file, api.StorageTier.HOT, move=True) is SpoolResult.SPOOLED
 
         # 2100 bytes spooled; a further 1000-byte video breaches the 2500 budget, so the oldest video is
         # evicted to make room and the CSV survives.
         third_video = make_file(tmp_path, "V3_third.mp4", nbytes=1000)
-        assert spool.spool_upload(CONTAINER, third_video, api.StorageTier.HOT, move=True)
+        assert (
+            spool.spool_upload(CONTAINER, third_video, api.StorageTier.HOT, move=True) is SpoolResult.SPOOLED
+        )
 
         names = {i.path.name for i in spool.pending_uploads()}
         assert names == {"V3_new.mp4", "V3_data.csv", "V3_third.mp4"}
@@ -132,25 +134,34 @@ class TestDiskSpool:
         spool = DiskSpool(tmp_path / "spool")
 
         video = make_file(tmp_path, "V3_big.mp4", nbytes=1000)
-        assert not spool.spool_upload(CONTAINER, video, api.StorageTier.HOT, move=True)
+        assert spool.spool_upload(CONTAINER, video, api.StorageTier.HOT, move=True) is SpoolResult.BINNED
         assert not video.exists(), "move=True should still consume the file when it is binned"
         assert not spool.has_data()
 
         # Non-video data is allowed to overshoot SPOOL_MAX_BYTES (it is small and precious).
         csv_file = make_file(tmp_path, "V3_data.csv", nbytes=1000)
-        assert spool.spool_upload(CONTAINER, csv_file, api.StorageTier.HOT, move=True)
+        assert spool.spool_upload(CONTAINER, csv_file, api.StorageTier.HOT, move=True) is SpoolResult.SPOOLED
         assert len(spool.pending_uploads()) == 1
 
     @pytest.mark.unittest
     def test_part_files_cleaned_and_ignored(self, tmp_path: Path) -> None:
         root = tmp_path / "spool"
-        stale = root / "upload" / CONTAINER / "HOT" / "V3_half_written.mp4.part"
-        stale.parent.mkdir(parents=True)
+        part_dir = root / "upload" / CONTAINER / "HOT"
+        part_dir.mkdir(parents=True)
+        # A stale .part is crash debris and must be swept; a fresh .part may be a live write by ANOTHER
+        # process sharing the spool directory (e.g. bcli constructing a connector while the service is
+        # mid-spool) and must be left alone - but still invisible to the drain listings.
+        stale = part_dir / "V3_crashed.mp4.part"
         stale.write_bytes(b"x" * 10)
+        past = time.time() - 2 * 3600
+        os.utime(stale, (past, past))
+        fresh = part_dir / "V3_in_progress.mp4.part"
+        fresh.write_bytes(b"x" * 10)
 
         spool = DiskSpool(root)
-        assert not stale.exists(), "half-written files from a crashed run should be cleaned up at startup"
-        assert not spool.has_data()
+        assert not stale.exists(), "old half-written files from a crashed run should be cleaned at startup"
+        assert fresh.exists(), "a fresh .part may belong to a live write in another process"
+        assert not spool.has_data(), ".part files must be invisible to the drain"
 
 
 class TestAsyncCloudConnectorSpool:
@@ -225,6 +236,53 @@ class TestAsyncCloudConnectorSpool:
             cc.upload_to_container(CONTAINER, [src], delete_src=True)
             assert cc._upload_queue.empty()
             assert len(cc._spool.pending_uploads()) == 1
+        finally:
+            cc.shutdown()
+
+    @pytest.mark.unittest
+    def test_upload_falls_back_to_queue_when_spool_fails(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        # If the spool can't take the data (disk full/unwritable), the divert path must fall back to the
+        # in-memory queue rather than silently dropping the file.
+        cc = self._make_cc(tmp_path)
+        self._stop_background_threads(cc)
+        try:
+            with cc._state_lock:
+                cc._offline = True
+            monkeypatch.setattr(DiskSpool, "spool_upload", lambda *_args, **_kwargs: SpoolResult.FAILED)
+
+            src = make_file(tmp_path, "V3_d01111111111_test.txt")
+            cc.upload_to_container(CONTAINER, [src], delete_src=True)
+
+            assert not cc._upload_queue.empty(), "spool failure must fall back to the in-memory queue"
+            item = cc._upload_queue.get_nowait()
+            assert isinstance(item, AsyncUpload)
+            assert item.src_files[0].exists(), "the file must still exist for the queued upload"
+        finally:
+            cc.shutdown()
+
+    @pytest.mark.unittest
+    def test_append_falls_back_to_queue_when_spool_fails(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        # The append path unlinks the source file before spooling, so a spool failure must fall back to
+        # the in-memory queue - the data exists nowhere else.
+        cc = self._make_cc(tmp_path)
+        self._stop_background_threads(cc)
+        try:
+            with cc._state_lock:
+                cc._offline = True
+            monkeypatch.setattr(DiskSpool, "spool_append", lambda *_args, **_kwargs: False)
+
+            csv_file = tmp_path / "V3_HEART_d01111111111_20260701.csv"
+            csv_file.write_text("".join(CSV_DATA))
+            assert cc.append_to_cloud(CONTAINER, csv_file, delete_src=True)
+
+            assert not cc._upload_queue.empty(), "spool failure must fall back to the in-memory queue"
+            item = cc._upload_queue.get_nowait()
+            assert isinstance(item, AsyncAppend)
+            assert item.data == CSV_DATA
         finally:
             cc.shutdown()
 

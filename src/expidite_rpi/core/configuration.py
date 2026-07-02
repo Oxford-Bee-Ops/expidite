@@ -57,6 +57,7 @@ SPOOL_MIN_DISK_FREE_BYTES: int = 1024**3
 # remainder to the disk spool. Must fit inside systemd's TimeoutStopSec budget alongside sensor shutdown.
 SPOOL_SHUTDOWN_FLUSH_SECONDS: float = 30.0
 
+
 ##############################################################################################################
 #
 # Platform discovery

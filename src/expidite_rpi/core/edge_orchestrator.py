@@ -481,6 +481,7 @@ class EdgeOrchestrator:
 def main() -> None:
     sdnotifier = sdnotify.SystemdNotifier()
     orchestrator = None
+    started = False
 
     try:
         # Provide diagnostics
@@ -495,6 +496,7 @@ def main() -> None:
 
         # Start all the sensor threads
         orchestrator.start_all()
+        started = True
 
         sdnotifier.notify("READY=1")
 
@@ -529,6 +531,13 @@ def main() -> None:
         if orchestrator is not None:
             logger.info("Edge orchestrator exiting; stopping all sensors and datastreams")
             orchestrator.stop_all()
+        # Signal "fully stopped" by removing the running flag - but only if this invocation owned the run.
+        # A second main() that exited early on "already running" must not delete the live instance's flag.
+        # request_managed_reboot waits on this removal before running `sudo reboot`, so it must happen only
+        # after stop_all() has finished flushing (the flag merely being stale is not sufficient, because it
+        # is legitimately stale for minutes during the graceful stop).
+        if started:
+            root_cfg.EXPIDITE_IS_RUNNING_FLAG.unlink(missing_ok=True)
         logger.info("Sensor script finished")
 
 

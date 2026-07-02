@@ -59,10 +59,9 @@ def request_managed_reboot(
 
 
 def _flush_and_reboot(reason: str, delay_seconds: float, collect_diagnostics: bool) -> None:
-    # Imported lazily to avoid circular imports (DiagnosticsBundle and EdgeOrchestrator both sit above
-    # several modules that need to request reboots).
+    # Imported lazily to avoid circular imports (DiagnosticsBundle sits above several modules that need to
+    # request reboots).
     from expidite_rpi.core.diagnostics_bundle import DiagnosticsBundle
-    from expidite_rpi.core.edge_orchestrator import EdgeOrchestrator
 
     try:
         if delay_seconds > 0:
@@ -72,12 +71,17 @@ def _flush_and_reboot(reason: str, delay_seconds: float, collect_diagnostics: bo
             # Collect diagnostics while the system is still running.
             DiagnosticsBundle.collect(reason)
 
-        # Request a graceful stop and wait (bounded) for the orchestrator to finish flushing. The flag is
-        # polled every second by the EdgeOrchestrator main loop; if RpiCore isn't running (or is in another
-        # process), watchdog_file_alive() tracks it via flag files so this works cross-process too.
+        # Request a graceful stop and wait (bounded) for the orchestrator to finish flushing.
+        # We wait on the EXPIDITE_IS_RUNNING_FLAG file being *removed*: the EdgeOrchestrator main loop
+        # touches it every second while running and unlinks it only after stop_all() has completed its
+        # flush, so removal is a positive "fully stopped" signal that works cross-process (BCLI) too.
+        # We must NOT use watchdog_file_alive() here: it reports False as soon as the STOP flag is newer
+        # than the running flag - i.e. immediately after the touch below, minutes before the flush is done.
+        # If the flag doesn't exist at all, RpiCore isn't running (or never started) and we reboot straight
+        # away; a stale flag left by a hard-killed process costs at most the bounded timeout.
         root_cfg.STOP_EXPIDITE_FLAG.touch()
         waited = 0.0
-        while EdgeOrchestrator.watchdog_file_alive() and waited < _REBOOT_FLUSH_TIMEOUT_SECONDS:
+        while root_cfg.EXPIDITE_IS_RUNNING_FLAG.exists() and waited < _REBOOT_FLUSH_TIMEOUT_SECONDS:
             sleep(1)
             waited += 1
         if waited >= _REBOOT_FLUSH_TIMEOUT_SECONDS:

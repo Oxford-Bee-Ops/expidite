@@ -83,7 +83,10 @@ back to `/expidite-diags/spool`, and as a last resort to a tmpfs path with a RAI
 ### Crash safety
 
 All writes go to a `.part` name and are renamed into place (rename within one filesystem is atomic).
-`.part` debris from a crashed run is deleted at construction, so the drain never uploads a half-file.
+`.part` files are invisible to the drain, so it never uploads a half-file. Debris from a crashed run is
+deleted at construction, but only when older than one hour: the spool directory is shared between
+processes (the service, bcli, the management service all construct connectors), and a fresh `.part` may
+be a live write by one of the others.
 
 ### Disk budget
 
@@ -114,6 +117,10 @@ threshold in `log_cloud_failure`), the connector enters offline mode:
 - Worker threads that fail while offline spool their item instead of re-queueing.
 
 Any successful cloud call resets the clock and returns the connector to online mode.
+
+If the spool itself cannot take the data (`SpoolResult.FAILED`: disk full or unwritable - distinct
+from a deliberately BINNED video), every divert path falls back to the in-memory queue rather than
+dropping the data; the RAM path was the pre-spool behavior and can still succeed if the network is up.
 
 ### Memory pressure (the second trigger)
 
@@ -172,6 +179,11 @@ This makes `systemctl stop`, `systemctl restart` and - critically - the system-w
 systemd sends during **any** `sudo reboot` flush-safe, even ones that bypass our own tooling. A stale
 flag cannot block startup because `EdgeOrchestrator.start_all()` clears it.
 
+The handler is installed by `RpiCore.start()`, not `__init__`: bcli and the management service also
+construct `RpiCore` (for configure/status), and installing the handler in those processes would make a
+SIGTERM to them stop the main data-collection service as collateral damage. Only the process that runs
+the orchestrator owns the handler.
+
 The service units also gained `After=network-online.target` / `Wants=network-online.target`: unit stop
 order is the reverse of start order, so during a reboot expidite stops *before* the network is torn
 down, giving the 30s network flush a chance to actually use the network.
@@ -181,7 +193,10 @@ down, giving the 30s network flush a chance to actually use the network.
 All deliberate reboots go through `request_managed_reboot(reason)` in `core/reboot.py`:
 
 1. Optionally collect a diagnostics bundle (see table).
-2. Touch `STOP_EXPIDITE_FLAG` and wait (bounded, 240s) for `watchdog_file_alive()` to go false.
+2. Touch `STOP_EXPIDITE_FLAG` and wait (bounded, 240s) for `EXPIDITE_IS_RUNNING_FLAG` to be *removed* -
+   the orchestrator's main loop deletes it only after `stop_all()` has finished flushing, so removal is
+   a positive "fully stopped" signal. (`watchdog_file_alive()` cannot be used here: it reports False the
+   moment the STOP flag is newer than the running flag, minutes before the flush completes.)
 3. `sudo reboot`.
 
 By default the wait runs on a daemon thread (`background=True`). This is required for callers that run

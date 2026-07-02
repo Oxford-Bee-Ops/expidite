@@ -15,7 +15,7 @@ from expidite_rpi.core.cloud_connector.cloud_connector import (
     is_transient_network_error,
     log_cloud_failure,
 )
-from expidite_rpi.core.cloud_connector.spool import DiskSpool, SpooledAppend, SpooledUpload
+from expidite_rpi.core.cloud_connector.spool import DiskSpool, SpooledAppend, SpooledUpload, SpoolResult
 
 logger = root_cfg.setup_logger("expidite")
 
@@ -174,9 +174,17 @@ class AsyncCloudConnector(CloudConnector):
         # While offline (or under memory pressure) new work goes straight to the disk spool: queueing it
         # would grow RAM, and staging it in TMP_DIR would grow the tmpfs, which is also RAM.
         if self._should_divert():
+            fallback_files = []
             for file in src_files:
-                self._spool.spool_upload(dst_container, file, storage_tier, move=delete_src)
-            return
+                result = self._spool.spool_upload(dst_container, file, storage_tier, move=delete_src)
+                if result is SpoolResult.FAILED and file.exists():
+                    # The spool couldn't take it (disk full/unwritable) but we still have the file; fall
+                    # back to the in-memory queue rather than silently losing the data. BINNED is a
+                    # deliberate sacrifice and must NOT fall back.
+                    fallback_files.append(file)
+            src_files = fallback_files
+            if not src_files:
+                return
 
         if delete_src:
             # Rename the files so that they are effectively deleted from the callers perspective
@@ -213,9 +221,11 @@ class AsyncCloudConnector(CloudConnector):
             src_file.unlink()
 
         # While offline (or under memory pressure) persist the data to the disk spool rather than holding
-        # it in RAM on the queue.
-        if self._should_divert():
-            return self._spool.spool_append(dst_container, src_file.name, data)
+        # it in RAM on the queue. The source file has already been unlinked above, so if the spool cannot
+        # take the data (disk full/unwritable) we must NOT drop it - fall back to the in-memory queue,
+        # which was the pre-spool behavior and can still succeed if the network is up.
+        if self._should_divert() and self._spool.spool_append(dst_container, src_file.name, data):
+            return True
 
         self._upload_queue.put(
             AsyncAppend(dst_container, src_file.name, delete_src, data=data, col_order=col_order)
@@ -284,6 +294,7 @@ class AsyncCloudConnector(CloudConnector):
     def _spill_queue_to_spool(self) -> None:
         """Move everything on the in-memory upload queue to the disk spool. No network I/O."""
         spilled = 0
+        failed: list[AsyncAppend | AsyncUpload] = []
         while True:
             try:
                 queue_item = self._upload_queue.get_nowait()
@@ -293,31 +304,59 @@ class AsyncCloudConnector(CloudConnector):
                 # Shutdown sentinel for do_work; put it back rather than swallowing it.
                 self._upload_queue.put(None)
                 break
-            self._spool_action(queue_item)
+            if not self._spool_action(queue_item):
+                failed.append(queue_item)
             self._upload_queue.task_done()
             spilled += 1
+        # Items the spool couldn't take (disk full/unwritable) go back on the queue rather than being lost;
+        # they are re-put after the loop so a persistent spool failure can't spin this loop forever. At
+        # shutdown there is no queue processing left, so the loss is logged instead.
+        for queue_item in failed:
+            if self._stop_requested.is_set():
+                logger.error(f"{root_cfg.RAISE_WARN()}Spool unavailable at shutdown; data lost: {queue_item}")
+            else:
+                self._upload_queue.put(queue_item)
         if spilled:
             logger.info(f"Spilled {spilled} queued uploads to disk spool at {self._spool.root}")
 
-    def _spool_action(self, action: AsyncAppend | AsyncUpload, safety_copy: bool = False) -> None:
+    def _spool_action(self, action: AsyncAppend | AsyncUpload, safety_copy: bool = False) -> bool:
         """Persist one queue item to the disk spool.
 
         safety_copy=True never moves or deletes source files (used for uploads still in flight on a worker
         thread, whose files may be mid-read and are cleaned up by that worker on success).
+
+        Returns False if any of the action's data could not be persisted (spool disk full/unwritable) and
+        the caller still holds it - the caller should then keep the action in RAM rather than lose data.
+        A BINNED video is a deliberate policy decision and counts as handled. For a (non safety-copy)
+        upload action, files that did make it to the spool are removed from action.src_files so a fallback
+        re-queue retries only the failed ones.
         """
         if isinstance(action, AsyncAppend):
-            self._spool.spool_append(action.dst_container, action.src_fname, action.data)
-            return
+            return self._spool.spool_append(action.dst_container, action.src_fname, action.data)
+
+        remaining = []
         for file in action.src_files:
             if not file.exists():
                 continue
             move = action.delete_src and not safety_copy
-            self._spool.spool_upload(action.dst_container, file, action.storage_tier, move=move)
+            result = self._spool.spool_upload(action.dst_container, file, action.storage_tier, move=move)
+            if result is SpoolResult.FAILED and file.exists():
+                remaining.append(file)
+
         if action.delete_src and not safety_copy:
-            # The files lived in a temporary directory we created in upload_to_container; remove it.
-            tmp_dir = action.src_files[0].parent
-            if tmp_dir.exists() and tmp_dir.is_dir() and not any(tmp_dir.iterdir()):
+            # The files lived in a temporary directory we created in upload_to_container. Files that failed
+            # to spool stay in it for the fallback re-queue; once none remain, remove the empty directory.
+            tmp_dir = action.src_files[0].parent if action.src_files else None
+            action.src_files = remaining
+            if (
+                not remaining
+                and tmp_dir is not None
+                and tmp_dir.exists()
+                and tmp_dir.is_dir()
+                and not any(tmp_dir.iterdir())
+            ):
                 tmp_dir.rmdir()
+        return not remaining
 
     ##########################################################################################################
     # Spool drain thread
@@ -434,8 +473,13 @@ class AsyncCloudConnector(CloudConnector):
 
             if action.src_files:
                 if self._should_divert():
-                    # Offline / shutting down / memory pressure: persist to disk instead of retrying in RAM.
-                    self._spool_action(action)
+                    # Offline / shutting down / memory pressure: persist to disk instead of retrying in
+                    # RAM. If the spool can't take some files (disk full/unwritable), fall back to
+                    # re-queueing those rather than losing them - unless we're shutting down, when there is
+                    # no queue processing left to fall back to.
+                    if not self._spool_action(action) and not self._stop_requested.is_set():
+                        action.iteration += 1
+                        self._upload_queue.put(action)
                 else:
                     # Re-queue the upload if any src_files still exist
                     action.iteration += 1
@@ -480,8 +524,12 @@ class AsyncCloudConnector(CloudConnector):
         finally:
             if not succeeded:
                 if self._should_divert():
-                    # Offline / shutting down / memory pressure: persist to disk instead of retrying in RAM.
-                    self._spool_action(action)
+                    # Offline / shutting down / memory pressure: persist to disk instead of retrying in
+                    # RAM. If the spool can't take the data, fall back to re-queueing rather than losing it
+                    # - unless we're shutting down, when there is no queue processing left to fall back to.
+                    if not self._spool_action(action) and not self._stop_requested.is_set():
+                        action.iteration += 1
+                        self._upload_queue.put(action)
                 elif action.iteration > 100:
                     # Failsafe
                     logger.error(
@@ -552,15 +600,17 @@ class AsyncCloudConnector(CloudConnector):
 
                 if queue_item is not None and self._memory_pressure():
                     # RAM is running out (the tmpfs working dir also counts); move the whole backlog,
-                    # including this item, to persistent disk rather than processing it in memory.
+                    # including this item, to persistent disk rather than processing it in memory. If the
+                    # spool can't take this item, fall through and process it normally (uploading also
+                    # frees the memory) rather than losing it.
                     logger.warning(
                         f"Memory usage above {root_cfg.SPOOL_AT_MEMORY_PERCENT}%; "
                         "spilling upload queue to disk spool"
                     )
-                    self._spool_action(queue_item)
-                    self._upload_queue.task_done()
-                    self._spill_queue_to_spool()
-                    continue
+                    if self._spool_action(queue_item):
+                        self._upload_queue.task_done()
+                        self._spill_queue_to_spool()
+                        continue
 
                 if isinstance(queue_item, AsyncAppend):
                     with self._state_lock:
