@@ -621,7 +621,7 @@ class InteractiveMenu:
             return
         click.echo("Rebooting the device...")
         click.echo("If RpiCore is running, we first stop it gracefully so queued data is flushed to the")
-        click.echo("cloud / disk spool - this may take a few minutes.")
+        click.echo("cloud or disk - this may take a few minutes.")
         # background=False: BCLI is a separate process from the RpiCore service, so it can (and should)
         # block here while the service flushes; the flag files it watches are shared via the filesystem.
         reboot.request_managed_reboot("Reboot requested via BCLI", background=False)
