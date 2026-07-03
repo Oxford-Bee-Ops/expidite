@@ -497,6 +497,9 @@ class DPnode:
 
             assert stream.cloud_container is not None
             cloud_container = stream.cloud_container
+            logger.info(
+                f"NICKB: CALL upload_to_container for recording: {sample_fname}, can_discard={can_discard}"
+            )
             self._get_cc().upload_to_container(
                 cloud_container,
                 [sample_fname],
