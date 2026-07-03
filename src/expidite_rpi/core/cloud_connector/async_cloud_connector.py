@@ -474,7 +474,8 @@ class AsyncCloudConnector(CloudConnector):
                     logger.error(f"{root_cfg.RAISE_WARN()}Temporary directory {tmp_dir} does not exist")
         except Exception as e:
             self._note_cloud_failure(e)
-            log_cloud_failure(f"Upload failed for {action.src_files}; diverting to disk spool", e)
+            disposition = "discarding (expendable)" if action.is_discardable else "diverting to disk spool"
+            log_cloud_failure(f"Upload failed for {action.src_files}; {disposition}", e)
             # Files that no longer exist were uploaded (and deleted) before the failure - drop them.
             action.src_files = [file for file in action.src_files if file.exists()]
             if action.src_files and not self._spool_action(action) and not self._stop_requested.is_set():

@@ -284,9 +284,19 @@ class _SuppressShutdownFaultsFilter(logging.Filter):
     customer-facing faults. Those are expected teardown noise, not real faults, so they are suppressed
     outright. Only WARNING+ records carrying the fault tag are candidates, so the flag file is stat-ed
     for just the handful of such records, not on the normal logging hot path.
+
+    The reboot module is exempted: its faults ("did not stop within Ns; rebooting anyway", "error flushing
+    before reboot") report on the shutdown/reboot itself and are exactly what an operator needs to see when
+    a graceful stop misbehaves - suppressing them would hide the failure we most want visible.
+
+    Note: this only filters loggers created via setup_logger (below), which attaches it to their handlers.
+    User sensor code (e.g. bee_ops) is covered as long as it logs through setup_logger("<name>"); a sensor
+    that builds its own logging some other way would bypass this suppression.
     """
 
     def filter(self, record: logging.LogRecord) -> bool:
+        if record.module == "reboot":
+            return True
         if record.levelno >= logging.WARNING and api.RAISE_WARN_TAG in record.getMessage():
             return not STOP_EXPIDITE_FLAG.exists()
         return True

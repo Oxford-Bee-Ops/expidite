@@ -42,8 +42,9 @@ class Test_shutdown_fault_filter:
     """The RAISE_WARNING fault suppression during graceful shutdown."""
 
     @staticmethod
-    def _record(level: int, msg: str) -> logging.LogRecord:
-        return logging.LogRecord("bee_ops", level, __file__, 1, msg, None, None)
+    def _record(level: int, msg: str, pathname: str = __file__) -> logging.LogRecord:
+        # record.module is derived from the pathname stem, which the filter uses to exempt reboot.py.
+        return logging.LogRecord("bee_ops", level, pathname, 1, msg, None, None)
 
     @pytest.mark.unittest
     def test_fault_suppressed_only_while_stopping(
@@ -73,3 +74,20 @@ class Test_shutdown_fault_filter:
         assert filt.filter(self._record(logging.WARNING, "camera settled slowly")) is True
         # ...and an INFO line that merely mentions the tag is below the fault threshold and survives.
         assert filt.filter(self._record(logging.INFO, f"{api.RAISE_WARN_TAG}_dev: fyi")) is True
+
+    @pytest.mark.unittest
+    def test_reboot_module_faults_survive_shutdown(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        # reboot.py's own faults report on the shutdown itself and must NOT be suppressed during a stop.
+        flag = tmp_path / "STOP_EXPIDITE_FLAG"
+        flag.touch()
+        monkeypatch.setattr(root_cfg, "STOP_EXPIDITE_FLAG", flag)
+        filt = root_cfg._shutdown_fault_filter
+
+        reboot_fault = self._record(
+            logging.ERROR,
+            f"{api.RAISE_WARN_TAG}_dev: RpiCore did not stop within 240s; rebooting anyway",
+            pathname="/x/expidite_rpi/core/reboot.py",
+        )
+        assert filt.filter(reboot_fault) is True

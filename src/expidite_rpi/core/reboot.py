@@ -44,10 +44,11 @@ def request_managed_reboot(
 
     delay_seconds delays the whole sequence, e.g. so an IoT Hub method response can be delivered first.
 
-    background=True (the default) performs the wait-and-reboot on a daemon thread and returns immediately.
-    This is required when called from a thread that EdgeOrchestrator.stop_all() joins (the device manager,
-    sensor threads, health checks): blocking such a thread on the shutdown it just triggered would
-    deadlock. Use background=False only from outside the RpiCore process (e.g. BCLI).
+    background=True (the default) performs the wait-and-reboot on a separate (non-daemon) thread and returns
+    immediately. This is required when called from a thread that EdgeOrchestrator.stop_all() joins (the
+    device manager, sensor threads, health checks): blocking such a thread on the shutdown it just triggered
+    would deadlock. The thread is deliberately non-daemon so the process does not exit before it issues the
+    reboot (see the thread creation below).
 
     is_error=True gathers a diagnostics bundle before stopping. Set it for reboots that are recovery actions
     from a fault (wifi outage, memory exhaustion, stale HEART); user-requested reboots (BCLI, IoT Hub command)
@@ -63,11 +64,17 @@ def request_managed_reboot(
         logger.warning(f"Rebooting device: {reason}")
 
     if background:
+        # daemon=False is deliberate and load-bearing: the caller is inside the RpiCore process, which
+        # exits as soon as the graceful stop completes (run_my_sensor.main returns once the orchestrator
+        # thread ends). A daemon thread would be abandoned at interpreter shutdown - often before it has
+        # polled the running flag and issued `sudo reboot` - so the device would merely restart instead of
+        # rebooting. A non-daemon thread keeps the process alive until the reboot is actually issued
+        # (bounded by _REBOOT_FLUSH_TIMEOUT_SECONDS).
         threading.Thread(
             target=_flush_and_reboot,
             args=(reason, delay_seconds, is_error),
             name="managed_reboot",
-            daemon=True,
+            daemon=False,
         ).start()
     else:
         _flush_and_reboot(reason, delay_seconds, is_error)
@@ -165,4 +172,15 @@ def _stop_service_and_reboot(delay_seconds: float) -> None:
         # Never let a stop failure prevent the reboot itself.
         logger.exception(f"{root_cfg.RAISE_WARN()}Error stopping service before reboot; rebooting anyway")
 
-    utils.run_cmd("sudo reboot", ignore_errors=True)
+    try:
+        # Not ignore_errors: we need to know if the reboot did not take. `systemctl stop` is a *manual*
+        # stop, so systemd's Restart=always will NOT bring the service back on its own - if the reboot
+        # fails we must restart it ourselves, or the device is left with no data collection until the next
+        # real boot.
+        utils.run_cmd("sudo reboot")
+    except Exception:
+        logger.exception(
+            f"{root_cfg.RAISE_WARN()}`sudo reboot` failed after stopping the service; "
+            "restarting the service so the device is not left idle"
+        )
+        utils.run_cmd(f"sudo systemctl start {_EXPIDITE_SERVICE}", ignore_errors=True)
