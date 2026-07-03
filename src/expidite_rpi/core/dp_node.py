@@ -194,7 +194,7 @@ class DPnode:
         start_time: datetime,
         end_time: datetime | None = None,
         override_sampling: api.OVERRIDE | None = api.OVERRIDE.AUTO,
-        is_discardable: bool = False,
+        can_discard: bool = False,
     ) -> Path:
         """Called by a Sensor or DataProcessor to save a recording file to the appropriate datastore.
         This should only be used by Sensors or **primary** datastreams.
@@ -213,7 +213,7 @@ class DPnode:
                 The time that the recording started.
             end_time:datetime
                 The time that the recording ended.
-            is_discardable: bool
+            can_discard: bool
                 If True, the recording is expendable: should the upload fail during a network outage it is
                 dropped rather than persisted to the disk spool, so it never consumes scarce spool disk.
         """
@@ -233,7 +233,7 @@ class DPnode:
             suffix=self.get_stream(stream_index).format,
             end_time=end_time,
             override_sampling=override_sampling,
-            is_discardable=is_discardable,
+            can_discard=can_discard,
         )
 
     def save_sub_recording(
@@ -245,7 +245,7 @@ class DPnode:
         offset_index: int | None = None,
         secondary_offset_index: int | None = None,
         override_sampling: api.OVERRIDE | None = api.OVERRIDE.AUTO,
-        is_discardable: bool = False,
+        can_discard: bool = False,
     ) -> Path:
         """Called by DataProcessors to save sub-sample recording files to the appropriate datastore.
         Note: save_sub_recording() will *rename* (ie delete) the supplied temporary_file
@@ -268,7 +268,7 @@ class DPnode:
                 Typically a frame number in the recording, if applicable.
             secondary_offset_index: optional int
                 An index that can be used to differentiate between multiple subsamples from a given frame.
-            is_discardable: bool
+            can_discard: bool
                 If True, the recording is expendable: should the upload fail during a network outage it is
                 dropped rather than persisted to the disk spool, so it never consumes scarce spool disk.
         """
@@ -292,7 +292,7 @@ class DPnode:
             offset_index=offset_index,
             secondary_offset_index=secondary_offset_index,
             override_sampling=override_sampling,
-            is_discardable=is_discardable,
+            can_discard=can_discard,
         )
 
     def log_sample_data(self, sample_period_start_time: datetime) -> None:
@@ -387,7 +387,7 @@ class DPnode:
         offset_index: int | None = None,
         secondary_offset_index: int | None = None,
         override_sampling: api.OVERRIDE | None = api.OVERRIDE.AUTO,
-        is_discardable: bool = False,
+        can_discard: bool = False,
     ) -> Path:
         """Private method that handles saving of recordings from Datastreams or DataProcessors.
 
@@ -404,7 +404,7 @@ class DPnode:
                 Typically a frame number in the recording, if applicable.
             secondary_offset_index: optional int
                 An index that can be used to differentiate between multiple subsamples from a given frame.
-            is_discardable: bool
+            can_discard: bool
                 If True, the recording is expendable: should the upload fail during a network outage it is
                 dropped rather than persisted to the disk spool, so it never consumes scarce spool disk.
         """
@@ -502,7 +502,7 @@ class DPnode:
                 [sample_fname],
                 delete_src=True,
                 storage_tier=stream.storage_tier,
-                is_discardable=is_discardable,
+                can_discard=can_discard,
             )
 
         if save_for_dp:

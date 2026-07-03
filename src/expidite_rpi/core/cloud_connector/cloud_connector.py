@@ -151,7 +151,7 @@ class CloudConnector:
         src_files: list[Path],
         delete_src: bool,
         storage_tier: api.StorageTier = api.StorageTier.HOT,
-        is_discardable: bool = False,
+        can_discard: bool = False,
     ) -> None:
         """Upload a list of local files to an Azure container.
 
@@ -161,8 +161,8 @@ class CloudConnector:
             dst_container: destination ContainerClient
             src_files: list of files to upload to the container
             delete_src: delete the local src_files instances after successful upload; defaults to True
-            is_discardable: only meaningful for the AsyncCloudConnector - see its override. The synchronous
-                base connector has no disk spool, so it ignores this flag (a failed upload raises either way).
+            can_discard: only meaningful for the AsyncCloudConnector - see its override. The synchronous base
+                connector has no disk spool, so it ignores this flag (a failed upload raises either way).
 
         If the upload fails part way through, those files that were successfully uploaded will have been
         deleted (if delete_src=True), while any remaining files in src_files will not have been deleted.

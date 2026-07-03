@@ -53,7 +53,7 @@ class LocalCloudConnector(CloudConnector):
         src_files: list[Path],
         delete_src: bool,
         storage_tier: api.StorageTier = api.StorageTier.HOT,
-        is_discardable: bool = False,
+        can_discard: bool = False,
     ) -> None:
         """Upload a list of local files to an Azure container
         These will be regular block_blobs and not append_blobs; see append_to_cloud for append_blobs.
@@ -62,7 +62,7 @@ class LocalCloudConnector(CloudConnector):
             dst_container: destination ContainerClient
             src_files: list of files to upload to the container
             delete_src: delete the local src_files instances after successful upload; defaults to True
-            is_discardable: accepted for interface parity with CloudConnector; the local connector writes
+            can_discard: accepted for interface parity with CloudConnector; the local connector writes
                 straight to disk and has no spool, so there is nothing to discard and the flag is ignored.
 
         If the upload fails part way through, those files that were successfully uploaded will have

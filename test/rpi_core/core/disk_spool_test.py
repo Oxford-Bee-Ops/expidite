@@ -205,11 +205,11 @@ class TestAsyncCloudConnectorSpool:
         cc._stop_requested.clear()
 
     def _staged_upload(
-        self, tmp_path: Path, name: str = "V3_d01111111111_test.txt", is_discardable: bool = False
+        self, tmp_path: Path, name: str = "V3_d01111111111_test.txt", can_discard: bool = False
     ) -> AsyncUpload:
         """Build an AsyncUpload as upload_to_container would: file staged in its own tmp dir."""
         staged = make_file(tmp_path / f"staging_{name}", name)
-        return AsyncUpload(CONTAINER, [staged], delete_src=True, is_discardable=is_discardable)
+        return AsyncUpload(CONTAINER, [staged], delete_src=True, can_discard=can_discard)
 
     @pytest.mark.unittest
     def test_offline_after_persistent_transient_failures(
@@ -261,7 +261,7 @@ class TestAsyncCloudConnectorSpool:
     def test_discardable_upload_dropped_not_spooled(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
-        # is_discardable marks a recording as expendable: a failed network attempt drops it rather than
+        # can_discard marks a recording as expendable: a failed network attempt drops it rather than
         # persisting it to the spool, so it never consumes scarce spool disk during an outage.
         cc = self._make_cc(tmp_path)
         self._stop_background_threads(cc)
@@ -272,7 +272,7 @@ class TestAsyncCloudConnectorSpool:
 
             monkeypatch.setattr(CloudConnector, "upload_to_container", failing_upload)
 
-            action = self._staged_upload(tmp_path, is_discardable=True)
+            action = self._staged_upload(tmp_path, can_discard=True)
             staging_dir = action.src_files[0].parent
             cc._async_upload(action)
 
@@ -540,7 +540,7 @@ class _RecordingConnectorStub:
         src_files: list[Path],
         delete_src: bool,
         storage_tier: api.StorageTier = api.StorageTier.HOT,
-        is_discardable: bool = False,
+        can_discard: bool = False,
     ) -> None:
         self.calls.append(
             {
@@ -548,13 +548,13 @@ class _RecordingConnectorStub:
                 "src_files": list(src_files),
                 "delete_src": delete_src,
                 "storage_tier": storage_tier,
-                "is_discardable": is_discardable,
+                "can_discard": can_discard,
             }
         )
 
 
 class TestSaveRecordingSpoolPlumbing:
-    """The dp_node -> connector plumbing for is_discardable.
+    """The dp_node -> connector plumbing for can_discard.
 
     The connector-level tests above construct AsyncUpload directly, so they cannot detect a bug in
     save_recording's plumbing (e.g. an override forcing every recording discardable). These tests drive a
@@ -575,8 +575,8 @@ class TestSaveRecordingSpoolPlumbing:
     def test_save_recording_is_spoolable_by_default(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
-        # The default contract: recordings saved without is_discardable are precious - on upload failure
-        # they must be spooled, so the connector must receive is_discardable=False.
+        # The default contract: recordings saved without can_discard are precious - on upload failure they
+        # must be spooled, so the connector must receive can_discard=False.
         sensor, stub = self._make_sensor(monkeypatch)
         src = tmp_path / "tmp_recording.jpg"
         src.write_bytes(b"jpeg-bytes")
@@ -586,8 +586,8 @@ class TestSaveRecordingSpoolPlumbing:
         )
 
         assert len(stub.calls) == 1
-        assert stub.calls[0]["is_discardable"] is False, (
-            "save_recording without is_discardable must reach the connector as NOT discardable, "
+        assert stub.calls[0]["can_discard"] is False, (
+            "save_recording without can_discard must reach the connector as NOT discardable, "
             "or every recording is silently dropped instead of spooled during an outage"
         )
 
@@ -604,8 +604,8 @@ class TestSaveRecordingSpoolPlumbing:
             src,
             start_time=api.utc_now(),
             override_sampling=api.OVERRIDE.SAVE,
-            is_discardable=True,
+            can_discard=True,
         )
 
         assert len(stub.calls) == 1
-        assert stub.calls[0]["is_discardable"] is True
+        assert stub.calls[0]["can_discard"] is True

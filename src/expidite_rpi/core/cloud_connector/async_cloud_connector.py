@@ -62,7 +62,7 @@ class AsyncUpload:
     # When True the files are never written to the disk spool: if the single live upload attempt fails
     # (or spooling is otherwise triggered by memory pressure/shutdown) the data is simply dropped. Used
     # for recordings the caller has declared expendable, so they never consume scarce spool disk.
-    is_discardable: bool = False
+    can_discard: bool = False
 
 
 # eq=False: actions are tracked by identity in the in-flight set, so they must hash by identity.
@@ -163,11 +163,11 @@ class AsyncCloudConnector(CloudConnector):
         src_files: list[Path],
         delete_src: bool,
         storage_tier: api.StorageTier = api.StorageTier.HOT,
-        is_discardable: bool = False,
+        can_discard: bool = False,
     ) -> None:
         """Async version of upload_to_container using a queue and thread pool for parallel uploads.
 
-        is_discardable=True marks these files as expendable: on any upload failure they are dropped rather
+        can_discard=True marks these files as expendable: on any upload failure they are dropped rather
         than persisted to the disk spool (see _spool_action), so declared-expendable recordings never take
         up scarce spool disk during an outage.
         """
@@ -192,7 +192,7 @@ class AsyncCloudConnector(CloudConnector):
 
         if src_files:
             self._upload_queue.put(
-                AsyncUpload(dst_container, src_files, delete_src, storage_tier, is_discardable)
+                AsyncUpload(dst_container, src_files, delete_src, storage_tier, can_discard)
             )
 
     def append_to_cloud(
@@ -313,7 +313,7 @@ class AsyncCloudConnector(CloudConnector):
         if isinstance(action, AsyncAppend):
             return self._spool.spool_append(action.dst_container, action.src_fname, action.data)
 
-        if action.is_discardable:
+        if action.can_discard:
             # safety_copy leaves the in-flight worker's files alone (that worker cleans them up itself);
             # otherwise drop the temp copy we own in upload_to_container.
             if action.delete_src and not safety_copy:
@@ -474,7 +474,7 @@ class AsyncCloudConnector(CloudConnector):
                     logger.error(f"{root_cfg.RAISE_WARN()}Temporary directory {tmp_dir} does not exist")
         except Exception as e:
             self._note_cloud_failure(e)
-            disposition = "discarding (expendable)" if action.is_discardable else "diverting to disk spool"
+            disposition = "discarding (expendable)" if action.can_discard else "diverting to disk spool"
             log_cloud_failure(f"Upload failed for {action.src_files}; {disposition}", e)
             # Files that no longer exist were uploaded (and deleted) before the failure - drop them.
             action.src_files = [file for file in action.src_files if file.exists()]
