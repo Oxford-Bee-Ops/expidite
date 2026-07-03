@@ -199,10 +199,12 @@ class TestAsyncCloudConnectorSpool:
         time.sleep(0.2)  # Let do_work consume the sentinel and exit
         cc._stop_requested.clear()
 
-    def _staged_upload(self, tmp_path: Path, name: str = "V3_d01111111111_test.txt") -> AsyncUpload:
+    def _staged_upload(
+        self, tmp_path: Path, name: str = "V3_d01111111111_test.txt", is_discardable: bool = False
+    ) -> AsyncUpload:
         """Build an AsyncUpload as upload_to_container would: file staged in its own tmp dir."""
         staged = make_file(tmp_path / f"staging_{name}", name)
-        return AsyncUpload(CONTAINER, [staged], delete_src=True)
+        return AsyncUpload(CONTAINER, [staged], delete_src=True, is_discardable=is_discardable)
 
     @pytest.mark.unittest
     def test_offline_after_persistent_transient_failures(
@@ -247,6 +249,31 @@ class TestAsyncCloudConnectorSpool:
             assert cc._upload_queue.empty(), "a failed upload must not be re-queued in RAM"
             assert len(cc._spool.pending_uploads()) == 1
             assert not staging_dir.exists(), "the tmpfs staging dir should be cleaned up after spooling"
+        finally:
+            cc.shutdown()
+
+    @pytest.mark.unittest
+    def test_discardable_upload_dropped_not_spooled(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        # is_discardable marks a recording as expendable: a failed network attempt drops it rather than
+        # persisting it to the spool, so it never consumes scarce spool disk during an outage.
+        cc = self._make_cc(tmp_path)
+        self._stop_background_threads(cc)
+        try:
+
+            def failing_upload(self: CloudConnector, *args: object, **kwargs: object) -> None:
+                raise ServiceRequestError(message="name resolution failure")
+
+            monkeypatch.setattr(CloudConnector, "upload_to_container", failing_upload)
+
+            action = self._staged_upload(tmp_path, is_discardable=True)
+            staging_dir = action.src_files[0].parent
+            cc._async_upload(action)
+
+            assert cc._upload_queue.empty(), "a discardable upload must not be re-queued in RAM"
+            assert not cc._spool.has_data(), "a discardable upload must not be written to the spool"
+            assert not staging_dir.exists(), "the tmpfs staging dir must be cleaned up after discarding"
         finally:
             cc.shutdown()
 

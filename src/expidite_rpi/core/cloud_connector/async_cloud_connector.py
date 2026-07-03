@@ -1,3 +1,4 @@
+import contextlib
 import shutil
 from concurrent.futures import ThreadPoolExecutor
 from dataclasses import dataclass
@@ -58,6 +59,10 @@ class AsyncUpload:
     src_files: list[Path]
     delete_src: bool
     storage_tier: api.StorageTier = api.StorageTier.HOT
+    # When True the files are never written to the disk spool: if the single live upload attempt fails
+    # (or spooling is otherwise triggered by memory pressure/shutdown) the data is simply dropped. Used
+    # for recordings the caller has declared expendable, so they never consume scarce spool disk.
+    is_discardable: bool = False
 
 
 # eq=False: actions are tracked by identity in the in-flight set, so they must hash by identity.
@@ -158,8 +163,14 @@ class AsyncCloudConnector(CloudConnector):
         src_files: list[Path],
         delete_src: bool,
         storage_tier: api.StorageTier = api.StorageTier.HOT,
+        is_discardable: bool = False,
     ) -> None:
-        """Async version of upload_to_container using a queue and thread pool for parallel uploads."""
+        """Async version of upload_to_container using a queue and thread pool for parallel uploads.
+
+        is_discardable=True marks these files as expendable: on any upload failure they are dropped rather
+        than persisted to the disk spool (see _spool_action), so declared-expendable recordings never take
+        up scarce spool disk during an outage.
+        """
         verified_files = []
         for file in src_files:
             if not file.exists():
@@ -180,7 +191,9 @@ class AsyncCloudConnector(CloudConnector):
                 src_files[i] = tmp_file
 
         if src_files:
-            self._upload_queue.put(AsyncUpload(dst_container, src_files, delete_src, storage_tier))
+            self._upload_queue.put(
+                AsyncUpload(dst_container, src_files, delete_src, storage_tier, is_discardable)
+            )
 
     def append_to_cloud(
         self, dst_container: str, src_file: Path, delete_src: bool, col_order: list[str] | None = None
@@ -293,9 +306,20 @@ class AsyncCloudConnector(CloudConnector):
         A DROPPED video is a deliberate policy decision and counts as handled. For a (non safety-copy)
         upload action, files that did make it to the spool are removed from action.src_files so a fallback
         re-queue retries only the failed ones.
+
+        A discardable upload is never spooled: it is dropped here and reported as handled (True), so an
+        expendable recording that failed its one live upload attempt does not consume spool disk.
         """
         if isinstance(action, AsyncAppend):
             return self._spool.spool_append(action.dst_container, action.src_fname, action.data)
+
+        if action.is_discardable:
+            # safety_copy leaves the in-flight worker's files alone (that worker cleans them up itself);
+            # otherwise drop the temp copy we own in upload_to_container.
+            if action.delete_src and not safety_copy:
+                self._discard_upload_files(action)
+            logger.debug(f"Dropped discardable upload for {action.dst_container} (not spooled)")
+            return True
 
         remaining = []
         for file in action.src_files:
@@ -320,6 +344,17 @@ class AsyncCloudConnector(CloudConnector):
             ):
                 tmp_dir.rmdir()
         return not remaining
+
+    @staticmethod
+    def _discard_upload_files(action: AsyncUpload) -> None:
+        """Delete a discardable upload's temp files and the temporary dir upload_to_container created."""
+        tmp_dir = action.src_files[0].parent if action.src_files else None
+        for file in action.src_files:
+            file.unlink(missing_ok=True)
+        action.src_files = []
+        if tmp_dir is not None and tmp_dir.exists() and tmp_dir.is_dir() and not any(tmp_dir.iterdir()):
+            with contextlib.suppress(OSError):
+                tmp_dir.rmdir()
 
     ##########################################################################################################
     # Spool drain thread - the ONLY retry mechanism
