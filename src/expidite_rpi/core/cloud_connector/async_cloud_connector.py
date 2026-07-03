@@ -290,7 +290,7 @@ class AsyncCloudConnector(CloudConnector):
 
         Returns False if any of the action's data could not be persisted (spool disk full/unwritable) and
         the caller still holds it - the caller should then keep the action in RAM rather than lose data.
-        A BINNED video is a deliberate policy decision and counts as handled. For a (non safety-copy)
+        A DROPPED video is a deliberate policy decision and counts as handled. For a (non safety-copy)
         upload action, files that did make it to the spool are removed from action.src_files so a fallback
         re-queue retries only the failed ones.
         """

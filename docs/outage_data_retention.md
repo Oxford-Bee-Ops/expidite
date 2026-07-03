@@ -95,11 +95,11 @@ Governed by `SPOOL_MAX_BYTES` (16 GB default) and a hard free-space floor `SPOOL
 (1 GB). When an incoming item would breach the budget:
 
 1. The oldest spooled **videos** (`.mp4`/`.avi`/`.h264`, by mtime) are evicted until it fits.
-2. If no evictable video remains and the incoming item is itself a video, it is binned.
+2. If no evictable video remains and the incoming item is itself a video, it is dropped.
 3. Non-video data (CSVs, logs) is allowed to overshoot `SPOOL_MAX_BYTES` - it is small and precious -
    bounded only by the free-space floor.
 
-The first binned video per run is a RAISE_WARN fault (visible in the customer WARNING datastream);
+The first dropped video per run is a RAISE_WARN fault (visible in the customer WARNING datastream);
 subsequent bins log at INFO with a periodic RAISE_WARN counter, so a week-long outage doesn't produce
 thousands of faults.
 
@@ -254,7 +254,7 @@ All tuning constants live in `core/configuration.py` for easy review and mocking
 | Wifi >2h reboot | Up to 2h of data lost | Flushed to spool pre-reboot; drained on recovery |
 | `sudo reboot` / `systemctl stop` | SIGTERM ignored → SIGKILL → loss | Graceful stop, flush/spool |
 | Installer upgrade | SIGKILL first → loss | Graceful stop first |
-| Week-long outage | Device unusable, total loss | CSVs retained indefinitely; videos kept up to 16 GB, then binned oldest-first |
+| Week-long outage | Device unusable, total loss | CSVs retained indefinitely; videos kept up to 16 GB, then dropped oldest-first |
 
 ## 10. Testing
 

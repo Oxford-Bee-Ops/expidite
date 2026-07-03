@@ -128,7 +128,7 @@ class TestDiskSpool:
 
         names = {i.path.name for i in spool.pending_uploads()}
         assert names == {"V3_new.mp4", "V3_data.csv", "V3_third.mp4"}
-        assert spool.videos_binned == 1
+        assert spool.videos_dropped == 1
 
     @pytest.mark.unittest
     def test_budget_bins_incoming_video_when_no_room(
@@ -139,8 +139,8 @@ class TestDiskSpool:
         spool = DiskSpool(tmp_path / "spool")
 
         video = make_file(tmp_path, "V3_big.mp4", nbytes=1000)
-        assert spool.spool_upload(CONTAINER, video, api.StorageTier.HOT, move=True) is SpoolResult.BINNED
-        assert not video.exists(), "move=True should still consume the file when it is binned"
+        assert spool.spool_upload(CONTAINER, video, api.StorageTier.HOT, move=True) is SpoolResult.DROPPED
+        assert not video.exists(), "move=True should still consume the file when it is dropped"
         assert not spool.has_data()
 
         # Non-video data is allowed to overshoot SPOOL_MAX_BYTES (it is small and precious).

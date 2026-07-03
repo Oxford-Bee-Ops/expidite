@@ -133,7 +133,7 @@ behaviour matches the table.
 - [ ] **F1. Oldest-video eviction.** On a camera device, temporarily set `SPOOL_MAX_BYTES` to
   something small (e.g. `200 * 1024**2`), cut internet, wait for offline mode, let videos accumulate
   past the budget.
-  - Journal: first bin logged as a fault - *"Spool over budget: binned video …"* with RAISE_WARN -
+  - Journal: first bin logged as a fault - *"Spool over budget: dropped video …"* with RAISE_WARN -
     then quieter per-file INFO lines.
   - Oldest videos disappear from `/expidite-spool/upload/...` first; **CSV/append data is never
     evicted**.
@@ -164,7 +164,7 @@ behaviour matches the table.
   - Device stays up the whole time (no memory reboots other than the expected 2-hourly wifi-recovery
     reboots).
   - On recovery: all CSV/journal data from the entire outage reaches Azure; videos present up to the
-    budget, oldest binned beyond it; binned count visible in the WARNING datastream.
+    budget, oldest dropped beyond it; dropped count visible in the WARNING datastream.
 
 ---
 

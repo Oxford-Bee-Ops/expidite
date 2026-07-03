@@ -35,13 +35,13 @@ _SIZE_CACHE_TTL_SECONDS = 10.0
 class SpoolResult(Enum):
     """Outcome of an attempt to persist an upload to the spool.
 
-    BINNED is a deliberate policy decision (video over budget) - the data is intentionally sacrificed and
+    DROPPED is a deliberate policy decision (video over budget) - the data is intentionally sacrificed and
     the caller must not retry. FAILED means the spool could not take the data (disk full/unwritable) but
     the caller may still hold it and should fall back to another path rather than lose it.
     """
 
     SPOOLED = "spooled"
-    BINNED = "binned"
+    DROPPED = "dropped"
     FAILED = "failed"
 
 
@@ -86,7 +86,7 @@ class SpooledAppend:
 class DiskSpool:
     def __init__(self, root: Path | None = None) -> None:
         self._lock = Lock()
-        self.videos_binned = 0
+        self.videos_dropped = 0
         # Spool-size census cache; None means "not yet computed" (computed lazily on first budget check so
         # constructing a connector - e.g. from bcli - doesn't pay for a full tree walk).
         self._cached_size: int | None = None
@@ -153,7 +153,7 @@ class DiskSpool:
         move=True transfers ownership of src_file to the spool (the caller wanted delete_src semantics);
         move=False leaves the caller's file untouched and spools a copy.
 
-        Returns SPOOLED on success, BINNED if the data was deliberately sacrificed (video over budget - the
+        Returns SPOOLED on success, DROPPED if the data was deliberately sacrificed (video over budget - the
         source is consumed when move=True), or FAILED if the spool could not take the data (the caller
         should fall back to another path; the source file is left in place where possible).
         """
@@ -169,10 +169,10 @@ class DiskSpool:
                 # Disk physically full - not a policy bin. Leave the file with the caller to fall back.
                 logger.error(f"{root_cfg.RAISE_WARN()}Spool cannot make room for {src_file.name}")
                 return SpoolResult.FAILED
-            self._record_binned(src_file)
+            self._record_dropped(src_file)
             if move:
                 src_file.unlink(missing_ok=True)
-            return SpoolResult.BINNED
+            return SpoolResult.DROPPED
 
         dst_dir = self._upload_dir / dst_container / storage_tier.name
         # The payload copy/move happens OUTSIDE the lock: a multi-hundred-MB video copied tmpfs->SD can
@@ -361,7 +361,7 @@ class DiskSpool:
                     continue
                 total -= vsize
                 self._cached_size = max(0, total)
-                self._record_binned(victim)
+                self._record_dropped(victim)
 
             if total + nbytes <= root_cfg.SPOOL_MAX_BYTES:
                 return self._disk_free() - nbytes >= root_cfg.SPOOL_MIN_DISK_FREE_BYTES
@@ -382,14 +382,14 @@ class DiskSpool:
     def _disk_free(self) -> int:
         return shutil.disk_usage(self.root).free
 
-    def _record_binned(self, f: Path) -> None:
-        self.videos_binned += 1
+    def _record_dropped(self, f: Path) -> None:
+        self.videos_dropped += 1
         # The first bin of a run is escalated so fleet operators can see data is being sacrificed; after
         # that, log periodically rather than once per file (a week-long outage can bin thousands of videos).
-        if self.videos_binned == 1 or self.videos_binned % 100 == 0:
+        if self.videos_dropped == 1 or self.videos_dropped % 100 == 0:
             logger.error(
-                f"{root_cfg.RAISE_WARN()}Spool over budget: binned video {f.name} "
-                f"({self.videos_binned} binned so far this run)"
+                f"{root_cfg.RAISE_WARN()}Spool over budget: dropped video {f.name} "
+                f"({self.videos_dropped} dropped so far this run)"
             )
         else:
-            logger.info(f"Spool over budget: binned video {f.name}")
+            logger.info(f"Spool over budget: dropped video {f.name}")
