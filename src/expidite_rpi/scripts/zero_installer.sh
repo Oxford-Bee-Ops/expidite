@@ -1022,9 +1022,9 @@ install_expidite_service() {
 [Unit]
 Description=Expidite
 # Wait for NTP before starting, so timestamped filenames and logs are correct.
-# The network-online ordering also applies in reverse at shutdown: during `sudo reboot`, systemd stops
-# expidite before tearing the network down, giving the graceful stop a chance to flush over the network
-# (anything unsent is spilled to the disk spool regardless).
+# network-online.target is only a soft ordering hint (Wants=, not Requires=): with no network the
+# wait-online service times out (~60s) and boot proceeds anyway, so RpiCore always starts and spools
+# offline. Shutdown does no network I/O - the graceful stop spills any unsent data to the disk spool.
 After=time-sync.target network-online.target
 Wants=network-online.target
 # If it crashes 5 times within 10 minutes, stop restarting to prevent a boot loop.
@@ -1146,11 +1146,6 @@ remove_management_service() {
     echo "expidite-management.service removed."
 }
 
-##############################################################################################################
-# Autostart if requested in system.cfg
-#
-# Note that this service is also started and stopped from bcli when the user manually starts/stops it.
-##############################################################################################################
 # True (exit 0) when a reboot has been flagged and automatic reboots have not been disabled by the
 # cyclical-reboot guard. This is the single reboot-gating predicate: reboot_if_required uses it too, so
 # auto_start_if_requested's skip-start decision can never disagree with the actual reboot decision.
@@ -1158,6 +1153,11 @@ reboot_is_pending() {
     [ -f "$HOME/.expidite/flags/reboot_required" ] && [ ! -f "$HOME/.expidite/flags/reboot_disabled" ]
 }
 
+##############################################################################################################
+# Autostart if requested in system.cfg
+#
+# Note that this service is also started and stopped from bcli when the user manually starts/stops it.
+##############################################################################################################
 auto_start_if_requested() {
     echo_header
 

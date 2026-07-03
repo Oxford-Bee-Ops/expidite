@@ -342,9 +342,8 @@ class CloudConnector:
         elapsed_seconds: float = 0.0,
         swallow_exceptions: bool = True,
     ) -> bool:
-        """swallow_exceptions=False re-raises failures instead of logging them, so the AsyncCloudConnector
-        can classify the exception (transient network outage vs real fault) and divert to the disk spool.
-        """
+        # swallow_exceptions=False re-raises failures instead of logging them, so the AsyncCloudConnector can
+        # classify the exception (transient network outage vs real fault) and divert to the disk spool.
         try:
             target_container = self._validate_container(dst_container)
             blob_client = target_container.get_blob_client(dst_file)
