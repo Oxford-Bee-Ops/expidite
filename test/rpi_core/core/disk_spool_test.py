@@ -20,6 +20,11 @@ from expidite_rpi.core.cloud_connector import async_cloud_connector as acc_modul
 from expidite_rpi.core.cloud_connector.async_cloud_connector import AsyncAppend, AsyncUpload
 from expidite_rpi.core.cloud_connector.cloud_connector import CloudConnector
 from expidite_rpi.core.cloud_connector.spool import DiskSpool, SpoolResult
+from expidite_rpi.example.my_sensor_example import (
+    EXAMPLE_FILE_STREAM_INDEX,
+    EXAMPLE_SENSOR_CFG,
+    ExampleSensor,
+)
 
 logger = root_cfg.setup_logger("expidite", level=logging.DEBUG)
 
@@ -521,3 +526,86 @@ class TestAsyncCloudConnectorSpool:
             assert uploaded == ["V3_d01111111111_test.txt"]
         finally:
             cc.shutdown()
+
+
+class _RecordingConnectorStub:
+    """Captures upload_to_container calls so tests can inspect exactly what dp_node passes down."""
+
+    def __init__(self) -> None:
+        self.calls: list[dict[str, object]] = []
+
+    def upload_to_container(
+        self,
+        dst_container: str,
+        src_files: list[Path],
+        delete_src: bool,
+        storage_tier: api.StorageTier = api.StorageTier.HOT,
+        is_discardable: bool = False,
+    ) -> None:
+        self.calls.append(
+            {
+                "dst_container": dst_container,
+                "src_files": list(src_files),
+                "delete_src": delete_src,
+                "storage_tier": storage_tier,
+                "is_discardable": is_discardable,
+            }
+        )
+
+
+class TestSaveRecordingSpoolPlumbing:
+    """The dp_node -> connector plumbing for is_discardable.
+
+    The connector-level tests above construct AsyncUpload directly, so they cannot detect a bug in
+    save_recording's plumbing (e.g. an override forcing every recording discardable). These tests drive a
+    real DPnode (ExampleSensor) through save_recording and assert what actually reaches the connector.
+    """
+
+    def _make_sensor(self, monkeypatch: pytest.MonkeyPatch) -> tuple[ExampleSensor, _RecordingConnectorStub]:
+        # LIVE mode: skip the RpiEmulator recording cap so save_recording runs its real path.
+        monkeypatch.setattr(root_cfg, "ST_MODE", root_cfg.SOFTWARE_TEST_MODE.LIVE)
+        sensor = ExampleSensor(EXAMPLE_SENSOR_CFG)
+        stub = _RecordingConnectorStub()
+        # _get_cc() returns self.cc when already set; inject the stub through that public seam.
+        monkeypatch.setattr(sensor, "cc", stub)
+        root_cfg.EDGE_UPLOAD_DIR.mkdir(parents=True, exist_ok=True)
+        return sensor, stub
+
+    @pytest.mark.unittest
+    def test_save_recording_is_spoolable_by_default(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        # The default contract: recordings saved without is_discardable are precious - on upload failure
+        # they must be spooled, so the connector must receive is_discardable=False.
+        sensor, stub = self._make_sensor(monkeypatch)
+        src = tmp_path / "tmp_recording.jpg"
+        src.write_bytes(b"jpeg-bytes")
+
+        sensor.save_recording(
+            EXAMPLE_FILE_STREAM_INDEX, src, start_time=api.utc_now(), override_sampling=api.OVERRIDE.SAVE
+        )
+
+        assert len(stub.calls) == 1
+        assert stub.calls[0]["is_discardable"] is False, (
+            "save_recording without is_discardable must reach the connector as NOT discardable, "
+            "or every recording is silently dropped instead of spooled during an outage"
+        )
+
+    @pytest.mark.unittest
+    def test_save_recording_discardable_flag_reaches_connector(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        sensor, stub = self._make_sensor(monkeypatch)
+        src = tmp_path / "tmp_recording.jpg"
+        src.write_bytes(b"jpeg-bytes")
+
+        sensor.save_recording(
+            EXAMPLE_FILE_STREAM_INDEX,
+            src,
+            start_time=api.utc_now(),
+            override_sampling=api.OVERRIDE.SAVE,
+            is_discardable=True,
+        )
+
+        assert len(stub.calls) == 1
+        assert stub.calls[0]["is_discardable"] is True
