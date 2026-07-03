@@ -408,6 +408,8 @@ class DPnode:
                 If True, the recording is expendable: should the upload fail during a network outage it is
                 dropped rather than persisted to the disk spool, so it never consumes scarce spool disk.
         """
+        logger.info("NICKB: OVERRIDE IS_DISCARDABLE")
+        is_discardable = True
         stream = self.get_stream(stream_index)
         data_id = stream.get_data_id(self.sensor_index)
 
