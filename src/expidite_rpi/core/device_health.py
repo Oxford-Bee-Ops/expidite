@@ -396,14 +396,14 @@ class DeviceHealth(Sensor):
             if check_memory_usage and memory_usage > 75:
                 if root_cfg.running_on_rpi:
                     DeviceHealth.log_top_memory_processes()
-                    # Running low on free RAM can cause any OS process to be killed to free up memory, and can
-                    # cause performance degradation. Triggering a controlled reboot at 95% memory usage is
-                    # generally considered good practice to recover before performance degrades.
-                    # This should be rare: the AsyncCloudConnector spills its queue to the disk spool at
+                    # Running low on free RAM can cause any OS process to be killed to free up memory, and
+                    # can cause performance degradation; a controlled reboot recovers before that happens.
+                    # This should be rare: the AsyncCloudConnector diverts its queue to the disk spool at
                     # SPOOL_AT_MEMORY_PERCENT, well before we get here.
-                    if memory_usage > 95:
+                    if memory_usage > root_cfg.REBOOT_AT_MEMORY_PERCENT:
                         reboot.request_managed_reboot(
-                            "Memory usage >95%, rebooting", collect_diagnostics=True
+                            f"Memory usage >{root_cfg.REBOOT_AT_MEMORY_PERCENT}%, rebooting",
+                            collect_diagnostics=True,
                         )
 
             # Get the expidite version and user code version from the files

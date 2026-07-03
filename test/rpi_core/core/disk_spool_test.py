@@ -1,7 +1,8 @@
-"""Tests for outage data retention: the DiskSpool and the AsyncCloudConnector's offline/spill behaviour.
+"""Tests for outage data retention: the DiskSpool and the AsyncCloudConnector's store-and-forward path.
 
-These tests never touch Azure: connector tests monkeypatch the parent CloudConnector network methods, so
-they exercise the offline state machine, the disk spool round-trip and the shutdown spill deterministically.
+The connector gives each upload one network attempt and persists to the disk spool on any failure; the
+drain thread is the only retry mechanism. These tests never touch Azure: connector tests monkeypatch the
+parent CloudConnector network methods, so they exercise the failure/spool/drain paths deterministically.
 """
 
 import logging
@@ -15,6 +16,7 @@ from azure.core.exceptions import ServiceRequestError
 from expidite_rpi.core import api
 from expidite_rpi.core import configuration as root_cfg
 from expidite_rpi.core.cloud_connector import AsyncCloudConnector
+from expidite_rpi.core.cloud_connector import async_cloud_connector as acc_module
 from expidite_rpi.core.cloud_connector.async_cloud_connector import AsyncAppend, AsyncUpload
 from expidite_rpi.core.cloud_connector.cloud_connector import CloudConnector
 from expidite_rpi.core.cloud_connector.spool import DiskSpool, SpoolResult
@@ -94,6 +96,9 @@ class TestDiskSpool:
         for item in items:
             spool.remove(item)
         assert not spool.has_data()
+        assert not (spool.root / "append" / CONTAINER / dst_fname).exists(), (
+            "emptied fragment directories should be pruned"
+        )
 
     @pytest.mark.unittest
     def test_budget_evicts_oldest_video_first(self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
@@ -163,9 +168,22 @@ class TestDiskSpool:
         assert fresh.exists(), "a fresh .part may belong to a live write in another process"
         assert not spool.has_data(), ".part files must be invisible to the drain"
 
+    @pytest.mark.unittest
+    def test_quarantine_preserves_data_out_of_drain_view(self, tmp_path: Path) -> None:
+        spool = DiskSpool(tmp_path / "spool")
+        src = make_file(tmp_path, "V3_poison.csv")
+        assert spool.spool_upload(CONTAINER, src, api.StorageTier.HOT, move=True) is SpoolResult.SPOOLED
+
+        item = spool.pending_uploads()[0]
+        spool.quarantine(item)
+
+        assert not spool.has_data(), "quarantined items must be invisible to the drain"
+        quarantined = list((spool.root / "quarantine").rglob("V3_poison.csv"))
+        assert len(quarantined) == 1, "the data must be preserved for manual recovery"
+
 
 class TestAsyncCloudConnectorSpool:
-    """Offline/spill behaviour of the AsyncCloudConnector, with all network methods patched out."""
+    """Store-and-forward behaviour of the AsyncCloudConnector, with all network methods patched out."""
 
     def _make_cc(self, tmp_path: Path) -> AsyncCloudConnector:
         cc = AsyncCloudConnector()
@@ -180,6 +198,11 @@ class TestAsyncCloudConnectorSpool:
         cc._drain_thread.join(timeout=5)
         time.sleep(0.2)  # Let do_work consume the sentinel and exit
         cc._stop_requested.clear()
+
+    def _staged_upload(self, tmp_path: Path, name: str = "V3_d01111111111_test.txt") -> AsyncUpload:
+        """Build an AsyncUpload as upload_to_container would: file staged in its own tmp dir."""
+        staged = make_file(tmp_path / f"staging_{name}", name)
+        return AsyncUpload(CONTAINER, [staged], delete_src=True)
 
     @pytest.mark.unittest
     def test_offline_after_persistent_transient_failures(
@@ -206,35 +229,59 @@ class TestAsyncCloudConnectorSpool:
             cc.shutdown()
 
     @pytest.mark.unittest
-    def test_offline_diverts_new_work_to_spool(self, tmp_path: Path) -> None:
+    def test_worker_failure_spools_upload(self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+        # The core store-and-forward contract: one network attempt, then the data is on disk.
         cc = self._make_cc(tmp_path)
+        self._stop_background_threads(cc)
         try:
-            with cc._state_lock:
-                cc._offline = True
 
-            src = make_file(tmp_path, "V3_d01111111111_test.txt")
-            cc.upload_to_container(CONTAINER, [src], delete_src=True)
-            assert not src.exists()
-            assert cc._upload_queue.empty(), "offline uploads must not be queued in memory"
+            def failing_upload(self: CloudConnector, *args: object, **kwargs: object) -> None:
+                raise ServiceRequestError(message="name resolution failure")
+
+            monkeypatch.setattr(CloudConnector, "upload_to_container", failing_upload)
+
+            action = self._staged_upload(tmp_path)
+            staging_dir = action.src_files[0].parent
+            cc._async_upload(action)
+
+            assert cc._upload_queue.empty(), "a failed upload must not be re-queued in RAM"
             assert len(cc._spool.pending_uploads()) == 1
+            assert not staging_dir.exists(), "the tmpfs staging dir should be cleaned up after spooling"
+        finally:
+            cc.shutdown()
 
-            csv_file = tmp_path / "V3_HEART_d01111111111_20260701.csv"
-            csv_file.write_text("".join(CSV_DATA))
-            assert cc.append_to_cloud(CONTAINER, csv_file, delete_src=True)
-            assert not csv_file.exists()
-            assert cc._upload_queue.empty()
-            assert len(cc._spool.pending_appends()) == 1
+    @pytest.mark.unittest
+    def test_worker_failure_spools_append(self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+        cc = self._make_cc(tmp_path)
+        self._stop_background_threads(cc)
+        try:
+
+            def failing_append(self: CloudConnector, **kwargs: object) -> bool:
+                raise ServiceRequestError(message="name resolution failure")
+
+            monkeypatch.setattr(CloudConnector, "_append_data_to_blob", failing_append)
+
+            cc._async_append(AsyncAppend(CONTAINER, "V3_HEART_d01111111111_20260701.csv", True, CSV_DATA))
+
+            assert cc._upload_queue.empty(), "a failed append must not be re-queued in RAM"
+            items = cc._spool.pending_appends()
+            assert len(items) == 1
+            assert items[0].path.read_text() == "".join(CSV_DATA)
         finally:
             cc.shutdown()
 
     @pytest.mark.unittest
     def test_memory_pressure_diverts_to_spool(self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+        # Under memory pressure, do_work sends dequeued items straight to disk without a network attempt.
         cc = self._make_cc(tmp_path)
         try:
             monkeypatch.setattr(cc, "_memory_pressure", lambda: True)
             src = make_file(tmp_path, "V3_d01111111111_test.txt")
             cc.upload_to_container(CONTAINER, [src], delete_src=True)
-            assert cc._upload_queue.empty()
+
+            deadline = time.monotonic() + 5
+            while not cc._spool.has_data() and time.monotonic() < deadline:
+                time.sleep(0.05)
             assert len(cc._spool.pending_uploads()) == 1
         finally:
             cc.shutdown()
@@ -243,22 +290,26 @@ class TestAsyncCloudConnectorSpool:
     def test_upload_falls_back_to_queue_when_spool_fails(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
-        # If the spool can't take the data (disk full/unwritable), the divert path must fall back to the
-        # in-memory queue rather than silently dropping the file.
+        # Doubly-degraded: network down AND spool unwritable - the data must go back to the RAM queue
+        # rather than being dropped (with a backoff so the cycle can't spin hot).
         cc = self._make_cc(tmp_path)
         self._stop_background_threads(cc)
         try:
-            with cc._state_lock:
-                cc._offline = True
+            monkeypatch.setattr(acc_module, "_SPOOL_FALLBACK_BACKOFF_SECONDS", 0.0)
+
+            def failing_upload(self: CloudConnector, *args: object, **kwargs: object) -> None:
+                raise ServiceRequestError(message="name resolution failure")
+
+            monkeypatch.setattr(CloudConnector, "upload_to_container", failing_upload)
             monkeypatch.setattr(DiskSpool, "spool_upload", lambda *_args, **_kwargs: SpoolResult.FAILED)
 
-            src = make_file(tmp_path, "V3_d01111111111_test.txt")
-            cc.upload_to_container(CONTAINER, [src], delete_src=True)
+            action = self._staged_upload(tmp_path)
+            cc._async_upload(action)
 
             assert not cc._upload_queue.empty(), "spool failure must fall back to the in-memory queue"
             item = cc._upload_queue.get_nowait()
             assert isinstance(item, AsyncUpload)
-            assert item.src_files[0].exists(), "the file must still exist for the queued upload"
+            assert item.src_files[0].exists(), "the file must still exist for the queued retry"
         finally:
             cc.shutdown()
 
@@ -266,18 +317,18 @@ class TestAsyncCloudConnectorSpool:
     def test_append_falls_back_to_queue_when_spool_fails(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
-        # The append path unlinks the source file before spooling, so a spool failure must fall back to
-        # the in-memory queue - the data exists nowhere else.
         cc = self._make_cc(tmp_path)
         self._stop_background_threads(cc)
         try:
-            with cc._state_lock:
-                cc._offline = True
+            monkeypatch.setattr(acc_module, "_SPOOL_FALLBACK_BACKOFF_SECONDS", 0.0)
+
+            def failing_append(self: CloudConnector, **kwargs: object) -> bool:
+                raise ServiceRequestError(message="name resolution failure")
+
+            monkeypatch.setattr(CloudConnector, "_append_data_to_blob", failing_append)
             monkeypatch.setattr(DiskSpool, "spool_append", lambda *_args, **_kwargs: False)
 
-            csv_file = tmp_path / "V3_HEART_d01111111111_20260701.csv"
-            csv_file.write_text("".join(CSV_DATA))
-            assert cc.append_to_cloud(CONTAINER, csv_file, delete_src=True)
+            cc._async_append(AsyncAppend(CONTAINER, "V3_HEART_d01111111111_20260701.csv", True, CSV_DATA))
 
             assert not cc._upload_queue.empty(), "spool failure must fall back to the in-memory queue"
             item = cc._upload_queue.get_nowait()
@@ -297,10 +348,8 @@ class TestAsyncCloudConnectorSpool:
                 cc._offline = True
 
             src = make_file(tmp_path, "V3_d01111111111_test.txt")
-            cc.upload_to_container(CONTAINER, [src], delete_src=True)
-            csv_file = tmp_path / "V3_HEART_d01111111111_20260701.csv"
-            csv_file.write_text("".join(CSV_DATA))
-            cc.append_to_cloud(CONTAINER, csv_file, delete_src=True)
+            assert cc._spool.spool_upload(CONTAINER, src, api.StorageTier.HOT, move=True)
+            assert cc._spool.spool_append(CONTAINER, "V3_HEART_d01111111111_20260701.csv", CSV_DATA)
 
             uploaded: list[str] = []
             appended: list[str] = []
@@ -331,17 +380,14 @@ class TestAsyncCloudConnectorSpool:
             cc.shutdown()
 
     @pytest.mark.unittest
-    def test_drain_stops_on_failure_and_keeps_data(
+    def test_drain_stops_on_transient_failure_and_keeps_data(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
         cc = self._make_cc(tmp_path)
         try:
             self._stop_background_threads(cc)
-            with cc._state_lock:
-                cc._offline = True
-
             src = make_file(tmp_path, "V3_d01111111111_test.txt")
-            cc.upload_to_container(CONTAINER, [src], delete_src=True)
+            assert cc._spool.spool_upload(CONTAINER, src, api.StorageTier.HOT, move=True)
 
             def failing_upload(self: CloudConnector, *args: object, **kwargs: object) -> None:
                 raise ServiceRequestError(message="still offline")
@@ -350,33 +396,69 @@ class TestAsyncCloudConnectorSpool:
 
             cc._drain_spool_once()
 
-            assert cc.is_offline(), "a failed probe should leave the connector offline"
             assert len(cc._spool.pending_uploads()) == 1, "the spooled file must survive a failed drain"
         finally:
             cc.shutdown()
 
     @pytest.mark.unittest
+    def test_drain_quarantines_poison_item(self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+        # A non-transient per-item failure (e.g. destination blob at Azure's block limit) must not block
+        # the items spooled behind it, and must eventually be quarantined rather than retried forever.
+        cc = self._make_cc(tmp_path)
+        try:
+            self._stop_background_threads(cc)
+            poison = make_file(tmp_path, "V3_poison.txt")
+            good = make_file(tmp_path, "V3_good.txt")
+            assert cc._spool.spool_upload(CONTAINER, poison, api.StorageTier.HOT, move=True)
+            assert cc._spool.spool_upload(CONTAINER, good, api.StorageTier.HOT, move=True)
+
+            uploaded: list[str] = []
+
+            def picky_upload(
+                self: CloudConnector,
+                dst_container: str,
+                src_files: list[Path],
+                delete_src: bool,
+                storage_tier: api.StorageTier = api.StorageTier.HOT,
+            ) -> None:
+                if "poison" in src_files[0].name:
+                    msg = "destination blob is full"
+                    raise ValueError(msg)
+                uploaded.extend(f.name for f in src_files)
+
+            monkeypatch.setattr(CloudConnector, "upload_to_container", picky_upload)
+
+            for _ in range(acc_module._DRAIN_MAX_ITEM_FAILURES + 1):
+                cc._drain_spool_once()
+                if not cc._spool.has_data():
+                    break
+
+            assert uploaded == ["V3_good.txt"], "the good item must drain despite the poison item"
+            assert not cc._spool.has_data(), "the poison item must eventually leave the pending listings"
+            quarantined = list((cc._spool.root / "quarantine").rglob("V3_poison.txt"))
+            assert len(quarantined) == 1, "the poison item's data must be preserved in quarantine"
+        finally:
+            cc.shutdown()
+
+    @pytest.mark.unittest
     def test_shutdown_spills_queue_to_spool(self, tmp_path: Path) -> None:
+        # Shutdown never touches the network: everything queued must land on disk, fast.
         cc = self._make_cc(tmp_path)
         self._stop_background_threads(cc)
-        with cc._state_lock:
-            cc._offline = True  # Offline: shutdown must not attempt (or wait for) network I/O
 
-        # Queue an upload (file staged in a tmp dir, as upload_to_container does for delete_src=True) and
-        # an append, as if they were awaiting upload when the shutdown arrived.
-        staged = make_file(tmp_path / "staging_tmp", "V3_d01111111111_test.txt")
-        cc._upload_queue.put(AsyncUpload(CONTAINER, [staged], delete_src=True))
+        action = self._staged_upload(tmp_path)
+        staging_dir = action.src_files[0].parent
+        cc._upload_queue.put(action)
         cc._upload_queue.put(AsyncAppend(CONTAINER, "V3_HEART_d01111111111_20260701.csv", True, CSV_DATA))
 
         start = time.monotonic()
         cc.shutdown()
         elapsed = time.monotonic() - start
 
-        assert elapsed < 10, f"offline shutdown must be fast and network-free (took {elapsed:.1f}s)"
+        assert elapsed < 10, f"shutdown must be fast and network-free (took {elapsed:.1f}s)"
         assert len(cc._spool.pending_uploads()) == 1
         assert len(cc._spool.pending_appends()) == 1
-        assert not staged.exists(), "the staged file should have moved to the spool"
-        assert not (tmp_path / "staging_tmp").exists(), "the empty staging dir should be cleaned up"
+        assert not staging_dir.exists(), "the empty staging dir should be cleaned up"
 
     @pytest.mark.unittest
     def test_startup_drains_spool_from_previous_run(
@@ -386,7 +468,7 @@ class TestAsyncCloudConnectorSpool:
         spool_root = tmp_path / "spool"
         seed = DiskSpool(spool_root)
         src = make_file(tmp_path, "V3_d01111111111_test.txt")
-        assert seed.spool_upload(CONTAINER, src, api.StorageTier.HOT, move=True)
+        assert seed.spool_upload(CONTAINER, src, api.StorageTier.HOT, move=True) is SpoolResult.SPOOLED
 
         uploaded: list[str] = []
 

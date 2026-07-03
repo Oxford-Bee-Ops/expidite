@@ -1,6 +1,7 @@
 import shutil
 from concurrent.futures import ThreadPoolExecutor
-from dataclasses import dataclass, field
+from dataclasses import dataclass
+from enum import Enum
 from pathlib import Path
 from queue import Empty, Queue
 from threading import Event, Lock, Thread
@@ -19,6 +20,15 @@ from expidite_rpi.core.cloud_connector.spool import DiskSpool, SpooledAppend, Sp
 
 logger = root_cfg.setup_logger("expidite")
 
+# When both the network attempt and the spool write fail (doubly-degraded device: no connectivity AND an
+# unwritable spool disk), the item is re-queued for another cycle; this delay stops that cycle from
+# spinning hot (a DNS failure can return in milliseconds).
+_SPOOL_FALLBACK_BACKOFF_SECONDS = 10.0
+
+# A spooled item that fails this many drain attempts with a non-transient error is quarantined so it
+# cannot block the items spooled behind it forever (e.g. a destination append blob at Azure's block limit).
+_DRAIN_MAX_ITEM_FAILURES = 5
+
 
 ##############################################################################################################
 # AsyncCloudConnector class
@@ -26,12 +36,18 @@ logger = root_cfg.setup_logger("expidite")
 # This improves resilience to transient network issues and reduces data loss.
 # Download / exists / list methods are *not* asynchronous and use the default CloudConnector.
 #
-# Data retention during outages: the upload queue holds append data in RAM, and upload files sit in TMP_DIR
-# (a tmpfs on SD-card devices), so during a prolonged network outage the backlog would exhaust memory and be
-# lost entirely on the recovery reboot. To prevent this the connector tracks an online/offline state: after
-# SPOOL_OFFLINE_AFTER_SECONDS of continuous transient network failures (or under memory pressure) it diverts
-# uploads to a persistent DiskSpool instead of retrying them in memory. A drain thread probes for recovery
-# and uploads the spool - including at startup, which is how data spooled before a reboot reaches the cloud.
+# Store-and-forward on failure: each queued item gets exactly ONE network attempt on a worker thread. On
+# success it's done; on ANY failure the data is persisted to the DiskSpool (real disk, survives reboots)
+# and the drain thread becomes the only retry mechanism - it uploads the spool oldest-first every
+# SPOOL_DRAIN_INTERVAL, stopping a pass on the first transient network failure (so the first item doubles
+# as the connectivity probe) and quarantining items that repeatedly fail non-transiently. This bounds RAM:
+# during an outage each item transits the queue once and then lives on disk, so a device can run for a
+# week offline without memory growth, and a reboot loses nothing that reached the spool. Shutdown never
+# touches the network: the queue is spilled to the spool and in-flight uploads are safety-copied, so
+# shutdown is fast and safe regardless of connectivity; the spool drains after the next start.
+#
+# The offline/online state (10 minutes of continuous transient failures) is operator telemetry only - it
+# drives the customer-facing "entering offline mode" fault and is_offline(); no data path depends on it.
 ##############################################################################################################
 # eq=False: actions are tracked by identity in the in-flight set, so they must hash by identity.
 @dataclass(eq=False)
@@ -42,10 +58,6 @@ class AsyncUpload:
     src_files: list[Path]
     delete_src: bool
     storage_tier: api.StorageTier = api.StorageTier.HOT
-    iteration: int = 0
-    # Monotonic time this action was first queued; used to escalate a persistently-failing upload to a
-    # fault based on how long it has been failing (see log_cloud_failure). Survives re-queues.
-    first_attempt_monotonic: float = field(default_factory=perf_counter)
 
 
 # eq=False: actions are tracked by identity in the in-flight set, so they must hash by identity.
@@ -57,11 +69,13 @@ class AsyncAppend:
     src_fname: str
     delete_src: bool
     data: list[str]
-    iteration: int = 0
     col_order: list[str] | None = None
-    # Monotonic time this action was first queued; used to escalate a persistently-failing append to a
-    # fault based on how long it has been failing (see log_cloud_failure). Survives re-queues.
-    first_attempt_monotonic: float = field(default_factory=perf_counter)
+
+
+class _DrainOutcome(Enum):
+    OK = "ok"  # uploaded (or vanished - nothing left to do); keep draining
+    TRANSIENT = "transient"  # network down; abort this pass, retry next tick
+    FAILED = "failed"  # non-transient per-item failure; skip it and keep draining
 
 
 class AsyncCloudConnector(CloudConnector):
@@ -69,7 +83,6 @@ class AsyncCloudConnector(CloudConnector):
         logger.debug("Creating AsyncCloudConnector instance")
         super().__init__()
         self._stop_requested = Event()
-        self._shutting_down = False
         self._upload_queue: Queue[AsyncAppend | AsyncUpload | None] = Queue()
         self._worker_pool: ThreadPoolExecutor = ThreadPoolExecutor(max_workers=6)
         self._perf_lock = Lock()
@@ -79,70 +92,55 @@ class AsyncCloudConnector(CloudConnector):
         self._async_upload_total_seconds = 0.0
         self._async_append_count = 0
         self._async_append_total_seconds = 0.0
-        # Offline/spool state. _first_transient_failure is when cloud calls started failing with transient
-        # network errors; once that persists for SPOOL_OFFLINE_AFTER_SECONDS we go offline and divert
-        # uploads to the disk spool. Any successful cloud call resets both.
+        # Offline telemetry state. _first_transient_failure is when cloud calls started failing with
+        # transient network errors; once that persists for SPOOL_OFFLINE_AFTER_SECONDS we report offline
+        # mode (a customer-facing fault). Any successful cloud call resets both. Purely informational: the
+        # data path (attempt once -> spool on failure) is the same online and offline.
         self._spool = DiskSpool()
         self._state_lock = Lock()
         self._offline = False
         self._first_transient_failure: float | None = None
+        self._last_memory_log = 0.0
         # Queue items currently being processed by a worker thread; used at shutdown to safety-copy their
         # data to the spool in case the process is killed mid-upload.
         self._in_flight: set[AsyncAppend | AsyncUpload] = set()
+        # Per-item drain failure counts (drain thread only; no lock needed) driving quarantine.
+        self._drain_failures: dict[Path, int] = {}
         # Start the worker thread to process the upload queue
         self._worker_pool.submit(self.do_work)
         # Start the spool drain thread. Daemon so a drain stuck in a long network timeout can never block
         # process exit. Woken immediately if a previous run left data in the spool (e.g. across a reboot).
         self._drain_wake = Event()
         if self._spool.has_data():
-            logger.info(f"Disk spool contains {self._spool.size_bytes:,} bytes from a previous run")
+            logger.info("Disk spool contains data from a previous run; drain scheduled")
             self._drain_wake.set()
         self._drain_thread = Thread(target=self._drain_loop, name="spool_drain", daemon=True)
         self._drain_thread.start()
 
     def shutdown(self) -> None:
-        """Shutdown the connector, guaranteeing queued data is either uploaded or on the disk spool.
+        """Shutdown the connector; queued and in-flight upload data is persisted to the disk spool.
 
-        If we are online, in-flight and queued uploads are given SPOOL_SHUTDOWN_FLUSH_SECONDS to complete
-        over the network; whatever remains (or everything, if offline) is spilled to the disk spool with no
-        network I/O, so shutdown is bounded and safe to run during a network outage or system reboot. The
-        spool is drained on the next startup.
+        No network I/O is attempted, so shutdown is fast and bounded regardless of connectivity - safe to
+        run mid-outage or during a system reboot. Data still in transit lands in Azure via the drain after
+        the next start instead of before this shutdown; that latency is the price of a simple, reliable
+        stop path.
         """
+        if self._stop_requested.is_set():
+            return
         logger.debug("AsyncCloudConnector.shutdown() called")
-        with self._state_lock:
-            if self._shutting_down:
-                return
-            # From here on, any upload failure diverts to the spool instead of re-queueing (see
-            # _should_divert), so the flush below cannot spin on retries.
-            self._shutting_down = True
-
-        # Give the queue a bounded window to flush over the network; skip it entirely if offline.
-        if not self.is_offline():
-            deadline = perf_counter() + root_cfg.SPOOL_SHUTDOWN_FLUSH_SECONDS
-            while perf_counter() < deadline:
-                with self._state_lock:
-                    in_flight = len(self._in_flight)
-                if self._upload_queue.empty() and in_flight == 0:
-                    break
-                sleep(0.2)
-
-        # Stop the do_work loop and spill everything still queued to the spool.
         self._stop_requested.set()
         self._drain_wake.set()
+        # Wake do_work if it is blocked on an empty queue; it exits on the sentinel (or spools anything it
+        # dequeues once stop is requested).
         self._upload_queue.put(None)
         self._spill_queue_to_spool()
-
-        # Safety-copy the data of any still-running uploads to the spool. If they complete after we exit,
-        # the next drain re-uploads the same blob names (harmless overwrite / accepted duplicate rows); if
-        # the process is killed mid-upload, the data is on disk rather than lost with the tmpfs.
+        # Safety-copy the data of uploads still running on worker threads: if the process is killed
+        # mid-upload the data is on disk rather than lost with the tmpfs; if the upload completes anyway,
+        # the next drain re-uploads the same blob names (harmless overwrite / accepted duplicate rows).
         with self._state_lock:
             in_flight_actions = list(self._in_flight)
         for action in in_flight_actions:
             self._spool_action(action, safety_copy=True)
-
-        # A worker that failed just before _shutting_down was visible may have re-queued its item after the
-        # spill above; sweep the queue once more so nothing is left in RAM.
-        self._spill_queue_to_spool()
 
         self._worker_pool.shutdown(wait=False, cancel_futures=True)
         self._drain_thread.join(timeout=5)
@@ -170,21 +168,6 @@ class AsyncCloudConnector(CloudConnector):
                 verified_files.append(file)
 
         src_files = verified_files
-
-        # While offline (or under memory pressure) new work goes straight to the disk spool: queueing it
-        # would grow RAM, and staging it in TMP_DIR would grow the tmpfs, which is also RAM.
-        if self._should_divert():
-            fallback_files = []
-            for file in src_files:
-                result = self._spool.spool_upload(dst_container, file, storage_tier, move=delete_src)
-                if result is SpoolResult.FAILED and file.exists():
-                    # The spool couldn't take it (disk full/unwritable) but we still have the file; fall
-                    # back to the in-memory queue rather than silently losing the data. BINNED is a
-                    # deliberate sacrifice and must NOT fall back.
-                    fallback_files.append(file)
-            src_files = fallback_files
-            if not src_files:
-                return
 
         if delete_src:
             # Rename the files so that they are effectively deleted from the callers perspective
@@ -220,13 +203,6 @@ class AsyncCloudConnector(CloudConnector):
             # Although this is asynchronous, we need to appear to delete the src_files synchronously
             src_file.unlink()
 
-        # While offline (or under memory pressure) persist the data to the disk spool rather than holding
-        # it in RAM on the queue. The source file has already been unlinked above, so if the spool cannot
-        # take the data (disk full/unwritable) we must NOT drop it - fall back to the in-memory queue,
-        # which was the pre-spool behavior and can still succeed if the network is up.
-        if self._should_divert() and self._spool.spool_append(dst_container, src_file.name, data):
-            return True
-
         self._upload_queue.put(
             AsyncAppend(dst_container, src_file.name, delete_src, data=data, col_order=col_order)
         )
@@ -234,32 +210,29 @@ class AsyncCloudConnector(CloudConnector):
         return True
 
     def is_offline(self) -> bool:
-        """True when persistent network failure has caused uploads to be diverted to the disk spool."""
+        """True when cloud uploads have been failing with transient network errors for a sustained period.
+
+        Telemetry only: the data path is identical online and offline (attempt once, spool on failure).
+        """
         with self._state_lock:
             return self._offline
 
     ##########################################################################################################
-    # Offline / spool state management
+    # Offline telemetry & memory pressure
     ##########################################################################################################
     def _memory_pressure(self) -> bool:
-        """True when system memory usage is high enough that queued data should be spilled to disk.
+        """True when system memory usage is high enough that queued data should go straight to disk.
 
-        Both the upload queue and TMP_DIR (tmpfs) consume RAM, so this covers each. Only applied on RPi:
-        development machines routinely run at high memory usage.
+        Normally RAM is bounded because each item transits the queue only once - but workers stuck in long
+        network timeouts (a black-holing network rather than a fast-failing one) can back the queue up.
+        Only applied on RPi: development machines routinely run at high memory usage.
         """
         if not root_cfg.running_on_rpi:
             return False
         return psutil.virtual_memory().percent > root_cfg.SPOOL_AT_MEMORY_PERCENT
 
-    def _should_divert(self) -> bool:
-        """True when data should go to the disk spool rather than the in-memory queue."""
-        with self._state_lock:
-            if self._offline or self._shutting_down:
-                return True
-        return self._memory_pressure()
-
     def _note_cloud_failure(self, exc: BaseException) -> None:
-        """Track a failed cloud call; enter offline mode once transient failures have persisted too long."""
+        """Track a failed cloud call; report offline mode once transient failures have persisted too long."""
         if not is_transient_network_error(exc):
             return
         go_offline = False
@@ -275,14 +248,12 @@ class AsyncCloudConnector(CloudConnector):
                 go_offline = True
         if go_offline:
             logger.error(
-                f"{root_cfg.RAISE_WARN()}Persistent network failure; entering offline mode - uploads will "
-                f"be spooled to disk at {self._spool.root}"
+                f"{root_cfg.RAISE_WARN()}Persistent network failure; device is offline - data is being "
+                f"retained in the disk spool at {self._spool.root}"
             )
-            # Move the backlog out of RAM now, rather than waiting for each retry to fail again.
-            self._spill_queue_to_spool()
 
     def _note_cloud_success(self) -> None:
-        """Track a successful cloud call; return to online mode and schedule a spool drain."""
+        """Track a successful cloud call; report recovery and schedule a spool drain."""
         with self._state_lock:
             was_offline = self._offline
             self._offline = False
@@ -292,30 +263,22 @@ class AsyncCloudConnector(CloudConnector):
             self._drain_wake.set()
 
     def _spill_queue_to_spool(self) -> None:
-        """Move everything on the in-memory upload queue to the disk spool. No network I/O."""
+        """Move everything on the in-memory upload queue to the disk spool. Shutdown path; no network I/O."""
         spilled = 0
-        failed: list[AsyncAppend | AsyncUpload] = []
         while True:
             try:
                 queue_item = self._upload_queue.get_nowait()
             except Empty:
                 break
             if queue_item is None:
-                # Shutdown sentinel for do_work; put it back rather than swallowing it.
+                # do_work's wake-up sentinel; put it back rather than swallowing it.
                 self._upload_queue.put(None)
                 break
             if not self._spool_action(queue_item):
-                failed.append(queue_item)
+                # Spool disk full/unwritable at shutdown: there is no retry path left.
+                logger.error(f"{root_cfg.RAISE_WARN()}Spool unavailable at shutdown; data lost: {queue_item}")
             self._upload_queue.task_done()
             spilled += 1
-        # Items the spool couldn't take (disk full/unwritable) go back on the queue rather than being lost;
-        # they are re-put after the loop so a persistent spool failure can't spin this loop forever. At
-        # shutdown there is no queue processing left, so the loss is logged instead.
-        for queue_item in failed:
-            if self._stop_requested.is_set():
-                logger.error(f"{root_cfg.RAISE_WARN()}Spool unavailable at shutdown; data lost: {queue_item}")
-            else:
-                self._upload_queue.put(queue_item)
         if spilled:
             logger.info(f"Spilled {spilled} queued uploads to disk spool at {self._spool.root}")
 
@@ -359,10 +322,10 @@ class AsyncCloudConnector(CloudConnector):
         return not remaining
 
     ##########################################################################################################
-    # Spool drain thread
+    # Spool drain thread - the ONLY retry mechanism
     ##########################################################################################################
     def _drain_loop(self) -> None:
-        """Periodically drain the disk spool back to the cloud (and probe for recovery while offline)."""
+        """Periodically drain the disk spool back to the cloud."""
         while not self._stop_requested.is_set():
             self._drain_wake.wait(timeout=root_cfg.SPOOL_DRAIN_INTERVAL)
             self._drain_wake.clear()
@@ -375,34 +338,46 @@ class AsyncCloudConnector(CloudConnector):
         logger.debug("Spool drain thread exiting")
 
     def _drain_spool_once(self) -> None:
-        """Drain the spool until it is empty or an upload fails.
+        """Drain the spool until it is empty or the network fails.
 
-        While offline, only the smallest item is attempted - a cheap connectivity probe. Its success flips
-        us back online (via _note_cloud_success) and the drain continues. Draining is sequential on this one
-        thread so a large backlog trickles out without starving live uploads of the worker pool.
+        The first item of a pass doubles as the connectivity probe: a transient network failure aborts the
+        pass, to be retried next tick. A non-transient per-item failure is counted and the item quarantined
+        after _DRAIN_MAX_ITEM_FAILURES, so one poison item cannot wedge everything spooled behind it.
+        Draining is sequential on this one thread so a large backlog trickles out without starving live
+        uploads of the worker pool. Appends first (small CSVs - cheap probes), oldest first.
         """
-        if not self._spool.has_data():
-            return
-
-        if self.is_offline():
-            probe = self._spool.smallest_pending()
-            if probe is None or not self._drain_item(probe):
-                return
-
-        while not self._stop_requested.is_set() and not self.is_offline():
+        drained_any = False
+        while not self._stop_requested.is_set():
             items: list[SpooledAppend | SpooledUpload] = []
             items.extend(self._spool.pending_appends())
             items.extend(self._spool.pending_uploads())
             if not items:
-                logger.info("Disk spool fully drained")
+                if drained_any:
+                    logger.info("Disk spool fully drained")
                 return
+            progressed = False
             for item in items:
-                if self._stop_requested.is_set() or not self._drain_item(item):
+                if self._stop_requested.is_set():
                     return
+                outcome = self._drain_item(item)
+                if outcome is _DrainOutcome.TRANSIENT:
+                    return
+                if outcome is _DrainOutcome.OK:
+                    progressed = True
+                    drained_any = True
+            if not progressed:
+                # Everything left failed non-transiently this pass; wait for the next tick rather than spin.
+                return
 
-    def _drain_item(self, item: SpooledAppend | SpooledUpload) -> bool:
+    def _drain_item(self, item: SpooledAppend | SpooledUpload) -> _DrainOutcome:
         """Upload one spooled item; remove it from the spool on success."""
         try:
+            if not item.path.exists():
+                # Stale listing: evicted for budget, or drained by another process's connector. Tidy up but
+                # do NOT report a cloud success - no network evidence was gathered.
+                self._spool.remove(item)
+                self._drain_failures.pop(item.path, None)
+                return _DrainOutcome.OK
             if isinstance(item, SpooledAppend):
                 with item.path.open("r") as f:
                     lines = f.readlines()
@@ -412,43 +387,51 @@ class AsyncCloudConnector(CloudConnector):
                     lines_to_append=lines,
                     swallow_exceptions=False,
                 ):
-                    return False
+                    return self._register_drain_failure(item)
             else:
                 super().upload_to_container(
                     item.dst_container, [item.path], delete_src=False, storage_tier=item.storage_tier
                 )
         except Exception as e:
-            self._note_cloud_failure(e)
             log_cloud_failure(f"Spool drain failed for {item.path.name}", e)
-            return False
+            if is_transient_network_error(e):
+                self._note_cloud_failure(e)
+                return _DrainOutcome.TRANSIENT
+            return self._register_drain_failure(item)
         self._note_cloud_success()
         self._spool.remove(item)
+        self._drain_failures.pop(item.path, None)
         logger.debug(f"Drained {item.path.name} from disk spool")
-        return True
+        return _DrainOutcome.OK
+
+    def _register_drain_failure(self, item: SpooledAppend | SpooledUpload) -> _DrainOutcome:
+        count = self._drain_failures.get(item.path, 0) + 1
+        self._drain_failures[item.path] = count
+        if count >= _DRAIN_MAX_ITEM_FAILURES:
+            self._drain_failures.pop(item.path, None)
+            self._spool.quarantine(item)
+        return _DrainOutcome.FAILED
 
     ##########################################################################################################
-    # Private methods
+    # Worker methods - exactly one network attempt per item; failure means the spool
     ##########################################################################################################
     def _async_upload(
         self,
         action: AsyncUpload,
     ) -> None:
-        """A wrapper to handle failure when uploading a file to the cloud asynchronously.
-        We re-queue the upload if it fails if the src files still exist.
-        This method is called on a thread from the ThreadPoolExecutor.
+        """Attempt the upload once; on any failure persist the files to the disk spool.
+
+        This method is called on a thread from the ThreadPoolExecutor. The drain thread owns all retries.
         """
         start_time = perf_counter()
         try:
-            logger.debug(
-                f"_async_upload with delete_src={action.delete_src}, "
-                f"iteration {action.iteration} for {action.src_files}"
-            )
+            logger.debug(f"_async_upload with delete_src={action.delete_src} for {action.src_files}")
             super().upload_to_container(
                 action.dst_container, action.src_files, action.delete_src, action.storage_tier
             )
             self._note_cloud_success()
             if action.delete_src:
-                # We created a temporary directory for the files in upload_to_cloud - delete it now
+                # We created a temporary directory for the files in upload_to_container - delete it now
                 tmp_dir = action.src_files[0].parent
                 if tmp_dir.exists() and tmp_dir.is_dir():
                     shutil.rmtree(tmp_dir)
@@ -456,36 +439,14 @@ class AsyncCloudConnector(CloudConnector):
                     logger.error(f"{root_cfg.RAISE_WARN()}Temporary directory {tmp_dir} does not exist")
         except Exception as e:
             self._note_cloud_failure(e)
-            # Check all the src_files still exist and drop any that don't
-            log_cloud_failure(
-                f"Upload failed for {action.src_files} on iteration {action.iteration}",
-                e,
-                elapsed_seconds=perf_counter() - action.first_attempt_monotonic,
-            )
-            verified_files = []
-            for file in action.src_files:
-                if not file.exists():
-                    logger.exception(f"{root_cfg.RAISE_WARN()}Upload of file {file} aborted; does not exist")
-                else:
-                    verified_files.append(file)
-
-            action.src_files = verified_files
-
-            if action.src_files:
-                if self._should_divert():
-                    # Offline / shutting down / memory pressure: persist to disk instead of retrying in
-                    # RAM. If the spool can't take some files (disk full/unwritable), fall back to
-                    # re-queueing those rather than losing them - unless we're shutting down, when there is
-                    # no queue processing left to fall back to.
-                    if not self._spool_action(action) and not self._stop_requested.is_set():
-                        action.iteration += 1
-                        self._upload_queue.put(action)
-                else:
-                    # Re-queue the upload if any src_files still exist
-                    action.iteration += 1
-                    self._upload_queue.put(action)
-                    # Back off for a bit before re-trying the upload
-                    sleep(2 * action.iteration)
+            log_cloud_failure(f"Upload failed for {action.src_files}; diverting to disk spool", e)
+            # Files that no longer exist were uploaded (and deleted) before the failure - drop them.
+            action.src_files = [file for file in action.src_files if file.exists()]
+            if action.src_files and not self._spool_action(action) and not self._stop_requested.is_set():
+                # Doubly-degraded (network AND spool disk failed): keep the data in RAM and try the whole
+                # cycle again later rather than lose it.
+                self._upload_queue.put(action)
+                sleep(_SPOOL_FALLBACK_BACKOFF_SECONDS)
         finally:
             self._finish_in_flight(action)
             self._record_async_timing("upload", perf_counter() - start_time)
@@ -494,54 +455,32 @@ class AsyncCloudConnector(CloudConnector):
         self,
         action: AsyncAppend,
     ) -> None:
-        """A wrapper to handle failure when uploading append data to the cloud asynchronously.
-        We re-queue the append if it fails.
-        This method is called on a thread from the ThreadPoolExecutor.
+        """Attempt the append once; on any failure persist the data to the disk spool.
+
+        This method is called on a thread from the ThreadPoolExecutor. The drain thread owns all retries.
         """
         succeeded: bool = False
         start_time = perf_counter()
         try:
-            logger.debug(f"_async_append iteration {action.iteration} for {action.src_fname}")
-
+            logger.debug(f"_async_append for {action.src_fname}")
             succeeded = self._append_data_to_blob(
                 dst_container=action.dst_container,
                 dst_file=action.src_fname,
                 lines_to_append=action.data,
                 col_order=action.col_order,
-                elapsed_seconds=perf_counter() - action.first_attempt_monotonic,
                 swallow_exceptions=False,
             )
             if succeeded:
                 self._note_cloud_success()
-
         except Exception as e:
             self._note_cloud_failure(e)
-            log_cloud_failure(
-                f"Upload failed for {action.src_fname} on iteration {action.iteration}",
-                e,
-                elapsed_seconds=perf_counter() - action.first_attempt_monotonic,
-            )
+            log_cloud_failure(f"Append failed for {action.src_fname}; diverting to disk spool", e)
         finally:
-            if not succeeded:
-                if self._should_divert():
-                    # Offline / shutting down / memory pressure: persist to disk instead of retrying in
-                    # RAM. If the spool can't take the data, fall back to re-queueing rather than losing it
-                    # - unless we're shutting down, when there is no queue processing left to fall back to.
-                    if not self._spool_action(action) and not self._stop_requested.is_set():
-                        action.iteration += 1
-                        self._upload_queue.put(action)
-                elif action.iteration > 100:
-                    # Failsafe
-                    logger.error(
-                        f"{root_cfg.RAISE_WARN()}Upload failed for {action.src_fname}"
-                        " too many times; giving up"
-                    )
-                else:
-                    # Re-queue the upload @@@ but only if it was a transient failure!
-                    action.iteration += 1
-                    self._upload_queue.put(action)
-                    # Back off for a bit before re-trying the upload
-                    sleep(2 * action.iteration)
+            if not succeeded and not self._spool_action(action) and not self._stop_requested.is_set():
+                # Doubly-degraded (network AND spool disk failed): keep the data in RAM and try the whole
+                # cycle again later rather than lose it.
+                self._upload_queue.put(action)
+                sleep(_SPOOL_FALLBACK_BACKOFF_SECONDS)
             self._finish_in_flight(action)
             self._record_async_timing("append", perf_counter() - start_time)
 
@@ -592,45 +531,53 @@ class AsyncCloudConnector(CloudConnector):
             self._async_append_count = 0
             self._async_append_total_seconds = 0.0
 
-    def do_work(self, block: bool = True) -> None:
-        """Process the upload queue."""
+    def do_work(self) -> None:
+        """Process the upload queue: hand each item to the worker pool for its single network attempt."""
         while not self._stop_requested.is_set():
             try:
-                queue_item = self._upload_queue.get(block=block, timeout=None if block else 1)
+                queue_item = self._upload_queue.get()
 
-                if queue_item is not None and self._memory_pressure():
-                    # RAM is running out (the tmpfs working dir also counts); move the whole backlog,
-                    # including this item, to persistent disk rather than processing it in memory. If the
-                    # spool can't take this item, fall through and process it normally (uploading also
-                    # frees the memory) rather than losing it.
-                    logger.warning(
-                        f"Memory usage above {root_cfg.SPOOL_AT_MEMORY_PERCENT}%; "
-                        "spilling upload queue to disk spool"
-                    )
+                if queue_item is None:
+                    # Shutdown sentinel.
+                    logger.debug("Upload queue flushed")
+                    self._upload_queue.task_done()
+                    break
+
+                if self._stop_requested.is_set():
+                    # Shutdown is spilling the queue; spool anything we dequeued ourselves so nothing is
+                    # stranded between the queue and the worker pool.
+                    self._spool_action(queue_item)
+                    self._upload_queue.task_done()
+                    continue
+
+                if self._memory_pressure():
+                    # RAM is running out (workers may be stuck in long network timeouts while the queue
+                    # backs up; the tmpfs working dir also counts). Send this item straight to disk. If the
+                    # spool can't take it, fall through to a normal attempt (uploading also frees memory).
+                    self._log_memory_pressure_throttled()
                     if self._spool_action(queue_item):
                         self._upload_queue.task_done()
-                        self._spill_queue_to_spool()
                         continue
 
+                with self._state_lock:
+                    self._in_flight.add(queue_item)
                 if isinstance(queue_item, AsyncAppend):
-                    with self._state_lock:
-                        self._in_flight.add(queue_item)
                     self._worker_pool.submit(self._async_append, queue_item)
-                elif isinstance(queue_item, AsyncUpload):
-                    with self._state_lock:
-                        self._in_flight.add(queue_item)
-                    self._worker_pool.submit(self._async_upload, queue_item)
                 else:
-                    logger.debug(f"Queue flushed using {queue_item}")
-                    assert self._stop_requested.is_set(), "Queue flushed but stop_requested is not set"
+                    self._worker_pool.submit(self._async_upload, queue_item)
 
                 # Mark the task as done, in the sense that we've scheduled it for processing
                 self._upload_queue.task_done()
-            except Empty:
-                assert not block, "Queue.get returned but block is True"
-                logger.debug("Shutting down upload queue")
-                break
             except Exception:
-                logger.exception(f"{root_cfg.RAISE_WARN()}Error during do_work execution on {queue_item}")
+                logger.exception(f"{root_cfg.RAISE_WARN()}Error during do_work execution")
 
         logger.info("do_work completed")
+
+    def _log_memory_pressure_throttled(self) -> None:
+        """Log memory-pressure diversion at most once a minute - it applies per item and would spam."""
+        now = perf_counter()
+        if now - self._last_memory_log > 60:
+            self._last_memory_log = now
+            logger.warning(
+                f"Memory usage above {root_cfg.SPOOL_AT_MEMORY_PERCENT}%; diverting queue to disk spool"
+            )

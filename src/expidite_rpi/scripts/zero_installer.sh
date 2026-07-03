@@ -1151,9 +1151,9 @@ remove_management_service() {
 #
 # Note that this service is also started and stopped from bcli when the user manually starts/stops it.
 ##############################################################################################################
-# True (exit 0) when reboot_if_required will reboot at the end of this run: a reboot has been flagged and
-# automatic reboots have not been disabled by the cyclical-reboot guard. Must match the logic in
-# reboot_if_required exactly.
+# True (exit 0) when a reboot has been flagged and automatic reboots have not been disabled by the
+# cyclical-reboot guard. This is the single reboot-gating predicate: reboot_if_required uses it too, so
+# auto_start_if_requested's skip-start decision can never disagree with the actual reboot decision.
 reboot_is_pending() {
     [ -f "$HOME/.expidite/flags/reboot_required" ] && [ ! -f "$HOME/.expidite/flags/reboot_disabled" ]
 }
@@ -1259,7 +1259,8 @@ reboot_if_required() {
         return
     fi
 
-    if [ -f "$HOME/.expidite/flags/reboot_required" ]; then
+    # Same predicate that auto_start_if_requested used to decide whether to skip starting the services.
+    if reboot_is_pending; then
         # Increment reboot counter
         REBOOT_COUNT_FILE="$HOME/.expidite/flags/reboot_count"
         REBOOT_TIMESTAMP_FILE="$HOME/.expidite/flags/last_reboot_time"

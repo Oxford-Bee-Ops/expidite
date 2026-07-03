@@ -7,11 +7,13 @@ shutdown/reboot paths. Run on real devices; tick items off as they pass.
 
 | Thing | Value / location |
 |---|---|
-| Offline mode trigger | 10 min of continuous transient network failures (`SPOOL_OFFLINE_AFTER_SECONDS = 600`) |
-| Drain/probe interval | 60s (`SPOOL_DRAIN_INTERVAL`) |
-| Memory spill threshold | 80% (`SPOOL_AT_MEMORY_PERCENT`), RPi only |
+| Data path | one network attempt per item; ANY failure → disk spool; the 60s drain is the only retry |
+| Offline-mode fault (telemetry only) | after 10 min of continuous transient failures (`SPOOL_OFFLINE_AFTER_SECONDS = 600`) |
+| Drain interval | 60s (`SPOOL_DRAIN_INTERVAL`); first item of each pass is the connectivity probe |
+| Poison-item quarantine | after 5 non-transient drain failures → `/expidite-spool/quarantine/` |
+| Memory divert threshold | 80% (`SPOOL_AT_MEMORY_PERCENT`), RPi only; managed reboot at 95% (`REBOOT_AT_MEMORY_PERCENT`) |
 | Spool budget | 16 GB or 1 GB free-disk floor (`SPOOL_MAX_BYTES`, `SPOOL_MIN_DISK_FREE_BYTES`) |
-| Shutdown network-flush window | 30s (`SPOOL_SHUTDOWN_FLUSH_SECONDS`), skipped entirely when offline |
+| Shutdown | never touches the network; queue spilled to spool, drained after next start |
 | Reboot flush wait | up to 240s (`_REBOOT_FLUSH_TIMEOUT_SECONDS` in `core/reboot.py`) |
 | Spool location | `/expidite-spool/upload/<container>/<TIER>/…` and `/expidite-spool/append/<container>/<blob>/…` |
 | Logs | `journalctl -t EXPIDITE -f` (or `-u expidite`) |
@@ -62,12 +64,13 @@ Revert afterwards (or re-run the installer, which reinstalls the package).
 
 ## C. Wifi outage → spool → recovery
 
-- [ ] **C1. Offline mode entry.** Cut internet (keep LAN). Wait ~11 min.
-  - For the first 10 min: *"Temporary network failure: …"* warnings, no customer-facing fault spam.
-  - Then: *"Persistent network failure; entering offline mode - uploads will be spooled to disk at
-    /expidite-spool"* and possibly *"Spilled N queued uploads to disk spool"*.
+- [ ] **C1. Outage behaviour + offline-mode fault.** Cut internet (keep LAN). Wait ~11 min.
   - Files appear under `/expidite-spool/upload/...` (correct container/tier directories) and CSV
-    fragments under `/expidite-spool/append/...`.
+    fragments under `/expidite-spool/append/...` **within a minute or two of the cut** - each upload
+    fails its one attempt and goes straight to disk.
+  - For the first 10 min: *"Temporary network failure: …"* warnings, no customer-facing fault spam.
+  - At ~10 min: *"Persistent network failure; device is offline - data is being retained in the disk
+    spool at /expidite-spool"* (telemetry only - spooling started immediately).
   - **Critical:** watch `free -m` and `df /expidite` over the next hour - memory and tmpfs usage stay
     roughly flat instead of climbing.
 
@@ -113,12 +116,12 @@ behaviour matches the table.
 
 ## E. Memory pressure
 
-- [ ] **E1. Spill threshold.** Temporarily set `SPOOL_AT_MEMORY_PERCENT = 20.0` (or run a memory hog
-  like `stress-ng --vm 1 --vm-bytes 70%`) with connectivity **up**.
-  - Journal: *"Memory usage above X%; spilling upload queue to disk spool"*; new uploads divert to the
-    spool instead of tmpfs.
+- [ ] **E1. Memory divert threshold.** Temporarily set `SPOOL_AT_MEMORY_PERCENT = 20.0` (or run a
+  memory hog like `stress-ng --vm 1 --vm-bytes 70%`) with connectivity **up**.
+  - Journal: *"Memory usage above X%; diverting queue to disk spool"* (throttled to once a minute);
+    queued items go straight to the spool without a network attempt.
   - The spool drains again once pressure drops (or continuously, since we're online - data still
-    reaches Azure).
+    reaches Azure via the drain).
 
 - [ ] **E2. The 95% reboot (optional, destructive-ish).** Push memory past 95% with a hog.
   - *"Rebooting device: Memory usage >95%, rebooting"* + diagnostics bundle + graceful stop before

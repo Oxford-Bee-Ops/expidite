@@ -39,7 +39,9 @@ def is_transient_network_error(exc: BaseException) -> bool:
 # internally 3 times with ~15-24s exponential backoff (~60s total), there is up to a 20s TCP connect
 # timeout per attempt, and our own async back-off sleeps sleep(2 * iteration) between retries. A fixed
 # retry count would therefore map to an unpredictable wall-clock time (tens of minutes).
-_ESCALATE_AFTER_SECONDS = 600.0  # 10 minutes
+# Derived from the offline-mode threshold so the two customer-facing signals stay aligned by construction:
+# an operation escalates to a fault at the same moment the device as a whole reports offline mode.
+_ESCALATE_AFTER_SECONDS = root_cfg.SPOOL_OFFLINE_AFTER_SECONDS  # 10 minutes
 
 
 def log_cloud_failure(message: str, exc: Exception, *, elapsed_seconds: float = 0.0) -> None:

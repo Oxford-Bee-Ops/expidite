@@ -36,26 +36,29 @@ WATCHDOG_FREQUENCY: float = 1
 ##############################################################################################################
 # Disk spool tuning (see cloud_connector/spool.py and AsyncCloudConnector)
 #
-# During a network outage, data queued for upload would otherwise accumulate in RAM (the upload queue holds
-# append data in memory, and upload files sit in TMP_DIR which is a tmpfs on SD-card devices). The spool
-# diverts that data to persistent disk (SPOOL_DIR) so it survives reboots and doesn't exhaust memory.
+# Uploads get one network attempt; on any failure the data is persisted to the disk spool (SPOOL_DIR) and
+# retried from there by the drain thread. RAM (the upload queue) and TMP_DIR (a tmpfs on SD-card devices)
+# therefore stay bounded during outages, and spooled data survives reboots.
 ##############################################################################################################
-# How long cloud uploads must fail continuously with transient network errors before the AsyncCloudConnector
-# enters offline mode and diverts uploads to the disk spool instead of retrying in memory.
+# How long cloud uploads must fail continuously with transient network errors before the device reports
+# offline mode (a customer-facing fault). Telemetry only - the data path is the same online and offline.
+# log_cloud_failure's fault-escalation threshold (_ESCALATE_AFTER_SECONDS) is derived from this constant.
 SPOOL_OFFLINE_AFTER_SECONDS: float = 600.0
-# Seconds between attempts to drain the spool back to the cloud (also the offline probe interval).
+# Seconds between attempts to drain the spool back to the cloud (the first item of each drain pass doubles
+# as the connectivity probe).
 SPOOL_DRAIN_INTERVAL: float = 60.0
-# Spill the in-memory upload queue to the disk spool when system memory usage exceeds this percentage.
-# Must be comfortably below the 95% at which DeviceHealth reboots the device. Only applied on RPi.
+# Divert queued uploads straight to the disk spool when system memory usage exceeds this percentage
+# (covers workers stuck in long network timeouts backing the queue up). Only applied on RPi. INVARIANT:
+# must stay comfortably below REBOOT_AT_MEMORY_PERCENT so data is shed to disk long before the reboot.
 SPOOL_AT_MEMORY_PERCENT: float = 80.0
+# DeviceHealth triggers a managed reboot above this memory usage, as a last-resort recovery before the OS
+# starts OOM-killing processes. See the SPOOL_AT_MEMORY_PERCENT invariant above.
+REBOOT_AT_MEMORY_PERCENT: float = 95.0
 # Maximum total size of the disk spool. When exceeded, the oldest spooled video files are deleted first
 # (videos are orders of magnitude larger than other data, so binning them preserves everything else).
 SPOOL_MAX_BYTES: int = 16 * 1024**3
 # Never let spooling reduce free disk space below this floor.
 SPOOL_MIN_DISK_FREE_BYTES: int = 1024**3
-# At shutdown, how long to keep trying to flush the upload queue over the network before spilling the
-# remainder to the disk spool. Must fit inside systemd's TimeoutStopSec budget alongside sensor shutdown.
-SPOOL_SHUTDOWN_FLUSH_SECONDS: float = 30.0
 
 
 ##############################################################################################################

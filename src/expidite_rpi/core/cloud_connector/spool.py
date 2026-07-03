@@ -1,6 +1,9 @@
+import contextlib
+import itertools
 import shutil
 import time
 import uuid
+from collections.abc import Iterator
 from dataclasses import dataclass
 from enum import Enum
 from pathlib import Path
@@ -22,6 +25,11 @@ _PART_SUFFIX = ".part"
 # Only .part files at least this old are cleaned up at construction. The spool directory is shared between
 # processes, so a freshly-written .part may belong to a live write in another process and must be left alone.
 _PART_CLEANUP_AGE_SECONDS = 3600.0
+
+# How long the cached spool-size census stays valid. The census is a full tree walk, so we don't repeat it
+# per spooled item; the cache also self-heals any drift from other processes writing to the shared spool
+# directory (budget enforcement only needs to be approximately right - there is a 1 GB free-disk floor).
+_SIZE_CACHE_TTL_SECONDS = 10.0
 
 
 class SpoolResult(Enum):
@@ -63,20 +71,26 @@ class SpooledAppend:
 ##############################################################################################################
 # DiskSpool
 #
-# Persistent on-disk overflow store for cloud uploads. During a network outage (or under memory pressure)
-# the AsyncCloudConnector diverts uploads here instead of retrying them in RAM, because both the upload
-# queue and TMP_DIR are memory-backed on SD-card devices. The spool lives on real disk (see
-# root_cfg.SPOOL_DIR) so its contents survive reboots; the AsyncCloudConnector drains it back to the cloud
+# Persistent on-disk store-and-forward buffer for cloud uploads. The AsyncCloudConnector attempts each
+# upload over the network once; on any failure the data is persisted here, because RAM (the upload queue)
+# and TMP_DIR (a tmpfs on SD-card devices) are both memory and are lost on reboot. The spool lives on real
+# disk (see root_cfg.SPOOL_DIR) so its contents survive reboots; the connector's drain thread uploads it
 # once connectivity returns, including after a restart.
 #
 # Layout:
-#   <root>/upload/<container>/<TIER>/<filename>      block-blob uploads (tier encoded in the path)
-#   <root>/append/<container>/<blob_name>/<uuid>.csv append-blob CSV fragments
+#   <root>/upload/<container>/<TIER>/<filename>       block-blob uploads (tier encoded in the path)
+#   <root>/append/<container>/<blob_name>/<uuid>.csv  append-blob CSV fragments
+#   <root>/quarantine/...                             items that repeatedly failed to upload with a
+#                                                     non-transient error; kept for manual recovery
 ##############################################################################################################
 class DiskSpool:
     def __init__(self, root: Path | None = None) -> None:
         self._lock = Lock()
         self.videos_binned = 0
+        # Spool-size census cache; None means "not yet computed" (computed lazily on first budget check so
+        # constructing a connector - e.g. from bcli - doesn't pay for a full tree walk).
+        self._cached_size: int | None = None
+        self._cached_size_time = 0.0
         self.root = self._create_root(root)
         self._upload_dir = self.root / "upload"
         self._append_dir = self.root / "append"
@@ -84,23 +98,17 @@ class DiskSpool:
         self._append_dir.mkdir(parents=True, exist_ok=True)
         # Clean up half-written files from a previous run that crashed mid-spool. Age-gated because the
         # spool root is shared between processes (the RpiCore service, bcli, the management service all
-        # construct connectors): an unconditional sweep here would delete a .part file another process is
+        # construct connectors): an unconditional sweep would delete a .part file another process is
         # writing *right now*, losing that record. In-progress files are seconds old; anything older than
         # the gate is crash debris. Young debris is invisible to the drain (listings exclude .part) and is
         # swept once it ages past the gate.
         cutoff = time.time() - _PART_CLEANUP_AGE_SECONDS
-        self._size_bytes = 0
-        for f in self.root.rglob("*"):
-            if not f.is_file():
+        for part in self.root.rglob(f"*{_PART_SUFFIX}"):
+            try:
+                if part.stat().st_mtime < cutoff:
+                    part.unlink(missing_ok=True)
+            except OSError:
                 continue
-            if f.suffix == _PART_SUFFIX:
-                try:
-                    if f.stat().st_mtime < cutoff:
-                        f.unlink(missing_ok=True)
-                except OSError:
-                    continue
-            else:
-                self._size_bytes += int(self._safe_stat(f, "st_size"))
 
     @staticmethod
     def _create_root(root: Path | None) -> Path:
@@ -167,26 +175,35 @@ class DiskSpool:
             return SpoolResult.BINNED
 
         dst_dir = self._upload_dir / dst_container / storage_tier.name
-        dst_dir.mkdir(parents=True, exist_ok=True)
+        # The payload copy/move happens OUTSIDE the lock: a multi-hundred-MB video copied tmpfs->SD can
+        # take tens of seconds and must not serialize every other spool writer behind it. The uuid in the
+        # .part name keeps concurrent writers of the same record from colliding; the lock only covers the
+        # replace+rename+accounting, which is microseconds.
+        part = dst_dir / f"{src_file.name}.{uuid.uuid4().hex[:8]}{_PART_SUFFIX}"
         try:
+            dst_dir.mkdir(parents=True, exist_ok=True)
+            if move:
+                shutil.move(src_file, part)
+            else:
+                shutil.copy2(src_file, part)
             with self._lock:
                 dst = dst_dir / src_file.name
                 if dst.exists():
                     # File naming is FAIR-unique per record, so an existing entry with the same name is the
                     # same record (e.g. spooled once as a safety copy and again on upload failure); replace.
-                    self._size_bytes = max(0, self._size_bytes - dst.stat().st_size)
                     dst.unlink()
-                part = dst.with_name(dst.name + _PART_SUFFIX)
-                # shutil.move across filesystems (tmpfs -> disk) is a copy+unlink, so stage via a .part name
-                # and rename into place; rename within one filesystem is atomic.
-                if move:
-                    shutil.move(src_file, part)
-                else:
-                    shutil.copy2(src_file, part)
                 part.rename(dst)
-                self._size_bytes += nbytes
+                if self._cached_size is not None:
+                    self._cached_size += nbytes
         except OSError:
             logger.exception(f"{root_cfg.RAISE_WARN()}Failed to spool {src_file} to disk")
+            if move and part.exists() and not src_file.exists():
+                # The payload made it into the .part but not into place; hand it back to the caller so the
+                # FAILED contract ("file left in place where possible") holds and the data isn't stranded.
+                try:
+                    shutil.move(part, src_file)
+                except OSError:
+                    logger.exception(f"{root_cfg.RAISE_WARN()}Could not restore {src_file} after failure")
             return SpoolResult.FAILED
         logger.debug(f"Spooled upload {dst} ({nbytes:,} bytes) for container {dst_container}")
         return SpoolResult.SPOOLED
@@ -198,14 +215,14 @@ class DiskSpool:
         """
         nbytes = sum(len(line) for line in data)
         if not self._make_room(nbytes, incoming_is_video=False):
-            logger.error(f"{root_cfg.RAISE_WARN()}Spool cannot make room; dropping append to {dst_fname}")
+            logger.error(f"{root_cfg.RAISE_WARN()}Spool cannot make room; cannot spool append to {dst_fname}")
             return False
 
         fragment_dir = self._append_dir / dst_container / dst_fname
-        fragment_dir.mkdir(parents=True, exist_ok=True)
         fragment = fragment_dir / f"{uuid.uuid4().hex}.csv"
         part = fragment.with_name(fragment.name + _PART_SUFFIX)
         try:
+            fragment_dir.mkdir(parents=True, exist_ok=True)
             with part.open("w", newline="") as f:
                 f.writelines(data)
             actual_bytes = part.stat().st_size
@@ -215,7 +232,8 @@ class DiskSpool:
             part.unlink(missing_ok=True)
             return False
         with self._lock:
-            self._size_bytes += actual_bytes
+            if self._cached_size is not None:
+                self._cached_size += actual_bytes
         logger.debug(f"Spooled append fragment {fragment} for {dst_container}/{dst_fname}")
         return True
 
@@ -224,11 +242,17 @@ class DiskSpool:
     ##########################################################################################################
     @staticmethod
     def _safe_stat(f: Path, attr: str) -> float:
-        """st_mtime/st_size that tolerates the file being evicted by another thread mid-listing."""
+        """st_mtime/st_size that tolerates the file being removed by another thread/process mid-listing."""
         try:
             return float(getattr(f.stat(), attr))
         except OSError:
             return 0.0
+
+    def _data_files(self) -> Iterator[Path]:
+        """All completed (non-.part) data files awaiting upload. Excludes the quarantine."""
+        for f in itertools.chain(self._upload_dir.rglob("*"), self._append_dir.rglob("*")):
+            if f.is_file() and f.suffix != _PART_SUFFIX:
+                yield f
 
     def pending_appends(self) -> list[SpooledAppend]:
         """All spooled append fragments, oldest first (per-blob fragments stay in write order)."""
@@ -251,31 +275,50 @@ class DiskSpool:
         items.sort(key=lambda i: self._safe_stat(i.path, "st_mtime"))
         return items
 
-    def smallest_pending(self) -> SpooledAppend | SpooledUpload | None:
-        """The smallest spooled item - used as a cheap connectivity probe while offline."""
-        items: list[SpooledAppend | SpooledUpload] = []
-        items.extend(self.pending_appends())
-        items.extend(self.pending_uploads())
-        if not items:
-            return None
-        return min(items, key=lambda i: self._safe_stat(i.path, "st_size"))
-
     def remove(self, item: SpooledAppend | SpooledUpload) -> None:
-        """Remove a successfully-drained item from the spool."""
+        """Remove a successfully-drained (or vanished) item from the spool."""
         try:
-            nbytes = item.path.stat().st_size
             item.path.unlink()
         except OSError:
             return
-        with self._lock:
-            self._size_bytes = max(0, self._size_bytes - nbytes)
+        # Append fragment dirs are per-blob (date-stamped) and would otherwise accumulate forever. rmdir
+        # fails atomically on a non-empty dir, so this is race-safe with concurrent writers.
+        with contextlib.suppress(OSError):
+            item.path.parent.rmdir()
+
+    def quarantine(self, item: SpooledAppend | SpooledUpload) -> None:
+        """Move an item that repeatedly fails to upload out of the drain's way, preserving the data.
+
+        One poison item (e.g. a destination blob at Azure's block limit, or a deleted container) must not
+        block everything spooled behind it forever. Quarantined files are kept for manual recovery under
+        <root>/quarantine/ and are invisible to the drain and the pending listings.
+        """
+        try:
+            rel = item.path.relative_to(self.root)
+            target = self.root / "quarantine" / rel
+            target.parent.mkdir(parents=True, exist_ok=True)
+            if target.exists():
+                target.unlink()
+            shutil.move(item.path, target)
+        except OSError:
+            # Leave the item in place; the drain will re-count its failures and try to quarantine again.
+            logger.exception(f"{root_cfg.RAISE_WARN()}Failed to quarantine {item.path}")
+            return
+        with contextlib.suppress(OSError):
+            item.path.parent.rmdir()
+        logger.error(
+            f"{root_cfg.RAISE_WARN()}Quarantined {item.path.name} after repeated upload failures; "
+            f"data preserved under {self.root / 'quarantine'}"
+        )
 
     def has_data(self) -> bool:
-        return any(self.pending_appends()) or any(self.pending_uploads())
+        """Cheap existence check - no stats, no sorts; called every drain tick."""
+        return next(self._data_files(), None) is not None
 
     @property
     def size_bytes(self) -> int:
-        return self._size_bytes
+        """Total bytes awaiting upload (computed fresh; not the cached census)."""
+        return sum(int(self._safe_stat(f, "st_size")) for f in self._data_files())
 
     @staticmethod
     def _tier_of(f: Path) -> api.StorageTier:
@@ -290,46 +333,54 @@ class DiskSpool:
     def _make_room(self, nbytes: int, incoming_is_video: bool) -> bool:
         """Ensure the spool can accept nbytes more data, evicting the oldest spooled videos if needed.
 
-        Returns False if the incoming data should be binned instead: it is a video and no room can be made,
-        or the disk is physically too full to accept it.
+        Returns False if the incoming data cannot be accepted: it is a video and no room can be made, or
+        (for non-video data, which is allowed to overshoot SPOOL_MAX_BYTES) the disk is physically too
+        full. Uses a single cached size census plus one video listing per call, rather than re-walking the
+        tree per eviction.
         """
         with self._lock:
-            while self._over_budget(nbytes):
-                victim = self._oldest_video()
-                if victim is None:
+            total = self._spool_size_locked()
+            videos: list[tuple[float, int, Path]] | None = None
+            while (
+                total + nbytes > root_cfg.SPOOL_MAX_BYTES
+                or self._disk_free() - nbytes < root_cfg.SPOOL_MIN_DISK_FREE_BYTES
+            ):
+                if videos is None:
+                    # One listing per _make_room call, oldest first; victims are popped from it.
+                    videos = sorted(
+                        (self._safe_stat(f, "st_mtime"), int(self._safe_stat(f, "st_size")), f)
+                        for f in self._upload_dir.glob("*/*/*")
+                        if f.is_file() and f.suffix.lower() in _VIDEO_SUFFIXES
+                    )
+                if not videos:
                     break
+                _, vsize, victim = videos.pop(0)
                 try:
-                    victim_bytes = victim.stat().st_size
                     victim.unlink()
                 except OSError:
-                    break
-                self._size_bytes = max(0, self._size_bytes - victim_bytes)
+                    continue
+                total -= vsize
+                self._cached_size = max(0, total)
                 self._record_binned(victim)
 
-            if not self._over_budget(nbytes):
-                return True
+            if total + nbytes <= root_cfg.SPOOL_MAX_BYTES:
+                return self._disk_free() - nbytes >= root_cfg.SPOOL_MIN_DISK_FREE_BYTES
             if incoming_is_video:
                 return False
             # Non-video data (CSVs, logs) is small and precious; allow it to overshoot SPOOL_MAX_BYTES as
             # long as the disk itself can still take it.
             return self._disk_free() - nbytes > root_cfg.SPOOL_MIN_DISK_FREE_BYTES
 
-    def _over_budget(self, nbytes: int) -> bool:
-        return (
-            self._size_bytes + nbytes > root_cfg.SPOOL_MAX_BYTES
-            or self._disk_free() - nbytes < root_cfg.SPOOL_MIN_DISK_FREE_BYTES
-        )
+    def _spool_size_locked(self) -> int:
+        """Cached total spool size; recomputed by a full walk at most every _SIZE_CACHE_TTL_SECONDS."""
+        now = time.time()
+        if self._cached_size is None or now - self._cached_size_time > _SIZE_CACHE_TTL_SECONDS:
+            self._cached_size = sum(int(self._safe_stat(f, "st_size")) for f in self._data_files())
+            self._cached_size_time = now
+        return self._cached_size
 
     def _disk_free(self) -> int:
         return shutil.disk_usage(self.root).free
-
-    def _oldest_video(self) -> Path | None:
-        videos = [
-            f for f in self._upload_dir.glob("*/*/*") if f.is_file() and f.suffix.lower() in _VIDEO_SUFFIXES
-        ]
-        if not videos:
-            return None
-        return min(videos, key=lambda f: f.stat().st_mtime)
 
     def _record_binned(self, f: Path) -> None:
         self.videos_binned += 1

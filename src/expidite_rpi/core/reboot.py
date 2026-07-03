@@ -7,8 +7,8 @@ from expidite_rpi.utils import utils
 logger = root_cfg.setup_logger("expidite")
 
 # How long to wait for the orchestrator to stop before rebooting anyway. Bounded by sensor shutdown
-# (max_recording_timer, default 180s) plus journal flush and the upload queue's bounded network flush
-# (SPOOL_SHUTDOWN_FLUSH_SECONDS); anything unsent by then has been spilled to the disk spool.
+# (max_recording_timer, default 180s) plus the journal flush; the upload queue itself is spilled to the
+# disk spool at connector shutdown with no network I/O, so it adds almost nothing.
 _REBOOT_FLUSH_TIMEOUT_SECONDS = 240.0
 
 

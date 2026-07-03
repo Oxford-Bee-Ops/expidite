@@ -32,27 +32,28 @@ SIGKILLed the process with the queue still in RAM.
 - Keep SD-card wear negligible in normal (online) operation.
 - Accept rare duplicate CSV rows rather than build exactly-once machinery.
 
-## 3. Architecture overview
+## 3. Architecture overview: store-and-forward on failure
 
 ```
-                     online                    offline / memory pressure / shutdown
-Sensor data ──► AsyncCloudConnector ──► Azure          │
-                     │ upload queue (RAM)              ▼
-                     │ TMP_DIR staging (tmpfs)   DiskSpool (/expidite-spool, real disk)
-                     │                                 │
-                     └──── drain thread ◄──────────────┘
-                            (probes every 60s; uploads spool when online,
-                             including at startup after a reboot)
+Sensor data ──► upload queue (RAM) ──► worker: ONE network attempt ──► Azure
+                                              │ any failure
+                                              ▼
+                                 DiskSpool (/expidite-spool, real disk)
+                                              │
+                          drain thread (the ONLY retry mechanism)
+                          every 60s, oldest first ──────────────► Azure
 ```
 
-Two cooperating mechanisms:
+Each queued item gets exactly **one** network attempt on a worker thread. On success it's done; on
+**any** failure the data is persisted to the **DiskSpool** (`core/cloud_connector/spool.py`) and the
+**drain thread** becomes the only retry mechanism. There is no retry-in-RAM, no offline/online switch
+in the data path, and shutdown never touches the network - it spills the queue to the spool and exits.
 
-1. **DiskSpool** (`core/cloud_connector/spool.py`) - a persistent on-disk overflow store.
-2. **Offline mode in `AsyncCloudConnector`** (`core/cloud_connector/async_cloud_connector.py`) - a
-   state machine that decides *when* data goes to the spool and *when* it is drained back to Azure.
-
-Plus a set of shutdown/reboot changes that guarantee the queue reaches either Azure or the spool
-before the device goes down.
+This bounds RAM by construction: during an outage each item transits the queue once and then lives on
+disk, so a device can run offline for a week without memory growth, and a reboot loses nothing that
+reached the spool. The cost is negligible SD wear (disk writes only happen on upload failures) plus a
+small latency cost at shutdown (in-transit data lands in Azure one drain pass after the next start
+rather than before the stop).
 
 ## 4. DiskSpool
 
@@ -102,43 +103,48 @@ The first binned video per run is a RAISE_WARN fault (visible in the customer WA
 subsequent bins log at INFO with a periodic RAISE_WARN counter, so a week-long outage doesn't produce
 thousands of faults.
 
-## 5. Offline mode in AsyncCloudConnector
+## 5. The data path in AsyncCloudConnector
 
-### Entering
+### One attempt, then disk
 
-Every failed cloud call is classified with the existing `is_transient_network_error()` (DNS failure,
-no response - the signature of an internet outage). The first transient failure starts a clock; once
-failures have been continuous for `SPOOL_OFFLINE_AFTER_SECONDS` (600s, matching the fault-escalation
-threshold in `log_cloud_failure`), the connector enters offline mode:
+Worker threads (`_async_upload` / `_async_append`) make a single network attempt per item. On any
+exception the data is persisted via `_spool_action()`. If the spool itself cannot take the data
+(`SpoolResult.FAILED`: disk full or unwritable - distinct from a deliberately BINNED video), the item
+falls back to the in-memory queue with a 10s backoff rather than being dropped: this is the
+doubly-degraded case (no network AND no disk) and the data cycles in RAM until one of them recovers.
 
-- The in-memory queue is immediately spilled to the spool (`_spill_queue_to_spool`).
-- New `upload_to_container()` / `append_to_cloud()` calls divert straight to the spool - queueing
-  would grow RAM, and staging in `TMP_DIR` would grow the tmpfs, which is also RAM.
-- Worker threads that fail while offline spool their item instead of re-queueing.
+### Offline mode is telemetry only
 
-Any successful cloud call resets the clock and returns the connector to online mode.
+Every failed cloud call is classified with `is_transient_network_error()`; once transient failures
+have been continuous for `SPOOL_OFFLINE_AFTER_SECONDS` (600s - the same constant that drives
+`log_cloud_failure`'s fault escalation, by construction), the device reports offline mode as a
+customer-facing fault, and clears it on the next successful call. **No data path depends on this
+state** - behavior is identical online and offline, which removes the largest source of state-machine
+complexity from the previous design.
 
-If the spool itself cannot take the data (`SpoolResult.FAILED`: disk full or unwritable - distinct
-from a deliberately BINNED video), every divert path falls back to the in-memory queue rather than
-dropping the data; the RAM path was the pre-spool behavior and can still succeed if the network is up.
+### Memory pressure
 
-### Memory pressure (the second trigger)
+Normally RAM is bounded because each item transits the queue once. The exception is a black-holing
+network: workers stuck in long connection timeouts while the queue backs up behind them. If memory
+exceeds `SPOOL_AT_MEMORY_PERCENT` (80%, RPi only), `do_work` sends dequeued items straight to disk
+without a network attempt until pressure clears. `DeviceHealth`'s managed reboot fires at
+`REBOOT_AT_MEMORY_PERCENT` (95%) - both constants live side by side in `configuration.py` with the
+ordering invariant documented.
 
-Independently of connectivity, if system memory exceeds `SPOOL_AT_MEMORY_PERCENT` (80%, RPi only -
-dev machines routinely run high), the `do_work` loop spills the queue to the spool and public calls
-divert. This fires well below the 95% threshold at which `DeviceHealth` reboots, so the memory-reboot
-should now be rare. tmpfs pages count as used memory, so this one check covers both growth vectors.
+### Draining - the only retry mechanism
 
-### Draining
+A dedicated daemon thread wakes every `SPOOL_DRAIN_INTERVAL` (60s) and drains sequentially - appends
+first (small CSVs), oldest first - so a large backlog trickles out without starving live uploads of
+the worker pool:
 
-A dedicated daemon thread wakes every `SPOOL_DRAIN_INTERVAL` (60s):
-
-- **While offline** it attempts only the *smallest* spooled item as a cheap connectivity probe. A
-  success flips the connector online.
-- **While online** it drains sequentially - appends first, then uploads, oldest first - until the
-  spool is empty or an upload fails. Draining on one thread means a large backlog trickles out
-  without starving live sensor data of the six-thread worker pool.
-- Successful drains delete the spooled item; failures leave it in place for the next tick.
+- The **first item of a pass doubles as the connectivity probe**: a transient network failure aborts
+  the pass, to be retried next tick.
+- A **non-transient** per-item failure (e.g. a destination append blob at Azure's 50,000-block limit,
+  or a deleted container) is counted and skipped; after 5 failed attempts the item is **quarantined**
+  to `<spool>/quarantine/` - preserved for manual recovery, invisible to the drain - so one poison
+  item can never wedge everything spooled behind it.
+- A spooled file that has vanished (evicted for budget, or drained by another process's connector) is
+  tidied away without being treated as network evidence.
 
 The same thread handles the **startup drain**: if the spool holds data when the connector is
 constructed (i.e. after a reboot), the drain is armed immediately. There is no "reload the queue into
@@ -154,17 +160,19 @@ RAM" step - spooled data goes disk → Azure directly, while new data flows thro
 
 ## 6. Flush-safe shutdown
 
-`AsyncCloudConnector.shutdown()` guarantees queued data is either uploaded or on the spool, in bounded
-time:
+`AsyncCloudConnector.shutdown()` never touches the network, so it is fast and bounded regardless of
+connectivity:
 
-1. If online, in-flight and queued uploads get `SPOOL_SHUTDOWN_FLUSH_SECONDS` (30s) to complete over
-   the network. If offline, this step is skipped entirely - shutdown does no network I/O.
-2. Everything still queued is spilled to the spool.
-3. The data of any upload still running on a worker thread is *safety-copied* to the spool: if the
+1. Everything still queued is spilled to the spool (`do_work` spools anything it has already dequeued
+   once stop is requested, so nothing is stranded between the queue and the worker pool).
+2. The data of any upload still running on a worker thread is *safety-copied* to the spool: if the
    process is killed mid-upload, the data is on disk rather than lost with the tmpfs; if the upload
-   completes anyway, the next drain re-uploads the same blob name (harmless).
-4. Worker failures during shutdown divert to the spool instead of re-queueing, so the flush can never
-   spin on retries.
+   completes anyway, the next drain re-uploads the same blob name (harmless overwrite / accepted
+   duplicate rows).
+
+Data in transit at shutdown therefore lands in Azure one drain pass after the next start instead of
+before the stop - the deliberate price of a stop path with no timing windows, no network flush
+deadline, and no online/offline branching.
 
 **Residual risk:** a worker thread stuck deep in a long Azure connection timeout cannot be cancelled;
 process exit may then block until systemd's SIGKILL at `TimeoutStopSec=240`. By that point its data
@@ -186,7 +194,7 @@ the orchestrator owns the handler.
 
 The service units also gained `After=network-online.target` / `Wants=network-online.target`: unit stop
 order is the reverse of start order, so during a reboot expidite stops *before* the network is torn
-down, giving the 30s network flush a chance to actually use the network.
+down - journal flushes that are already in flight can still complete.
 
 ## 7. Managed reboots
 
@@ -229,20 +237,20 @@ All tuning constants live in `core/configuration.py` for easy review and mocking
 
 | Constant | Default | Meaning |
 |---|---|---|
-| `SPOOL_OFFLINE_AFTER_SECONDS` | 600 | Continuous transient failure before entering offline mode |
-| `SPOOL_DRAIN_INTERVAL` | 60 | Seconds between drain/probe attempts |
-| `SPOOL_AT_MEMORY_PERCENT` | 80 | Memory usage above which the queue spills to disk (RPi only) |
+| `SPOOL_OFFLINE_AFTER_SECONDS` | 600 | Continuous transient failure before reporting offline mode (telemetry; also drives fault escalation) |
+| `SPOOL_DRAIN_INTERVAL` | 60 | Seconds between drain passes (first item of a pass is the connectivity probe) |
+| `SPOOL_AT_MEMORY_PERCENT` | 80 | Memory usage above which dequeued items go straight to disk (RPi only) |
+| `REBOOT_AT_MEMORY_PERCENT` | 95 | DeviceHealth managed-reboot threshold; must stay above `SPOOL_AT_MEMORY_PERCENT` |
 | `SPOOL_MAX_BYTES` | 16 GB | Spool size budget (videos evicted oldest-first beyond it) |
 | `SPOOL_MIN_DISK_FREE_BYTES` | 1 GB | Free-disk floor spooling never crosses |
-| `SPOOL_SHUTDOWN_FLUSH_SECONDS` | 30 | Network flush window during shutdown (skipped offline) |
 | `SPOOL_DIR` | `/expidite-spool` | Spool root (per-platform) |
 
 ## 9. What this changes in practice
 
 | Scenario | Before | After |
 |---|---|---|
-| Short outage (<10 min) | Retried in RAM, no loss | Unchanged |
-| Long outage, memory fills | Reboot at 95% → total loss | Spill at 80% → data on disk, device keeps running |
+| Short outage (<10 min) | Retried in RAM, no loss | Data goes to disk on first failure, drained on recovery - no loss |
+| Long outage, memory fills | Reboot at 95% → total loss | RAM never grows: one transit per item, then disk; device keeps running |
 | Wifi >2h reboot | Up to 2h of data lost | Flushed to spool pre-reboot; drained on recovery |
 | `sudo reboot` / `systemctl stop` | SIGTERM ignored → SIGKILL → loss | Graceful stop, flush/spool |
 | Installer upgrade | SIGKILL first → loss | Graceful stop first |
