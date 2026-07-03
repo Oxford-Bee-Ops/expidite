@@ -1019,11 +1019,6 @@ class InteractiveMenu:
 # Main just calls the interactive menu
 ##############################################################################################################
 def main() -> None:
-    # Move off the invoking shell's CWD so GPIO init (rpi-lgpio, via RPi.GPIO/gpiozero) doesn't drop its
-    # .lgd-nfy* notification FIFOs wherever bcli happened to be launched from - notably /expidite-spool
-    # during outage testing. Must be here, not under __main__: the `bcli` console-script entry point calls
-    # main() directly, so a guard under __main__ never runs for the installed command.
-    os.chdir(root_cfg.HOME_DIR)
     # Disable console logging during CLI execution
     with disable_console_logging("expidite"):
         try:
@@ -1043,4 +1038,5 @@ def main() -> None:
 
 
 if __name__ == "__main__":
+    os.chdir(root_cfg.HOME_DIR)
     main()

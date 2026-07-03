@@ -1036,11 +1036,6 @@ StartLimitBurst=5
 User=$SERVICE_USER
 WorkingDirectory=$SERVICE_HOME/.expidite
 Environment="HOME=$SERVICE_HOME"
-# Give rpi-lgpio (via RPi.GPIO/gpiozero) a fixed, writable, tmpfs-backed home for its .lgd-nfy* GPIO
-# notification FIFOs, instead of dropping them in the process CWD. RuntimeDirectory= makes systemd create
-# /run/lgpio owned by the service user and clean it up on stop.
-RuntimeDirectory=lgpio
-Environment="LG_WD=/run/lgpio"
 ExecStart=$PYTHON_BIN -m $my_start_script
 # Watchdog: systemd kills and restarts if the process doesn't notify within this time.
 WatchdogSec=60s
