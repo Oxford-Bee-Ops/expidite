@@ -31,6 +31,10 @@ class AsyncUpload:
     # Monotonic time this action was first queued; used to escalate a persistently-failing upload to a
     # fault based on how long it has been failing (see log_cloud_failure). Survives re-queues.
     first_attempt_monotonic: float = field(default_factory=perf_counter)
+    # When True the files are never written to the disk spool: if the single live upload attempt fails
+    # (or spooling is otherwise triggered by memory pressure/shutdown) the data is simply dropped. Used
+    # for recordings the caller has declared expendable, so they never consume scarce spool disk.
+    can_discard: bool = False
 
 
 @dataclass
@@ -91,8 +95,14 @@ class AsyncCloudConnector(CloudConnector):
         src_files: list[Path],
         delete_src: bool,
         storage_tier: api.StorageTier = api.StorageTier.HOT,
+        can_discard: bool = False,
     ) -> None:
-        """Async version of upload_to_container using a queue and thread pool for parallel uploads."""
+        """Async version of upload_to_container using a queue and thread pool for parallel uploads.
+
+        can_discard=True marks these files as expendable: on any upload failure they are dropped rather
+        than persisted to the disk spool (see _spool_action), so declared-expendable recordings never take
+        up scarce spool disk during an outage.
+        """
         verified_files = []
         for file in src_files:
             if not file.exists():
@@ -113,7 +123,9 @@ class AsyncCloudConnector(CloudConnector):
                 src_files[i] = tmp_file
 
         if src_files:
-            self._upload_queue.put(AsyncUpload(dst_container, src_files, delete_src, storage_tier))
+            self._upload_queue.put(
+                AsyncUpload(dst_container, src_files, delete_src, storage_tier, can_discard)
+            )
 
     def append_to_cloud(
         self, dst_container: str, src_file: Path, delete_src: bool, col_order: list[str] | None = None
