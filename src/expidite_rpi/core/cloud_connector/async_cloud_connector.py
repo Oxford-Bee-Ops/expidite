@@ -262,7 +262,7 @@ class AsyncCloudConnector(CloudConnector):
         if go_offline:
             logger.error(
                 f"{root_cfg.RAISE_WARN()}Persistent network failure; device is offline - data is being "
-                f"retained in the disk spool at {self._spool.root}"
+                f"queued on disk in {self._spool.root}"
             )
 
     def _note_cloud_success(self) -> None:
