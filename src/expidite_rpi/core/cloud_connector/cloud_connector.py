@@ -127,6 +127,12 @@ class CloudConnector:
             CloudConnector._instance = desired_class()
         return CloudConnector._instance
 
+    @staticmethod
+    def shutdown_instance() -> None:
+        """Shut down the CloudConnector singleton if one exists."""
+        if CloudConnector._instance is not None:
+            CloudConnector._instance.shutdown()
+
     def set_keys(self, keys_file: Path | None = None, key: str | None = None) -> None:
         """Sets the cloud storage key for the CloudConnector from either a file or directly from a string."""
         if keys_file:

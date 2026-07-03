@@ -17,7 +17,7 @@ from crontab import CronTab
 
 from expidite_rpi.core import api, device_health, reboot
 from expidite_rpi.core import configuration as root_cfg
-from expidite_rpi.core.cloud_connector import AsyncCloudConnector, CloudConnector
+from expidite_rpi.core.cloud_connector import CloudConnector
 from expidite_rpi.core.edge_orchestrator import EdgeOrchestrator
 from expidite_rpi.management.common import DASH_LINE, check_if_setup_required, check_keys_env
 from expidite_rpi.rpi_core import RpiCore
@@ -893,10 +893,7 @@ class InteractiveMenu:
                 case _:
                     click.echo("Invalid choice. Please try again.")
 
-        # Clean up and exit
-        cc = CloudConnector.get_instance(root_cfg.CloudType.AZURE)
-        assert isinstance(cc, AsyncCloudConnector)
-        cc.shutdown()
+        # Cleanup happens in main()'s finally block; nothing to do here.
 
     def sensing_menu(self) -> None:
         """Menu for sensing commands."""
@@ -1030,10 +1027,10 @@ def main() -> None:
             logger.exception("Error in CLI")
             click.echo(f"Error in CLI: {e}")
         finally:
-            # Ensure the cloud connector is shut down
-            cc = CloudConnector.get_instance(root_cfg.CloudType.AZURE)
-            assert isinstance(cc, AsyncCloudConnector)
-            cc.shutdown()
+            # Ensure the cloud connector is shut down, but only if one was actually created during this
+            # session. Don't force-create a connector just to tear it down - that would spin up the drain
+            # thread and schedule a spool drain in a short-lived CLI process.
+            CloudConnector.shutdown_instance()
             click.echo("Done")
 
 
