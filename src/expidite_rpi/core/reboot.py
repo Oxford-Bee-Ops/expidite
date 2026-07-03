@@ -15,12 +15,24 @@ _REBOOT_FLUSH_TIMEOUT_SECONDS = 240.0
 ##############################################################################################################
 # Managed reboot
 #
-# All deliberate reboots (wifi recovery, memory exhaustion, stale HEART, IoT Hub command, BCLI) must go
-# through request_managed_reboot so that queued sensor data is flushed before the device goes down. Data
-# awaiting upload lives in RAM (the async upload queue, and /expidite which is a tmpfs on SD-card devices),
-# so a bare `sudo reboot` would lose all of it. Setting STOP_EXPIDITE_FLAG makes the EdgeOrchestrator main
-# loop stop cleanly: sensors stop, journals flush, and unsent uploads are spilled to the persistent disk
-# spool, from which they are uploaded after the reboot.
+# All deliberate reboots must flush queued sensor data before the device goes down: data awaiting upload
+# lives in RAM (the async upload queue, and /expidite which is a tmpfs on SD-card devices), so a bare
+# `sudo reboot` would lose all of it. A clean shutdown stops sensors, flushes journals, and spills unsent
+# uploads to the persistent disk spool, from which they are uploaded after the reboot.
+#
+# There are two entry points depending on where the caller runs:
+#
+# - stop_service_and_reboot(): for callers OUTSIDE the RpiCore process (BCLI, the management/IoT Hub
+#   service). It runs `sudo systemctl stop expidite.service` - the same graceful stop the installer uses -
+#   which lets systemd SIGTERM the whole service cgroup (tearing down in-flight work such as an rpicam-vid
+#   recording promptly) and blocks until the service has fully exited. This is fast and is the preferred
+#   path.
+#
+# - request_managed_reboot(): for callers INSIDE the RpiCore process (device health / device manager
+#   fault recovery). Such a caller cannot `systemctl stop` its own service without deadlocking (the stop
+#   would wait for the very process that is running the stop command to exit), so instead it sets
+#   STOP_EXPIDITE_FLAG - which the EdgeOrchestrator main loop polls - and waits (bounded) for the run to
+#   finish before rebooting.
 ##############################################################################################################
 def request_managed_reboot(
     reason: str,
@@ -96,5 +108,61 @@ def _flush_and_reboot(reason: str, delay_seconds: float, is_error: bool) -> None
     except Exception:
         # Never let a flush failure prevent the reboot itself - the reboot is the recovery action.
         logger.exception(f"{root_cfg.RAISE_WARN()}Error flushing before reboot; rebooting anyway")
+
+    utils.run_cmd("sudo reboot", ignore_errors=True)
+
+
+# The systemd unit whose graceful stop flushes RpiCore's data. `systemctl stop` blocks until the cgroup has
+# exited, escalating to SIGKILL only after the unit's TimeoutStopSec (240s); the safety timeout below sits
+# above that so run_cmd never kills systemctl before systemd has finished its own bounded stop.
+_EXPIDITE_SERVICE = "expidite.service"
+_SERVICE_STOP_TIMEOUT_SECONDS = 300.0
+
+
+def stop_service_and_reboot(reason: str, delay_seconds: float = 0.0) -> None:
+    """Gracefully stop the RpiCore service via systemd, then reboot. For callers OUTSIDE the RpiCore process.
+
+    `sudo systemctl stop expidite.service` is the same graceful stop the installer performs: systemd SIGTERMs
+    the whole service cgroup - so in-flight sensor work (e.g. an rpicam-vid recording) is torn down promptly
+    rather than running to completion - and blocks until the service has fully exited. RpiCore's SIGTERM
+    handler turns that into a clean shutdown (sensors stop, journals flush, unsent uploads spill to the disk
+    spool). The unit is left enabled, so systemd (and the @reboot crontab) auto-start RpiCore after the boot.
+
+    Do NOT call this from within the RpiCore process: `systemctl stop` would block waiting for that very
+    process to exit, so the reboot would never run. In-process reboots use request_managed_reboot instead.
+
+    delay_seconds delays the sequence (e.g. so an IoT Hub method response can be delivered first).
+    """
+    if not root_cfg.running_on_rpi:
+        logger.warning(f"Ignoring reboot request ({reason}); not running on a Raspberry Pi")
+        return
+
+    logger.warning(f"Rebooting device: {reason}")
+
+    if delay_seconds != 0:
+        threading.Thread(
+            target=_stop_service_and_reboot,
+            args=(delay_seconds,),
+            name="managed_reboot",
+            daemon=True,
+        ).start()
+    else:
+        _stop_service_and_reboot(0)
+
+
+def _stop_service_and_reboot(delay_seconds: float) -> None:
+    try:
+        if delay_seconds > 0:
+            sleep(delay_seconds)
+        # Blocks until the service cgroup has fully exited. ignore_errors: an already-stopped unit still
+        # returns cleanly, and either way we must proceed to the reboot.
+        utils.run_cmd(
+            f"sudo systemctl stop {_EXPIDITE_SERVICE}",
+            ignore_errors=True,
+            timeout=_SERVICE_STOP_TIMEOUT_SECONDS,
+        )
+    except Exception:
+        # Never let a stop failure prevent the reboot itself.
+        logger.exception(f"{root_cfg.RAISE_WARN()}Error stopping service before reboot; rebooting anyway")
 
     utils.run_cmd("sudo reboot", ignore_errors=True)

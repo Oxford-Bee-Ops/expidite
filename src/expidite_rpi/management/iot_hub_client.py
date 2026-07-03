@@ -225,9 +225,9 @@ class IoTHubClient:
         if not root_cfg.running_on_rpi:
             return {"error": "Not running on Raspberry Pi"}
 
-        # Managed reboot flushes queued data to the cloud / disk spool before rebooting; it runs on a
-        # background thread, and the initial delay lets us send the method response first.
-        reboot.request_managed_reboot("Reboot requested via IoT Hub", delay_seconds=2)
+        # Gracefully stop the RpiCore service (flushing queued data to cloud / disk spool) then reboot. Runs
+        # on a background thread with a short initial delay so we can return the method response first.
+        reboot.stop_service_and_reboot("Reboot requested via IoT Hub", delay_seconds=2)
         return {"status": "rebooting"}
 
     def _handle_get_review_mode(self, _payload: dict[str, Any]) -> dict[str, str]:
