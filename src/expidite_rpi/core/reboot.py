@@ -30,12 +30,12 @@ def request_managed_reboot(
 ) -> None:
     """Stop RpiCore gracefully (bounded), then reboot the device.
 
+    delay_seconds delays the whole sequence, e.g. so an IoT Hub method response can be delivered first.
+
     background=True (the default) performs the wait-and-reboot on a daemon thread and returns immediately.
     This is required when called from a thread that EdgeOrchestrator.stop_all() joins (the device manager,
     sensor threads, health checks): blocking such a thread on the shutdown it just triggered would
     deadlock. Use background=False only from outside the RpiCore process (e.g. BCLI).
-
-    delay_seconds delays the whole sequence, e.g. so an IoT Hub method response can be delivered first.
 
     collect_diagnostics=True gathers a diagnostics bundle before stopping. Set it for reboots that are
     recovery actions from a fault (wifi outage, memory exhaustion, stale HEART); user-requested reboots

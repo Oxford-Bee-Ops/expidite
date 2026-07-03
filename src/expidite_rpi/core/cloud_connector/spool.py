@@ -369,7 +369,7 @@ class DiskSpool:
                 return False
             # Non-video data (CSVs, logs) is small and precious; allow it to overshoot SPOOL_MAX_BYTES as
             # long as the disk itself can still take it.
-            return self._disk_free() - nbytes > root_cfg.SPOOL_MIN_DISK_FREE_BYTES
+            return self._disk_free() - nbytes >= root_cfg.SPOOL_MIN_DISK_FREE_BYTES
 
     def _spool_size_locked(self) -> int:
         """Cached total spool size; recomputed by a full walk at most every _SIZE_CACHE_TTL_SECONDS."""
