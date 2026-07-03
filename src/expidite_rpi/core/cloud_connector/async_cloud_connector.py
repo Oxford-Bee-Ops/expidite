@@ -318,7 +318,7 @@ class AsyncCloudConnector(CloudConnector):
             # otherwise drop the temp copy we own in upload_to_container.
             if action.delete_src and not safety_copy:
                 self._discard_upload_files(action)
-            logger.debug(f"Dropped discardable upload for {action.dst_container} (not spooled)")
+            logger.warning(f"Dropped discardable upload for {action.dst_container} / {action.src_files}")
             return True
 
         remaining = []
