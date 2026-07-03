@@ -285,7 +285,7 @@ class DeviceHealth(Sensor):
             msg = (
                 f"Latest HEART file on Azure is {age} old (last modified {last_heart_update_time}), rebooting"
             )
-            reboot.request_managed_reboot(msg, collect_diagnostics=True)
+            reboot.request_managed_reboot(msg, is_error=True)
 
     ##########################################################################################################
     # Diagnostics utility functions
@@ -403,7 +403,7 @@ class DeviceHealth(Sensor):
                     if memory_usage > root_cfg.REBOOT_AT_MEMORY_PERCENT:
                         reboot.request_managed_reboot(
                             f"Memory usage >{root_cfg.REBOOT_AT_MEMORY_PERCENT}%, rebooting",
-                            collect_diagnostics=True,
+                            is_error=True,
                         )
 
             # Get the expidite version and user code version from the files

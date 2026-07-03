@@ -391,9 +391,7 @@ class DeviceManager:
         # Reboot after 2 hours. The managed reboot flushes queued data to the disk spool first - we are
         # offline, so everything queued since the outage began is in RAM and would otherwise be lost.
         if self.ping_failure_count_run == int((2 * 3600) / self.ping_check_interval):
-            reboot.request_managed_reboot(
-                "Rebooting device due to no internet for >2 hours", collect_diagnostics=True
-            )
+            reboot.request_managed_reboot("Rebooting device due to no internet for >2 hours", is_error=True)
 
         elif self.ping_failure_count_run % retry_frequency == 10:
             logger.info("Restarting client wifi interface")

@@ -26,7 +26,7 @@ def request_managed_reboot(
     reason: str,
     delay_seconds: float = 0.0,
     background: bool = True,
-    collect_diagnostics: bool = False,
+    is_error: bool = False,
 ) -> None:
     """Stop RpiCore gracefully (bounded), then reboot the device.
 
@@ -37,28 +37,31 @@ def request_managed_reboot(
     sensor threads, health checks): blocking such a thread on the shutdown it just triggered would
     deadlock. Use background=False only from outside the RpiCore process (e.g. BCLI).
 
-    collect_diagnostics=True gathers a diagnostics bundle before stopping. Set it for reboots that are
-    recovery actions from a fault (wifi outage, memory exhaustion, stale HEART); user-requested reboots
-    (BCLI, IoT Hub command) don't collect diagnostics because there is nothing wrong to diagnose.
+    is_error=True gathers a diagnostics bundle before stopping. Set it for reboots that are recovery actions
+    from a fault (wifi outage, memory exhaustion, stale HEART); user-requested reboots (BCLI, IoT Hub command)
+    don't collect diagnostics because there is nothing wrong to diagnose.
     """
     if not root_cfg.running_on_rpi:
         logger.warning(f"Ignoring managed reboot request ({reason}); not running on a Raspberry Pi")
         return
 
-    logger.error(f"{root_cfg.RAISE_WARN()}Rebooting device: {reason}")
+    if is_error:
+        logger.error(f"{root_cfg.RAISE_WARN()}Rebooting device: {reason}")
+    else:
+        logger.warning(f"Rebooting device: {reason}")
 
     if background:
         threading.Thread(
             target=_flush_and_reboot,
-            args=(reason, delay_seconds, collect_diagnostics),
+            args=(reason, delay_seconds, is_error),
             name="managed_reboot",
             daemon=True,
         ).start()
     else:
-        _flush_and_reboot(reason, delay_seconds, collect_diagnostics)
+        _flush_and_reboot(reason, delay_seconds, is_error)
 
 
-def _flush_and_reboot(reason: str, delay_seconds: float, collect_diagnostics: bool) -> None:
+def _flush_and_reboot(reason: str, delay_seconds: float, is_error: bool) -> None:
     # Imported lazily to avoid circular imports (DiagnosticsBundle sits above several modules that need to
     # request reboots).
     from expidite_rpi.core.diagnostics_bundle import DiagnosticsBundle
@@ -67,7 +70,7 @@ def _flush_and_reboot(reason: str, delay_seconds: float, collect_diagnostics: bo
         if delay_seconds > 0:
             sleep(delay_seconds)
 
-        if collect_diagnostics:
+        if is_error:
             # Collect diagnostics while the system is still running.
             DiagnosticsBundle.collect(reason)
 
