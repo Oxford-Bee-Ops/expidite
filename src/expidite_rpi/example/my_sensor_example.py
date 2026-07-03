@@ -76,7 +76,10 @@ class ExampleSensor(Sensor):
             with open(fname, "w") as f:
                 f.write("This is a dummy image file")
             self.save_recording(
-                stream_index=EXAMPLE_FILE_STREAM_INDEX, temporary_file=fname, start_time=api.utc_now()
+                stream_index=EXAMPLE_FILE_STREAM_INDEX,
+                temporary_file=fname,
+                start_time=api.utc_now(),
+                can_discard=True,
             )
 
             # Sensors should not sleep for more than ~180s so that the stop_requested flag can be checked and

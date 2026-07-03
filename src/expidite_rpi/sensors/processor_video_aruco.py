@@ -223,6 +223,7 @@ class VideoArucoProcessor(DataProcessor):
             temporary_file=out_path,
             start_time=parts[api.RECORD_ID.TIMESTAMP.value],
             end_time=parts[api.RECORD_ID.END_TIME.value],
+            can_discard=True,
         )
 
         # Return the data as a dataframe

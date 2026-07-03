@@ -111,6 +111,7 @@ class AudioSensor(Sensor):
                 temporary_file=wav_output_filename,
                 start_time=start_time,
                 end_time=api.utc_now(),
+                can_discard=True,
             )
 
             logger.info(f"Saved audio of {duration!s}s to {final_output_filename}; ")

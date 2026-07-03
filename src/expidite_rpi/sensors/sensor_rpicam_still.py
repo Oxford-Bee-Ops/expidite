@@ -139,7 +139,11 @@ class RpicamStillSensor(Sensor):
 
                 # Save the video file to the datastream
                 self.save_recording(
-                    stream_index_to_use, filename, start_time=start_time, end_time=api.utc_now()
+                    stream_index_to_use,
+                    filename,
+                    start_time=start_time,
+                    end_time=api.utc_now(),
+                    can_discard=True,
                 )
 
                 exception_count = 0  # Reset exception count on success
