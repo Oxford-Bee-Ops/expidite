@@ -147,11 +147,17 @@ def stop_service_and_reboot(reason: str, delay_seconds: float = 0.0) -> None:
     logger.warning(f"Rebooting device: {reason}")
 
     if delay_seconds != 0:
+        # daemon=False: a daemon thread is killed the instant its process's main thread exits, so it only
+        # completes if the calling process happens to outlive the ~minutes-long stop+reboot sequence. The
+        # long-lived management service does, but a short-lived caller (e.g. a future BCLI path with a
+        # delay) would exit and abandon the thread mid `systemctl stop` - leaving the service stopped, no
+        # reboot issued, and Restart=always suppressed by the manual stop: a dead device. Non-daemon costs
+        # nothing (the thread ends once the reboot is issued, and systemd's SIGKILL still bounds shutdown).
         threading.Thread(
             target=_stop_service_and_reboot,
             args=(delay_seconds,),
             name="managed_reboot",
-            daemon=True,
+            daemon=False,
         ).start()
     else:
         _stop_service_and_reboot(0)
