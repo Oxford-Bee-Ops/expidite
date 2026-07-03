@@ -275,6 +275,27 @@ def set_log_level(level: int) -> None:
     module_logger.debug("Debug logging enabled for expidite")
 
 
+class _SuppressShutdownFaultsFilter(logging.Filter):
+    """Drop RAISE_WARNING fault records while a graceful stop is in progress.
+
+    During a deliberate shutdown (STOP_EXPIDITE_FLAG set by `systemctl stop`, a BCLI/IoT Hub reboot, or the
+    installer's graceful stop) systemd SIGTERMs the whole service cgroup, so in-flight operations - a
+    running rpicam-vid, an open upload - are interrupted and raise errors that would otherwise surface as
+    customer-facing faults. Those are expected teardown noise, not real faults, so they are suppressed
+    outright. Only WARNING+ records carrying the fault tag are candidates, so the flag file is stat-ed
+    for just the handful of such records, not on the normal logging hot path.
+    """
+
+    def filter(self, record: logging.LogRecord) -> bool:
+        if record.levelno >= logging.WARNING and api.RAISE_WARN_TAG in record.getMessage():
+            return not STOP_EXPIDITE_FLAG.exists()
+        return True
+
+
+# Single shared instance - the filter is stateless, so one instance can guard every handler.
+_shutdown_fault_filter = _SuppressShutdownFaultsFilter()
+
+
 def setup_logger(name: str, level: int | None = None) -> logging.Logger:
     global _DEFAULT_LOG
     if level is not None:
@@ -287,6 +308,7 @@ def setup_logger(name: str, level: int | None = None) -> logging.Logger:
         if len(logger.handlers) == 0:
             handler = JournaldLogHandler(SYSLOG_IDENTIFIER=Path(sys.argv[0]).name)
             handler.setFormatter(_TruncatingFormatter("%(name)s %(levelname)-6s [%(thread)d] %(message)s"))
+            handler.addFilter(_shutdown_fault_filter)
             logger.addHandler(handler)
     else:  # elif root_cfg.running_on_windows
         logger = logging.getLogger(name)
@@ -309,6 +331,7 @@ def setup_logger(name: str, level: int | None = None) -> logging.Logger:
             console_handler = logging.StreamHandler(sys.stdout)
             console_handler.setLevel(_LOG_LEVEL)
             console_handler.setFormatter(formatter)
+            console_handler.addFilter(_shutdown_fault_filter)
             logger.addHandler(console_handler)
 
         if _DEFAULT_LOG is None:
@@ -319,6 +342,7 @@ def setup_logger(name: str, level: int | None = None) -> logging.Logger:
             handler = logging.FileHandler(_DEFAULT_LOG)
             handler.setLevel(_LOG_LEVEL)
             handler.setFormatter(formatter)
+            handler.addFilter(_shutdown_fault_filter)
             logger.addHandler(handler)
             print(f"Logging {name} to default file: {_DEFAULT_LOG} at level {_LOG_LEVEL}")
 

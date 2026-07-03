@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "expidite"
-version = "0.99.2"
+version = "0.99.3"
 description = "Python module to support using Raspberry Pi for scientific data collection"
 readme = "README.md"
 requires-python = ">=3.13"
@@ -148,6 +148,7 @@ ignore = [
 "test/rpi_core/core/cloud_connector_delta_test.py" = ["SLF001"]
 "test/rpi_core/core/cloud_connector_transient_test.py" = ["SLF001"]
 "test/rpi_core/core/cloud_journal_test.py" = ["SLF001"]
+"test/rpi_core/core/configuration_test.py" = ["SLF001"]
 "test/rpi_core/core/disk_spool_test.py" = ["SLF001"]
 "test/rpi_core/core/review_mode_test.py" = ["ANN001"]
 "test/rpi_core/core/orchestrator_test.py" = ["SLF001"]
