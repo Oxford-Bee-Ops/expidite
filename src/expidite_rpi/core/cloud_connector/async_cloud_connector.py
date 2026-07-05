@@ -313,9 +313,6 @@ class AsyncCloudConnector(CloudConnector):
         if isinstance(action, AsyncAppend):
             return self._spool.spool_append(action.dst_container, action.src_fname, action.data)
 
-        logger.info("NICKB: _SPOOL_ACTION FOR:")
-        logger.info(f"NICKB: ACTION = {action}")
-        logger.info(f"NICKB: safety_copy = {safety_copy}")
         if action.can_discard:
             logger.warning(f"Dropped discardable upload for {action.dst_container} / {action.src_files}")
             # safety_copy leaves the in-flight worker's files alone (that worker cleans them up itself);
