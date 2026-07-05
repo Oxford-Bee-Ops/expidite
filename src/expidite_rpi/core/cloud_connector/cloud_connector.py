@@ -123,7 +123,7 @@ class CloudConnector:
                 logger.warning(
                     f"{root_cfg.RAISE_WARN()}Replacing CloudConnector instance with {desired_class.__name__}"
                 )
-                CloudConnector._instance.shutdown()
+                CloudConnector.shutdown_instance()
             CloudConnector._instance = desired_class()
         return CloudConnector._instance
 
