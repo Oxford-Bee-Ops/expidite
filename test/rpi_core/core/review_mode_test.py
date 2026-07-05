@@ -10,6 +10,7 @@ This test demonstrates the review mode behavior by:
 import tempfile
 import time
 from pathlib import Path
+from threading import Event
 from unittest.mock import patch
 
 from expidite_rpi.core import api
@@ -69,6 +70,7 @@ class TestReviewModeExercise:
             RPICAM_REVIEW_MODE_STREAM_INDEX,
             test_file,
             start_time=mock_save_recording.call_args[1]["start_time"],
+            can_discard=True,
         )
 
         # Verify the command contains the review mode command
@@ -202,6 +204,34 @@ class TestReviewModeExercise:
         called_command = mock_run_cmd.call_args[0][0]
         expected_command = f"rpicam-still --width 1280 --height 720 --quality 95 -o {test_file}"
         assert called_command == expected_command
+
+    @patch.object(RpicamSensor, "in_review_mode", return_value=False)
+    @patch("expidite_rpi.core.file_naming.get_temporary_filename")
+    @patch.object(RpicamSensor, "save_recording")
+    def test_recording_discarded_when_aborted_by_shutdown(
+        self, mock_save_recording, mock_get_filename, mock_in_review_mode
+    ) -> None:
+        """A recording aborted by shutdown is discarded, not saved as a shorter-than-usual clip."""
+        # Arrange
+        test_file = self.temp_dir / "partial.mp4"
+        mock_get_filename.return_value = test_file
+
+        sensor = RpicamSensor(DEFAULT_RPICAM_SENSOR_CFG)
+
+        def fake_run_video_cmd(cmd: str, *, stop_event: Event, on_start=None) -> str:
+            # Simulate rpicam-vid being aborted by shutdown: a partial file is left behind and, because
+            # run_video_cmd was interrupted, stop_requested is set by the time it returns.
+            test_file.write_bytes(b"partial video data")
+            stop_event.set()
+            return "0"
+
+        # Act: run() records once, sees stop_requested set, and takes the discard branch.
+        with patch("expidite_rpi.utils.utils.run_video_cmd", side_effect=fake_run_video_cmd):
+            sensor.run()
+
+        # Assert: the partial clip is neither saved nor left on disk.
+        mock_save_recording.assert_not_called()
+        assert not test_file.exists(), "partial recording should have been discarded"
 
 
 if __name__ == "__main__":
