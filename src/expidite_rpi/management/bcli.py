@@ -1023,9 +1023,6 @@ def main() -> None:
             logger.exception("Error in CLI")
             click.echo(f"Error in CLI: {e}")
         finally:
-            # Ensure the cloud connector is shut down, but only if one was actually created during this
-            # session. Don't force-create a connector just to tear it down - that would spin up the drain
-            # thread and schedule a spool drain in a short-lived CLI process.
             CloudConnector.shutdown_instance()
             click.echo("Done")
 
