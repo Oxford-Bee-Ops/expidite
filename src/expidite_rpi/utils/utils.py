@@ -7,10 +7,9 @@ import os
 import re
 import signal
 import subprocess
-from collections.abc import Callable
 from datetime import UTC
 from pathlib import Path
-from threading import Event, Timer
+from threading import Timer
 
 import psutil
 
@@ -97,8 +96,6 @@ def run_cmd(
     ignore_errors: bool = False,
     grep_strs: list[str] | None = None,
     timeout: float | None = None,
-    stop_event: Event | None = None,
-    on_start: "Callable[[subprocess.Popen[bytes]], None] | None" = None,
 ) -> str:
     """Run a system command and return the output, or throw an exception on bad return code.
 
@@ -115,17 +112,6 @@ def run_cmd(
             indefinitely. If the command does not complete within the timeout, the whole process group is
             killed (so shell-spawned children such as rpicam-vid are terminated, not orphaned) and the
             command is treated as a failure (return "" if ignore_errors, otherwise raise).
-        stop_event: Event | None
-            If provided, a non-zero return code is treated as an intentional abort rather than a failure
-            *when the event is set* (so "" is returned instead of raising). This lets a caller kill the
-            command out from under run_cmd - see on_start - without run_cmd mistaking the resulting
-            signal-death for an error. The partial output of an aborted command is expected to be discarded.
-        on_start: Callable[[Popen], None] | None
-            If provided, called with the live subprocess as soon as it has started. This hands the caller a
-            handle it can kill (e.g. from a sensor's stop()) so that a long-running command such as a video
-            recording is aborted promptly at shutdown instead of blocking the calling thread - and hence
-            RpiCore shutdown - until the command's own timer expires. Killing the process simply unblocks
-            the ordinary communicate() wait below; there is no polling.
 
     Returns:
         str
@@ -157,14 +143,10 @@ def run_cmd(
             shell=True,
             start_new_session=not root_cfg.running_on_windows,
         )
-        # Hand the live process to the caller so it can abort us (e.g. at shutdown). If it does, the kill
-        # unblocks the communicate() below at once - no polling and no watcher thread.
-        if on_start is not None:
-            on_start(p)
         try:
             out, err = p.communicate(timeout=timeout)
         except subprocess.TimeoutExpired:
-            kill_process_group(p)
+            _kill_process_group(p)
             # communicate() again to reap the killed process and drain its pipes. SIGKILL closes the
             # children's pipe ends so this normally returns at once, but bound it anyway: a process wedged
             # in the kernel (e.g. a camera driver in uninterruptible sleep, which only acts on SIGKILL once
@@ -178,10 +160,7 @@ def run_cmd(
                 return ""
             raise RuntimeError(msg) from None
 
-        # A command the caller deliberately aborted (stop_event set, process killed via on_start) is not a
-        # failure: its non-zero / signal return code is a consequence of that kill, so we skip the error
-        # check and return whatever partial output it produced for the caller to discard.
-        if p.returncode != 0 and not (stop_event is not None and stop_event.is_set()):
+        if p.returncode != 0:
             if ignore_errors:
                 logger.info(f"Ignoring failure running command: {cmd} Err output: {err!s}")
                 return ""
@@ -203,7 +182,7 @@ def run_cmd(
         raise
 
 
-def kill_process_group(p: "subprocess.Popen[bytes]") -> None:
+def _kill_process_group(p: "subprocess.Popen[bytes]") -> None:
     """Kill the process group led by p so that shell-spawned children are terminated too.
 
     On POSIX the process was started with start_new_session=True, giving it its own process group whose id
@@ -232,8 +211,6 @@ def run_video_cmd(
     grep_strs: list[str] | None = None,
     default_duration_s: float = VIDEO_CMD_DEFAULT_DURATION_S,
     margin_s: float = VIDEO_CMD_TIMEOUT_MARGIN_S,
-    stop_event: Event | None = None,
-    on_start: "Callable[[subprocess.Popen[bytes]], None] | None" = None,
 ) -> str:
     """Run an rpicam-style camera command with a timeout derived from its own "-t" duration.
 
@@ -242,22 +219,10 @@ def run_video_cmd(
     command's "-t <milliseconds>" duration (falling back to default_duration_s when absent, and passes run_cmd
     a timeout of duration + margin, so a hung camera becomes a bounded, recoverable exception rather than
     permanentlt stuck.
-
-    Pass stop_event and on_start (typically the sensor's stop_requested and a callback that stores the
-    process for its stop() to kill) to have a long recording aborted at shutdown: stop() kills the process,
-    which unblocks the recording immediately, and its partial output is returned for the caller to discard
-    instead of the command running to its full duration and blocking the sensor thread. See run_cmd.
     """
     match = re.search(r"\s-t\s+(\d+)", cmd)
     duration_s = int(match.group(1)) / 1000 if match else default_duration_s
-    return run_cmd(
-        cmd,
-        ignore_errors=ignore_errors,
-        grep_strs=grep_strs,
-        timeout=duration_s + margin_s,
-        stop_event=stop_event,
-        on_start=on_start,
-    )
+    return run_cmd(cmd, ignore_errors=ignore_errors, grep_strs=grep_strs, timeout=duration_s + margin_s)
 
 
 ##############################################################################################################

@@ -149,17 +149,9 @@ class RpicamSensor(Sensor):
 
                 logger.info(f"Recording video with command: {cmd}")
 
-                # Start the video recording process. on_start hands the live process to the base Sensor so
-                # that a shutdown mid-recording (stop()) kills rpicam-vid promptly, rather than blocking the
-                # sensor thread - and hence RpiCore shutdown - until the full "-t" duration elapses.
-                rc = utils.run_video_cmd(
-                    cmd, stop_event=self.stop_requested, on_start=self.set_active_subprocess
-                )
+                # Start the video recording process
+                rc = utils.run_video_cmd(cmd)
                 logger.info(f"Video recording completed with rc={rc}")
-
-                if self.discard_if_stopping(filename):
-                    # Shutdown aborted this recording; the loop exits on the next continue_recording() check.
-                    break
 
                 # Save the video file to the datastream
                 self.save_recording(

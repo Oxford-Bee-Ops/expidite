@@ -4,11 +4,9 @@
 # - SensorConfig: Dataclass for sensor configuration, specified in sensor_cac.py
 # - Sensor: Super class for all sensor classes
 ##############################################################################################################
-import subprocess
 from abc import ABC
 from datetime import UTC, datetime, timedelta
-from pathlib import Path
-from threading import Event, Lock, Thread
+from threading import Event, Thread
 
 from expidite_rpi.core import configuration as root_cfg
 from expidite_rpi.core.dp_config_objects import SensorCfg, SensorMode
@@ -48,54 +46,15 @@ class Sensor(Thread, DPnode, ABC):
         self.daemon = False
         self.stop_requested = Event()
 
-        # The long-running subprocess (if any) currently executing on this sensor's thread, so that stop()
-        # can abort it. Guarded by a lock because stop() runs on the orchestrator thread while
-        # set_active_subprocess() runs on this sensor's thread. See set_active_subprocess().
-        self._active_subprocess: subprocess.Popen[bytes] | None = None
-        self._active_subprocess_lock = Lock()
-
     def start(self) -> None:
         """Start the sensor thread - this method must not be subclassed."""
         logger.info(f"Starting sensor thread {self!r}")
         super().start()
 
-    def set_active_subprocess(self, p: subprocess.Popen[bytes]) -> None:
-        """Record the subprocess currently running on this sensor's thread so stop() can abort it.
-
-        Sensors that shell out to a long-running command (e.g. a video recording) pass this method as
-        utils.run_cmd's on_start callback. It lets a shutdown kill the command immediately instead of the
-        sensor thread blocking - and hence delaying RpiCore shutdown - until the command finishes on its own.
-        """
-        with self._active_subprocess_lock:
-            self._active_subprocess = p
-
     def stop(self) -> None:
         """Stop the sensor thread - this method must not be subclassed."""
         logger.info(f"Stop sensor thread {self!r}")
         self.stop_requested.set()
-        # If a long-running command (e.g. a video recording) is in progress on this sensor's thread, kill it
-        # so the thread returns promptly rather than blocking shutdown until the command's own timer expires.
-        # The poll() guard means we never signal a process that has already exited (whose pid the OS may have
-        # reused); once it has exited its returncode is set, so a genuine failure is still surfaced normally.
-        with self._active_subprocess_lock:
-            p = self._active_subprocess
-            if p is not None and p.poll() is None:
-                logger.info(f"Aborting in-progress command on sensor {self!r}")
-                utils.kill_process_group(p)
-
-    def discard_if_stopping(self, partial_file: Path) -> bool:
-        """If shutdown has been requested, discard a partial recording and return True.
-
-        A recording that stop() aborted mid-flight (see set_active_subprocess) leaves a partial, shorter-
-        than-usual file. Rather than saving that, sensors call this immediately after the recording command
-        returns: if we are stopping it deletes the file and returns True so the caller can break/return out
-        of its recording loop; otherwise it returns False and the caller saves the recording as normal.
-        """
-        if not self.stop_requested.is_set():
-            return False
-        partial_file.unlink(missing_ok=True)
-        logger.info("Recording aborted by shutdown; discarding partial output")
-        return True
 
     def continue_recording(self) -> bool:
         """Sensor subclasses *must* use this in a while loop to manage the recording cycle.
