@@ -7,7 +7,7 @@ from dataclasses import asdict
 from datetime import timedelta
 from enum import Enum
 from pathlib import Path
-from time import sleep
+from time import perf_counter, sleep
 
 import sdnotify
 import yaml
@@ -317,8 +317,11 @@ class EdgeOrchestrator:
                 our_thread = threading.current_thread().ident
                 if (sensor.ident != our_thread) and sensor.is_alive():
                     logger.info(f"Waiting for sensor thread {sensor}")
+                    join_start = perf_counter()
                     sensor.join()
-                    logger.info(f"Waiting over. Sensor thread {sensor} stopped")
+                    # Greppable timing: if any sensor blocks shutdown (e.g. stuck in an in-progress
+                    # recording), its join duration shows here. Grep reboot logs for "JOIN_TIMING sensor".
+                    logger.info(f"JOIN_TIMING sensor {sensor} join took {perf_counter() - join_start:.1f}s")
                 else:
                     logger.info(f"Sensor thread {sensor} already stopped")
 
@@ -330,8 +333,11 @@ class EdgeOrchestrator:
         for dpe in self._dpworkers:
             if dpe.is_alive():
                 logger.info(f"Waiting for datastream thread {dpe}")
+                join_start = perf_counter()
                 dpe.join()
-                logger.info(f"Waiting over. Datastream thread {dpe} stopped")
+                # Greppable timing: mirrors the sensor join above so a slow shutdown can be attributed to a
+                # datastream/processor rather than a sensor. Grep reboot logs for "JOIN_TIMING datastream".
+                logger.info(f"JOIN_TIMING datastream {dpe} join took {perf_counter() - join_start:.1f}s")
             else:
                 logger.info(f"Datastream thread {dpe} already stopped")
 
