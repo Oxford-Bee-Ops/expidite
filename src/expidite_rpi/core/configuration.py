@@ -306,6 +306,26 @@ class _SuppressShutdownFaultsFilter(logging.Filter):
 _shutdown_fault_filter = _SuppressShutdownFaultsFilter()
 
 
+def _syslog_identifier() -> str:
+    """Return a stable, human-readable identifier for journald logs.
+
+    Normally this is the basename of the launch script (e.g. "run_my_sensor.py"). When the
+    process is started with `python -m pkg.mod`, CPython sets sys.argv[0] to the literal "-m"
+    while the module is being located, and only rewrites it to the module path afterwards.
+    Handlers built during that window (e.g. via package-import-time setup_logger calls) would
+    otherwise be stamped "-m", so we recover the real module name from sys.orig_argv instead.
+    """
+    argv0 = Path(sys.argv[0]).name
+    if argv0 and not argv0.startswith("-"):
+        return argv0
+    orig = getattr(sys, "orig_argv", [])
+    if "-m" in orig and orig.index("-m") + 1 < len(orig):
+        module = orig[orig.index("-m") + 1]
+        if module:
+            return module.rsplit(".", 1)[-1]
+    return "expidite"
+
+
 def setup_logger(name: str, level: int | None = None) -> logging.Logger:
     global _DEFAULT_LOG
     if level is not None:
@@ -316,7 +336,7 @@ def setup_logger(name: str, level: int | None = None) -> logging.Logger:
         logger = logging.getLogger(name)
         logger.setLevel(_LOG_LEVEL)
         if len(logger.handlers) == 0:
-            handler = JournaldLogHandler(SYSLOG_IDENTIFIER=Path(sys.argv[0]).name)
+            handler = JournaldLogHandler(SYSLOG_IDENTIFIER=_syslog_identifier())
             handler.setFormatter(_TruncatingFormatter("%(name)s %(levelname)-6s [%(thread)d] %(message)s"))
             handler.addFilter(_shutdown_fault_filter)
             logger.addHandler(handler)
