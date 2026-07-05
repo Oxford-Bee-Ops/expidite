@@ -343,11 +343,10 @@ class EdgeOrchestrator:
         # Clear our thread lists
         self.reset_orchestrator_state()
 
-        # Unconditionally shut down the cloud connector singleton. jp.stop() only reaches
-        # AsyncCloudConnector.shutdown() if CloudJournals were created during this run. If they weren't, the
-        # do_work thread would block forever on queue.get().
-        if CloudConnector._instance is not None:
-            CloudConnector._instance.shutdown()
+        # Shut down the cloud connector singleton. jp.stop() only reaches AsyncCloudConnector.shutdown() if
+        # CloudJournals were created during this run. If they weren't, the do_work thread would block forever
+        # on queue.get().
+        CloudConnector.shutdown_instance()
 
         with EdgeOrchestrator._status_lock:
             self._status = OrchestratorStatus.STOPPED
