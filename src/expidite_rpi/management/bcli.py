@@ -891,8 +891,6 @@ class InteractiveMenu:
                 case _:
                     click.echo("Invalid choice. Please try again.")
 
-        # Cleanup happens in main()'s finally block; nothing to do here.
-
     def sensing_menu(self) -> None:
         """Menu for sensing commands."""
         while True:
