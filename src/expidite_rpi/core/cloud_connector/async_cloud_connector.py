@@ -441,10 +441,18 @@ class AsyncCloudConnector(CloudConnector):
                     self._spool.remove(item)
                     self._drain_failures.pop(item.path, None)
                     return _DrainOutcome.OK
+                # col_order is not persisted with the fragment, but the fragment's header row IS the
+                # canonical column order (CloudJournal writes each fragment via Journal.save using the
+                # stream's reqd_columns, so the header already reflects col_order). Recover it so a
+                # header-mismatch merge on drain reproduces the intended column ordering rather than the
+                # arbitrary order a None col_order would give.
+                header = lines[0].strip()
+                col_order = [c.strip() for c in header.split(",")] if header else None
                 if not self._append_data_to_blob(
                     dst_container=item.dst_container,
                     dst_file=item.dst_fname,
                     lines_to_append=lines,
+                    col_order=col_order,
                     swallow_exceptions=False,
                 ):
                     return self._register_drain_failure(item)
