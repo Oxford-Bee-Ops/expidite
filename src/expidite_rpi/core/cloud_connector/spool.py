@@ -91,6 +91,15 @@ class DiskSpool:
         # constructing a connector - e.g. from bcli - doesn't pay for a full tree walk).
         self._cached_size: int | None = None
         self._cached_size_time = 0.0
+        # In-memory "spool is empty" latch, so the steady-state (online, nothing failing) drain tick can
+        # skip the SD-card walk entirely. False = unknown, forcing a real walk; set True by has_data() once
+        # a walk confirms the spool empty, and cleared by every spool write. The spool dir is written to by
+        # exactly one process, so this process's own writes are the only ones that can add data; a restart
+        # resets the latch to False, so a reboot always re-walks (picking up data spooled before the crash).
+        self._known_empty = False
+        # Bumped under _lock on every spool write. has_data() snapshots it before walking and only latches
+        # empty if it is unchanged afterwards, so a write that races the walk can never be latched away.
+        self._write_generation = 0
         self.root = self._create_root(root)
         self._upload_dir = self.root / "upload"
         self._append_dir = self.root / "append"
@@ -193,6 +202,7 @@ class DiskSpool:
                     # same record (e.g. spooled once as a safety copy and again on upload failure); replace.
                     dst.unlink()
                 part.rename(dst)
+                self._mark_dirty_locked()
                 if self._cached_size is not None:
                     self._cached_size += nbytes
         except OSError:
@@ -232,6 +242,7 @@ class DiskSpool:
             part.unlink(missing_ok=True)
             return False
         with self._lock:
+            self._mark_dirty_locked()
             if self._cached_size is not None:
                 self._cached_size += actual_bytes
         logger.debug(f"Spooled append fragment {fragment} for {dst_container}/{dst_fname}")
@@ -311,9 +322,31 @@ class DiskSpool:
             f"data preserved under {self.root / 'quarantine'}"
         )
 
+    def _mark_dirty_locked(self) -> None:
+        """Record that a spool write happened. Caller must hold _lock."""
+        self._known_empty = False
+        self._write_generation += 1
+
     def has_data(self) -> bool:
-        """Cheap existence check - no stats, no sorts; called every drain tick."""
-        return next(self._data_files(), None) is not None
+        """Cheap existence check - no stats, no sorts; called every drain tick.
+
+        Returns without touching the SD card once a previous walk has confirmed the spool empty and nothing
+        has been spooled since (see _known_empty), which keeps the steady-state online drain tick off the
+        disk. Any spool write clears the latch, and it starts unset each run, so a local write or a restart
+        always forces a real walk.
+        """
+        with self._lock:
+            if self._known_empty:
+                return False
+            generation = self._write_generation
+        found = next(self._data_files(), None) is not None
+        if not found:
+            with self._lock:
+                # Only latch empty if no spool write raced the walk; otherwise the walk may have missed the
+                # new fragment and we must re-walk next tick rather than wrongly skip it.
+                if self._write_generation == generation:
+                    self._known_empty = True
+        return found
 
     @property
     def size_bytes(self) -> int:

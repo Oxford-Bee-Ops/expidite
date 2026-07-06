@@ -174,6 +174,39 @@ class TestDiskSpool:
         assert not spool.has_data(), ".part files must be invisible to the drain"
 
     @pytest.mark.unittest
+    def test_has_data_skips_disk_when_known_empty(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        # The steady-state (online, nothing spooling) drain tick must not walk the SD card every minute:
+        # once a walk confirms the spool empty, has_data() answers from the in-memory latch until the next
+        # spool write. A restart is covered separately: a fresh DiskSpool starts with the latch unset.
+        spool = DiskSpool(tmp_path / "spool")
+
+        walk_count = 0
+        real_data_files = spool._data_files
+
+        def counting_data_files() -> object:
+            nonlocal walk_count
+            walk_count += 1
+            return real_data_files()
+
+        monkeypatch.setattr(spool, "_data_files", counting_data_files)
+
+        assert not spool.has_data()  # first call walks the disk and latches empty
+        assert walk_count == 1
+        assert not spool.has_data()  # subsequent calls are answered from the latch, no disk walk
+        assert not spool.has_data()
+        assert walk_count == 1, "has_data() must not touch the disk once the spool is known-empty"
+
+        # A spool write clears the latch, so the very next has_data() re-checks the disk and sees the data.
+        # (spool_append may itself walk once for its budget census; snapshot around the has_data() call so
+        # this asserts specifically that has_data() re-walked rather than answering stale-empty.)
+        assert spool.spool_append(CONTAINER, "V3_HEART_d01111111111_20260701.csv", CSV_DATA)
+        walks_before = walk_count
+        assert spool.has_data()
+        assert walk_count == walks_before + 1, "a spool write must force the next has_data() to re-walk"
+
+    @pytest.mark.unittest
     def test_quarantine_preserves_data_out_of_drain_view(self, tmp_path: Path) -> None:
         spool = DiskSpool(tmp_path / "spool")
         src = make_file(tmp_path, "V3_poison.csv")
@@ -429,6 +462,10 @@ class TestAsyncCloudConnectorSpool:
             cc._drain_spool_once()
 
             assert len(cc._spool.pending_uploads()) == 1, "the spooled file must survive a failed drain"
+            assert cc._spool.has_data(), (
+                "a failed drain must not latch the spool known-empty; the next tick must re-check the SD "
+                "card and retry even though nothing new was spooled"
+            )
         finally:
             cc.shutdown()
 

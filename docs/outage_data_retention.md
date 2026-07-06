@@ -164,6 +164,14 @@ the worker pool:
 - A spooled file that has vanished (evicted for budget, or drained by another process's connector) is
   tidied away without being treated as network evidence.
 
+In the steady state (online, nothing failing) the spool is empty, and a 60s tick that walked the SD
+card just to find nothing would be pure wear/noise. So `DiskSpool.has_data()` keeps an in-memory
+"known-empty" latch: it is set once a walk confirms the spool empty and cleared by every spool write, so
+a plain timeout tick answers from memory and touches the disk only when there is (or might be) data. The
+latch is safe because the spool is written by exactly one process, and it starts unset each run, so a
+spool write or a restart always forces a real walk. An explicit drain wake (startup arm, recovery from
+offline) bypasses the latch and always re-checks.
+
 The same thread handles the **startup drain**: if the spool holds data when the connector is
 constructed (i.e. after a reboot), the drain is armed immediately. There is no "reload the queue into
 RAM" step - spooled data goes disk → Azure directly, while new data flows through the normal path.

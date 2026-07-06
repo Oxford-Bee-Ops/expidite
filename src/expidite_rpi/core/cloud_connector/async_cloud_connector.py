@@ -375,10 +375,15 @@ class AsyncCloudConnector(CloudConnector):
     def _drain_loop(self) -> None:
         """Periodically drain the disk spool back to the cloud."""
         while not self._stop_requested.is_set():
-            self._drain_wake.wait(timeout=root_cfg.SPOOL_DRAIN_INTERVAL)
+            woken = self._drain_wake.wait(timeout=root_cfg.SPOOL_DRAIN_INTERVAL)
             self._drain_wake.clear()
             if self._stop_requested.is_set():
                 break
+            # On a plain timeout tick, skip the SD-card walk entirely when the spool is known-empty and
+            # nothing has been spooled since - the common online case. An explicit wake (startup arm,
+            # recovery from offline) always falls through to a real drain.
+            if not woken and not self._spool.has_data():
+                continue
             try:
                 self._drain_spool_once()
             except Exception:
