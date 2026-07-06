@@ -171,10 +171,23 @@ RAM" step - spooled data goes disk → Azure directly, while new data flows thro
 ### Idempotency / duplicates
 
 - Re-uploading a block blob is a harmless overwrite (`overwrite=True`, same FAIR name).
-- For appends there is a small window (crash between a successful `append_block` and deleting the
-  fragment) that produces duplicate CSV rows. This is a deliberate trade-off: duplicates are
-  analytically harmless and detectable via `RECORD_ID`, and exactly-once semantics would require a
-  transaction log.
+- Appends are *not* idempotent (`append_block` has no position guard), so a fragment that is uploaded
+  twice appends its rows twice. Two paths produce this, both accepted as harmless duplicate CSV rows:
+  - **Crash window:** the process dies between a successful `append_block` and deleting the fragment,
+    so the drain re-sends it after the next start.
+  - **Lost ack on recovery (the common one):** during an outage recovery the network is still flapping,
+    so an `append_block` can commit at Azure while its HTTP response is lost. That surfaces as a
+    transient error (`ServiceResponseError`), so the block is retried - by the Azure SDK's own retry
+    policy within the call, and/or by the drain, which keeps the fragment spooled on a `TRANSIENT`
+    outcome (`_drain_item`) and re-sends it next tick. The re-sent fragment is the *last* one appended
+    before the response was lost, so the visible symptom is a duplicate row (or rows) at the **end** of
+    the file, right after connectivity returns.
+- This is a deliberate trade-off (goal in §2): duplicates are analytically harmless and detectable via
+  `RECORD_ID` (dedup downstream), whereas suppressing them would mean either not retrying ambiguous
+  appends - risking a *missing* row, which this design treats as unacceptable - or adding an
+  append-position guard / transaction log. If the duplicates ever become a problem, the cheap fix is
+  Azure's `AppendPositionAccessConditions` (pass the pre-append blob length as `appendpos`; a retry of
+  an already-committed append then fails `412 AppendPositionConditionNotMet` instead of duplicating).
 
 ## 6. Flush-safe shutdown
 
