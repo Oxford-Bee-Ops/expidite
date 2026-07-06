@@ -198,10 +198,7 @@ class DeviceHealth(Sensor):
                 # Set timer for next run.
                 self.log_counter += 1
                 sleep_time = root_cfg.my_device.heart_beat_frequency
-                # NICKB
-                # self.stop_requested.wait(sleep_time)
-                logger.info("NICKB SLEEP 120 ONLY")
-                self.stop_requested.wait(120)
+                self.stop_requested.wait(sleep_time)
         except Exception:
             logger.exception(f"{root_cfg.RAISE_WARN()}Error in DeviceHealth thread")
 
@@ -396,7 +393,7 @@ class DeviceHealth(Sensor):
 
             # Memory usage - if greater than threshold then generate some diagnostics
             memory_usage = psutil.virtual_memory().percent
-            if check_memory_usage and memory_usage > 75:
+            if check_memory_usage and memory_usage > root_cfg.WARN_AT_MEMORY_PERCENT:
                 if root_cfg.running_on_rpi:
                     DeviceHealth.log_top_memory_processes()
                     # Running low on free RAM can cause any OS process to be killed to free up memory, and

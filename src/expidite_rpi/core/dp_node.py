@@ -469,14 +469,12 @@ class DPnode:
                 return new_fname
 
         # Determine if we should save the recording to the cloud.
-        logger.info("NICKB: ALWAYS SAVE VIDEO")
-        save_sample = True
-        # if override_sampling is None or override_sampling == api.OVERRIDE.AUTO:
-        #     save_sample = self.save_sample(stream.sample_probability)
-        # elif override_sampling == api.OVERRIDE.SAVE:
-        #     save_sample = True
-        # else:  # override_sampling == api.OVERRIDE.DISCARD:
-        #     save_sample = False
+        if override_sampling is None or override_sampling == api.OVERRIDE.AUTO:
+            save_sample = self.save_sample(stream.sample_probability)
+        elif override_sampling == api.OVERRIDE.SAVE:
+            save_sample = True
+        else:  # override_sampling == api.OVERRIDE.DISCARD:
+            save_sample = False
 
         # There is now a fork based on:
         # - a) do we need to pass this file to a DP

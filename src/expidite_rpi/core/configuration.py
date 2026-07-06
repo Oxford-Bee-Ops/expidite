@@ -47,12 +47,14 @@ SPOOL_OFFLINE_AFTER_SECONDS: float = 600.0
 # Seconds between attempts to drain the spool back to the cloud (the first item of each drain pass doubles
 # as the connectivity probe).
 SPOOL_DRAIN_INTERVAL: float = 60.0
+# Log a regular warning when system memory usage exceeds this percentage.
+WARN_AT_MEMORY_PERCENT: float = 75.0
 # Divert queued uploads straight to the disk spool when system memory usage exceeds this percentage
-# (covers workers stuck in long network timeouts backing the queue up). Only applied on RPi. INVARIANT:
-# must stay comfortably below REBOOT_AT_MEMORY_PERCENT so data is shed to disk long before the reboot.
+# (covers workers stuck in long network timeouts backing the queue up). Value must be comfortably below
+# REBOOT_AT_MEMORY_PERCENT so data is spilled to disk long before the reboot.
 SPOOL_AT_MEMORY_PERCENT: float = 90.0
 # DeviceHealth triggers a managed reboot above this memory usage, as a last-resort recovery before the OS
-# starts OOM-killing processes. See the SPOOL_AT_MEMORY_PERCENT invariant above.
+# starts OOM-killing processes.
 REBOOT_AT_MEMORY_PERCENT: float = 95.0
 # Maximum total size of the disk spool. When exceeded, the oldest spooled video files are deleted first
 # (videos are orders of magnitude larger than other data, so binning them preserves everything else).
@@ -318,7 +320,7 @@ def _syslog_identifier() -> str:
     argv0 = Path(sys.argv[0]).name
     if argv0 and not argv0.startswith("-"):
         return argv0
-    orig = getattr(sys, "orig_argv", [])
+    orig: list[str] = getattr(sys, "orig_argv", [])
     if "-m" in orig and orig.index("-m") + 1 < len(orig):
         module = orig[orig.index("-m") + 1]
         if module:
