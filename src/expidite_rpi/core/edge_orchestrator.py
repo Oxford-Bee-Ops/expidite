@@ -535,8 +535,17 @@ def main() -> None:
         # request_managed_reboot waits on this removal before running `sudo reboot`, so it must happen only
         # after stop_all() has finished flushing (the flag merely being stale is not sufficient, because it
         # is legitimately stale for minutes during the graceful stop).
+        #
+        # Also clear the STOP flag now that we have fully stopped. It is an edge-triggered "please stop now"
+        # signal (start_all() clears it on the next start regardless), so removing it on exit does not change
+        # any restart behaviour, but it stops the flag from lingering after the process is gone - which would
+        # otherwise keep _SuppressShutdownFaultsFilter suppressing faults (see configuration.py) well past
+        # the actual shutdown. Guarded by `started` for the same reason as the running flag: a second main()
+        # that bailed out on "already running" must not yank the flag out from under the live instance it
+        # was asked to stop.
         if started:
             root_cfg.EXPIDITE_IS_RUNNING_FLAG.unlink(missing_ok=True)
+            root_cfg.STOP_EXPIDITE_FLAG.unlink(missing_ok=True)
         logger.info("Sensor script finished")
 
 
