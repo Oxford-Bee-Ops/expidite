@@ -144,7 +144,7 @@ complexity from the previous design.
 
 Normally RAM is bounded because each item transits the queue once. The exception is a black-holing
 network: workers stuck in long connection timeouts while the queue backs up behind them. If memory
-exceeds `SPOOL_AT_MEMORY_PERCENT` (80%, RPi only), `do_work` sends dequeued items straight to disk
+exceeds `SPOOL_AT_MEMORY_PERCENT` (90%, RPi only), `do_work` sends dequeued items straight to disk
 without a network attempt until pressure clears. `DeviceHealth`'s managed reboot fires at
 `REBOOT_AT_MEMORY_PERCENT` (95%) - both constants live side by side in `configuration.py` with the
 ordering invariant documented.
@@ -253,14 +253,14 @@ blocks; the flag files are shared via the filesystem, so the mechanism works cro
 
 All tuning constants live in `core/configuration.py` for easy review and mocking:
 
-| Constant | Default | Meaning |
-|---|---|---|
-| `SPOOL_OFFLINE_AFTER_SECONDS` | 600 | Continuous transient failure before reporting offline mode (telemetry; also drives fault escalation) |
-| `SPOOL_DRAIN_INTERVAL` | 60 | Seconds between drain passes (first item of a pass is the connectivity probe) |
-| `SPOOL_AT_MEMORY_PERCENT` | 80 | Memory usage above which dequeued items go straight to disk (RPi only) |
-| `REBOOT_AT_MEMORY_PERCENT` | 95 | DeviceHealth managed-reboot threshold; must stay above `SPOOL_AT_MEMORY_PERCENT` |
-| `SPOOL_MAX_BYTES` | 16 GB | Spool size budget (videos evicted oldest-first beyond it) |
-| `SPOOL_MIN_DISK_FREE_BYTES` | 1 GB | Free-disk floor spooling never crosses |
+| Constant | Default           | Meaning |
+|---|-------------------|---|
+| `SPOOL_OFFLINE_AFTER_SECONDS` | 600               | Continuous transient failure before reporting offline mode (telemetry; also drives fault escalation) |
+| `SPOOL_DRAIN_INTERVAL` | 60                | Seconds between drain passes (first item of a pass is the connectivity probe) |
+| `SPOOL_AT_MEMORY_PERCENT` | 90                | Memory usage above which dequeued items go straight to disk (RPi only) |
+| `REBOOT_AT_MEMORY_PERCENT` | 95                | DeviceHealth managed-reboot threshold; must stay above `SPOOL_AT_MEMORY_PERCENT` |
+| `SPOOL_MAX_BYTES` | 16 GB             | Spool size budget (videos evicted oldest-first beyond it) |
+| `SPOOL_MIN_DISK_FREE_BYTES` | 1 GB              | Free-disk floor spooling never crosses |
 | `SPOOL_DIR` | `/expidite-spool` | Spool root (per-platform) |
 
 ## 9. What this changes in practice

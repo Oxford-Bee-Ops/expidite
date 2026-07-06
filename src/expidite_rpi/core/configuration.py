@@ -50,7 +50,7 @@ SPOOL_DRAIN_INTERVAL: float = 60.0
 # Divert queued uploads straight to the disk spool when system memory usage exceeds this percentage
 # (covers workers stuck in long network timeouts backing the queue up). Only applied on RPi. INVARIANT:
 # must stay comfortably below REBOOT_AT_MEMORY_PERCENT so data is shed to disk long before the reboot.
-SPOOL_AT_MEMORY_PERCENT: float = 80.0
+SPOOL_AT_MEMORY_PERCENT: float = 90.0
 # DeviceHealth triggers a managed reboot above this memory usage, as a last-resort recovery before the OS
 # starts OOM-killing processes. See the SPOOL_AT_MEMORY_PERCENT invariant above.
 REBOOT_AT_MEMORY_PERCENT: float = 95.0
