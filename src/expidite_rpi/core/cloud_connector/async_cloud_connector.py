@@ -148,6 +148,17 @@ class AsyncCloudConnector(CloudConnector):
             self._spool_action(action, safety_copy=True)
 
         self._worker_pool.shutdown(wait=False, cancel_futures=True)
+        # cancel_futures may have cancelled a hand-off before its worker ran, so that item's _async_* never
+        # executed and never spooled it - yet it is still in _in_flight (only _finish_in_flight removes it).
+        # Re-persist whatever remains: for an upload still running this is an idempotent re-copy (same FAIR
+        # name) of what the pass above already safety-copied; for a cancelled hand-off it is the only thing
+        # between the data and loss. Done AFTER the pool has stopped, so do_work can no longer add new
+        # entries (its post-stop submits are re-checked and self-spooled - see do_work).
+        with self._state_lock:
+            stranded = list(self._in_flight)
+        for action in stranded:
+            self._spool_action(action, safety_copy=True)
+
         self._drain_thread.join(timeout=5)
 
         self._log_async_performance(force=True)
@@ -627,12 +638,28 @@ class AsyncCloudConnector(CloudConnector):
                         self._upload_queue.task_done()
                         continue
 
+                # Register as in-flight, then hand off for the single network attempt. A shutdown() racing
+                # this exact point would otherwise strand the item: it may have already taken its _in_flight
+                # safety-copy snapshot (so this item is not in it) and be about to cancel/reject the submit.
+                # Guard both edges - re-check stop, and catch the RuntimeError from a submit to an
+                # already-shut-down pool - and spool the item ourselves rather than lose it. (A future
+                # cancelled AFTER a successful submit is caught by shutdown()'s post-pool-shutdown re-drain.)
                 with self._state_lock:
                     self._in_flight.add(queue_item)
-                if isinstance(queue_item, AsyncAppend):
-                    self._worker_pool.submit(self._async_append, queue_item)
-                else:
-                    self._worker_pool.submit(self._async_upload, queue_item)
+                submitted = False
+                if not self._stop_requested.is_set():
+                    try:
+                        if isinstance(queue_item, AsyncAppend):
+                            self._worker_pool.submit(self._async_append, queue_item)
+                        else:
+                            self._worker_pool.submit(self._async_upload, queue_item)
+                        submitted = True
+                    except RuntimeError:
+                        # Executor already shut down by a concurrent shutdown(); spool below instead.
+                        pass
+                if not submitted:
+                    self._spool_action(queue_item)
+                    self._finish_in_flight(queue_item)
 
                 # Mark the task as done, in the sense that we've scheduled it for processing
                 self._upload_queue.task_done()
