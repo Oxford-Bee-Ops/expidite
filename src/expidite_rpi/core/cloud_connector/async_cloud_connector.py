@@ -242,7 +242,20 @@ class AsyncCloudConnector(CloudConnector):
         """
         if not root_cfg.running_on_rpi:
             return False
-        return psutil.virtual_memory().percent > root_cfg.SPOOL_AT_MEMORY_PERCENT
+
+        memory_usage = psutil.virtual_memory().percent
+        is_memory_over_threshold = memory_usage > root_cfg.SPOOL_AT_MEMORY_PERCENT
+
+        if is_memory_over_threshold:
+            # Log memory-pressure diversion at most once a minute - it applies per item and would spam.
+            now = perf_counter()
+            if now - self._last_memory_log > 60:
+                self._last_memory_log = now
+                logger.warning(
+                    f"Memory usage {memory_usage}% > {root_cfg.SPOOL_AT_MEMORY_PERCENT}% threshold; "
+                    f"diverting queue to disk spool"
+                )
+        return is_memory_over_threshold
 
     def _note_cloud_failure(self, exc: BaseException) -> None:
         """Track a failed cloud call; report offline mode once transient failures have persisted too long."""
@@ -597,7 +610,6 @@ class AsyncCloudConnector(CloudConnector):
                     # RAM is running out (workers may be stuck in long network timeouts while the queue
                     # backs up; the tmpfs working dir also counts). Send this item straight to disk. If the
                     # spool can't take it, fall through to a normal attempt (uploading also frees memory).
-                    self._log_memory_pressure_throttled()
                     if self._spool_action(queue_item):
                         self._upload_queue.task_done()
                         continue
@@ -615,12 +627,3 @@ class AsyncCloudConnector(CloudConnector):
                 logger.exception(f"{root_cfg.RAISE_WARN()}Error during do_work execution")
 
         logger.info("do_work completed")
-
-    def _log_memory_pressure_throttled(self) -> None:
-        """Log memory-pressure diversion at most once a minute - it applies per item and would spam."""
-        now = perf_counter()
-        if now - self._last_memory_log > 60:
-            self._last_memory_log = now
-            logger.warning(
-                f"Memory usage above {root_cfg.SPOOL_AT_MEMORY_PERCENT}%; diverting queue to disk spool"
-            )

@@ -402,7 +402,8 @@ class DeviceHealth(Sensor):
                     # SPOOL_AT_MEMORY_PERCENT, well before we get here.
                     if memory_usage > root_cfg.REBOOT_AT_MEMORY_PERCENT:
                         reboot.request_managed_reboot(
-                            f"Memory usage >{root_cfg.REBOOT_AT_MEMORY_PERCENT}%, rebooting",
+                            f"Memory usage {memory_usage}% > {root_cfg.REBOOT_AT_MEMORY_PERCENT}% "
+                            "threshold, rebooting",
                             is_error=True,
                         )
 
