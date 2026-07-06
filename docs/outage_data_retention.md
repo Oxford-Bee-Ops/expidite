@@ -103,6 +103,24 @@ The first dropped video per run is a RAISE_WARN fault (visible in the customer W
 subsequent bins log at INFO with a periodic RAISE_WARN counter, so a week-long outage doesn't produce
 thousands of faults.
 
+### Expendable recordings (`can_discard`)
+
+The budget/eviction logic above governs data that actually reaches the spool. Whether a recording
+reaches it at all is decided one step earlier, by the `can_discard` flag on the upload:
+
+- **`can_discard=True`** — the recording is *expendable*. If its single live upload attempt fails it is
+  dropped immediately and **never written to the spool** (see `_spool_action`), so it consumes no spool
+  disk during an outage. **All built-in camera and audio sensors** (`sensor_rpicam_vid`,
+  `sensor_rpicam_still`, `sensor_video_on_demand`, `sensor_audio_on_demand`, `processor_video_trapcam`,
+  `processor_video_aruco`) set this: their recordings are random samples, so losing an outage's worth of
+  them is acceptable and preferable to filling the spool. In the default deployment, therefore, **no
+  video is retained across an outage** - it is dropped the moment an upload fails.
+- **`can_discard=False`** (the default for `save_recording`/`save_data`) — the recording is precious and
+  is spooled on failure like any other data. Nothing in the shipped sensors spools video this way, so the
+  video-eviction machinery above is effectively a **safety net for custom sensors** that save large
+  recordings with `can_discard=False`: such videos are retained up to `SPOOL_MAX_BYTES` and then evicted
+  oldest-first. Users who need their video retained across outages should set `can_discard=False`.
+
 ## 5. The data path in AsyncCloudConnector
 
 ### One attempt, then disk
@@ -254,7 +272,7 @@ All tuning constants live in `core/configuration.py` for easy review and mocking
 | Wifi >2h reboot | Up to 2h of data lost | Flushed to spool pre-reboot; drained on recovery |
 | `sudo reboot` / `systemctl stop` | SIGTERM ignored → SIGKILL → loss | Graceful stop, flush/spool |
 | Installer upgrade | SIGKILL first → loss | Graceful stop first |
-| Week-long outage | Device unusable, total loss | CSVs retained indefinitely; videos kept up to 16 GB, then dropped oldest-first |
+| Week-long outage | Device unusable, total loss | CSVs retained indefinitely; built-in video is expendable (`can_discard=True`) so it's dropped on first upload failure - custom `can_discard=False` video is kept up to 16 GB, then dropped oldest-first |
 
 ## 10. Testing
 

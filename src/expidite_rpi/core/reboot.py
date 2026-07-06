@@ -11,6 +11,27 @@ logger = root_cfg.setup_logger("expidite")
 # disk spool at connector shutdown with no network I/O, so it adds almost nothing.
 _REBOOT_FLUSH_TIMEOUT_SECONDS = 240.0
 
+# Set the moment a reboot is first requested so repeated triggers become no-ops. Recovery callers fire on
+# a poll (DeviceHealth checks memory every cycle; a memory-exhausted device stays over threshold), and a
+# managed reboot collects a DiagnosticsBundle *before* it touches STOP_EXPIDITE_FLAG - a window in which
+# the caller can fire again. Without this guard each repeat spawns another non-daemon reboot thread and
+# another diagnostics collection on an already-OOM device, worsening the very condition we are recovering
+# from. The flag is process-local: the two entry points run in different processes (RpiCore vs the
+# management service) and never contend across them.
+_reboot_lock = threading.Lock()
+_reboot_requested = False
+
+
+def _claim_reboot(reason: str) -> bool:
+    """Return True for the first reboot request in this process; False (and log) for later ones."""
+    global _reboot_requested
+    with _reboot_lock:
+        if _reboot_requested:
+            logger.warning(f"Ignoring reboot request ({reason}); a reboot is already in progress")
+            return False
+        _reboot_requested = True
+        return True
+
 
 ##############################################################################################################
 # Managed reboot
@@ -56,6 +77,9 @@ def request_managed_reboot(
     """
     if not root_cfg.running_on_rpi:
         logger.warning(f"Ignoring managed reboot request ({reason}); not running on a Raspberry Pi")
+        return
+
+    if not _claim_reboot(reason):
         return
 
     if is_error:
@@ -142,6 +166,9 @@ def stop_service_and_reboot(reason: str, delay_seconds: float = 0.0) -> None:
     """
     if not root_cfg.running_on_rpi:
         logger.warning(f"Ignoring reboot request ({reason}); not running on a Raspberry Pi")
+        return
+
+    if not _claim_reboot(reason):
         return
 
     logger.warning(f"Rebooting device: {reason}")

@@ -416,7 +416,14 @@ class AsyncCloudConnector(CloudConnector):
             if isinstance(item, SpooledAppend):
                 with item.path.open("r") as f:
                     lines = f.readlines()
-                if lines and not self._append_data_to_blob(
+                if not lines:
+                    # An empty fragment should never be spooled (spool_append only writes >1-line data),
+                    # but if one exists, drop it without a network call - and WITHOUT reporting a cloud
+                    # success, which would falsely clear offline telemetry with no network evidence.
+                    self._spool.remove(item)
+                    self._drain_failures.pop(item.path, None)
+                    return _DrainOutcome.OK
+                if not self._append_data_to_blob(
                     dst_container=item.dst_container,
                     dst_file=item.dst_fname,
                     lines_to_append=lines,
