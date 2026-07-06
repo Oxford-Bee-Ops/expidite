@@ -198,7 +198,10 @@ class DeviceHealth(Sensor):
                 # Set timer for next run.
                 self.log_counter += 1
                 sleep_time = root_cfg.my_device.heart_beat_frequency
-                self.stop_requested.wait(sleep_time)
+                # NICKB
+                # self.stop_requested.wait(sleep_time)
+                logger.info("NICKB SLEEP 120 ONLY")
+                self.stop_requested.wait(120)
         except Exception:
             logger.exception(f"{root_cfg.RAISE_WARN()}Error in DeviceHealth thread")
 
