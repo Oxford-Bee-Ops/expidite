@@ -9,9 +9,10 @@ https://github.com/Oxford-Bee-Ops/expidite/issues/21.
 """
 
 import logging
+from typing import cast
 
 import pytest
-from azure.core.exceptions import ServiceRequestError, ServiceResponseError
+from azure.core.exceptions import ResourceExistsError, ServiceRequestError, ServiceResponseError
 from azure.storage.blob import ContainerClient
 
 from expidite_rpi.core import api
@@ -125,6 +126,45 @@ class TestLogCloudFailure:
             for record in _expidite_records(caplog):
                 if api.RAISE_WARN_TAG in record.getMessage():
                     assert record.exc_info is None, f"RAISE_WARN line had a stack trace for {exc!r}"
+
+
+class TestValidateContainerCreateRace:
+    @pytest.mark.unittest
+    def test_losing_the_create_race_is_not_a_failure(
+        self, monkeypatch: pytest.MonkeyPatch, caplog: pytest.LogCaptureFixture
+    ) -> None:
+        """Another thread or device creating the container between exists() and create_container() is benign.
+
+        All devices in a fleet share the storage account, so several can race to create a brand-new
+        container; the losers get ResourceExistsError (ContainerAlreadyExists). The container existing is
+        the outcome we wanted, so _validate_container must succeed rather than surface it as an append
+        failure.
+        """
+
+        class _RaceLosingContainerClient:
+            def exists(self) -> bool:
+                return False  # Not yet created at check time...
+
+            def create_container(self) -> None:
+                message = "The specified container already exists."  # ...but is by now.
+                raise ResourceExistsError(message)
+
+        fake_client = cast(ContainerClient, _RaceLosingContainerClient())
+        monkeypatch.setattr(
+            cc_module.ContainerClient,
+            "from_connection_string",
+            lambda **_kwargs: fake_client,
+        )
+        connector = cc_module.CloudConnector.__new__(cc_module.CloudConnector)
+        connector._validated_containers = {}
+        connector._connection_string = "unused"
+
+        with caplog.at_level(logging.WARNING, logger="expidite"):
+            result = connector._validate_container("expidite-upload")
+
+        assert result is fake_client
+        assert connector._validated_containers["expidite-upload"] is fake_client
+        assert _expidite_records(caplog) == []  # no warning, no fault
 
 
 class TestAppendDataToBlobEscalation:

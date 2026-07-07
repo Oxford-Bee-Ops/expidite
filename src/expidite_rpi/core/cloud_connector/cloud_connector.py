@@ -1,3 +1,4 @@
+import contextlib
 import csv
 import io
 from concurrent.futures import ThreadPoolExecutor, as_completed
@@ -8,6 +9,7 @@ from typing import Optional
 
 import pandas as pd
 from azure.core.exceptions import (
+    ResourceExistsError,
     ResourceModifiedError,
     ResourceNotFoundError,
     ServiceRequestError,
@@ -695,7 +697,11 @@ class CloudConnector:
             )
             if not container_client.exists():
                 logger.info(f"Creating container {container}")
-                container_client.create_container()
+                # Suppress ResourceExistsError: it indicates that another thread or device created the
+                # container between our exists() check and the create. The container existing is the outcome
+                # we wanted, so not a failure.
+                with contextlib.suppress(ResourceExistsError):
+                    container_client.create_container()
             self._validated_containers[container] = container_client
 
         return self._validated_containers[container]
