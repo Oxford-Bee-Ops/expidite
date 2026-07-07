@@ -107,7 +107,11 @@ class VideoOnDemandSensor(Sensor):
 
             # Save the video file to the datastream
             self.save_recording(
-                VIDEO_OD_STREAM_INDEX, filename, start_time=start_time, end_time=api.utc_now()
+                VIDEO_OD_STREAM_INDEX,
+                filename,
+                start_time=start_time,
+                end_time=api.utc_now(),
+                can_discard=True,
             )
 
         except Exception:

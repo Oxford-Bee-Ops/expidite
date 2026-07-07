@@ -107,7 +107,12 @@ class RpicamSensor(Sensor):
             # Run recording process
             utils.run_video_cmd(config.review_mode_cmd.replace("FILENAME", str(filename)))
             logger.info("Review mode image captured")
-            self.save_recording(RPICAM_REVIEW_MODE_STREAM_INDEX, filename, start_time=api.utc_now())
+            self.save_recording(
+                RPICAM_REVIEW_MODE_STREAM_INDEX,
+                filename,
+                start_time=api.utc_now(),
+                can_discard=True,
+            )
 
         except Exception:
             logger.exception(f"{root_cfg.RAISE_WARN()}Error in RpicamSensor review_mode_output")
@@ -150,7 +155,11 @@ class RpicamSensor(Sensor):
 
                 # Save the video file to the datastream
                 self.save_recording(
-                    RPICAM_STREAM_INDEX, filename, start_time=start_time, end_time=api.utc_now()
+                    RPICAM_STREAM_INDEX,
+                    filename,
+                    start_time=start_time,
+                    end_time=api.utc_now(),
+                    can_discard=True,
                 )
 
                 exception_count = 0  # Reset exception count on success

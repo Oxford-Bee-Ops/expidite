@@ -18,6 +18,7 @@ from azure.iot.device import (
 if TYPE_CHECKING:
     from azure.iot.device import MethodRequest  # pyright: ignore[reportPrivateImportUsage]
 from expidite_rpi.core import configuration as root_cfg
+from expidite_rpi.core import reboot
 from expidite_rpi.core.device_config_objects import FAILED_TO_LOAD
 from expidite_rpi.management.bcli import InteractiveMenu
 from expidite_rpi.management.ssh_tunnel import SshTunnelManager
@@ -224,13 +225,9 @@ class IoTHubClient:
         if not root_cfg.running_on_rpi:
             return {"error": "Not running on Raspberry Pi"}
 
-        # Delay so that we can send a response first.
-        def _delayed_reboot() -> None:
-            time.sleep(2)
-            logger.info("Reboot now")
-            subprocess.run(["sudo", "reboot"], check=False)
-
-        threading.Thread(target=_delayed_reboot, daemon=True).start()
+        # Gracefully stop the RpiCore service (flushing queued data to cloud / disk spool) then reboot. Runs
+        # on a background thread with a short initial delay so we can return the method response first.
+        reboot.stop_service_and_reboot("Reboot requested via IoT Hub", delay_seconds=2)
         return {"status": "rebooting"}
 
     def _handle_get_review_mode(self, _payload: dict[str, Any]) -> dict[str, str]:

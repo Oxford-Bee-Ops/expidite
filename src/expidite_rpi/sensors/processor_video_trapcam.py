@@ -123,6 +123,7 @@ class TrapcamDp(DataProcessor):
                             temporary_file=temp_filename,
                             start_time=sample_start_time,
                             end_time=sample_end_time,
+                            can_discard=True,
                         )
                         samples_saved += 1
                         sum_sample_duration += sample_duration
@@ -181,6 +182,7 @@ class TrapcamDp(DataProcessor):
                             temporary_file=temp_filename,
                             start_time=sample_start_time,
                             end_time=sample_end_time,
+                            can_discard=True,
                         )
                         samples_saved += 1
                         sum_sample_duration += sample_duration
@@ -399,6 +401,7 @@ class TrapcamDp(DataProcessor):
                         temporary_file=temp_filename,
                         start_time=segment_start_time,
                         end_time=segment_end_time,
+                        can_discard=True,
                     )
                     samples_saved += 1
                 else:

@@ -15,7 +15,7 @@ from pathlib import Path
 import click
 from crontab import CronTab
 
-from expidite_rpi.core import api, device_health
+from expidite_rpi.core import api, device_health, reboot
 from expidite_rpi.core import configuration as root_cfg
 from expidite_rpi.core.cloud_connector import CloudConnector
 from expidite_rpi.core.edge_orchestrator import EdgeOrchestrator
@@ -493,13 +493,28 @@ class InteractiveMenu:
         # Touch the stop file so the process shuts down gracefully.
         root_cfg.STOP_EXPIDITE_FLAG.touch()
 
-        # Prevent the process from automatically restarting. This will be reverted, the next time
-        # rpi_installer.sh runs, or by manually restarting the process from BCLI.
-        if root_cfg.running_on_rpi and root_cfg.system_cfg.auto_start == "Yes":
-            run_cmd_live_echo("sudo systemctl stop expidite.service")
+        # Whether systemd is managing (and would auto-restart) the process.
+        auto_start = root_cfg.running_on_rpi and root_cfg.system_cfg.auto_start == "Yes"
 
-        if pkill and root_cfg.system_cfg:
-            run_cmd(f"sudo pkill -f 'python -m {root_cfg.system_cfg.my_start_script}'")
+        if pkill:
+            # Hard stop: don't wait out the unit's graceful shutdown (TimeoutStopSec=240s).
+            if auto_start:
+                # Ask systemd to stop the unit but return immediately (--no-block). This flips the unit to
+                # 'deactivating' and disables Restart=always, so the SIGKILL below is attributed to a
+                # commanded stop rather than an uncommanded crash. Killing while the unit is still active
+                # would be counted as a failed restart: it bumps NRestarts
+                # (see RpiCore._check_for_abnormal_restart) and erodes the StartLimitBurst boot-loop budget.
+                # Ordering matters - the stop must be initiated before the kill
+                run_cmd("sudo systemctl --no-block stop expidite.service")
+                run_cmd("sudo systemctl kill --signal=SIGKILL --kill-whom=all expidite.service")
+            elif root_cfg.system_cfg:
+                # No systemd unit managing us, so nothing will restart the process: kill it directly.
+                run_cmd(f"sudo pkill -9 -f 'python -m {root_cfg.system_cfg.my_start_script}'")
+        elif auto_start:
+            # Graceful stop: systemd SIGTERMs and waits up to TimeoutStopSec for a clean shutdown.
+            # This also prevents the process from automatically restarting. It will be reverted, the
+            # next time rpi_installer.sh runs, or by manually restarting the process from BCLI.
+            run_cmd_live_echo("sudo systemctl stop expidite.service")
 
     def restart_rpi_core(self, pkill: bool) -> None:
         self.stop_rpi_core(pkill)
@@ -619,8 +634,10 @@ class InteractiveMenu:
         if click.getchar().lower() != "y":
             click.echo("Reboot cancelled.")
             return
-        click.echo("Rebooting the device...")
-        run_cmd_live_echo("sudo reboot")
+        click.echo("Stopping RpiCore before rebooting... this may take up to 3 minutes to complete.")
+        # background=False: BCLI is a separate process from the RpiCore service, so it can (and should)
+        # block here via `systemctl stop` while the service shuts down, before rebooting.
+        reboot.stop_service_and_reboot("Reboot requested via BCLI")
 
     def update_storage_key(self) -> None:
         """Update the storage key in ~/.expidite/keys.env."""

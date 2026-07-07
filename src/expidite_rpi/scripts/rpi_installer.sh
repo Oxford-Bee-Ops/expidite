@@ -109,9 +109,18 @@ ensure_passwordless_sudo() {
 stop_expidite_service() {
   echo_header
   # Stop the service if it is currently running.
+  # `systemctl stop` sends SIGTERM, which RpiCore turns into a graceful shutdown (flushing journals and
+  # spilling unsent uploads to the disk spool), and blocks until every process in the service cgroup has
+  # exited; systemd escalates to SIGKILL itself after TimeoutStopSec. So the installer never proceeds
+  # while RpiCore is still running. SIGKILL here is only the fallback if the stop fails outright; it is
+  # followed by another blocking stop because `systemctl kill` returns without waiting for process exit.
   if systemctl is-active --quiet expidite.service; then
-      sudo systemctl kill --signal=SIGKILL --kill-whom=all expidite.service || echo "Warning: failed to kill expidite.service"
-      sudo systemctl stop expidite.service || echo "Warning: failed to stop expidite.service"
+      echo "Stopping expidite.service gracefully (may take a few minutes to flush data)..."
+      if ! sudo systemctl stop expidite.service; then
+          echo "Warning: failed to stop expidite.service; killing it"
+          sudo systemctl kill --signal=SIGKILL --kill-whom=all expidite.service || echo "Warning: failed to kill expidite.service"
+          sudo systemctl stop expidite.service || echo "Warning: failed to stop expidite.service after kill"
+      fi
   fi
   # Reset the restart counter so the upgrade isn't mistaken for an abnormal restart.
   sudo systemctl reset-failed expidite.service 2>/dev/null || true
@@ -798,6 +807,13 @@ create_mount() {
     sudo mkdir -p $diags_mountpoint
     sudo chown -R $SERVICE_USER:$SERVICE_USER $diags_mountpoint
 
+    # The spool directory is always on disk, so that data queued for upload survives reboot. It is only
+    # written to during network outages, under memory pressure and at shutdown, so the SD-card wear from
+    # normal operation is negligible.
+    spool_mountpoint="/expidite-spool"
+    sudo mkdir -p $spool_mountpoint
+    sudo chown -R $SERVICE_USER:$SERVICE_USER $spool_mountpoint
+
     # Are we mounting on SSD or RAM disk?
     if grep -qs "/dev/sda" /etc/mtab; then
         echo "Mounted on SSD; no further action reqd."
@@ -963,7 +979,11 @@ install_expidite_service() {
 [Unit]
 Description=Expidite
 # Wait for NTP before starting, so timestamped filenames and logs are correct.
-After=time-sync.target
+# network-online.target is only a soft ordering hint (Wants=, not Requires=): with no network the
+# wait-online service times out (~60s) and boot proceeds anyway, so RpiCore always starts and spools
+# offline. Shutdown does no network I/O - the graceful stop spills any unsent data to the disk spool.
+After=time-sync.target network-online.target
+Wants=network-online.target
 # If it crashes 5 times within 10 minutes, stop restarting to prevent a boot loop.
 # systemd will log a warning; manual intervention or a hardware reboot will clear the limit.
 StartLimitIntervalSec=600
@@ -1084,6 +1104,13 @@ remove_management_service() {
     echo "expidite-management.service removed."
 }
 
+# True (exit 0) when a reboot has been flagged and automatic reboots have not been disabled by the
+# cyclical-reboot guard. This is the single reboot-gating predicate: reboot_if_required uses it too, so
+# auto_start_if_requested's skip-start decision can never disagree with the actual reboot decision.
+reboot_is_pending() {
+    [ -f "$HOME/.expidite/flags/reboot_required" ] && [ ! -f "$HOME/.expidite/flags/reboot_disabled" ]
+}
+
 ##############################################################################################################
 # Autostart if requested in system.cfg
 #
@@ -1095,10 +1122,17 @@ auto_start_if_requested() {
     if [ "$auto_start" == "Yes" ]; then
         install_expidite_service
 
-        # start is idempotent (no-op if already running).
-        echo "Auto-starting Expidite RpiCore..."
-        sudo systemctl start expidite.service && echo "Expidite RpiCore started (or already running)." \
-            || echo "Warning: systemctl start expidite.service failed; check 'journalctl -u expidite'"
+        # If this run ends in a reboot, don't start the services now: they would begin collecting data only
+        # to be stopped again seconds later by the reboot. The units are enabled, so systemd starts them on
+        # the post-reboot boot (and the @reboot crontab entry re-runs this installer as well).
+        if reboot_is_pending; then
+            echo "Reboot pending at end of install; Expidite RpiCore will auto-start after the reboot."
+        else
+            # start is idempotent (no-op if already running).
+            echo "Auto-starting Expidite RpiCore..."
+            sudo systemctl start expidite.service && echo "Expidite RpiCore started (or already running)." \
+                || echo "Warning: systemctl start expidite.service failed; check 'journalctl -u expidite'"
+        fi
     else
         echo "Auto-start is not enabled in system.cfg or not appropriate to this install type."
         remove_expidite_service
@@ -1107,9 +1141,13 @@ auto_start_if_requested() {
     if [ "$auto_start_management_service" == "Yes" ]; then
         install_management_service
 
-        echo "Auto-starting Expidite Management Service..."
-        sudo systemctl start expidite-management.service && echo "Expidite Management Service started (or already running)." \
-            || echo "Warning: failed to start expidite-management.service; check 'journalctl -u expidite-management'"
+        if reboot_is_pending; then
+            echo "Reboot pending at end of install; Expidite Management Service will auto-start after the reboot."
+        else
+            echo "Auto-starting Expidite Management Service..."
+            sudo systemctl start expidite-management.service && echo "Expidite Management Service started (or already running)." \
+                || echo "Warning: failed to start expidite-management.service; check 'journalctl -u expidite-management'"
+        fi
     else
         echo "Auto-start Management Service is not enabled in system.cfg or not appropriate to this install type."
         remove_management_service
@@ -1179,7 +1217,8 @@ reboot_if_required() {
         return
     fi
 
-    if [ -f "$HOME/.expidite/flags/reboot_required" ]; then
+    # Same predicate that auto_start_if_requested used to decide whether to skip starting the services.
+    if reboot_is_pending; then
         # Increment reboot counter
         REBOOT_COUNT_FILE="$HOME/.expidite/flags/reboot_count"
         REBOOT_TIMESTAMP_FILE="$HOME/.expidite/flags/last_reboot_time"

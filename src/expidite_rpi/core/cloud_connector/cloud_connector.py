@@ -39,7 +39,9 @@ def is_transient_network_error(exc: BaseException) -> bool:
 # internally 3 times with ~15-24s exponential backoff (~60s total), there is up to a 20s TCP connect
 # timeout per attempt, and our own async back-off sleeps sleep(2 * iteration) between retries. A fixed
 # retry count would therefore map to an unpredictable wall-clock time (tens of minutes).
-_ESCALATE_AFTER_SECONDS = 600.0  # 10 minutes
+# Derived from the offline-mode threshold so the two customer-facing signals stay aligned by construction:
+# an operation escalates to a fault at the same moment the device as a whole reports offline mode.
+_ESCALATE_AFTER_SECONDS = root_cfg.SPOOL_OFFLINE_AFTER_SECONDS  # 10 minutes
 
 
 def log_cloud_failure(message: str, exc: Exception, *, elapsed_seconds: float = 0.0) -> None:
@@ -347,7 +349,10 @@ class CloudConnector:
         lines_to_append: list[str],
         col_order: list[str] | None = None,
         elapsed_seconds: float = 0.0,
+        swallow_exceptions: bool = True,
     ) -> bool:
+        # swallow_exceptions=False re-raises failures instead of logging them, so the AsyncCloudConnector can
+        # classify the exception (transient network outage vs real fault) and divert to the disk spool.
         try:
             target_container = self._validate_container(dst_container)
             blob_client = target_container.get_blob_client(dst_file)
@@ -388,6 +393,8 @@ class CloudConnector:
 
             return True
         except Exception as e:
+            if not swallow_exceptions:
+                raise
             log_cloud_failure(f"Failed to append data to {dst_file}", e, elapsed_seconds=elapsed_seconds)
             return False
 

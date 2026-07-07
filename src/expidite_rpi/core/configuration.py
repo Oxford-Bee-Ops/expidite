@@ -33,6 +33,35 @@ WATCHDOG_FREQUENCY: float = 1
 # It also limits the duration of any recordings
 # - max_recording_timer
 
+##############################################################################################################
+# Disk spool tuning (see cloud_connector/spool.py and AsyncCloudConnector)
+#
+# Uploads get one network attempt; on any failure the data is persisted to the disk spool (SPOOL_DIR) and
+# retried from there by the drain thread. RAM (the upload queue) and TMP_DIR (a tmpfs on SD-card devices)
+# therefore stay bounded during outages, and spooled data survives reboots.
+##############################################################################################################
+# How long cloud uploads must fail continuously with transient network errors before the device reports
+# offline mode (a customer-facing fault). Telemetry only - the data path is the same online and offline.
+# log_cloud_failure's fault-escalation threshold (_ESCALATE_AFTER_SECONDS) is derived from this constant.
+SPOOL_OFFLINE_AFTER_SECONDS: float = 600.0
+# Seconds between attempts to drain the spool back to the cloud (the first item of each drain pass doubles
+# as the connectivity probe).
+SPOOL_DRAIN_INTERVAL: float = 60.0
+# Log a regular warning when system memory usage exceeds this percentage.
+WARN_AT_MEMORY_PERCENT: float = 75.0
+# Divert queued uploads straight to the disk spool when system memory usage exceeds this percentage
+# (covers workers stuck in long network timeouts backing the queue up). Value must be comfortably below
+# REBOOT_AT_MEMORY_PERCENT so data is spilled to disk long before the reboot.
+SPOOL_AT_MEMORY_PERCENT: float = 90.0
+# DeviceHealth triggers a managed reboot above this memory usage, as a last-resort recovery before the OS
+# starts OOM-killing processes.
+REBOOT_AT_MEMORY_PERCENT: float = 95.0
+# Maximum total size of the disk spool. When exceeded, the oldest spooled video files are deleted first
+# (videos are orders of magnitude larger than other data, so binning them preserves everything else).
+SPOOL_MAX_BYTES: int = 16 * 1024**3
+# Never let spooling reduce free disk space below this floor.
+SPOOL_MIN_DISK_FREE_BYTES: int = 1024**3
+
 
 ##############################################################################################################
 #
@@ -106,6 +135,9 @@ if running_on_windows:
     # on the same machine
     ROOT_WORKING_DIR: Path = Path(tempfile.gettempdir()) / "expidite" / api.utc_to_fname_str()
     DIAGS_DIR: Path = HOME_DIR / "expidite-diags"
+    # In development mode persistence doesn't matter; keep the spool inside the per-run working dir so
+    # concurrent test runs stay isolated.
+    SPOOL_DIR: Path = ROOT_WORKING_DIR / "spool"
     assert HOME_DIR is not None, f"No 'code' directory found in path {Path.cwd()}"
 
 elif running_on_rpi:
@@ -116,6 +148,9 @@ elif running_on_rpi:
     CFG_DIR = HOME_DIR / ".expidite"  # In the base user directory on the RPi
     ROOT_WORKING_DIR = Path("/expidite")
     DIAGS_DIR = Path("/expidite-diags")
+    # On persistent storage (created by rpi_installer.sh) so spooled data survives reboot; /expidite is a
+    # tmpfs on SD-card devices.
+    SPOOL_DIR = Path("/expidite-spool")
     utils_clean.create_root_working_dir(ROOT_WORKING_DIR)
 
 elif running_on_linux:
@@ -126,6 +161,7 @@ elif running_on_linux:
     CFG_DIR = Path("/run/secrets")
     ROOT_WORKING_DIR = Path("/expidite")
     DIAGS_DIR = Path("/expidite-diags")  # Deliberately separate, so that it survives reboot.
+    SPOOL_DIR = Path("/expidite-spool")  # Deliberately separate, so that it survives reboot.
     utils_clean.create_root_working_dir(ROOT_WORKING_DIR)
 else:
     raise NotImplementedError("Unknown platform: " + platform.platform())
@@ -241,6 +277,57 @@ def set_log_level(level: int) -> None:
     module_logger.debug("Debug logging enabled for expidite")
 
 
+class _SuppressShutdownFaultsFilter(logging.Filter):
+    """Drop RAISE_WARNING fault records while a graceful stop is in progress.
+
+    During a deliberate shutdown (STOP_EXPIDITE_FLAG set by `systemctl stop`, a BCLI/IoT Hub reboot, or the
+    installer's graceful stop) systemd SIGTERMs the whole service cgroup, so in-flight operations - a
+    running rpicam-vid, an open upload - are interrupted and raise errors that would otherwise surface as
+    customer-facing faults. Those are expected teardown noise, not real faults, so they are suppressed
+    outright. Only WARNING+ records carrying the fault tag are candidates, so the flag file is stat-ed
+    for just the handful of such records, not on the normal logging hot path.
+
+    The reboot module is exempted: its faults ("did not stop within Ns; rebooting anyway", "error flushing
+    before reboot") report on the shutdown/reboot itself and are exactly what an operator needs to see when
+    a graceful stop misbehaves - suppressing them would hide the failure we most want visible.
+
+    Note: this only filters loggers created via setup_logger (below), which attaches it to their handlers.
+    User sensor code (e.g. bee_ops) is covered as long as it logs through setup_logger("<name>"); a sensor
+    that builds its own logging some other way would bypass this suppression.
+    """
+
+    def filter(self, record: logging.LogRecord) -> bool:
+        if record.module == "reboot":
+            return True
+        if record.levelno >= logging.WARNING and api.RAISE_WARN_TAG in record.getMessage():
+            return not STOP_EXPIDITE_FLAG.exists()
+        return True
+
+
+# Single shared instance - the filter is stateless, so one instance can guard every handler.
+_shutdown_fault_filter = _SuppressShutdownFaultsFilter()
+
+
+def _syslog_identifier() -> str:
+    """Return a stable, human-readable identifier for journald logs.
+
+    Normally this is the basename of the launch script (e.g. "run_my_sensor.py"). When the
+    process is started with `python -m pkg.mod`, CPython sets sys.argv[0] to the literal "-m"
+    while the module is being located, and only rewrites it to the module path afterwards.
+    Handlers built during that window (e.g. via package-import-time setup_logger calls) would
+    otherwise be stamped "-m", so we recover the real module name from sys.orig_argv instead.
+    """
+    argv0 = Path(sys.argv[0]).name
+    if argv0 and not argv0.startswith("-"):
+        return argv0
+    orig: list[str] = getattr(sys, "orig_argv", [])
+    if "-m" in orig and orig.index("-m") + 1 < len(orig):
+        module = orig[orig.index("-m") + 1]
+        if module:
+            return module.rsplit(".", 1)[-1]
+    return "expidite"
+
+
 def setup_logger(name: str, level: int | None = None) -> logging.Logger:
     global _DEFAULT_LOG
     if level is not None:
@@ -251,8 +338,9 @@ def setup_logger(name: str, level: int | None = None) -> logging.Logger:
         logger = logging.getLogger(name)
         logger.setLevel(_LOG_LEVEL)
         if len(logger.handlers) == 0:
-            handler = JournaldLogHandler(SYSLOG_IDENTIFIER=Path(sys.argv[0]).name)
+            handler = JournaldLogHandler(SYSLOG_IDENTIFIER=_syslog_identifier())
             handler.setFormatter(_TruncatingFormatter("%(name)s %(levelname)-6s [%(thread)d] %(message)s"))
+            handler.addFilter(_shutdown_fault_filter)
             logger.addHandler(handler)
     else:  # elif root_cfg.running_on_windows
         logger = logging.getLogger(name)
@@ -275,6 +363,7 @@ def setup_logger(name: str, level: int | None = None) -> logging.Logger:
             console_handler = logging.StreamHandler(sys.stdout)
             console_handler.setLevel(_LOG_LEVEL)
             console_handler.setFormatter(formatter)
+            console_handler.addFilter(_shutdown_fault_filter)
             logger.addHandler(console_handler)
 
         if _DEFAULT_LOG is None:
@@ -285,6 +374,7 @@ def setup_logger(name: str, level: int | None = None) -> logging.Logger:
             handler = logging.FileHandler(_DEFAULT_LOG)
             handler.setLevel(_LOG_LEVEL)
             handler.setFormatter(formatter)
+            handler.addFilter(_shutdown_fault_filter)
             logger.addHandler(handler)
             print(f"Logging {name} to default file: {_DEFAULT_LOG} at level {_LOG_LEVEL}")
 

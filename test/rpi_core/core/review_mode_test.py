@@ -69,6 +69,7 @@ class TestReviewModeExercise:
             RPICAM_REVIEW_MODE_STREAM_INDEX,
             test_file,
             start_time=mock_save_recording.call_args[1]["start_time"],
+            can_discard=True,
         )
 
         # Verify the command contains the review mode command
