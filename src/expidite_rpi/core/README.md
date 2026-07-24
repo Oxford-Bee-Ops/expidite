@@ -140,9 +140,9 @@ Sensor → [DataProcessor₁] → [DataProcessor₂] → Cloud Storage
 @dataclass
 class Stream:
     description: str
-    type_id: str           # Unique identifier for stream type
-    index: int            # Position in node's output array
-    format: FORMAT        # Data format (CSV, JSON, MP4, etc.)
+    type_id: str  # Unique identifier for stream type
+    index: int  # Position in node's output array
+    format: FORMAT  # Data format (CSV, JSON, MP4, etc.)
     cloud_container: str  # Target cloud storage container
     sample_probability: str  # Sampling rate for data reduction
 ```
@@ -153,11 +153,12 @@ class Stream:
 class SensorCfg(DPtreeNodeCfg):
     sensor_type: SENSOR_TYPE
     sensor_index: int
-    outputs: list[Stream]     # Defines output streams
+    outputs: list[Stream]  # Defines output streams
     description: str
     # Sensor-specific fields...
 
-@dataclass  
+
+@dataclass
 class DataProcessorCfg(DPtreeNodeCfg):
     outputs: list[Stream]
     description: str
@@ -200,11 +201,7 @@ def create_sensor_tree():
 ### Simple Sensor Setup
 ```python
 # 1. Define sensor configuration
-sensor_cfg = MySensorCfg(
-    sensor_type=SENSOR_TYPE.CAMERA,
-    sensor_index=0,
-    outputs=[main_stream, review_stream]
-)
+sensor_cfg = MySensorCfg(sensor_type=SENSOR_TYPE.CAMERA, sensor_index=0, outputs=[main_stream, review_stream])
 
 # 2. Create sensor
 sensor = MySensor(sensor_cfg)
@@ -223,17 +220,17 @@ orchestrator.start_all()
 def create_complex_pipeline():
     # Sensor
     camera = RPiCamera(camera_config)
-    
+
     # Processing chain
     tree = DPtree(camera)
     tree.connect((camera, 0), ImageResizer(resize_config))
     tree.connect((ImageResizer, 0), FeatureExtractor(feature_config))
     tree.connect((FeatureExtractor, 0), CloudUploader(upload_config))
-    
-    # Parallel branch for thumbnails  
+
+    # Parallel branch for thumbnails
     tree.connect((camera, 0), ThumbnailGenerator(thumb_config))
     tree.connect((ThumbnailGenerator, 0), ThumbnailUploader(thumb_upload_config))
-    
+
     return [tree]
 ```
 

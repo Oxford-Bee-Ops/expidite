@@ -61,12 +61,10 @@ from expidite_rpi.utils.rpi_emulator import RpiTestRecording
 test_recordings = [
     RpiTestRecording(
         cmd_prefix="rpicam-vid",
-        recordings=[
-            Path("test/resources/sample_video.mp4"),
-            Path("test/resources/another_video.mp4")
-        ]
+        recordings=[Path("test/resources/sample_video.mp4"), Path("test/resources/another_video.mp4")],
     )
 ]
+
 
 # Using pytest fixture
 @pytest.mark.unittest
@@ -123,6 +121,7 @@ from expidite_rpi.rpi_core import RpiCore
 from expidite_rpi.core.device_config_objects import DeviceCfg
 from expidite_rpi.utils.rpi_emulator import RpiEmulator
 
+
 class TestMySensor:
     @pytest.fixture
     def inventory(self) -> List[DeviceCfg]:
@@ -171,6 +170,7 @@ from typing import List
 from expidite_rpi.utils.rpi_emulator import RpiEmulator
 from expidite_rpi.core.device_config_objects import DeviceCfg
 
+
 class TestExample:
     @pytest.fixture
     def inventory(self) -> List[DeviceCfg]:
@@ -179,7 +179,7 @@ class TestExample:
     def test_method(self, rpi_emulator: RpiEmulator) -> None:
         # Now you get full autocomplete and type checking
         rpi_emulator.set_recording_cap(1)  # IDE knows all methods
-        rpi_emulator.assert_records(...)    # Parameters are typed
+        rpi_emulator.assert_records(...)  # Parameters are typed
 ```
 
 ### Method 2: Context Manager (Alternative)
@@ -234,18 +234,18 @@ class TestCameraDevice:
 ```python
 from expidite_rpi.utils.rpi_emulator import RpiTestRecording
 
+
 class TestVideoProcessor:
     @pytest.mark.unittest
     def test_video_processing(self, rpi_emulator):
         # Use actual video file for testing
-        rpi_emulator.set_recordings([
-            RpiTestRecording(
-                cmd_prefix="rpicam-vid",
-                recordings=[
-                    root_cfg.TEST_DIR / "resources" / "test_video.mp4"
-                ]
-            )
-        ])
+        rpi_emulator.set_recordings(
+            [
+                RpiTestRecording(
+                    cmd_prefix="rpicam-vid", recordings=[root_cfg.TEST_DIR / "resources" / "test_video.mp4"]
+                )
+            ]
+        )
 
         # Rest of test...
 ```
@@ -256,16 +256,13 @@ class TestVideoProcessor:
 
 ```python
 # Validate expected number of files
-rpi_emulator.assert_records(
-    container="expidite-upload",
-    expected_files={"V3_CAMERA*": 2, "V3_AUDIO*": 1}
-)
+rpi_emulator.assert_records(container="expidite-upload", expected_files={"V3_CAMERA*": 2, "V3_AUDIO*": 1})
 
 # Validate file contents (for CSV/journal files)
 rpi_emulator.assert_records(
     container="expidite-journals",
     expected_files={"V3_SENSOR*": 1},
-    expected_rows={"V3_SENSOR*": 10}  # 10 data rows (excluding header)
+    expected_rows={"V3_SENSOR*": 10},  # 10 data rows (excluding header)
 )
 
 # Get data for custom validation
@@ -403,6 +400,7 @@ if root_cfg.running_on_windows:
 
 ```python
 import logging
+
 logger = root_cfg.setup_logger("expidite", level=logging.DEBUG)
 ```
 
@@ -504,12 +502,7 @@ class TestDataProcessor:
     @pytest.mark.unittest
     def test_video_processing(self, rpi_emulator):
         # Provide specific test video
-        rpi_emulator.set_recordings([
-            RpiTestRecording(
-                cmd_prefix="rpicam-vid",
-                recordings=[test_video_path]
-            )
-        ])
+        rpi_emulator.set_recordings([RpiTestRecording(cmd_prefix="rpicam-vid", recordings=[test_video_path])])
 
         rpi_emulator.set_recording_cap(1)
         sc = RpiCore()
