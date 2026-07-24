@@ -143,7 +143,7 @@ class CloudConnector:
                 raise ValueError(msg)
 
             # Create a new Keys class with the env_file set in the model_config
-            keys = root_cfg.Keys(_env_file=keys_file, _env_file_encoding="utf-8")  # type: ignore
+            keys = root_cfg.Keys(_env_file=keys_file, _env_file_encoding="utf-8")  # type: ignore[call-arg]
             if keys.cloud_storage_key == root_cfg.FAILED_TO_LOAD:
                 msg = f"Failed to load cloud storage key from {keys_file}"
                 raise ValueError(msg)
@@ -622,7 +622,7 @@ class CloudConnector:
                 with open(dst_file, "wb") as my_file:
                     download_stream = blob_client.download_blob()
                     file_bytes = download_stream.readall()
-                    my_file.write(file_bytes)  # type: ignore[ty:invalid-argument-type]
+                    my_file.write(file_bytes)
                 logger.info(f"Downloaded {dst_file.name}, {len(file_bytes):,} bytes")
                 return
             except ResourceModifiedError:
@@ -662,7 +662,7 @@ class CloudConnector:
             while cursor < size:
                 length = min(_DELTA_CHUNK_BYTES, size - cursor)
                 file_bytes = blob_client.download_blob(offset=cursor, length=length).readall()
-                my_file.write(file_bytes)  # type: ignore[ty:invalid-argument-type]
+                my_file.write(file_bytes)
                 cursor += len(file_bytes)
                 written += len(file_bytes)
         descriptor = "bytes" if offset == 0 else "additional bytes"
@@ -728,7 +728,7 @@ class CloudConnector:
         if len(cloud_lines) >= 1:
             # We have headers from local and cloud files; check headers match
             local_reader = csv.reader([local_line])
-            cloud_reader = csv.reader([cloud_lines[0]])  # type: ignore
+            cloud_reader = csv.reader([cloud_lines[0]])
             local_headers = next(local_reader)
             cloud_headers = next(cloud_reader)
             if local_headers != cloud_headers:
