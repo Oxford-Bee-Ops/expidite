@@ -267,6 +267,71 @@ pip_install() {
 }
 
 ##############################################################################################################
+# Repair an install that failed verification on a previous run.
+#
+# Without this the bad state is permanent, which is what turned one bad install into four dead devices:
+# install_expidite skips the install whenever the remote hash matches the cached one, and that cache was
+# written *before* the damage occurred. So every subsequent boot concludes expidite is already up to date and
+# leaves the broken package exactly where it is. Nothing short of a human with an SSH session recovers it.
+#
+# Three things are needed to make the reinstall actually stick:
+#
+# - Clear both hash caches, so install_expidite and install_user_code stop short-circuiting. We clear the
+#   user's too: whatever zeroed expidite was equally able to zero the user's package, which is installed in
+#   the same run and so was being written in the same window.
+#
+# - Purge the damaged tree. pip works out what to uninstall from the dist-info RECORD, and on a zeroed
+#   install RECORD is itself zero bytes - pip cannot remove what it cannot enumerate. We purge only expidite,
+#   whose on-disk layout we know; the user's package is left to --force-reinstall because its import name is
+#   not reliably derivable from its pip name.
+#
+# - Bypass pip's caches. ~/.cache/pip is on the same SD card and was being written in the same window, so a
+#   cached wheel may itself be truncated; installing from it would faithfully reproduce the damage.
+#
+# --force-reinstall also reinstalls dependencies, which on a Pi means re-fetching numpy/pandas/opencv and can
+# take many minutes. That is the right trade for a path that only runs on a device already known to be
+# broken: thoroughness matters more than speed, and a zeroing power cut could equally have hit a dependency.
+#
+# Called once the remote hash is in hand, deliberately: that hash is proof we can reach GitHub. Purging the
+# local copy first and only then discovering there is no network would leave the device with no package at
+# all, which is worse than the broken one it started with.
+##############################################################################################################
+PIP_HEAL_ARGS=()
+
+heal_broken_install() {
+    if [ ! -f "$HOME/.expidite/flags/install_verification_failed" ]; then
+        return 0
+    fi
+
+    echo_header "Repairing install that failed verification on the previous run"
+    cat "$HOME/.expidite/flags/install_verification_failed" 2>/dev/null
+
+    # Applied to every install in this run, so the repair is not defeated by pip deciding the already-present
+    # (but broken) distribution satisfies the requirement.
+    PIP_HEAL_ARGS=(--force-reinstall --no-cache-dir)
+
+    rm -f "$HOME/.expidite/flags/expidite-repo-last-hash" "$HOME/.expidite/flags/user-repo-last-hash"
+
+    if [ -z "$EXP_REMOTE_HASH" ]; then
+        echo "No remote hash (GitHub unreachable); skipping the purge and leaving the current files in place."
+        echo "The cleared hash caches mean the install will be retried as soon as the network returns."
+        sync
+        return 0
+    fi
+
+    local site_packages
+    site_packages=$("$HOME/$venv_dir/bin/python" -c \
+        "import sysconfig; print(sysconfig.get_paths()['purelib'])" 2>/dev/null)
+    if [ -n "$site_packages" ] && [ -d "$site_packages/expidite_rpi" ]; then
+        echo "Purging damaged expidite package from $site_packages"
+        rm -rf "$site_packages/expidite_rpi" "$site_packages"/expidite-*.dist-info
+    else
+        echo "Could not locate the installed expidite package; relying on --force-reinstall alone."
+    fi
+    sync
+}
+
+##############################################################################################################
 # Read system.cfg file and export the key-value pairs found.
 ##############################################################################################################
 export_system_cfg() {
@@ -513,6 +578,10 @@ install_expidite() {
     # 1. Get remote HEAD commit hash (using HTTPS since expidite is a public repository)
     EXP_REMOTE_HASH=$(git ls-remote "https://github.com/oxford-bee-ops/expidite.git" "refs/heads/$expidite_git_branch" | awk '{print $1}')
 
+    # 1a. Repair a previously-failed install before the hash comparison below can short-circuit it. Placed
+    # after the ls-remote so the purge only happens once we know GitHub is reachable.
+    heal_broken_install
+
     # 2. Load last-installed hash (if any)
     if [[ -f "$EXP_HASH_FILE" ]]; then
         EXP_LOCAL_HASH=$(<"$EXP_HASH_FILE")
@@ -523,7 +592,7 @@ install_expidite() {
     # 3. Compare and install only if changed (or if [ "$new_install" == "yes" ])
     if [[ "$EXP_REMOTE_HASH" != "$EXP_LOCAL_HASH" || "$new_install" == "yes" ]]; then
         echo "Detected new commit $EXP_REMOTE_HASH on branch $expidite_git_branch."
-        pip_install "git+https://github.com/oxford-bee-ops/expidite.git@$expidite_git_branch" || { echo "Failed to install Expidite"; }
+        pip_install "${PIP_HEAL_ARGS[@]}" "git+https://github.com/oxford-bee-ops/expidite.git@$expidite_git_branch"             || { echo "Failed to install Expidite"; }
         updated_version=$(pip show expidite | grep Version)
         echo "Expidite installed successfully. Now version: $updated_version"
 
@@ -760,7 +829,7 @@ install_user_code_from_git_clone() {
             # Convert git@github.com:owner/repo.git to ssh://git@github.com/owner/repo.git
             ssh_url="${fixed_git_repo_url/github.com:/github.com/}"
             pip_url="git+ssh://$ssh_url@$my_git_branch"
-            if pip_install "$pip_url"; then
+            if pip_install "${PIP_HEAL_ARGS[@]}" "$pip_url"; then
                 install_success="true"
             else
                 echo "Failed to install $pip_url"
@@ -768,7 +837,7 @@ install_user_code_from_git_clone() {
         else
             # For HTTPS URLs, pip expects git+ prefix
             pip_url="git+$fixed_git_repo_url@$my_git_branch"
-            if pip_install "$pip_url"; then
+            if pip_install "${PIP_HEAL_ARGS[@]}" "$pip_url"; then
                 install_success="true"
             else
                 echo "Failed to install $pip_url"
