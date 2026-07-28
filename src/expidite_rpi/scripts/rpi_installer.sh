@@ -1136,11 +1136,69 @@ remove_management_service() {
     echo "expidite-management.service removed."
 }
 
+##############################################################################################################
+# Verify that what we just installed can actually be imported, before anything acts on it.
+#
+# A pip install can complete - or appear to - and still leave a package that imports but does nothing. The
+# case that motivated this: a power cut shortly after an install leaves the tree fully present with every .py
+# file zero length (see pip_install above). A zero-byte .py file is a *valid empty module*, so nothing earlier
+# in this script notices: pip reports success, `pip show` reports a version, and `ls` shows every file there.
+#
+# So we check semantically rather than structurally, by importing what the two services actually import:
+#   - `from expidite_rpi import RpiCore` is what expidite.service's start script does. Against a zeroed
+#     package this raises ImportError - the failure that took the fleet down.
+#   - importing the management service module is what expidite-management.service does. Against a zeroed
+#     package that module is empty, so systemd's `python -m ...` runs nothing and exits 0; the service then
+#     restarts every 10s forever while logging nothing at all, which is far harder to spot than a crash.
+#     Importing it here is side-effect free because its main() is guarded by __name__ == "__main__".
+#
+# A structural check (scanning for zero-byte .py files) would be the wrong tool: legitimately empty
+# __init__.py files are common throughout site-packages, so it cannot tell damage from normal.
+##############################################################################################################
+verify_expidite_install() {
+    echo_header
+
+    local check rc=0
+    check=$("$HOME/$venv_dir/bin/python" -c "
+from expidite_rpi import RpiCore
+import expidite_rpi.management.management_service
+print('RpiCore and the management service module both import cleanly')
+" 2>&1) || rc=$?
+
+    if [ "$rc" -eq 0 ]; then
+        echo "Install verification passed: $check"
+        rm -f "$HOME/.expidite/flags/install_verification_failed"
+        return 0
+    fi
+
+    # Record the failure where both a human and the next installer run can find it.
+    {
+        echo "Install verification failed at $(date -Is)"
+        echo "$check"
+    } > "$HOME/.expidite/flags/install_verification_failed"
+    sync
+
+    echo "!!! INSTALL VERIFICATION FAILED !!!"
+    echo "The installed expidite package is present but not usable:"
+    echo "$check"
+    echo "Suppressing the pending reboot and leaving expidite.service stopped."
+    return 1
+}
+
 # True (exit 0) when a reboot has been flagged and automatic reboots have not been disabled by the
 # cyclical-reboot guard. This is the single reboot-gating predicate: reboot_if_required uses it too, so
 # auto_start_if_requested's skip-start decision can never disagree with the actual reboot decision.
+#
+# A failed install verification also suppresses the reboot. Rebooting does not repair a broken install, and
+# rebooting into one is precisely what turns a single bad install into the cyclical reboot we are trying to
+# prevent: the device comes up, the service cannot start, the installer runs again from @reboot cron, and
+# round it goes. A device left up with a broken package is diagnosable; one in a reboot loop is not. That
+# deliberately also suppresses any reboot owed to an OS package update in the same run - a pending OS reboot
+# is a lesser problem than an unbreakable reboot loop, and it will be taken on the next clean install.
 reboot_is_pending() {
-    [ -f "$HOME/.expidite/flags/reboot_required" ] && [ ! -f "$HOME/.expidite/flags/reboot_disabled" ]
+    [ -f "$HOME/.expidite/flags/reboot_required" ] \
+        && [ ! -f "$HOME/.expidite/flags/reboot_disabled" ] \
+        && [ ! -f "$HOME/.expidite/flags/install_verification_failed" ]
 }
 
 ##############################################################################################################
@@ -1157,7 +1215,12 @@ auto_start_if_requested() {
         # If this run ends in a reboot, don't start the services now: they would begin collecting data only
         # to be stopped again seconds later by the reboot. The units are enabled, so systemd starts them on
         # the post-reboot boot (and the @reboot crontab entry re-runs this installer as well).
-        if reboot_is_pending; then
+        if [ -f "$HOME/.expidite/flags/install_verification_failed" ]; then
+            # Starting it would only burn through StartLimitBurst (5 crashes in 600s) and leave the unit in
+            # systemd's failed state, from which it will not restart even once the package is repaired. The
+            # unit stays enabled, so a later boot with a good install starts it normally.
+            echo "Install verification failed; NOT starting expidite.service. Repair the install first."
+        elif reboot_is_pending; then
             echo "Reboot pending at end of install; Expidite RpiCore will auto-start after the reboot."
         else
             # start is idempotent (no-op if already running).
@@ -1173,6 +1236,10 @@ auto_start_if_requested() {
     if [ "$auto_start_management_service" == "Yes" ]; then
         install_management_service
 
+        # Deliberately NOT gated on install verification. This service is the remote-access lifeline (IoT
+        # Hub), so on a device we already know to be broken it is the one thing most worth having running.
+        # It has no StartLimit, so a failed start costs nothing but a retry every 10s, and if the damage
+        # spared its import path it will come up and let us in.
         if reboot_is_pending; then
             echo "Reboot pending at end of install; Expidite Management Service will auto-start after the reboot."
         else
@@ -1322,6 +1389,9 @@ if [ "$os_update" == "yes" ]; then
 fi
 install_expidite
 install_user_code
+# Immediately after the installs, so the verdict sits next to the install output in the log, and before
+# anything downstream (service starts, the reboot) acts on what was installed.
+verify_expidite_install
 set_log_storage_volatile
 create_mount
 set_predictable_network_interface_names
