@@ -299,13 +299,43 @@ pip_install() {
 ##############################################################################################################
 PIP_HEAL_ARGS=()
 
+# Is the installed expidite actually usable? Shared by heal_broken_install (as a precondition, before we
+# decide whether to reinstall) and verify_expidite_install (as a postcondition, after we have). The output -
+# a success line or a traceback - is left in EXPIDITE_IMPORT_RESULT for the caller to log.
+#
+# See verify_expidite_install for why these two imports, and why this is a semantic check rather than a scan
+# for zero-byte files.
+EXPIDITE_IMPORT_RESULT=""
+
+expidite_imports_ok() {
+    local rc=0
+    EXPIDITE_IMPORT_RESULT=$("$HOME/$venv_dir/bin/python" -c "
+from expidite_rpi import RpiCore
+import expidite_rpi.management.management_service
+print('RpiCore and the management service module both import cleanly')
+" 2>&1) || rc=$?
+    return $rc
+}
+
 heal_broken_install() {
-    if [ ! -f "$HOME/.expidite/flags/install_verification_failed" ]; then
+    local reason
+    if [ -f "$HOME/.expidite/flags/install_verification_failed" ]; then
+        reason="the previous run failed verification"
+    elif ! expidite_imports_ok; then
+        # Checking the live state, not just the flag, is what makes the repair happen in *this* run.
+        #
+        # The flag alone is written at the end of a run and read at the start of the next one, so a repair
+        # driven only by the flag is always deferred by a run - and verify_expidite_install suppresses the
+        # reboot that would have produced that next run. The two guards deadlock: one waits for a next run,
+        # the other removes the thing that triggers one, and the device sits broken until the weekly cron.
+        reason="the installed package does not import"
+    else
         return 0
     fi
 
-    echo_header "Repairing install that failed verification on the previous run"
+    echo_header "Repairing expidite install ($reason)"
     cat "$HOME/.expidite/flags/install_verification_failed" 2>/dev/null
+    [ -n "$EXPIDITE_IMPORT_RESULT" ] && echo "$EXPIDITE_IMPORT_RESULT"
 
     # Applied to every install in this run, so the repair is not defeated by pip deciding the already-present
     # (but broken) distribution satisfies the requirement.
@@ -1248,15 +1278,8 @@ remove_management_service() {
 verify_expidite_install() {
     echo_header
 
-    local check rc=0
-    check=$("$HOME/$venv_dir/bin/python" -c "
-from expidite_rpi import RpiCore
-import expidite_rpi.management.management_service
-print('RpiCore and the management service module both import cleanly')
-" 2>&1) || rc=$?
-
-    if [ "$rc" -eq 0 ]; then
-        echo "Install verification passed: $check"
+    if expidite_imports_ok; then
+        echo "Install verification passed: $EXPIDITE_IMPORT_RESULT"
         rm -f "$HOME/.expidite/flags/install_verification_failed"
         return 0
     fi
@@ -1264,14 +1287,15 @@ print('RpiCore and the management service module both import cleanly')
     # Record the failure where both a human and the next installer run can find it.
     {
         echo "Install verification failed at $(date -Is)"
-        echo "$check"
+        echo "$EXPIDITE_IMPORT_RESULT"
     } > "$HOME/.expidite/flags/install_verification_failed"
     sync
 
     echo "!!! INSTALL VERIFICATION FAILED !!!"
     echo "The installed expidite package is present but not usable:"
-    echo "$check"
+    echo "$EXPIDITE_IMPORT_RESULT"
     echo "Suppressing the pending reboot and leaving expidite.service stopped."
+    echo "The next installer run will repair it; if this run was triggered by cron, reboot to trigger one."
     return 1
 }
 
