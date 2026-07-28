@@ -299,6 +299,10 @@ pip_install() {
 ##############################################################################################################
 PIP_HEAL_ARGS=()
 
+# Set by heal_broken_install so install_expidite knows this run is a repair rather than a routine upgrade,
+# and can flag the reboot that a repair needs but a same-version reinstall would otherwise not trigger.
+EXPIDITE_HEAL_ACTIVE="no"
+
 # Is the installed expidite actually usable? Shared by heal_broken_install (as a precondition, before we
 # decide whether to reinstall) and verify_expidite_install (as a postcondition, after we have). The output -
 # a success line or a traceback - is left in EXPIDITE_IMPORT_RESULT for the caller to log.
@@ -340,6 +344,7 @@ heal_broken_install() {
     # Applied to every install in this run, so the repair is not defeated by pip deciding the already-present
     # (but broken) distribution satisfies the requirement.
     PIP_HEAL_ARGS=(--force-reinstall --no-cache-dir)
+    EXPIDITE_HEAL_ACTIVE="yes"
 
     rm -f "$HOME/.expidite/flags/expidite-repo-last-hash" "$HOME/.expidite/flags/user-repo-last-hash"
 
@@ -617,6 +622,20 @@ install_expidite() {
             if [ "$current_version" != "$updated_version" ]; then
                 echo "Expidite version has changed from $current_version to $updated_version. Reboot required."
                 # Set a flag to indicate that a reboot is required
+                touch "$HOME/.expidite/flags/reboot_required"
+            elif [ "$EXPIDITE_HEAL_ACTIVE" == "yes" ]; then
+                # A repair reinstalls the *same* version, so the check above never fires - yet a repair needs
+                # the reboot more than a version bump does. heal_broken_install deleted and recreated
+                # site-packages/expidite_rpi underneath a running system: expidite-management.service is not
+                # stopped by this script and has been importing from that directory, so it is now holding
+                # module objects whose files were removed. Only a reboot gets every process onto the new
+                # files.
+                #
+                # This cannot loop. The reboot is flagged only after a *successful* reinstall, and a
+                # successful reinstall means the next run's precondition check passes, so it does not heal
+                # and does not flag another reboot. Exactly one reboot, with the cyclical-reboot guard still
+                # underneath it as a backstop.
+                echo "Expidite was repaired at the same version ($updated_version). Reboot required."
                 touch "$HOME/.expidite/flags/reboot_required"
             fi
         else
