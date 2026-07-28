@@ -389,8 +389,8 @@ finally:
 Handle platform differences gracefully:
 
 ```python
-if not root_cfg.running_on_rpi:
-    logger.warning("Skipping I2C test off-device")
+if root_cfg.running_on_windows:
+    logger.warning("Skipping I2C test on Windows")
     return
 ```
 
@@ -543,8 +543,8 @@ class TestDataProcessor:
    ```python
    # Issue: Tests wait forever for recording caps
    # Solution: Check that sensors are actually running and producing data
-   if not root_cfg.running_on_rpi and sensor_requires_hardware:
-       pytest.skip("Requires hardware only available on the Pi")
+   if root_cfg.running_on_windows and sensor_requires_hardware:
+       pytest.skip("Requires hardware not available on Windows")
    ```
 
 ## Integration with CI/CD

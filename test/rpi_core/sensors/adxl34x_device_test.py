@@ -27,8 +27,8 @@ class Test_adxl34x_device:
     def test_adxl34x_device(self, rpi_emulator: RpiEmulator) -> None:
         logger.info("Running test_adxl34x_device")
 
-        if not root_cfg.running_on_rpi:
-            logger.warning("Skipping ADXL34x test off-device - requires I2C")
+        if root_cfg.running_on_windows:
+            logger.warning("Skipping ADXL34x test on Windows - requires I2C")
             return
 
         # Configure RpiCore with the test device

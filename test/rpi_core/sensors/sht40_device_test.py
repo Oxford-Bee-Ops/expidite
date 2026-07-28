@@ -27,8 +27,8 @@ class Test_SHT40_device:
     def test_SHT40_device(self, rpi_emulator: RpiEmulator) -> None:
         logger.info("Running test_SHT40_device")
 
-        if not root_cfg.running_on_rpi:
-            logger.warning("Skipping SHT40 test off-device - requires I2C")
+        if root_cfg.running_on_windows:
+            logger.warning("Skipping SHT40 test on Windows - requires I2C")
             return
 
         # Configure RpiCore with the test device

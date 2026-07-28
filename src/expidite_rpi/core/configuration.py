@@ -5,7 +5,6 @@ import sys
 import tempfile
 from enum import Enum
 from pathlib import Path
-from typing import NamedTuple
 
 import psutil
 
@@ -78,49 +77,27 @@ def _get_pi_model() -> str:
         return "Unknown"
 
 
-class _PlatformFlags(NamedTuple):
-    """The platform we are running on, as derived from the stdlib platform module."""
+running_on_linux = False
+running_on_rpi = False
+running_on_rpi5 = False
+running_on_pi_zero = False
+running_on_windows = False
+running_on_azure = False
 
-    linux: bool = False
-    rpi: bool = False
-    rpi5: bool = False
-    pi_zero: bool = False
-    windows: bool = False
-    macos: bool = False
-    azure: bool = False
-
-
-def _detect_platform(platform_str: str, system: str, node: str) -> _PlatformFlags:
-    """Identify the platform from the strings reported by the platform module.
-
-    Kept as a pure function of those strings (rather than inline module code) so that detection can be
-    tested for platforms other than the one the tests happen to be running on.
-    """
-    if "Linux" in platform_str:
-        if "rpi" not in platform_str:
-            return _PlatformFlags(linux=True)
-        model = _get_pi_model()
-        return _PlatformFlags(linux=True, rpi=True, rpi5="Pi 5" in model, pi_zero="Zero" in model)
-    if "Windows" in platform_str:
-        return _PlatformFlags(windows=True)
-    if system == "Darwin":
-        # macOS is a development / analysis machine, handled like Windows in the directory block below.
-        # platform.platform() renders as either "macOS-26.5.1-..." or "Darwin-...", depending on whether the
-        # macOS version lookup succeeds, so key off platform.system() which is always "Darwin".
-        return _PlatformFlags(macos=True)
-    if node.startswith("fv-az"):
-        return _PlatformFlags(azure=True)
-    raise NotImplementedError("Unknown platform: " + platform_str)
-
-
-_platform = _detect_platform(platform.platform(), platform.system(), platform.node())
-running_on_linux = _platform.linux
-running_on_rpi = _platform.rpi
-running_on_rpi5 = _platform.rpi5
-running_on_pi_zero = _platform.pi_zero
-running_on_windows = _platform.windows
-running_on_macos = _platform.macos
-running_on_azure = _platform.azure
+if "Linux" in platform.platform():
+    running_on_linux = True
+    if "rpi" in platform.platform():
+        running_on_rpi = True
+        if "Pi 5" in _get_pi_model():
+            running_on_rpi5 = True
+        elif "Zero" in _get_pi_model():
+            running_on_pi_zero = True
+elif "Windows" in platform.platform():
+    running_on_windows = True
+elif platform.node().startswith("fv-az"):
+    running_on_azure = True
+else:
+    raise NotImplementedError("Unknown platform: " + platform.platform())
 
 DUMMY_MAC = "d01111111111"
 
@@ -148,8 +125,8 @@ my_device_id = my_mac.replace(":", "")
 # Platform-dependent directory structure
 #
 ##############################################################################################################
-if running_on_windows or running_on_macos:
-    # Set paths for development mode where we're running everything locally on a laptop or desktop
+if running_on_windows:
+    # Set paths for development mode where we're running everything locally on a laptop
     HOME_DIR: Path = Path.home()
     CODE_DIR: Path = Path(__file__).parent.parent.parent.parent.parent
     SC_CODE_DIR: Path = CODE_DIR / "expidite"

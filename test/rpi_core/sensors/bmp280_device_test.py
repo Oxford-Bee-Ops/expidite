@@ -27,8 +27,8 @@ class Test_BMP280_device:
     def test_BMP280_device(self, rpi_emulator: RpiEmulator) -> None:
         logger.info("Running test_BMP280_device")
 
-        if not root_cfg.running_on_rpi:
-            logger.warning("Skipping BMP280 test off-device - requires I2C")
+        if root_cfg.running_on_windows:
+            logger.warning("Skipping BMP280 test on Windows - requires I2C")
             return
 
         # Configure RpiCore with the test device
