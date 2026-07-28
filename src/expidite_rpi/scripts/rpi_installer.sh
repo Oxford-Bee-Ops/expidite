@@ -560,20 +560,40 @@ install_expidite() {
     # 3. Compare and install only if changed (or if [ "$new_install" == "yes" ])
     if [[ "$EXP_REMOTE_HASH" != "$EXP_LOCAL_HASH" || "$new_install" == "yes" ]]; then
         echo "Detected new commit $EXP_REMOTE_HASH on branch $expidite_git_branch."
-        pip_install "${PIP_HEAL_ARGS[@]}" "git+https://github.com/oxford-bee-ops/expidite.git@$expidite_git_branch" \
-            || { echo "Failed to install Expidite"; }
+        exp_install_success="false"
+        if pip_install "${PIP_HEAL_ARGS[@]}" \
+                "git+https://github.com/oxford-bee-ops/expidite.git@$expidite_git_branch"; then
+            exp_install_success="true"
+        else
+            echo "Failed to install Expidite"
+        fi
+
         updated_version=$(pip show expidite | grep Version)
-        echo "Expidite installed successfully. Now version: $updated_version"
 
-        # We store the updated_version in the flags directory for later use in logging
-        echo "$updated_version" > "$HOME/.expidite/expidite_code_version"
-        echo "$EXP_REMOTE_HASH" > "$EXP_HASH_FILE"
+        # Only cache the hash if the install actually succeeded. The hash file is what makes every later run
+        # skip this block ("No changes detected"), so writing it after a failed install tells all future runs
+        # that a version we never installed is present - the failure is not merely swallowed, it is recorded
+        # as a success and can never be retried. install_user_code_from_git_clone already guards its hash
+        # write this way; this one did not, and that is why four devices stayed broken across every reboot.
+        if [ "$exp_install_success" == "true" ]; then
+            echo "Expidite installed successfully. Now version: $updated_version"
 
-        # If the version has changed, we need to set a flag so we reboot at the end of the script
-        if [ "$current_version" != "$updated_version" ]; then
-            echo "Expidite version has changed from $current_version to $updated_version. Reboot required."
-            # Set a flag to indicate that a reboot is required
-            touch "$HOME/.expidite/flags/reboot_required"
+            # We store the updated_version in the flags directory for later use in logging
+            echo "$updated_version" > "$HOME/.expidite/expidite_code_version"
+            echo "$EXP_REMOTE_HASH" > "$EXP_HASH_FILE"
+            sync
+
+            # If the version has changed, we need to set a flag so we reboot at the end of the script
+            if [ "$current_version" != "$updated_version" ]; then
+                echo "Expidite version has changed from $current_version to $updated_version. Reboot required."
+                # Set a flag to indicate that a reboot is required
+                touch "$HOME/.expidite/flags/reboot_required"
+            fi
+        else
+            echo "Install failed; hash NOT updated, so this install will be retried on the next run."
+            echo "Current version remains: $updated_version"
+            # Deliberately no reboot flag: rebooting cannot fix a failed download, and doing so on every run
+            # is exactly the cyclical reboot we are trying to prevent.
         fi
     else
         echo "No changes detected on branch $expidite_git_branch. Skipping install."
@@ -1377,6 +1397,39 @@ install_leds_service() {
 ##############################################################################################################
 # Reboot if required
 ##############################################################################################################
+##############################################################################################################
+# Take an exclusive lock, so only one installer run is ever in flight.
+#
+# This script is launched from three places - the @reboot crontab entry, the weekly os_update crontab entry,
+# and by hand over SSH - and nothing prevented two of them overlapping. Two concurrent `pip install`s into
+# the same venv is a direct route to a mangled site-packages: they uninstall and unpack the same files
+# underneath each other, and pip has no cross-process locking of its own. A device stuck in a reboot loop
+# makes the overlap likely rather than theoretical, because each boot fires another @reboot run while the
+# previous one may still be working through a slow install.
+#
+# -n (non-blocking) rather than waiting: if another run already holds the lock then the work is already being
+# done, and queueing a second run behind it would only pile up cron invocations. We exit 0 because this is a
+# normal outcome, not a failure.
+#
+# The lock is taken before stop_expidite_service so a duplicate run cannot stop data collection and then
+# discover it has nothing to do. It is released automatically when the script exits and fd 9 is closed, so a
+# killed or power-cut run leaves no stale lock behind.
+##############################################################################################################
+acquire_installer_lock() {
+    if ! command -v flock >/dev/null 2>&1; then
+        echo "Warning: flock not available; proceeding without an installer lock."
+        return 0
+    fi
+
+    mkdir -p "$HOME/.expidite"
+    exec 9>"$HOME/.expidite/installer.lock"
+    if ! flock -n 9; then
+        echo "Another installer run is already in progress; exiting so we do not install over it."
+        exit 0
+    fi
+    echo "Installer lock acquired."
+}
+
 reboot_if_required() {
     echo_header
     # Check if reboots are disabled due to too many failures
@@ -1435,6 +1488,9 @@ echo_header() {
 ##############################################################################################################
 echo_header "Starting RPi installer.  (os_update=$os_update)"
 exit_if_run_as_root
+# Before anything with side effects: exit_if_run_as_root comes first only because running as root would take
+# the lock under the wrong $HOME.
+acquire_installer_lock
 ensure_passwordless_sudo
 stop_expidite_service
 sleep_for_ten_seconds
