@@ -238,6 +238,36 @@ sys.exit(1)
 }
 
 ##############################################################################################################
+# Run `pip install` and flush the result to disk before continuing.
+#
+# ext4 allocates blocks for newly written files lazily: the directory entry and inode are journaled promptly,
+# but the file *contents* may not reach the SD card for up to ~30s after pip returns. An unclean shutdown in
+# that window - a power blip, a brownout, a watchdog reset - leaves the package tree fully present with every
+# file truncated to zero bytes. That state is uniquely nasty because a zero-byte .py file is a *valid empty
+# module*: the import succeeds, and the failure only surfaces later as an ImportError naming a file that looks
+# perfectly fine on disk.
+#
+# We sync on the failure path too, though it repairs nothing. Most pip failures (network, resolution, build)
+# abort before site-packages is touched, so there are no dirty pages and the sync is a cheap no-op. But when
+# pip fails *during* the install it first rolls back, restoring the previous working version from its temp
+# backup - and that rollback is itself just dirty pages. The sync is what makes the restored-good state
+# survive a power cut, instead of the half-written new version being what gets recovered.
+#
+# Note the bound: this only closes the window between pip returning and the installer continuing. A power cut
+# *inside* pip's own writes still produces the zero-byte tree; detecting and self-healing that is the job of
+# the post-install verification, not of this function.
+#
+# The exit status is preserved, so `||` fallbacks and `if pip_install ...; then` call sites behave exactly as
+# they did with a bare `pip install`.
+##############################################################################################################
+pip_install() {
+    local rc=0
+    pip install "$@" || rc=$?
+    sync
+    return $rc
+}
+
+##############################################################################################################
 # Read system.cfg file and export the key-value pairs found.
 ##############################################################################################################
 export_system_cfg() {
@@ -461,7 +491,7 @@ install_expidite() {
     # 3. Compare and install only if changed (or if [ "$new_install" == "yes" ])
     if [[ "$EXP_REMOTE_HASH" != "$EXP_LOCAL_HASH" || "$new_install" == "yes" ]]; then
         echo "Detected new commit $EXP_REMOTE_HASH on branch $expidite_git_branch."
-        pip install "git+https://github.com/oxford-bee-ops/expidite.git@$expidite_git_branch" || { echo "Failed to install Expidite"; }
+        pip_install "git+https://github.com/oxford-bee-ops/expidite.git@$expidite_git_branch" || { echo "Failed to install Expidite"; }
         updated_version=$(pip show expidite | grep Version)
         echo "Expidite installed successfully. Now version: $updated_version"
 
@@ -554,7 +584,7 @@ restore_expidite_if_overridden() {
         if [ -n "$_saved_expidite_version" ] && [ "$exp_ver" != "$_saved_expidite_version" ]; then
             echo "Expidite was changed ($_saved_expidite_version -> $exp_ver) by user-code install."
             echo "Restoring expidite from branch $expidite_git_branch..."
-            pip install "git+https://github.com/oxford-bee-ops/expidite.git@$expidite_git_branch" \
+            pip_install "git+https://github.com/oxford-bee-ops/expidite.git@$expidite_git_branch" \
                 || echo "Warning: Failed to restore expidite from branch $expidite_git_branch"
         fi
     fi
@@ -578,7 +608,9 @@ install_user_code_from_package() {
     current_version=$(pip show "$project_name" 2>/dev/null | grep Version)
 
     save_expidite_version
+    # github_installer.py pips the wheel in-process, so it needs the same flush that pip_install performs.
     "$HOME/$venv_dir/scripts/github_installer.py"
+    sync
     restore_expidite_if_overridden
 
     updated_version=$(pip show "$project_name" 2>/dev/null | grep Version)
@@ -700,7 +732,7 @@ install_user_code_from_git_clone() {
             # Convert git@github.com:owner/repo.git to ssh://git@github.com/owner/repo.git
             ssh_url="${fixed_git_repo_url/github.com:/github.com/}"
             pip_url="git+ssh://$ssh_url@$my_git_branch"
-            if pip install "$pip_url"; then
+            if pip_install "$pip_url"; then
                 install_success="true"
             else
                 echo "Failed to install $pip_url"
@@ -708,7 +740,7 @@ install_user_code_from_git_clone() {
         else
             # For HTTPS URLs, pip expects git+ prefix
             pip_url="git+$fixed_git_repo_url@$my_git_branch"
-            if pip install "$pip_url"; then
+            if pip_install "$pip_url"; then
                 install_success="true"
             else
                 echo "Failed to install $pip_url"
@@ -1232,6 +1264,10 @@ reboot_if_required() {
 
         echo "$reboot_count" > "$REBOOT_COUNT_FILE"
         echo "$(date +%s)" > "$REBOOT_TIMESTAMP_FILE"
+        # These two files ARE the cyclical-reboot guard. `sudo reboot` syncs on a clean shutdown, but if this
+        # boot instead ends in a power cut or a watchdog reset the counter is lost and the guard silently
+        # forgets how many times it has already gone round - the one failure it exists to stop.
+        sync
 
         echo "Reboot required. This will be reboot #$reboot_count. Rebooting now..."
         sudo reboot
