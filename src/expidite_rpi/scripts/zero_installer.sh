@@ -187,6 +187,9 @@ check_prerequisites() {
             echo "WARNING: Too many reboots detected ($reboot_count in last hour). Disabling automatic reboots."
             rm -f "$HOME/.expidite/flags/reboot_required"
             echo "REBOOT_DISABLED" > "$HOME/.expidite/flags/reboot_disabled"
+            # This flag is the last line of defence against a reboot loop, and the loop it stops is exactly
+            # what denies it a clean shutdown to flush on. Losing it means the loop simply resumes.
+            sync
             return
         elif [ "$time_since_reboot" -gt 3600 ]; then
             # Reset counter after 1 hour
@@ -267,6 +270,21 @@ pip_install() {
 }
 
 ##############################################################################################################
+# Flag that a reboot is required, and make the flag durable before continuing.
+#
+# `touch` alone leaves the flag as a dirty inode that may not reach the SD card for ~30s - the same ext4
+# behaviour pip_install works around. Every caller here is followed by minutes of further install work, so
+# that window is wide open, and a power cut inside it loses the flag entirely: the device comes back up
+# having silently skipped a reboot it needed. After an OS package upgrade that leaves rpicam broken until
+# some later run happens to reboot; after a repair it leaves the running services holding module files that
+# were deleted from underneath them.
+##############################################################################################################
+flag_reboot_required() {
+    touch "$HOME/.expidite/flags/reboot_required"
+    sync
+}
+
+##############################################################################################################
 # Repair an install that failed verification on a previous run.
 #
 # Without this the bad state is permanent, which is what turned one bad install into four dead devices:
@@ -320,10 +338,40 @@ print('RpiCore and the management service module both import cleanly')
     return $rc
 }
 
+# Where this venv installs packages. Empty if the venv's python cannot be run.
+expidite_site_packages() {
+    "$HOME/$venv_dir/bin/python" -c "import sysconfig; print(sysconfig.get_paths()['purelib'])" 2>/dev/null
+}
+
+# Is expidite present on disk at all? This separates damage - present but unusable, which is what
+# heal_broken_install repairs - from mere absence, which is just an install that has not happened yet.
+#
+# A zeroed tree answers yes, which is the case that matters: `pip show` still reports a version and the
+# package directory is still there, and that is exactly what makes that failure mode so hard to spot. We
+# fall back to looking for the package directory because a zeroed dist-info can defeat `pip show` while
+# leaving behind a tree that still needs purging.
+expidite_is_installed() {
+    "$HOME/$venv_dir/bin/python" -m pip show expidite >/dev/null 2>&1 && return 0
+    local site_packages
+    site_packages=$(expidite_site_packages)
+    [ -n "$site_packages" ] && [ -d "$site_packages/expidite_rpi" ]
+}
+
 heal_broken_install() {
     local reason
     if [ -f "$HOME/.expidite/flags/install_verification_failed" ]; then
         reason="the previous run failed verification"
+    elif ! expidite_is_installed; then
+        # Absence is not damage. On a first install - or on any run whose venv exists but was never
+        # populated - there is nothing to purge and nothing to force pip past, and install_expidite already
+        # clears the hash cache when `pip show` comes up empty, so the normal install path handles it.
+        #
+        # Without this branch the import check below fails with ModuleNotFoundError on every fresh
+        # provision, and the run "repairs" a package that was never there: --force-reinstall --no-cache-dir
+        # applied to both installs, re-fetching every pinned dependency with no cache to fall back on, plus
+        # a reboot flagged as if a repair had happened, plus a log that reads like a damaged device.
+        echo "Expidite is not installed yet; nothing to repair (normal for a first install)."
+        return 0
     elif ! expidite_imports_ok; then
         # Checking the live state, not just the flag, is what makes the repair happen in *this* run.
         #
@@ -355,8 +403,7 @@ heal_broken_install() {
     fi
 
     local site_packages
-    site_packages=$("$HOME/$venv_dir/bin/python" -c \
-        "import sysconfig; print(sysconfig.get_paths()['purelib'])" 2>/dev/null)
+    site_packages=$(expidite_site_packages)
     if [ -n "$site_packages" ] && [ -d "$site_packages/expidite_rpi" ]; then
         echo "Purging damaged expidite package from $site_packages"
         rm -rf "$site_packages/expidite_rpi" "$site_packages"/expidite-*.dist-info
@@ -543,7 +590,7 @@ install_os_packages() {
     echo "OS packages installed successfully."
     # A reboot is always required after installing packages, otherwise the system is unstable
     # (eg rpicam broken pipe)
-    touch "$HOME/.expidite/flags/reboot_required"
+    flag_reboot_required
 }
 
 # Function to install the Uncomplicated Firewall and set appropriate rules.
@@ -653,7 +700,7 @@ install_expidite() {
             if [ "$current_version" != "$updated_version" ]; then
                 echo "Expidite version has changed from $current_version to $updated_version. Reboot required."
                 # Set a flag to indicate that a reboot is required
-                touch "$HOME/.expidite/flags/reboot_required"
+                flag_reboot_required
             elif [ "$EXPIDITE_HEAL_ACTIVE" == "yes" ]; then
                 # A repair reinstalls the *same* version, so the check above never fires - yet a repair needs
                 # the reboot more than a version bump does. heal_broken_install deleted and recreated
@@ -667,7 +714,7 @@ install_expidite() {
                 # and does not flag another reboot. Exactly one reboot, with the cyclical-reboot guard still
                 # underneath it as a backstop.
                 echo "Expidite was repaired at the same version ($updated_version). Reboot required."
-                touch "$HOME/.expidite/flags/reboot_required"
+                flag_reboot_required
             fi
         else
             echo "Install failed; hash NOT updated, so this install will be retried on the next run."
@@ -787,7 +834,7 @@ install_user_code_from_package() {
 
     if [[ "$current_version" != "$updated_version" ]]; then
         echo "User's code installation succeeded. Reboot required."
-        touch "$HOME/.expidite/flags/reboot_required"
+        flag_reboot_required
 
         # We store the updated_version in the flags directory for later use in logging.
         echo "$updated_version" > "$HOME/.expidite/user_code_version"
@@ -918,11 +965,15 @@ install_user_code_from_git_clone() {
         # Only cache the new hash if installation was successful
         if [ "$install_success" == "true" ]; then
             echo "$REMOTE_HASH" > "$HASH_FILE"
+            # Flushed for the same reason install_expidite flushes its hash: pip_install has already synced
+            # the package, and this sync is what stops a power cut recovering a filesystem where the hash
+            # says "installed" but the package it names never landed.
+            sync
             echo "Installation complete; hash updated."
 
             # Only set reboot flag if installation succeeded AND hash actually changed
             echo "User's code hash has changed and installation succeeded. Reboot required."
-            touch "$HOME/.expidite/flags/reboot_required"
+            flag_reboot_required
         else
             echo "Installation failed; hash NOT updated to prevent masking failures."
             echo "No reboot will be triggered due to installation failure."
