@@ -210,17 +210,21 @@ class DeviceHealth(Sensor):
     def log_warnings(self) -> None:
         """Capture warning and error logs to the WARNING datastream.
         We get these from the system journal and log them to the WARNING datastream.
-        We capture logs tagged with the RAISE_WARN_TAG and all logs with priority <=3 (Error).
+        We capture all logs with priority <=3 (Error), plus WARNING-level logs tagged with RAISE_WARN_TAG.
+        Priorities are recorded as journald reported them.
         """
         if root_cfg.running_on_rpi:
             logs = get_logs(since=self.last_ran, min_priority=4)
             self.last_ran = api.utc_now()
 
             for log in logs:
-                if str(log["message"]).startswith(api.RAISE_WARN_TAG):
-                    log["priority"] = int(log.get("priority", 4)) - 1
-                    self.log(WARNING_STREAM_INDEX, log)
-                elif int(log.get("priority", 4)) <= 3:
+                priority = int(log.get("priority", 4))
+                # Errors and above qualify on priority alone. A WARNING (priority 4) qualifies only if it
+                # carries the fault tag - a deliberate RAISE_WARN must reach the customer datastream, an
+                # ordinary warning must not. The tag is matched anywhere in the message rather than at the
+                # start because journald's MESSAGE field holds the *formatted* record, which setup_logger's
+                # formatter has already prefixed with "<name> <LEVEL> [<thread>] " by the time we read it.
+                if priority <= 3 or (priority == 4 and api.RAISE_WARN_TAG in str(log["message"])):
                     self.log(WARNING_STREAM_INDEX, log)
 
     def check_azure_connection(self) -> None:
