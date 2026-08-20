@@ -148,9 +148,16 @@ class CloudConnector:
                 msg = f"Failed to load cloud storage key from {keys_file}"
                 raise ValueError(msg)
 
+            # Clear the cache of validated containers if changing key
+            if self._connection_string != keys.cloud_storage_key:
+                self._clear_validated_containers()
+
             self._connection_string = keys.cloud_storage_key
         else:
             assert key is not None
+            # Clear the cache of validated containers if changing key
+            if self._connection_string != key:
+                self._clear_validated_containers()
             self._connection_string = key
 
     def upload_to_container(
@@ -705,6 +712,14 @@ class CloudConnector:
             self._validated_containers[container] = container_client
 
         return self._validated_containers[container]
+
+    def _clear_validated_containers(self) -> None:
+        """Clear the cache of validated containers.
+
+        This is required if we set a new connection string, because the new connection string
+        may not have access to the same containers
+        """
+        self._validated_containers.clear()
 
     def _get_connection_string(self) -> str:
         return self._connection_string
