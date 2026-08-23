@@ -4,6 +4,7 @@ from struct import pack_into, unpack_from
 from time import sleep
 from typing import ClassVar
 
+import busio
 from adafruit_bus_device import i2c_device
 from adafruit_register.i2c_bit import ROBit, RWBit
 from adafruit_register.i2c_bits import RWBits
@@ -11,11 +12,9 @@ from adafruit_register.i2c_struct import ROUnaryStruct, Struct
 
 try:
     import board
-    import busio
 except (ImportError, NotImplementedError):
     # Running on non-CircuitPython environment (Windows/standard Python)
     board = None
-    busio = None
 
 """
 The MIT License (MIT)

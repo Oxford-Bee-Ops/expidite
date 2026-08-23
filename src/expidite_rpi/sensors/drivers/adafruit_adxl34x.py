@@ -30,17 +30,16 @@ Implementation Notes
 
 from struct import unpack
 
+import busio
 from adafruit_bus_device import i2c_device
 from micropython import const
 
 try:
     # This is only needed for typing
     import board
-    import busio
 except (ImportError, NotImplementedError):
     # Running on non-CircuitPython environment (Windows/standard Python)
     board = None
-    busio = None
 
 __version__ = "0.0.0+auto.0"
 __repo__ = "https://github.com/adafruit/Adafruit_CircuitPython_ADXL34x.git"
