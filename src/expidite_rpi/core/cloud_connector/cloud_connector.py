@@ -15,7 +15,7 @@ from azure.core.exceptions import (
     ServiceRequestError,
     ServiceResponseError,
 )
-from azure.storage.blob import BlobClient, ContainerClient
+from azure.storage.blob import BlobClient, BlobType, ContainerClient
 
 from expidite_rpi.core import api, file_naming
 from expidite_rpi.core import configuration as root_cfg
@@ -390,7 +390,10 @@ class CloudConnector:
                     )
 
                     # Re-create the append_blob - this replaces the existing file.
-                    if blob_client.get_blob_properties().size == 0:
+                    # create_append_blob() overwrites an existing append blob in place, but Azure rejects a
+                    # Put Blob that would change an existing blob's *type*, so anything that isn't already an
+                    # append blob must be deleted first.
+                    if blob_client.get_blob_properties().blob_type != BlobType.APPENDBLOB:
                         blob_client.delete_blob()
                     blob_client.create_append_blob()
 
