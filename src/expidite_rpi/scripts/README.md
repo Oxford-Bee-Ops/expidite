@@ -138,7 +138,7 @@ Code Deployment → System Configuration → Service Management → Persistence
 
 ### Automated Execution:
 - **On Reboot**: Automatic execution via cron `@reboot`
-- **Weekly Maintenance**: Saturday 2 AM OS updates
+- **Weekly Maintenance**: Monday 2 AM OS updates (Sunday night)
 
 ## Design Principles
 
