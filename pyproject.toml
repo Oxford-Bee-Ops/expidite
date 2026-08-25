@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "expidite"
-version = "0.1.283"
+version = "0.1.284"
 description = "Python module to support using Raspberry Pi for scientific data collection"
 readme = "README.md"
 requires-python = ">=3.13"
@@ -26,7 +26,7 @@ dependencies = [
     "gpiozero==2.0.1",
     "numexpr==2.14.2", # Required by pandas.
     "numpy==2.4.2",
-    "opencv-python-headless==4.13.0.92",
+    "opencv-python==5.0.0.93",
     "pandas==3.0.5",
     "psutil==7.2.2",
     "PyGithub==2.10.0",
