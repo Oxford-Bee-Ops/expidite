@@ -17,7 +17,6 @@ from dataclasses import replace
 
 from expidite_rpi.core import configuration as root_cfg
 from expidite_rpi.core.dp_tree import DPtree
-from expidite_rpi.sensors import processor_video_aruco
 from expidite_rpi.sensors.processor_video_trapcam import (
     DEFAULT_TRAPCAM_DP_CFG,
     TrapcamDp,
@@ -180,30 +179,6 @@ def create_double_trapcam_device() -> list[DPtree]:
     camera1 = create_trapcam_device(sensor_index=0)
     camera2 = create_trapcam_device(sensor_index=1)
     return camera1 + camera2
-
-
-##############################################################################################################
-# Aruco camera device
-##############################################################################################################
-def create_aruco_camera_device(sensor_index: int) -> list[DPtree]:
-    """Create a device that spots aruco markers."""
-    # Sensor
-    cfg = DEFAULT_RPICAM_SENSOR_CFG
-    cfg.sensor_index = sensor_index
-    my_sensor = RpicamSensor(cfg)
-
-    # DataProcessor
-    my_dp = processor_video_aruco.VideoArucoProcessor(
-        processor_video_aruco.DEFAULT_AUROCO_PROCESSOR_CFG, sensor_index=sensor_index
-    )
-
-    # Connect the DataProcessor to the Sensor
-    my_tree = DPtree(my_sensor)
-    my_tree.connect(
-        source=(my_sensor, RPICAM_STREAM_INDEX),
-        sink=my_dp,
-    )
-    return [my_tree]
 
 
 ##############################################################################################################

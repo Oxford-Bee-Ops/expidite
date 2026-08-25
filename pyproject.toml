@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "expidite"
-version = "0.1.282"
+version = "0.1.283"
 description = "Python module to support using Raspberry Pi for scientific data collection"
 readme = "README.md"
 requires-python = ">=3.13"
@@ -138,7 +138,6 @@ ignore = [
 "src/expidite_rpi/example/my_processor_example.py" = ["PERF401"]
 "src/expidite_rpi/rpi_core.py" = ["SLF001"]
 "src/expidite_rpi/sensors/drivers/*" = ["ANN001", "ANN002", "ANN003", "ANN201"]
-"src/expidite_rpi/sensors/processor_video_aruco.py" = ["ANN001", "B905", "PERF401"]
 "src/expidite_rpi/sensors/sensor_adxl34x.py" = ["UP031"]
 "src/expidite_rpi/sensors/sensor_aht20.py" = ["UP031"]
 "src/expidite_rpi/sensors/sensor_bmp280.py" = ["UP031"]
@@ -206,7 +205,6 @@ module = [
     "expidite_rpi.utils.utils",
     "expidite_rpi.utils.journal_pool",
     "expidite_rpi.core.dp_node",
-    "expidite_rpi.sensors.processor_video_aruco",
     "expidite_rpi.example.my_processor_example",
     "expidite_rpi.core.dp_tree",
     "expidite_rpi.core.device_health",
@@ -222,17 +220,11 @@ module = [
     "expidite_rpi.core.cloud_connector.cloud_connector",
     "expidite_rpi.core.configuration",
     "expidite_rpi.core.device_health",
-    "expidite_rpi.sensors.processor_video_aruco",
     "expidite_rpi.sensors.processor_video_trapcam",
     "expidite_rpi.sensors.sensor_ltr390",
     "expidite_rpi.sensors.sensor_bmp280",
 ]
 warn_unused_ignores = false
-[[tool.mypy.overrides]]
-module = [
-    "expidite_rpi.sensors.processor_video_aruco",
-]
-disallow_untyped_defs = false
 
 ##############################################################################################################
 # pyright: static type checker and bug detection.

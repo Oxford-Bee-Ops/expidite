@@ -109,10 +109,10 @@ reaches it at all is decided one step earlier, by the `can_discard` flag on the 
 - **`can_discard=True`** — the recording is *expendable*. If its single live upload attempt fails it is
   dropped immediately and **never written to the spool** (see `_spool_action`), so it consumes no spool
   disk during an outage. **All built-in camera and audio sensors** (`sensor_rpicam_vid`,
-  `sensor_rpicam_still`, `sensor_video_on_demand`, `sensor_audio_on_demand`, `processor_video_trapcam`,
-  `processor_video_aruco`) set this: their recordings are random samples, so losing an outage's worth of
-  them is acceptable and preferable to filling the spool. In the default deployment, therefore, **no
-  video is retained across an outage** - it is dropped the moment an upload fails.
+  `sensor_rpicam_still`, `sensor_video_on_demand`, `sensor_audio_on_demand`, `processor_video_trapcam`)
+  set this: their recordings are random samples, so losing an outage's worth of them is acceptable and
+  preferable to filling the spool. In the default deployment, therefore, **no video is retained across an
+  outage** - it is dropped the moment an upload fails.
 - **`can_discard=False`** (the default for `save_recording`/`save_data`) — the recording is precious and
   is spooled on failure like any other data. Nothing in the shipped sensors spools video this way, so the
   video-eviction machinery above is effectively a **safety net for custom sensors** that save large
