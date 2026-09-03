@@ -27,9 +27,9 @@ last_space_check_value = 0.0
 last_space_check_outcome = False
 last_temp_check = dt.datetime(1970, 1, 1, tzinfo=UTC)
 last_temp_check_outcome = False
-critical_expidite_mount_threshold = 75.0
-high_expidite_mount_threshold = 25.0
-high_temperature_threshold = 70.0
+CRITICAL_EXPIDITE_MOUNT_THRESHOLD = 75.0
+HIGH_EXPIDITE_MOUNT_THRESHOLD = 25.0
+HIGH_TEMPERATURE_THRESHOLD = 70.0
 
 
 def failing_to_keep_up() -> bool:
@@ -46,7 +46,7 @@ def failing_to_keep_up() -> bool:
     last_space_check = now
 
     last_space_check_value = psutil.disk_usage(str(root_cfg.ROOT_WORKING_DIR)).percent
-    if last_space_check_value > critical_expidite_mount_threshold:
+    if last_space_check_value > CRITICAL_EXPIDITE_MOUNT_THRESHOLD:
         logger.warning(f"{root_cfg.RAISE_WARN()}Failing to keep up due to low disk space")
         last_space_check_outcome = True
     else:
@@ -71,25 +71,25 @@ def reduce_load_advised() -> bool:
     if (now - last_space_check).total_seconds() > 30:
         last_space_check = now
         last_space_check_value = psutil.disk_usage(str(root_cfg.ROOT_WORKING_DIR)).percent
-        last_space_check_outcome = last_space_check_value > critical_expidite_mount_threshold
+        last_space_check_outcome = last_space_check_value > CRITICAL_EXPIDITE_MOUNT_THRESHOLD
 
     cpu_readings = psutil.sensors_temperatures().get("cpu_thermal")  # type: ignore
     cpu_temp = cpu_readings[0].current if cpu_readings else 0
 
-    cpu_too_hot = cpu_temp > high_temperature_threshold
-    mount_too_full = last_space_check_value > high_expidite_mount_threshold
+    cpu_too_hot = cpu_temp > HIGH_TEMPERATURE_THRESHOLD
+    mount_too_full = last_space_check_value > HIGH_EXPIDITE_MOUNT_THRESHOLD
 
     # Log the two conditions separately: they have distinct causes and distinct remedies, and reporting
     # the healthy value alongside the unhealthy one makes the fault look like a false positive.
     if cpu_too_hot:
         logger.warning(
             f"{root_cfg.RAISE_WARN()}Advising to reduce load due to high CPU temperature "
-            f"{cpu_temp}℃ (threshold {high_temperature_threshold}℃)"
+            f"{cpu_temp}℃ (threshold {HIGH_TEMPERATURE_THRESHOLD}℃)"
         )
     if mount_too_full:
         logger.warning(
             f"{root_cfg.RAISE_WARN()}Advising to reduce load due to high expidite mount usage "
-            f"{last_space_check_value}% (threshold {high_expidite_mount_threshold}%)"
+            f"{last_space_check_value}% (threshold {HIGH_EXPIDITE_MOUNT_THRESHOLD}%)"
         )
 
     last_temp_check_outcome = cpu_too_hot or mount_too_full
