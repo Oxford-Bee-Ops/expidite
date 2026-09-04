@@ -63,10 +63,9 @@ class Sensor(Thread, DPnode, ABC):
         If Expidite is shutting down, this will return false.
         If Expidite is failing to process data quickly enough and is therefore at risk of
         running out of memory, this function will hold up the thread until the data backlog is
-        processed.
+        processed, or until a stop is requested.
         """
-        # Check if the system is running low on memory
-        while utils.failing_to_keep_up():
+        while utils.failing_to_keep_up() and not self.stop_requested.is_set():
             self.stop_requested.wait(root_cfg.my_device.max_recording_timer)
 
         return not self.stop_requested.is_set()
