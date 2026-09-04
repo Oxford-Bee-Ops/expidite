@@ -9,7 +9,7 @@ import signal
 import subprocess
 from datetime import UTC
 from pathlib import Path
-from threading import Timer
+from threading import RLock, Timer
 
 import psutil
 
@@ -27,74 +27,86 @@ last_space_check_value = 0.0
 last_space_check_outcome = False
 last_temp_check = dt.datetime(1970, 1, 1, tzinfo=UTC)
 last_temp_check_outcome = False
+_check_lock = RLock()  # Guards the cached readings above, their outcomes and their clocks.
 CRITICAL_EXPIDITE_MOUNT_THRESHOLD = 75.0
 HIGH_EXPIDITE_MOUNT_THRESHOLD = 25.0
 HIGH_TEMPERATURE_THRESHOLD = 70.0
+# How long a reading is reused for, covering both the mount-usage and the CPU-temperature caches below.
+CHECK_INTERVAL_S = 30.0
+
+
+def _refresh_space_check() -> bool:
+    """Refresh the cached mount usage if it is stale, and return whether usage is critical.
+
+    The low-disk warning belongs here, with the refresh, rather than in failing_to_keep_up(). Both public
+    checks share one cached reading and one clock, so whichever of them refreshes first resets that clock
+    for the other. With the warning in failing_to_keep_up() alone, a reduce_load_advised() call winning
+    the window would refresh silently and leave failing_to_keep_up() stalling every sensor thread on a
+    cached True that was never reported - the stall was invisible in the fleet logs.
+    """
+    global last_space_check, last_space_check_value, last_space_check_outcome
+
+    with _check_lock:
+        now = api.utc_now()
+        if (now - last_space_check).total_seconds() < CHECK_INTERVAL_S:
+            return last_space_check_outcome
+
+        last_space_check_value = psutil.disk_usage(str(root_cfg.ROOT_WORKING_DIR)).percent
+        last_space_check_outcome = last_space_check_value > CRITICAL_EXPIDITE_MOUNT_THRESHOLD
+        last_space_check = now
+
+        if last_space_check_outcome:
+            logger.warning(
+                f"{root_cfg.RAISE_WARN()}Failing to keep up due to low disk space: expidite mount usage "
+                f"{last_space_check_value}% (threshold {CRITICAL_EXPIDITE_MOUNT_THRESHOLD}%)"
+            )
+
+        return last_space_check_outcome
 
 
 def failing_to_keep_up() -> bool:
     """Function that allows us to back off intensive operations if we're running low on space."""
-    # Cache the result for 30 seconds to avoid repeated disk checks
-    global last_space_check, last_space_check_value, last_space_check_outcome
-
     if not root_cfg.running_on_rpi:
         return False
 
-    now = api.utc_now()
-    if (now - last_space_check).total_seconds() < 30:
-        return last_space_check_outcome
-    last_space_check = now
-
-    last_space_check_value = psutil.disk_usage(str(root_cfg.ROOT_WORKING_DIR)).percent
-    if last_space_check_value > CRITICAL_EXPIDITE_MOUNT_THRESHOLD:
-        logger.warning(f"{root_cfg.RAISE_WARN()}Failing to keep up due to low disk space")
-        last_space_check_outcome = True
-    else:
-        last_space_check_outcome = False
-
-    return last_space_check_outcome
+    return _refresh_space_check()
 
 
 def reduce_load_advised() -> bool:
     """Function that allows us to back off intensive operations if we're running under high load."""
     global last_temp_check, last_temp_check_outcome
-    global last_space_check, last_space_check_value, last_space_check_outcome
 
     if not root_cfg.running_on_rpi:
         return False
 
-    now = api.utc_now()
-    if (now - last_temp_check).total_seconds() < 30:
+    with _check_lock:
+        now = api.utc_now()
+        if (now - last_temp_check).total_seconds() < CHECK_INTERVAL_S:
+            return last_temp_check_outcome
+
+        _refresh_space_check()
+
+        cpu_readings = psutil.sensors_temperatures().get("cpu_thermal")  # type: ignore
+        cpu_temp = cpu_readings[0].current if cpu_readings else 0
+
+        cpu_too_hot = cpu_temp > HIGH_TEMPERATURE_THRESHOLD
+        mount_too_full = last_space_check_value > HIGH_EXPIDITE_MOUNT_THRESHOLD
+
+        if cpu_too_hot:
+            logger.warning(
+                f"{root_cfg.RAISE_WARN()}Advising to reduce load due to high CPU temperature "
+                f"{cpu_temp}℃ (threshold {HIGH_TEMPERATURE_THRESHOLD}℃)"
+            )
+        if mount_too_full:
+            logger.warning(
+                f"{root_cfg.RAISE_WARN()}Advising to reduce load due to high expidite mount usage "
+                f"{last_space_check_value}% (threshold {HIGH_EXPIDITE_MOUNT_THRESHOLD}%)"
+            )
+
+        last_temp_check_outcome = cpu_too_hot or mount_too_full
+        last_temp_check = now
+
         return last_temp_check_outcome
-    last_temp_check = now
-
-    if (now - last_space_check).total_seconds() > 30:
-        last_space_check = now
-        last_space_check_value = psutil.disk_usage(str(root_cfg.ROOT_WORKING_DIR)).percent
-        last_space_check_outcome = last_space_check_value > CRITICAL_EXPIDITE_MOUNT_THRESHOLD
-
-    cpu_readings = psutil.sensors_temperatures().get("cpu_thermal")  # type: ignore
-    cpu_temp = cpu_readings[0].current if cpu_readings else 0
-
-    cpu_too_hot = cpu_temp > HIGH_TEMPERATURE_THRESHOLD
-    mount_too_full = last_space_check_value > HIGH_EXPIDITE_MOUNT_THRESHOLD
-
-    # Log the two conditions separately: they have distinct causes and distinct remedies, and reporting
-    # the healthy value alongside the unhealthy one makes the fault look like a false positive.
-    if cpu_too_hot:
-        logger.warning(
-            f"{root_cfg.RAISE_WARN()}Advising to reduce load due to high CPU temperature "
-            f"{cpu_temp}℃ (threshold {HIGH_TEMPERATURE_THRESHOLD}℃)"
-        )
-    if mount_too_full:
-        logger.warning(
-            f"{root_cfg.RAISE_WARN()}Advising to reduce load due to high expidite mount usage "
-            f"{last_space_check_value}% (threshold {HIGH_EXPIDITE_MOUNT_THRESHOLD}%)"
-        )
-
-    last_temp_check_outcome = cpu_too_hot or mount_too_full
-
-    return last_temp_check_outcome
 
 
 ##############################################################################################################
