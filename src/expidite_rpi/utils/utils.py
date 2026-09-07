@@ -31,7 +31,9 @@ last_temp_check_outcome = False
 _check_lock = Lock()  # Guards the cached readings above, their outcomes and their clocks.
 CRITICAL_EXPIDITE_MOUNT_THRESHOLD = 75.0
 HIGH_EXPIDITE_MOUNT_THRESHOLD = 25.0
-HIGH_TEMPERATURE_THRESHOLD = 70.0
+# Raspberry Pi throttles the CPU beginning at 80℃ (soft throttling) and more aggressively at 85℃ (hard
+# throttling), so we reduce load before that point.
+HIGH_TEMPERATURE_THRESHOLD = 75.0
 # How long a reading is reused for, covering both the mount-usage and the CPU-temperature caches below.
 CHECK_INTERVAL_S = 30.0
 
