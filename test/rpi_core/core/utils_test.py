@@ -2,7 +2,8 @@ import datetime as dt
 import time
 from collections.abc import Callable
 from datetime import UTC, datetime
-from threading import Thread
+from pathlib import Path
+from threading import Event, Thread
 from types import SimpleNamespace
 from unittest.mock import MagicMock
 
@@ -128,6 +129,8 @@ def mount(monkeypatch: pytest.MonkeyPatch) -> _MountHarness:
     monkeypatch.setattr(utils, "last_space_check", dt.datetime(1970, 1, 1, tzinfo=UTC))
     monkeypatch.setattr(utils, "last_space_check_value", 0.0)
     monkeypatch.setattr(utils, "last_space_check_outcome", False)
+    monkeypatch.setattr(utils, "last_space_check_breakdown", "")
+    monkeypatch.setattr(utils, "_summarise_mount_usage", lambda: "processing 9MB in 9 files")
     monkeypatch.setattr(utils, "last_temp_check", dt.datetime(1970, 1, 1, tzinfo=UTC))
     monkeypatch.setattr(utils, "last_temp_check_outcome", False)
     monkeypatch.setattr(utils.psutil, "disk_usage", harness.disk_usage)
@@ -217,10 +220,10 @@ class Test_load_checks:
 
     @pytest.mark.unittest
     def test_mixed_concurrent_checks_do_not_deadlock(self, mount: _MountHarness) -> None:
-        """reduce_load_advised() holds the lock across its call to _refresh_space_check().
+        """Both checks take the shared lock, and reduce_load_advised() drives the other one.
 
-        That reentrant acquisition is why the lock is an RLock. A plain Lock deadlocks here rather than
-        failing an assertion, so the threads are joined with a timeout and checked for liveness.
+        A lock-ordering mistake here deadlocks rather than failing an assertion, so the threads are joined
+        with a timeout and checked for liveness.
         """
         mount.percent = 80.0
         mount.delay = 0.02
@@ -240,3 +243,60 @@ class Test_load_checks:
 
         assert all(completed), "A check thread deadlocked on the shared lock"
         assert mount.reads == 1
+
+    @pytest.mark.unittest
+    def test_mount_walk_does_not_block_other_threads(
+        self, mount: _MountHarness, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """The walk stats every file on the mount, so it must not be held across _check_lock.
+
+        It is slowest exactly when the mount is fullest, which is when the most sensor threads are calling
+        continue_recording(). Held under the lock it would serialise all of them behind one walk.
+        """
+        walking = Event()
+        release = Event()
+
+        def slow_walk() -> str:
+            walking.set()
+            release.wait(THREAD_JOIN_TIMEOUT_S)
+            return "processing 9MB in 9 files"
+
+        monkeypatch.setattr(utils, "_summarise_mount_usage", slow_walk)
+        mount.percent = 80.0
+
+        walker = Thread(target=utils.failing_to_keep_up, daemon=True)
+        walker.start()
+        assert walking.wait(THREAD_JOIN_TIMEOUT_S), "The walk never started"
+
+        # The walk is in flight; a second thread must be handed the cached reading, not made to wait.
+        start = time.monotonic()
+        assert utils.failing_to_keep_up() is True
+        elapsed = time.monotonic() - start
+
+        release.set()
+        walker.join(THREAD_JOIN_TIMEOUT_S)
+        assert not walker.is_alive(), "The walking thread never completed"
+        assert elapsed < 1.0, f"failing_to_keep_up() blocked for {elapsed:.1f}s behind the mount walk"
+
+    @pytest.mark.unittest
+    def test_mount_breakdown_names_every_entry(self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+        """Every top-level directory is named, biggest first, including the empty ones.
+
+        A stage sitting at 0 files is what rules that stage out as the cause of the backlog.
+        """
+        for name, files, size in [("processing", 2, 400000), ("upload", 0, 0), ("logs", 1, 3000)]:
+            (tmp_path / name / "nested").mkdir(parents=True)
+            for i in range(files):
+                (tmp_path / name / "nested" / f"f{i}.dat").write_bytes(b"x" * size)
+        monkeypatch.setattr(root_cfg, "ROOT_WORKING_DIR", tmp_path)
+
+        breakdown = utils._summarise_mount_usage()
+
+        assert breakdown == "processing 0.8MB in 2 files, logs 0.0MB in 1 file, upload 0.0MB in 0 files"
+
+    @pytest.mark.unittest
+    def test_mount_breakdown_survives_an_unreadable_mount(self, monkeypatch: pytest.MonkeyPatch) -> None:
+        """The breakdown is diagnostic text, so a failure to read the mount must not lose the warning."""
+        monkeypatch.setattr(root_cfg, "ROOT_WORKING_DIR", Path("no-such-mount"))
+
+        assert "breakdown unavailable" in utils._summarise_mount_usage()

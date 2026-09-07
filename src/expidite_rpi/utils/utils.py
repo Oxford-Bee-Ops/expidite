@@ -9,7 +9,7 @@ import signal
 import subprocess
 from datetime import UTC
 from pathlib import Path
-from threading import RLock, Timer
+from threading import Lock, Timer
 
 import psutil
 
@@ -25,14 +25,56 @@ logger = root_cfg.setup_logger("expidite")
 last_space_check = dt.datetime(1970, 1, 1, tzinfo=UTC)
 last_space_check_value = 0.0
 last_space_check_outcome = False
+last_space_check_breakdown = ""
 last_temp_check = dt.datetime(1970, 1, 1, tzinfo=UTC)
 last_temp_check_outcome = False
-_check_lock = RLock()  # Guards the cached readings above, their outcomes and their clocks.
+_check_lock = Lock()  # Guards the cached readings above, their outcomes and their clocks.
 CRITICAL_EXPIDITE_MOUNT_THRESHOLD = 75.0
 HIGH_EXPIDITE_MOUNT_THRESHOLD = 25.0
 HIGH_TEMPERATURE_THRESHOLD = 70.0
 # How long a reading is reused for, covering both the mount-usage and the CPU-temperature caches below.
 CHECK_INTERVAL_S = 30.0
+
+
+def _summarise_mount_usage() -> str:
+    """Return a one-line breakdown of what is occupying ROOT_WORKING_DIR, biggest directory first.
+
+    Each pipeline stage owns a top-level directory (processing, staging, upload, tmp, logs, and spool when
+    the persistent spool has failed over), so naming them says whether the mount is backed up behind a
+    DataProcessor, behind the cloud, or is just log churn.
+
+    Best-effort: files are created and deleted under us while we walk, so anything that vanishes mid-walk
+    is skipped rather than raising into the caller's warning path.
+    """
+    entries: list[tuple[int, int, str]] = []
+    try:
+        children = list(root_cfg.ROOT_WORKING_DIR.iterdir())
+    except OSError as e:
+        return f"breakdown unavailable ({e})"
+
+    for child in children:
+        size = 0
+        count = 0
+        with contextlib.suppress(OSError):
+            if child.is_dir():
+                for path in child.rglob("*"):
+                    with contextlib.suppress(OSError):
+                        if path.is_file():
+                            size += path.stat().st_size
+                            count += 1
+            elif child.is_file():
+                size = child.stat().st_size
+                count = 1
+        entries.append((size, count, child.name))
+
+    if not entries:
+        return "mount is empty"
+
+    entries.sort(reverse=True)
+    return ", ".join(
+        f"{name} {size / 1000000:.1f}MB in {count} file{'' if count == 1 else 's'}"
+        for size, count, name in entries
+    )
 
 
 def _refresh_space_check() -> bool:
@@ -45,6 +87,7 @@ def _refresh_space_check() -> bool:
     cached True that was never reported - the stall was invisible in the fleet logs.
     """
     global last_space_check, last_space_check_value, last_space_check_outcome
+    global last_space_check_breakdown
 
     with _check_lock:
         now = api.utc_now()
@@ -54,14 +97,20 @@ def _refresh_space_check() -> bool:
         last_space_check_value = psutil.disk_usage(str(root_cfg.ROOT_WORKING_DIR)).percent
         last_space_check_outcome = last_space_check_value > CRITICAL_EXPIDITE_MOUNT_THRESHOLD
         last_space_check = now
+        usage = last_space_check_value
+        is_critical = last_space_check_outcome
 
-        if last_space_check_outcome:
-            logger.warning(
-                f"{root_cfg.RAISE_WARN()}Failing to keep up due to low disk space: expidite mount usage "
-                f"{last_space_check_value}% (threshold {CRITICAL_EXPIDITE_MOUNT_THRESHOLD}%)"
-            )
+    breakdown = _summarise_mount_usage() if usage > HIGH_EXPIDITE_MOUNT_THRESHOLD else ""
+    with _check_lock:
+        last_space_check_breakdown = breakdown
 
-        return last_space_check_outcome
+    if is_critical:
+        logger.warning(
+            f"{root_cfg.RAISE_WARN()}Failing to keep up due to low disk space: expidite mount usage "
+            f"{usage}% (threshold {CRITICAL_EXPIDITE_MOUNT_THRESHOLD}%); largest contents: {breakdown}"
+        )
+
+    return is_critical
 
 
 def failing_to_keep_up() -> bool:
@@ -79,12 +128,12 @@ def reduce_load_advised() -> bool:
     if not root_cfg.running_on_rpi:
         return False
 
+    _refresh_space_check()
+
     with _check_lock:
         now = api.utc_now()
         if (now - last_temp_check).total_seconds() < CHECK_INTERVAL_S:
             return last_temp_check_outcome
-
-        _refresh_space_check()
 
         cpu_readings = psutil.sensors_temperatures().get("cpu_thermal")  # type: ignore
         cpu_temp = cpu_readings[0].current if cpu_readings else 0
@@ -100,7 +149,8 @@ def reduce_load_advised() -> bool:
         if mount_too_full:
             logger.warning(
                 f"{root_cfg.RAISE_WARN()}Advising to reduce load due to high expidite mount usage "
-                f"{last_space_check_value}% (threshold {HIGH_EXPIDITE_MOUNT_THRESHOLD}%)"
+                f"{last_space_check_value}% (threshold {HIGH_EXPIDITE_MOUNT_THRESHOLD}%); "
+                f"largest contents: {last_space_check_breakdown or 'not yet sampled'}"
             )
 
         last_temp_check_outcome = cpu_too_hot or mount_too_full
