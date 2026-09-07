@@ -392,11 +392,11 @@ class DeviceHealth(Sensor):
                 self.last_ping_success_count_all = self.device_manager.ping_success_count_all
 
             # Total memory
-            total_memory = psutil.virtual_memory().total
-            total_memory_gb = round(total_memory / (1024**3), 2)
+            memory = psutil.virtual_memory()
+            total_memory_gb = round(memory.total / (1024**3), 2)
 
             # Memory usage - if greater than threshold then generate some diagnostics
-            memory_usage = psutil.virtual_memory().percent
+            memory_usage = memory.percent
             if check_memory_usage and memory_usage > root_cfg.WARN_AT_MEMORY_PERCENT:
                 if root_cfg.running_on_rpi:
                     DeviceHealth.log_top_memory_processes()
@@ -422,7 +422,7 @@ class DeviceHealth(Sensor):
                 "cpu_percent": str(psutil.cpu_percent(0)),
                 "total_memory_gb": str(total_memory_gb),
                 "memory_percent": str(memory_usage),
-                "memory_free": str(int(psutil.virtual_memory().free / 1000000)) + "M",
+                "memory_free": str(int(memory.available / 1000000)) + "M",
                 "disk_percent": str(psutil.disk_usage("/").percent),
                 "disk_bytes_written_in_period": str(bytes_written),
                 "io_bytes_sent": str(bytes_sent),
