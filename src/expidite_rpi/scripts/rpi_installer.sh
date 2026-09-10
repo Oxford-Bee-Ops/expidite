@@ -1058,7 +1058,11 @@ create_mount() {
             # Create the mount
             sudo mount -t tmpfs -o size=$mount_size tmpfs $mountpoint
 
-            # Add the mount to fstab
+            # Add the mount to fstab. Terminate the last line first: if /etc/fstab does not end in a newline,
+            # our entry would be appended onto the end of that line.
+            if [ -n "$(sudo tail -c1 /etc/fstab)" ]; then
+                echo | sudo tee -a /etc/fstab > /dev/null
+            fi
             echo "$fstab_entry" | sudo tee -a /etc/fstab > /dev/null
             sudo systemctl daemon-reload
             # Recommended sleep before mount -a to allow systemd to complete
@@ -1145,7 +1149,11 @@ set_hostname() {
         echo "Updating /etc/hosts file..."
         # Remove any line starting with "127.0.1.1"
         sudo sed -i '/^127\.0\.1\.1/d' /etc/hosts
-        # Insert the new hostname at the end of the file
+        # Insert the new hostname at the end of the file. Terminate the last line first: if /etc/hosts
+        # does not end in a newline, our entry would be appended onto the end of that line.
+        if [ -n "$(sudo tail -c1 /etc/hosts)" ]; then
+            echo | sudo tee -a /etc/hosts > /dev/null
+        fi
         echo "127.0.1.1 $new_hostname" | sudo tee -a /etc/hosts > /dev/null
     fi
 }
