@@ -1274,6 +1274,14 @@ Restart=always
 RestartSec=30
 # Give the process up to 60s to start (e.g. if NTP sync is unavailable because there is no network).
 TimeoutStartSec=60
+# Set STOP_EXPIDITE_FLAG before systemd SIGTERMs the cgroup. systemd signals every process in the cgroup at
+# once, so an in-flight rpicam-vid dies and its sensor thread logs a fault before RpiCore's SIGTERM handler can
+# set the flag - which _SuppressShutdownFaultsFilter relies on to drop that expected teardown noise. ExecStop
+# runs to completion before the signal is sent, closing that race. The MAINPID check skips the touch when the
+# process has already exited on its own (a crash), so a stale flag cannot suppress real faults. $$ is systemd's
+# escape for a literal $, leaving MAINPID for sh to read from the environment systemd provides. The leading -
+# means a failed touch (e.g. read-only filesystem) is ignored rather than leaving the unit in the failed state.
+ExecStop=-/bin/sh -c 'if [ -n "\$\$MAINPID" ]; then touch $SERVICE_HOME/.expidite/flags/STOP_EXPIDITE_FLAG; fi'
 # Give the process up to 4 minutes to clean up on shutdown (graceful stop can take ~3 minutes).
 TimeoutStopSec=240
 StandardOutput=journal
