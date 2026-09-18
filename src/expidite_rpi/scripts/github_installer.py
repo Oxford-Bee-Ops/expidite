@@ -103,6 +103,7 @@ def _install_package(local_wheel_path: Path) -> None:
                 "-m",
                 "pip",
                 "install",
+                "--no-cache-dir",
                 "--upgrade",
                 "--upgrade-strategy",
                 "only-if-needed",

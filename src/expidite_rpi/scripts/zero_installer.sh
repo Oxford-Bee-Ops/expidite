@@ -261,10 +261,12 @@ sys.exit(1)
 #
 # The exit status is preserved, so `||` fallbacks and `if pip_install ...; then` call sites behave exactly as
 # they did with a bare `pip install`.
+#
+# --no-cache-dir because pip never prunes ~/.cache/pip, which stores every old version.
 ##############################################################################################################
 pip_install() {
     local rc=0
-    pip install "$@" || rc=$?
+    pip install --no-cache-dir "$@" || rc=$?
     sync
     return $rc
 }
@@ -587,6 +589,8 @@ install_os_packages() {
     sudo apt-get purge -y rpicam-apps-lite || { echo "Failed to remove rpicam-apps-lite"; }
     sudo apt-get install -y "${camera_python_packages[@]}" || { echo "Failed to install camera packages"; }
     sudo apt-get autoremove -y || { echo "Failed to remove unnecessary packages"; }
+    # apt-get keeps every download; so cleanup old versions.
+    sudo apt-get clean || { echo "Failed to clean apt cache"; }
     echo "OS packages installed successfully."
     # A reboot is always required after installing packages, otherwise the system is unstable
     # (eg rpicam broken pipe)
