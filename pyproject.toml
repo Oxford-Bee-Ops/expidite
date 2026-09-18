@@ -20,14 +20,14 @@ dependencies = [
     "adafruit-circuitpython-ltr390==1.1.24",
     "adafruit-platformdetect==3.89.1",
     "azure-iot-device==2.14.0",
-    "azure-storage-blob==12.30.1",
+    "azure-storage-blob==12.30.2",
     "bottleneck==1.6.0", # Required by pandas.
     "click==8.5.0",
     "gpiozero==2.0.1",
     "numexpr==2.14.2", # Required by pandas.
     "numpy==2.4.2",
     "opencv-python-headless==4.13.0.92",
-    "pandas==3.0.5",
+    "pandas==3.0.6",
     "psutil==7.2.2",
     "PyGithub==2.10.0",
     "PyYAML==6.0.3",
@@ -50,8 +50,8 @@ dev = [
     "pyright==1.1.414",
     "pytest==9.1.1",
     "pytest-socket==0.8.1",
-    "ruff==0.16.7",
-    "ty==0.0.81",
+    "ruff==0.16.8",
+    "ty==0.0.82",
     "types-psutil==7.2.2.20260906",
     "types-PyYAML==6.0.12.20260906",
 ]
