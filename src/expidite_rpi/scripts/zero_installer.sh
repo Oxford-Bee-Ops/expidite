@@ -1119,14 +1119,43 @@ create_mount() {
 
         # Disable swap only on higher-memory systems.
         if [ "$total_mem_mb" -gt 1500 ]; then
-            sudo swapoff -a
-            sudo systemctl mask swap.target
+            disable_swap
         else
             echo "Keeping swap enabled on low-memory device (${total_mem_mb}MB)."
             sudo systemctl unmask swap.target || true
         fi
     fi
 
+}
+
+##############################################################################################################
+# Disable swap. We want to protect the SD card by minimising disk writes, and swap memory can require frequent
+# disk writes.
+#
+# `swapoff -a` only lasts until reboot, and masking swap.target does not stop either of the services that
+# re-enable swap on boot: rpi-swap on trixie, dphys-swapfile on bookworm. Both use a /var/swap file on the SD
+# card. The rpi-swap drop-in takes effect from the next boot; writing it on bookworm is harmless and keeps
+# swap off if the device is later upgraded.
+##############################################################################################################
+disable_swap() {
+    sudo swapoff -a
+    sudo systemctl mask swap.target
+
+    swap_dropin="/etc/rpi/swap.conf.d/90-expidite.conf"
+    if ! grep -qs "^Mechanism=none" "$swap_dropin"; then
+        sudo mkdir -p /etc/rpi/swap.conf.d
+        printf '[Main]\nMechanism=none\n' | sudo tee "$swap_dropin" > /dev/null
+        echo "Configured rpi-swap with Mechanism=none."
+    fi
+
+    if systemctl is-enabled --quiet dphys-swapfile 2>/dev/null; then
+        sudo systemctl disable --now dphys-swapfile && echo "Disabled dphys-swapfile."
+    fi
+
+    # rpi-swap keeps /var/swap attached to a loop device until reboot; leave it to the next installer run.
+    if [ -z "$(sudo losetup -j /var/swap 2>/dev/null)" ]; then
+        sudo rm -f /var/swap
+    fi
 }
 
 ##############################################################################################################
