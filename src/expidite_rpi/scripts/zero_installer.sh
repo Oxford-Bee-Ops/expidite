@@ -1074,9 +1074,12 @@ create_mount() {
     sudo mkdir -p $spool_mountpoint
     sudo chown -R $SERVICE_USER:$SERVICE_USER $spool_mountpoint
 
-    # Are we mounting on SSD or RAM disk?
-    if grep -qs "/dev/sda" /etc/mtab; then
-        echo "Mounted on SSD; no further action reqd."
+    # Are we mounting on SSD or RAM disk? Decide by where the root filesystem lives, not by whether any SSD
+    # is mounted: a device booting from SD with a USB SSD attached for extra storage still needs the RAM disk.
+    # Anything other than a clear SSD root (including an ambiguous /dev/root) falls through to the RAM disk.
+    root_dev=$(findmnt -n -o SOURCE /)
+    if [[ "$root_dev" == /dev/sd* || "$root_dev" == /dev/nvme* ]]; then
+        echo "Root filesystem is on SSD ($root_dev); no further action reqd."
     else
         echo "Running on SD card. Mount the RAM disk."
         total_mem_mb=$(get_total_mem_mb)
