@@ -1117,35 +1117,34 @@ create_mount() {
             echo "The expidite mount point has been added to fstab."
         fi
 
-        # Disable swap only on higher-memory systems.
-        if [ "$total_mem_mb" -gt 1500 ]; then
-            disable_swap
-        else
-            echo "Keeping swap enabled on low-memory device (${total_mem_mb}MB)."
-            sudo systemctl unmask swap.target || true
-        fi
+        configure_swap
     fi
 
 }
 
 ##############################################################################################################
-# Disable swap. We want to protect the SD card by minimising disk writes, and swap memory can require frequent
-# disk writes.
+# Configure swap to use zram only. We want to protect the SD card by minimising disk writes, so swap must
+# never go to a file on the SD card, but compressed swap in RAM (zram) is useful headroom under memory
+# pressure.
 #
-# `swapoff -a` only lasts until reboot, and masking swap.target does not stop either of the services that
-# re-enable swap on boot: rpi-swap on trixie, dphys-swapfile on bookworm. Both use a /var/swap file on the SD
-# card. The rpi-swap drop-in takes effect from the next boot; writing it on bookworm is harmless and keeps
-# swap off if the device is later upgraded.
+# On trixie:
+# - rpi-swap's default mechanism can back zram with a /var/swap file on the SD card; here the drop-in
+#   restricts it to zram only, from the next boot. zram is considered a better mechanism than fully disabling
+#   swap because it allows the kernel to compress memory pages and free up RAM under memory pressure, without
+#   writing to the SD card.
+# On bookworm:
+# - dphys-swapfile swaps to /var/swap, so we disable it; bookworm then has no swap, as rpi-swap is not
+#   available. Writing the drop-in on bookworm is harmless and takes effect if the device is later upgraded.
 ##############################################################################################################
-disable_swap() {
-    sudo swapoff -a
-    sudo systemctl mask swap.target
+configure_swap() {
+    # Older installer versions masked swap.target, which would also stop zram swap from being activated.
+    sudo systemctl unmask swap.target || true
 
     swap_dropin="/etc/rpi/swap.conf.d/90-expidite.conf"
-    if ! grep -qs "^Mechanism=none" "$swap_dropin"; then
+    if ! grep -qs "^Mechanism=zram$" "$swap_dropin"; then
         sudo mkdir -p /etc/rpi/swap.conf.d
-        printf '[Main]\nMechanism=none\n' | sudo tee "$swap_dropin" > /dev/null
-        echo "Configured rpi-swap with Mechanism=none."
+        printf '[Main]\nMechanism=zram\n' | sudo tee "$swap_dropin" > /dev/null
+        echo "Configured rpi-swap with Mechanism=zram."
     fi
 
     if systemctl is-enabled --quiet dphys-swapfile 2>/dev/null; then
