@@ -41,6 +41,21 @@ def make_file(dir_path: Path, name: str, nbytes: int = 20) -> Path:
 
 class TestDiskSpool:
     @pytest.mark.unittest
+    def test_unusable_persistent_root_does_not_fall_back_to_ram(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        persistent_root = tmp_path / "persistent-spool"
+        persistent_root.write_text("not a directory")
+        ram_root = tmp_path / "ram"
+        monkeypatch.setattr(root_cfg, "SPOOL_DIR", persistent_root)
+        monkeypatch.setattr(root_cfg, "ROOT_WORKING_DIR", ram_root)
+
+        with pytest.raises(FileExistsError):
+            DiskSpool()
+
+        assert not (ram_root / "spool").exists()
+
+    @pytest.mark.unittest
     def test_upload_roundtrip(self, tmp_path: Path) -> None:
         spool = DiskSpool(tmp_path / "spool")
         src = make_file(tmp_path, "V3_d01111111111_test.txt")

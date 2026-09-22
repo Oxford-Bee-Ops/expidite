@@ -41,9 +41,8 @@ CHECK_INTERVAL_S = 30.0
 def _summarise_mount_usage() -> str:
     """Return a one-line breakdown of what is occupying ROOT_WORKING_DIR, biggest directory first.
 
-    Each pipeline stage owns a top-level directory (processing, staging, upload, tmp, logs, and spool when
-    the persistent spool has failed over), so naming them says whether the mount is backed up behind a
-    DataProcessor, behind the cloud, or is just log churn.
+    Each pipeline stage owns a top-level directory (processing, staging, upload, tmp and logs), so naming
+    them says whether the mount is backed up behind a DataProcessor, behind the cloud, or is just log churn.
 
     Best-effort: files are created and deleted under us while we walk, so anything that vanishes mid-walk
     is skipped rather than raising into the caller's warning path.

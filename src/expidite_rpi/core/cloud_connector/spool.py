@@ -121,35 +121,22 @@ class DiskSpool:
 
     @staticmethod
     def _create_root(root: Path | None) -> Path:
-        """Create and return the spool root, falling back to alternatives if it isn't usable.
+        """Create, validate and return the persistent spool root.
 
-        SPOOL_DIR is normally created by the installer with the right ownership. If it's missing and we
-        can't create it (e.g. the installer hasn't been re-run since this feature shipped), fall back to a
-        subdirectory of DIAGS_DIR, which is also on persistent storage and owned by the service user. The
-        final fallback inside ROOT_WORKING_DIR is memory-backed on SD-card devices and provides no
-        persistence; it only exists so the connector can keep functioning on a misconfigured device.
+        SPOOL_DIR, created by rpi_installer, is the only persistent spool location. Allow caller to
+        override it only for testing. If it is unusable, fail construction.
         """
-        candidates = [root] if root is not None else [root_cfg.SPOOL_DIR, root_cfg.DIAGS_DIR / "spool"]
-        for candidate in candidates:
-            try:
-                candidate.mkdir(parents=True, exist_ok=True)
-                # mkdir succeeding doesn't prove we can write (the dir may be root-owned); check explicitly.
-                probe = candidate / f"probe_{uuid.uuid4().hex}{_PART_SUFFIX}"
-                probe.touch()
-                probe.unlink()
-            except OSError as e:
-                # Expected on devices where the installer hasn't created the directory yet; the final
-                # fallback below raises the customer-facing fault.
-                logger.warning(f"Spool directory {candidate} is not usable: ({e!s})")
-            else:
-                return candidate
-        fallback = root_cfg.ROOT_WORKING_DIR / "spool"
-        logger.error(
-            f"{root_cfg.RAISE_WARN()}No persistent spool directory available; using {fallback} which will "
-            "NOT survive a reboot"
-        )
-        fallback.mkdir(parents=True, exist_ok=True)
-        return fallback
+        candidate = root if root is not None else root_cfg.SPOOL_DIR
+        try:
+            candidate.mkdir(parents=True, exist_ok=True)
+            # mkdir succeeding doesn't prove we can write (the dir may be root-owned); check explicitly.
+            probe = candidate / f"probe_{uuid.uuid4().hex}{_PART_SUFFIX}"
+            probe.touch()
+            probe.unlink()
+        except OSError:
+            logger.exception(f"{root_cfg.RAISE_WARN()}Persistent spool directory {candidate} is not usable")
+            raise
+        return candidate
 
     ##########################################################################################################
     # Writing to the spool
