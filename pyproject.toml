@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "expidite"
-version = "0.1.298"
+version = "0.1.299"
 description = "Python module to support using Raspberry Pi for scientific data collection"
 readme = "README.md"
 requires-python = ">=3.13"
@@ -131,6 +131,8 @@ ignore = [
 ]
 # Rules that we should enforce, but need to fix the code first.
 [tool.ruff.lint.per-file-ignores]
+"test/rpi_core/core/boot_history_test.py" = ["SLF001"]
+"test/rpi_core/core/reboot_test.py" = ["SLF001"]
 "src/expidite_rpi/core/config_validator.py" = ["SLF001"]
 "src/expidite_rpi/core/dp_tree.py" = ["SLF001"]
 "src/expidite_rpi/core/dp_worker_thread.py" = ["SLF001"]

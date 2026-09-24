@@ -67,8 +67,8 @@ class DiagnosticsBundle:
 
         # Limit disk usage by limiting the number of files. If we have connectivity they should be getting
         # uploaded to cloud storage and then deleted. If not, then there isn't much value in keep storing for
-        # files.
-        if len(os.listdir(root_cfg.DIAGS_DIR)) > 10:
+        # files. Only bundles count towards the limit (persistent boot-history files share this directory).
+        if len(list(root_cfg.DIAGS_DIR.glob("V3_DIAGS_*.log.gz"))) > 10:
             logger.info("Skip diagnostic collection because too many existing files")
             return
 

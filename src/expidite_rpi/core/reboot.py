@@ -2,6 +2,7 @@ import threading
 from time import sleep
 
 from expidite_rpi.core import configuration as root_cfg
+from expidite_rpi.scripts import boot_history
 from expidite_rpi.utils import utils
 
 logger = root_cfg.setup_logger("expidite")
@@ -138,7 +139,11 @@ def _flush_and_reboot(reason: str, delay_seconds: float, is_error: bool) -> None
         # Never let a flush failure prevent the reboot itself - the reboot is the recovery action.
         logger.exception(f"{root_cfg.RAISE_WARN()}Error flushing before reboot; rebooting anyway")
 
-    utils.run_cmd("sudo reboot", ignore_errors=True)
+    boot_history.record_reboot_request(f"managed reboot: {reason}")
+    try:
+        utils.run_cmd("sudo reboot")
+    except Exception:
+        logger.exception(f"{root_cfg.RAISE_WARN()}`sudo reboot` failed")
 
 
 # The systemd unit whose graceful stop flushes RpiCore's data. `systemctl stop` blocks until the cgroup has
@@ -180,15 +185,15 @@ def stop_service_and_reboot(reason: str, delay_seconds: float = 0.0) -> None:
         # nothing (the thread ends once the reboot is issued, and systemd's SIGKILL still bounds shutdown).
         threading.Thread(
             target=_stop_service_and_reboot,
-            args=(delay_seconds,),
+            args=(reason, delay_seconds),
             name="managed_reboot",
             daemon=False,
         ).start()
     else:
-        _stop_service_and_reboot(0)
+        _stop_service_and_reboot(reason, 0)
 
 
-def _stop_service_and_reboot(delay_seconds: float) -> None:
+def _stop_service_and_reboot(reason: str, delay_seconds: float) -> None:
     try:
         if delay_seconds > 0:
             sleep(delay_seconds)
@@ -202,6 +207,8 @@ def _stop_service_and_reboot(delay_seconds: float) -> None:
     except Exception:
         # Never let a stop failure prevent the reboot itself.
         logger.exception(f"{root_cfg.RAISE_WARN()}Error stopping service before reboot; rebooting anyway")
+
+    boot_history.record_reboot_request(f"service stop and reboot: {reason}")
 
     try:
         # Not ignore_errors: we need to know if the reboot did not take. `systemctl stop` is a *manual*

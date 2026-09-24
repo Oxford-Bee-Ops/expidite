@@ -1131,6 +1131,46 @@ set_predictable_network_interface_names() {
 }
 
 ##############################################################################################################
+# Persist minimal evidence across reboots. The service records this boot when it starts, then records an
+# orderly shutdown after expidite.service has stopped. Before=expidite.service creates the required reverse
+# stop ordering; normal systemd dependencies keep the filesystem and journal available.
+##############################################################################################################
+install_boot_history_service() {
+    echo_header
+    SERVICE_USER="bee-ops"
+    SERVICE_HOME="/home/$SERVICE_USER"
+    PYTHON_BIN="$SERVICE_HOME/$venv_dir/bin/python"
+    BOOT_HISTORY_SCRIPT="$SERVICE_HOME/$venv_dir/scripts/boot_history.py"
+    BOOT_HISTORY_SERVICE_FILE="/etc/systemd/system/expidite-boot-history.service"
+
+    sudo tee "$BOOT_HISTORY_SERVICE_FILE" > /dev/null << EOF
+[Unit]
+Description=Expidite boot history recorder
+After=time-sync.target
+Before=expidite.service
+RequiresMountsFor=/expidite-diags
+RefuseManualStop=yes
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+# A oneshot has no start timeout by default, and expidite.service waits for this unit to start. Bound
+# both hooks so a hung write on a failing SD card can't block data collection or delay shutdown.
+TimeoutStartSec=30
+TimeoutStopSec=30
+User=$SERVICE_USER
+ExecStart=$PYTHON_BIN $BOOT_HISTORY_SCRIPT record-boot
+ExecStop=$PYTHON_BIN $BOOT_HISTORY_SCRIPT record-shutdown
+
+[Install]
+WantedBy=multi-user.target
+EOF
+
+    sudo systemctl daemon-reload
+    sudo systemctl enable --now expidite-boot-history.service
+}
+
+##############################################################################################################
 # Enable the I2C interface
 #
 # Runs:	sudo raspi-config nonint do_i2c 0
@@ -1608,7 +1648,13 @@ reboot_if_required() {
         sync
 
         echo "Reboot required. This will be reboot #$reboot_count. Rebooting now..."
-        sudo reboot
+        BOOT_HISTORY_PYTHON="$HOME/$venv_dir/bin/python"
+        BOOT_HISTORY_SCRIPT="$HOME/$venv_dir/scripts/boot_history.py"
+        "$BOOT_HISTORY_PYTHON" "$BOOT_HISTORY_SCRIPT" record-request \
+            "rpi_installer requested reboot #$reboot_count"
+        if ! sudo reboot; then
+            echo "Warning: reboot command failed."
+        fi
     else
         echo "No reboot required."
         # We can safely reset the reboot counter here
@@ -1668,6 +1714,7 @@ install_user_code
 verify_expidite_install
 set_log_storage_volatile
 create_mount
+install_boot_history_service
 set_predictable_network_interface_names
 enable_i2c
 alias_bcli
