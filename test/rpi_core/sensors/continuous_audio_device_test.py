@@ -37,7 +37,8 @@ class _DummyContinuousAudioSelf:
         return next(self._continue_values)
 
     def sensor_failed(self) -> None:
-        raise AssertionError("sensor_failed should not be called in this test")
+        msg = "sensor_failed should not be called in this test"
+        raise AssertionError(msg)
 
     def save_recording(
         self,
