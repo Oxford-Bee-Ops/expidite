@@ -1,6 +1,5 @@
 from collections.abc import Callable
 from dataclasses import dataclass, field
-from typing import Any
 
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
@@ -20,24 +19,6 @@ from expidite_rpi.utils import utils_clean
 FAILED_TO_LOAD = "Not set"
 
 
-@dataclass
-class Configuration:
-    """Utility super class."""
-
-    def update_field(self, field_name: str, value: Any) -> None:  # noqa: ANN401
-        setattr(self, field_name, value)
-
-    def update_fields(self, **kwargs: Any) -> None:  # noqa: ANN401
-        for field_name, value in kwargs.items():
-            self.update_field(field_name, value)
-
-    def display(self) -> str:
-        return utils_clean.display_dataclass(self)
-
-    def get_field(self, field_name: str) -> Any:  # noqa: ANN401
-        return getattr(self, field_name)
-
-
 ##############################################################################################################
 # Wifi configuration
 ##############################################################################################################
@@ -52,7 +33,7 @@ class WifiClient:
 # Configuration for a device
 ##############################################################################################################
 @dataclass
-class DeviceCfg(Configuration):
+class DeviceCfg:
     """Configuration for a device."""
 
     # DPtree objects define the Sensor and DataProcessor objects that will be used to process the data.
@@ -127,6 +108,9 @@ class DeviceCfg(Configuration):
     # This will be passed to pytest to identify and invoke the tests.
     # This is parameter is passed as the -k option in pytest.
     tests_to_run: list[str] = field(default_factory=list)
+
+    def display(self) -> str:
+        return utils_clean.display_dataclass(self)
 
 
 ##############################################################################################################
