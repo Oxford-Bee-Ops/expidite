@@ -1,4 +1,5 @@
 import signal
+import sys
 import threading
 from pathlib import Path
 from threading import Thread
@@ -9,6 +10,7 @@ from expidite_rpi.core.device_config_objects import DeviceCfg
 from expidite_rpi.core.device_health import DeviceHealth
 from expidite_rpi.core.diagnostics_bundle import DiagnosticsBundle
 from expidite_rpi.core.edge_orchestrator import EdgeOrchestrator
+from expidite_rpi.scripts import boot_history
 from expidite_rpi.utils import utils
 
 logger = root_cfg.setup_logger("expidite")
@@ -56,6 +58,17 @@ class RpiCore:
             logger.warning("Not on main thread; SIGTERM handler not installed")
             return
         signal.signal(signal.SIGTERM, RpiCore._handle_sigterm)
+
+    @staticmethod
+    def _record_start_in_boot_history() -> None:
+        """Record the start in the boot history, but only when running as system.cfg's my_start_script.
+
+        BCLI can also start RpiCore in its own process, and tests start it too; neither is the real start.
+        """
+        main_spec = getattr(sys.modules.get("__main__"), "__spec__", None)
+        start_script = root_cfg.system_cfg.my_start_script if root_cfg.system_cfg else None
+        if root_cfg.running_on_rpi and main_spec is not None and main_spec.name == start_script:
+            boot_history.record_expidite_started()
 
     @staticmethod
     def _handle_sigterm(_sig: int, _frame: object) -> None:
@@ -159,6 +172,8 @@ class RpiCore:
         RpiCore._check_for_abnormal_restart()
 
         RpiCore._install_sigterm_handler()
+
+        RpiCore._record_start_in_boot_history()
 
         logger.info("Starting RpiCore")
 

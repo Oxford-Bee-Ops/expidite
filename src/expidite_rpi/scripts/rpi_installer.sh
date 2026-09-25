@@ -1286,7 +1286,9 @@ install_expidite_service() {
     sudo tee "$SERVICE_FILE" > /dev/null << EOF
 [Unit]
 Description=Expidite
-# Wait for NTP before starting, so timestamped filenames and logs are correct.
+# Prefer to start after NTP sync, so timestamped filenames and logs are correct. This is only an ordering hint:
+# nothing activates systemd-time-wait-sync.service, so time-sync.target is reached as soon as timesyncd starts,
+# and RpiCore can start with the stale clock timesyncd restored at boot.
 # network-online.target is only a soft ordering hint (Wants=, not Requires=): with no network the
 # wait-online service times out (~60s) and boot proceeds anyway, so RpiCore always starts and spools
 # offline. Shutdown does no network I/O - the graceful stop spills any unsent data to the disk spool.

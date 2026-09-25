@@ -1,6 +1,7 @@
 """A deliberately tiny, standalone, best-effort boot history.
 
-It records every boot, every requested reboot (with its reason) and every orderly shutdown.
+It records every boot, every requested reboot (with its reason), every orderly shutdown and every start of
+RpiCore by the configured start script.
 
 Systemd executes this file directly from the virtualenv's ``scripts`` directory. Do not change that to
 ``python -m expidite_rpi...`` and do not import anything from ``expidite_rpi`` here: importing a package
@@ -18,13 +19,14 @@ import contextlib
 import json
 import os
 import sys
-from datetime import UTC, datetime
+from datetime import UTC, datetime, timedelta
 from pathlib import Path
 from typing import Any
 
 BOOT_EVENT = "boot"
 SHUTDOWN_EVENT = "shutdown"
 REBOOT_REQUESTED_EVENT = "reboot_requested"
+EXPIDITE_STARTED_EVENT = "expidite_started"
 MAX_REASON_CHARS = 500
 MAX_BYTES_PER_FILE = 100_000
 
@@ -32,6 +34,8 @@ DIAGS_DIR = Path("/expidite-diags")
 BOOT_HISTORY_FILE = DIAGS_DIR / "boot_history.jsonl"
 BOOT_HISTORY_BACKUP_FILE = DIAGS_DIR / "boot_history.1.jsonl"
 _BOOT_ID_FILE = Path("/proc/sys/kernel/random/boot_id")
+# Seconds since the kernel started. Unlike the wall clock, it is never stepped by NTP.
+_UPTIME_FILE = Path("/proc/uptime")
 _POWER_RESET_FILE = Path("/proc/device-tree/chosen/power/power_reset")
 _POWER_RESET_FLAGS = {
     0: "over_voltage",
@@ -91,16 +95,41 @@ def record_reboot_request(reason: str) -> dict[str, Any] | None:
         return event
 
 
+def record_expidite_started() -> dict[str, Any] | None:
+    """Record an RpiCore start, with the time this boot began.
+
+    The boot event's "at" is written before NTP sync and can be stale. boot_at is the current time minus the
+    kernel uptime, so it is the true boot time provided the clock is synced when RpiCore starts.
+    """
+    try:
+        event = _new_event(EXPIDITE_STARTED_EVENT)
+        event["boot_at"] = _format_time(datetime.now(tz=UTC) - timedelta(seconds=event["uptime_s"]))
+        _append_event(event)
+    except Exception:
+        return None
+    else:
+        return event
+
+
 def _new_event(kind: str) -> dict[str, Any]:
-    return {"at": _utc_now_str(), "boot_id": _read_boot_id(), "event": kind}
+    return {
+        "at": _format_time(datetime.now(tz=UTC)),
+        "boot_id": _read_boot_id(),
+        "event": kind,
+        "uptime_s": _read_uptime(),
+    }
 
 
 def _read_boot_id() -> str:
     return _BOOT_ID_FILE.read_text().strip()
 
 
-def _utc_now_str() -> str:
-    return datetime.now(tz=UTC).strftime("%Y-%m-%dT%H:%M:%S")
+def _read_uptime() -> int:
+    return round(float(_UPTIME_FILE.read_text().split()[0]))
+
+
+def _format_time(moment: datetime) -> str:
+    return moment.strftime("%Y-%m-%dT%H:%M:%S")
 
 
 def _read_power_reset() -> dict[str, Any] | None:

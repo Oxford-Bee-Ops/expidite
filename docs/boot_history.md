@@ -1,6 +1,7 @@
 # Boot history
 
-The boot history is a small, best-effort record of hardware boots, requested reboots and orderly shutdowns.
+The boot history is a small, best-effort record of hardware boots, requested reboots, orderly shutdowns and
+RpiCore starts.
 It is stored on persistent storage at:
 
 ```text
@@ -13,11 +14,13 @@ recorder only ever appends; it never reads the file back.
 ## Event formats
 
 Every event starts with a UTC timestamp `at` to the second (such as `2026-09-24T09:17:31`), the kernel
-`boot_id` of the boot it happened in, and an `event` type. Any other fields follow. The `boot` event is written
-before NTP has necessarily synced, so its `at` may be stale: Pi 4 and Pi Zero models have no real-time clock,
-and a Pi 5 RTC without a battery loses the time on power loss. After an unexpected reset, `at` is then the last
-saved clock time and can be earlier than events already in the file. Rely on file order, not `at`, to sequence
-events. In the examples below, `A` is the old kernel boot ID and `B` is the new one.
+`boot_id` of the boot it happened in, an `event` type, and `uptime_s`, the seconds since the kernel started
+(`/proc/uptime`, rounded). Any other fields follow. The `boot` event is written before NTP has necessarily
+synced, so its `at` may be stale: Pi 4 and Pi Zero models have no real-time clock, and a Pi 5 RTC without a
+battery loses the time on power loss. `systemd-timesyncd` then restores the clock it last saved, at the
+previous sync or shutdown, so `at` can be earlier than events already in the file. Rely on file order, not
+`at`, to sequence events, and use the `boot_at` of the boot's `expidite_started` event as its true boot time.
+In the examples below, `A` is the old kernel boot ID and `B` is the new one.
 
 Boot event, written once early in each boot:
 
@@ -43,7 +46,16 @@ Orderly shutdown event, written during every orderly reboot or poweroff:
 {"at": "<time>", "boot_id": "A", "event": "shutdown"}
 ```
 
-`reason` is truncated to 500 characters.
+RpiCore start event, written each time RpiCore is started by `my_start_script`:
+
+```json
+{"at": "<time>", "boot_id": "B", "event": "expidite_started", "uptime_s": 81, "boot_at": "<time>"}
+```
+
+`boot_at` is the time the kernel started (`at` - `uptime_s`). It is correct if the clock was NTP-synced when
+RpiCore started.
+
+`reason` is truncated to 500 characters. `uptime_s` is omitted from the other examples for brevity.
 
 ## Who writes events
 
@@ -52,6 +64,7 @@ Orderly shutdown event, written during every orderly reboot or poweroff:
 | `boot` | The `expidite-boot-history` systemd service runs `boot_history.py record-boot` when it starts, before `expidite.service`. |
 | `shutdown` | The same service runs `boot_history.py record-shutdown` when it stops. systemd stops it during every reboot or poweroff. |
 | `reboot_requested` | `reboot.py` (internal health recovery, BCLI and IoT Hub reboots) calls `record_reboot_request()`. The installers run `boot_history.py record-request "<reason>"`. |
+| `expidite_started` | `RpiCore.start()`, only in the process running system.cfg's `my_start_script` via `python -m` (as `expidite.service` does). BCLI starting RpiCore in its own process does not write one. |
 
 The installers create the service, and its `ExecStart` and `ExecStop` run as `bee-ops`.
 
@@ -61,6 +74,7 @@ Group the events by `boot_id` and read each boot's outcome from what it contains
 
 | Events for boot `A` | Meaning |
 |---|---|
+| `expidite_started` | Ignored when classifying how a boot ended. One per RpiCore start, so there may be several. |
 | `boot`, `shutdown` | Orderly shutdown that nobody requested through Expidite, e.g. a plain `sudo reboot` or `sudo poweroff`. |
 | `boot`, `reboot_requested`, `shutdown` | Orderly requested reboot. The `reason` says why. |
 | `boot`, `reboot_requested` | A reboot was requested, but boot `A` never shut down cleanly: the shutdown hung and was reset, or power was lost part-way through. If no later boot follows for a long time, the `sudo reboot` command itself failed. |
@@ -73,6 +87,10 @@ Readers should also:
 - **Use the last `reboot_requested` in a boot.** If a reboot request fails and a later one succeeds within the
   same boot, there are two; the later one is the reason for the shutdown.
 - **Skip lines that are not valid JSON.** See the power-loss row below.
+- **Measure downtime from `boot_at`.** After an orderly shutdown, the device was off from boot `A`'s
+  `shutdown` `at` (true if `A` had synced) until boot `B`'s `boot_at`; the gap includes firmware and bootloader
+  time. After an unclean end, the end of boot `A` is unknown. Boot `B`'s own stale `at` is the clock
+  `systemd-timesyncd` last saved during boot `A`, a lower bound on when `A` was last alive.
 
 ## Rotation
 
@@ -87,7 +105,7 @@ file.
 |---|---|
 | First boot ever observed | A single `boot` event. |
 | Plain `sudo reboot` | `shutdown`, followed by the next `boot`. |
-| Plain `sudo poweroff`, followed by a later power-on | The same as a plain reboot. The history does not record how long the device remained off. |
+| Plain `sudo poweroff`, followed by a later power-on | The same as a plain reboot. The time off is boot `B`'s `boot_at` minus boot `A`'s `shutdown` time. |
 | `rpi_installer` reboot | `reboot_requested` with reason `rpi_installer requested reboot #<n>`, then `shutdown`. |
 | `zero_installer` reboot | `reboot_requested` with reason `zero_installer requested reboot #<n>`, then `shutdown`. |
 | BCLI reboot | `reboot_requested` with reason `service stop and reboot: Reboot requested via BCLI`, then `shutdown`. |

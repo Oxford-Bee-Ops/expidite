@@ -1,6 +1,7 @@
 import contextlib
 import json
 import re
+from datetime import UTC, datetime, timedelta
 from pathlib import Path
 from typing import Any
 
@@ -15,7 +16,13 @@ def diags_dir(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> Path:
     monkeypatch.setattr(boot_history, "BOOT_HISTORY_FILE", tmp_path / "boot_history.jsonl")
     monkeypatch.setattr(boot_history, "BOOT_HISTORY_BACKUP_FILE", tmp_path / "boot_history.1.jsonl")
     monkeypatch.setattr(boot_history, "_POWER_RESET_FILE", tmp_path / "power_reset")
+    _set_uptime(tmp_path, 12.34)
+    monkeypatch.setattr(boot_history, "_UPTIME_FILE", tmp_path / "uptime")
     return tmp_path
+
+
+def _set_uptime(diags_dir: Path, uptime_s: float) -> None:
+    (diags_dir / "uptime").write_text(f"{uptime_s:.2f} 40.00\n")
 
 
 def _set_boot_id(monkeypatch: pytest.MonkeyPatch, boot_id: str) -> None:
@@ -43,9 +50,10 @@ class TestRecordBoot:
         event = boot_history.record_boot()
 
         assert event is not None
-        assert list(event) == ["at", "boot_id", "event"]
+        assert list(event) == ["at", "boot_id", "event", "uptime_s"]
         assert event["event"] == boot_history.BOOT_EVENT
         assert event["boot_id"] == "boot-a"
+        assert event["uptime_s"] == 12
         assert re.fullmatch(r"\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}", event["at"])
         assert _events(diags_dir) == [event]
 
@@ -163,7 +171,7 @@ class TestRecordShutdown:
         event = boot_history.record_shutdown()
 
         assert event is not None
-        assert list(event) == ["at", "boot_id", "event"]
+        assert list(event) == ["at", "boot_id", "event", "uptime_s"]
         assert event["event"] == boot_history.SHUTDOWN_EVENT
         assert _events(diags_dir) == [event]
 
@@ -221,3 +229,32 @@ class TestRecordRebootRequest:
         )
 
         assert boot_history.record_reboot_request("managed reboot") is None
+
+
+class TestRecordExpiditeStarted:
+    @pytest.mark.unittest
+    def test_boot_time_is_now_minus_uptime(self, diags_dir: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+        _set_boot_id(monkeypatch, "boot-a")
+        _set_uptime(diags_dir, 100.0)
+
+        before = datetime.now(tz=UTC).replace(microsecond=0)
+        event = boot_history.record_expidite_started()
+        after = datetime.now(tz=UTC)
+
+        assert event is not None
+        assert list(event) == ["at", "boot_id", "event", "uptime_s", "boot_at"]
+        assert event["event"] == boot_history.EXPIDITE_STARTED_EVENT
+        boot_at = datetime.strptime(event["boot_at"], "%Y-%m-%dT%H:%M:%S").replace(tzinfo=UTC)
+        assert before - timedelta(seconds=101) <= boot_at <= after - timedelta(seconds=100)
+        assert _events(diags_dir) == [event]
+
+    @pytest.mark.unittest
+    def test_write_failure_is_silent(self, diags_dir: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+        _set_boot_id(monkeypatch, "boot-a")
+        monkeypatch.setattr(
+            boot_history,
+            "_append_event",
+            lambda _event: (_ for _ in ()).throw(OSError("read-only filesystem")),
+        )
+
+        assert boot_history.record_expidite_started() is None
