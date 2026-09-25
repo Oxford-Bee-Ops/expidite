@@ -52,8 +52,9 @@ RpiCore start event, written each time RpiCore is started by `my_start_script`:
 {"at": "<time>", "boot_id": "B", "event": "expidite_started", "uptime_s": 81, "boot_at": "<time>"}
 ```
 
-`boot_at` is the time the kernel started (`at` - `uptime_s`). It is correct if the clock was NTP-synced when
-RpiCore started.
+`boot_at` is the time the kernel started (`at` - `uptime_s`). `expidite.service` starts after NTP sync, but
+waits at most 90 seconds for it, so with no network RpiCore starts with a stale clock. `boot_at` is then
+omitted, and this boot's true start time is not recorded.
 
 `reason` is truncated to 500 characters. `uptime_s` is omitted from the other examples for brevity.
 

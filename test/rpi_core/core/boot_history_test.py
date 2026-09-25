@@ -18,6 +18,7 @@ def diags_dir(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> Path:
     monkeypatch.setattr(boot_history, "_POWER_RESET_FILE", tmp_path / "power_reset")
     _set_uptime(tmp_path, 12.34)
     monkeypatch.setattr(boot_history, "_UPTIME_FILE", tmp_path / "uptime")
+    monkeypatch.setattr(boot_history, "_CLOCK_SYNCED_FILE", tmp_path / "synchronized")
     return tmp_path
 
 
@@ -236,6 +237,7 @@ class TestRecordExpiditeStarted:
     def test_boot_time_is_now_minus_uptime(self, diags_dir: Path, monkeypatch: pytest.MonkeyPatch) -> None:
         _set_boot_id(monkeypatch, "boot-a")
         _set_uptime(diags_dir, 100.0)
+        (diags_dir / "synchronized").touch()
 
         before = datetime.now(tz=UTC).replace(microsecond=0)
         event = boot_history.record_expidite_started()
@@ -246,6 +248,18 @@ class TestRecordExpiditeStarted:
         assert event["event"] == boot_history.EXPIDITE_STARTED_EVENT
         boot_at = datetime.strptime(event["boot_at"], "%Y-%m-%dT%H:%M:%S").replace(tzinfo=UTC)
         assert before - timedelta(seconds=101) <= boot_at <= after - timedelta(seconds=100)
+        assert _events(diags_dir) == [event]
+
+    @pytest.mark.unittest
+    def test_boot_time_is_omitted_if_clock_is_not_synced(
+        self, diags_dir: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        _set_boot_id(monkeypatch, "boot-a")
+
+        event = boot_history.record_expidite_started()
+
+        assert event is not None
+        assert list(event) == ["at", "boot_id", "event", "uptime_s"]
         assert _events(diags_dir) == [event]
 
     @pytest.mark.unittest

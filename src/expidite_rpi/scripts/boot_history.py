@@ -36,6 +36,8 @@ BOOT_HISTORY_BACKUP_FILE = DIAGS_DIR / "boot_history.1.jsonl"
 _BOOT_ID_FILE = Path("/proc/sys/kernel/random/boot_id")
 # Seconds since the kernel started. Unlike the wall clock, it is never stepped by NTP.
 _UPTIME_FILE = Path("/proc/uptime")
+# systemd-timesyncd creates this once it has set the clock from NTP. /run is a tmpfs, so it is absent at boot.
+_CLOCK_SYNCED_FILE = Path("/run/systemd/timesync/synchronized")
 _POWER_RESET_FILE = Path("/proc/device-tree/chosen/power/power_reset")
 _POWER_RESET_FLAGS = {
     0: "over_voltage",
@@ -96,14 +98,16 @@ def record_reboot_request(reason: str) -> dict[str, Any] | None:
 
 
 def record_expidite_started() -> dict[str, Any] | None:
-    """Record an RpiCore start, with the time this boot began.
+    """Record an RpiCore start, with the time this boot began if the clock is NTP-synced.
 
-    The boot event's "at" is written before NTP sync and can be stale. boot_at is the current time minus the
-    kernel uptime, so it is the true boot time provided the clock is synced when RpiCore starts.
+    The boot event's "at" is written before NTP sync and can be stale. expidite.service waits for NTP sync,
+    but only for a bounded time, so boot_at (the current time minus the kernel uptime) is omitted if it timed
+    out.
     """
     try:
         event = _new_event(EXPIDITE_STARTED_EVENT)
-        event["boot_at"] = _format_time(datetime.now(tz=UTC) - timedelta(seconds=event["uptime_s"]))
+        if _CLOCK_SYNCED_FILE.exists():
+            event["boot_at"] = _format_time(datetime.now(tz=UTC) - timedelta(seconds=event["uptime_s"]))
         _append_event(event)
     except Exception:
         return None

@@ -1146,7 +1146,8 @@ install_boot_history_service() {
     sudo tee "$BOOT_HISTORY_SERVICE_FILE" > /dev/null << EOF
 [Unit]
 Description=Expidite boot history recorder
-After=time-sync.target
+# Deliberately not After=time-sync.target, which waits for NTP sync: record the boot straight away, so that a
+# reset during that wait still leaves evidence of this boot.
 Before=expidite.service
 RequiresMountsFor=/expidite-diags
 RefuseManualStop=yes
@@ -1273,6 +1274,27 @@ wait_for_ntp_sync() {
 }
 
 ##############################################################################################################
+# Make time-sync.target wait for NTP sync at boot, so expidite.service (After=time-sync.target) starts with a
+# correct clock. Without systemd-time-wait-sync.service, time-sync.target is reached as soon as timesyncd
+# starts, with the stale clock timesyncd restored at boot. By default the service waits forever, which would
+# stop an offline device ever starting RpiCore, so bound the wait. On timeout the service fails and
+# time-sync.target is reached anyway, because After= only orders. It only delays units ordered after
+# time-sync.target, not boot.
+##############################################################################################################
+enable_wait_for_ntp_sync_at_boot() {
+    echo_header
+    TIME_WAIT_SYNC_DROPIN_DIR="/etc/systemd/system/systemd-time-wait-sync.service.d"
+
+    sudo mkdir -p "$TIME_WAIT_SYNC_DROPIN_DIR"
+    sudo tee "$TIME_WAIT_SYNC_DROPIN_DIR/expidite.conf" > /dev/null << EOF
+[Service]
+TimeoutStartSec=90
+EOF
+    sudo systemctl daemon-reload
+    sudo systemctl enable systemd-time-wait-sync.service
+}
+
+##############################################################################################################
 # Install expidite as a systemd service for automatic restart on failure.
 # The service file is generated here (not a static template) because it needs venv_dir and my_start_script
 # values from system.cfg.
@@ -1286,9 +1308,8 @@ install_expidite_service() {
     sudo tee "$SERVICE_FILE" > /dev/null << EOF
 [Unit]
 Description=Expidite
-# Prefer to start after NTP sync, so timestamped filenames and logs are correct. This is only an ordering hint:
-# nothing activates systemd-time-wait-sync.service, so time-sync.target is reached as soon as timesyncd starts,
-# and RpiCore can start with the stale clock timesyncd restored at boot.
+# Start after NTP sync, so timestamped filenames and logs are correct. enable_wait_for_ntp_sync_at_boot holds
+# time-sync.target back until the clock is synced, or for at most 90s with no network.
 # network-online.target is only a soft ordering hint (Wants=, not Requires=): with no network the
 # wait-online service times out (~60s) and boot proceeds anyway, so RpiCore always starts and spools
 # offline. Shutdown does no network I/O - the graceful stop spills any unsent data to the disk spool.
@@ -1378,8 +1399,9 @@ Description=Expidite Management Service
 After=network-online.target
 Wants=network-online.target
 # Prefer to start after the clock is NTP-synced: IoT Hub auth uses time-based SAS tokens that a wrong
-# clock would invalidate. This is only an ordering hint (so time-sync.target is reached early and cannot
-# block boot); the IoT Hub client also retries on its own, so a not-yet-synced clock is self-healing.
+# clock would invalidate. This cannot stop the service starting: with no NTP sync, time-sync.target is still
+# reached after at most 90s (see enable_wait_for_ntp_sync_at_boot). The IoT Hub client also retries on its
+# own, so a not-yet-synced clock is self-healing.
 After=time-sync.target
 [Service]
 User=$SERVICE_USER
@@ -1717,6 +1739,7 @@ verify_expidite_install
 set_log_storage_volatile
 create_mount
 install_boot_history_service
+enable_wait_for_ntp_sync_at_boot
 set_predictable_network_interface_names
 enable_i2c
 alias_bcli
