@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "expidite"
-version = "0.1.302"
+version = "0.1.303"
 description = "Python module to support using Raspberry Pi for scientific data collection"
 readme = "README.md"
 requires-python = ">=3.13"
@@ -18,6 +18,7 @@ dependencies = [
     "adafruit-circuitpython-busdevice==5.2.17",
     "adafruit-circuitpython-bmp280==3.3.12",
     "adafruit-circuitpython-ltr390==1.1.24",
+    "adafruit-circuitpython-register==1.12.1", # 1.13.0 removed Struct.buffer, which adafruit_ltr390 1.1.24 uses.
     "adafruit-platformdetect==3.89.1",
     "azure-iot-device==2.14.0",
     "azure-storage-blob==12.30.3",
@@ -218,7 +219,6 @@ module = [
 disallow_any_generics = false
 [[tool.mypy.overrides]]
 module = [
-    "expidite_rpi.sensors.drivers.ltr390",
     "expidite_rpi.sensors.drivers.adafruit_adxl34x",
     "expidite_rpi.core.cloud_connector.cloud_connector",
     "expidite_rpi.core.configuration",
