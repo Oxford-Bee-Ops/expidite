@@ -40,6 +40,8 @@ To install the code, run:
 
 And follow the instructions in Usage > User Flow below.
 
+The [example configuration and code](https://github.com/Oxford-Bee-Ops/expidite/tree/main/src/expidite_rpi/example) and [Raspberry Pi installer scripts](https://github.com/Oxford-Bee-Ops/expidite/tree/main/src/expidite_rpi/scripts) are in the GitHub source tree. Download or clone the repository to copy and customise them.
+
 
 ## Usage
 ### PRE-REQUISITES
@@ -63,7 +65,7 @@ The following steps enable you to run the default example sensor on your RPI. Do
 - Physically build your RPI and attach your chosen sensors.
 - Get an SD card with the Raspberry Pi OS. If you use Raspberry Pi Imager, enabling SSH access and including default Wifi config will make your life easier.
 - Install the SD card and power up your RPI.
-- Copy the **keys.env** and **system.cfg** files from the expidite repo `/src/expidite_rpi/example/` folder to your own computer / dev environment / git project.
+- Copy the template [keys.env](https://github.com/Oxford-Bee-Ops/expidite/blob/main/src/expidite_rpi/example/keys.env) and [system.cfg](https://github.com/Oxford-Bee-Ops/expidite/blob/main/src/expidite_rpi/example/system.cfg) from `src/expidite_rpi/example/` in the GitHub repo to your own computer or project.
 - Edit **keys.env**:
     - Set `cloud_storage_key` to the Shared Access Signature for your Azure Storage accounts (see explanatory notes in keys.env).
     - For security reasons, do **not** check your keys.env into Git.
@@ -71,7 +73,7 @@ The following steps enable you to run the default example sensor on your RPI. Do
     - create an **.expidite** folder in your user home directory 
         - `mkdir ~/.expidite`
     - copy your **keys.env** and **system.cfg** to the .expidite folder
-    - copy the **rpi_installer.sh** file from `/src/expidite_rpi/scripts/` to the .expidite folder
+    - copy [rpi_installer.sh](https://github.com/Oxford-Bee-Ops/expidite/blob/main/src/expidite_rpi/scripts/rpi_installer.sh) from `src/expidite_rpi/scripts/` in the GitHub repo to the .expidite folder
     - run the rpi_installer.sh script:
         - `cd ~/.expidite && dos2unix *.sh && chmod +x *.sh && ./rpi_installer.sh`
         - this will take a few minutes as it creates a virtual environment, updates to the latest OS packages, installs Expidite's RpiCore and its dependencies, and sets up the RPI ready for use as a sensor.
@@ -91,7 +93,7 @@ The following steps enable you to run the default example sensor on your RPI. Do
 To execute your particular experimental setup, you need to configure your devices in a "fleet config" python file. You will want to maintain this configuration in Git.
 
 - Create your own Git repo if you haven't already got one
-- Copy the `/src/expidite_rpi/example` folder into your Git repo as a starting point for your own config and code customizations.
+- Copy the [source example folder](https://github.com/Oxford-Bee-Ops/expidite/tree/main/src/expidite_rpi/example) into your Git repo as a starting point for your own config and code customizations.
 - Edit **my_fleet_config.py** to add configuration for your device(s)
     - You will need the mac address of the device's wlan0 interface as the identifier of the device
     - To get the mac address run `cat /sys/class/net/wlan0/address`
@@ -100,7 +102,7 @@ To execute your particular experimental setup, you need to configure your device
     - Set `my_git_repo_url` to your Git repository URL
     - **For PUBLIC repositories**: Comment out `my_git_ssh_private_key_file` and use HTTPS URL format
     - **For PRIVATE repositories**: Set `my_git_ssh_private_key_file` to your SSH key filename and use SSH URL format
-    - See the system.cfg file in `/src/expidite_rpi/example/` for more details and more options.
+    - See the [example system.cfg](https://github.com/Oxford-Bee-Ops/expidite/blob/main/src/expidite_rpi/example/system.cfg) for more details and options.
 
 ### USER FLOW - PRODUCTION PROCESS FOR AN EXPERIMENT WITH MANY DEVICES
 #### Pre-requisites
@@ -166,7 +168,7 @@ KE=keys.env; SC=system.cfg; FC=Fleet config
 | Interface naming              | SC:`enable_predictable_network_interface_names` | "Yes" | Forces Raspberry Pi to use predictable interface names (eg wlan0)
 
 ### Fleet configuration options
-See the examples (`src/expidite_rpi/example/my_fleet_config.py`) and object definition for `DeviceCfg` in `/src/expidite_rpi/core/device_config_objects.py`.
+See the [example fleet configuration](https://github.com/Oxford-Bee-Ops/expidite/blob/main/src/expidite_rpi/example/my_fleet_config.py) and the [`DeviceCfg` definition](https://github.com/Oxford-Bee-Ops/expidite/blob/main/src/expidite_rpi/core/device_config_objects.py).
 
 ### Remote management
 
