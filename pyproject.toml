@@ -4,10 +4,11 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "expidite"
-version = "0.1.303"
+version = "0.1.304"
 description = "Python module to support using Raspberry Pi for scientific data collection"
 readme = "README.md"
 requires-python = ">=3.13"
+license = "MIT"
 authors = [
   {name = "Estella", email = "estella@bee-ops.com"},
   {name = "Stuart", email = "stuart@bee-ops.com"},
@@ -28,6 +29,7 @@ dependencies = [
     "numexpr==2.14.2", # Required by pandas.
     "numpy==2.4.2",
     "opencv-python-headless==4.13.0.92",
+    "packaging==26.3",
     "pandas==3.0.6",
     "psutil==7.2.2",
     "PyGithub==2.10.0",
@@ -41,6 +43,11 @@ dependencies = [
     "websockets==17.1",
     'systemd-python==235; sys_platform == "linux"',
 ]
+
+[project.urls]
+Homepage = "https://github.com/Oxford-Bee-Ops/expidite"
+Repository = "https://github.com/Oxford-Bee-Ops/expidite"
+Issues = "https://github.com/Oxford-Bee-Ops/expidite/issues"
 
 [project.optional-dependencies]
 dev = [
@@ -65,7 +72,12 @@ management-service = "expidite_rpi.management.management_service:main"
 where = ["src"]
 
 [tool.setuptools.data-files]
-"scripts" = ["src/expidite_rpi/scripts/*"]
+"scripts" = [
+    "src/expidite_rpi/scripts/*.py",
+    "src/expidite_rpi/scripts/*.sh",
+    "src/expidite_rpi/scripts/*.service",
+    "src/expidite_rpi/scripts/README.md",
+]
 
 ##############################################################################################################
 # ruff: static lint and style checker.
