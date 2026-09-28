@@ -640,10 +640,9 @@ install_ufw() {
 # expidite_git_branch in system.cfg selects one of two modes. docs/expidite_versions.md explains them for
 # users; this is the mechanics.
 #
-# - main (the default, and what devices in the field have): the user's code decides. Its pyproject.toml
-#   declares the expidite it depends on, and pip installs that when install_user_code installs the user's
-#   code, so expidite only changes when the user's code does. install_expidite has nothing to do, except to
-#   put the user's version back after a test branch has been removed from system.cfg.
+# - main (the default): the user's code decides. install_expidite checks its declared dependency against
+#   the installed source, including the Git commit. Older user repositories without a dependency continue
+#   to follow main until they add a pin.
 #
 # - any other branch: a test override. install_expidite runs after install_user_code, so the branch wins, and
 #   reinstalls whenever the branch head moves: commit to the branch, reboot the device, and it is running.
@@ -658,27 +657,60 @@ install_ufw() {
 ##############################################################################################################
 EXPIDITE_GIT_URL="https://github.com/oxford-bee-ops/expidite.git"
 
-# Set by prepare_code_install when it had to install expidite without knowing which version the user's code
-# wants (because the user's code was not installed yet), so install_expidite knows to correct it.
-EXPIDITE_BOOTSTRAPPED="no"
-
-# The expidite requirement declared by the installed user package, for example "expidite==0.1.303" or
-# "expidite @ git+https://github.com/oxford-bee-ops/expidite.git@main". Empty if there is none, including when
-# the user's code is not installed yet.
+# The applicable expidite requirement declared by the installed user package, for example "expidite==0.1.305"
+# or "expidite @ git+https://github.com/oxford-bee-ops/expidite.git@main". Empty if it has none, its marker is
+# false on this device, unpinned, or the user's package has not been installed yet.
 get_user_expidite_requirement() {
     local project_name
-    project_name=$(get_pip_package_name "$my_git_repo_url")
+    project_name="${my_package_name:-$(get_pip_package_name "$my_git_repo_url")}"
     "$HOME/$venv_dir/bin/python" -c "
-import importlib.metadata, re, sys
+import importlib.metadata, sys
+from pip._vendor.packaging.requirements import Requirement
+from pip._vendor.packaging.utils import canonicalize_name
 try:
     reqs = importlib.metadata.requires(sys.argv[1]) or []
 except Exception:
     sys.exit(0)
-for req in reqs:
-    if re.match(r'\s*expidite(?![\w.-])', req, re.IGNORECASE) and 'extra' not in req.partition(';')[2]:
-        print(req)
+for text in reqs:
+    try:
+        req = Requirement(text)
+    except Exception:
+        continue
+    if (canonicalize_name(req.name) == 'expidite' and (req.url or req.specifier)
+            and (req.marker is None or req.marker.evaluate({'extra': ''}))):
+        print(text)
         break
 " "$project_name" 2>/dev/null
+}
+
+# Check the installed source as well as its version. pip can consider a new Git commit satisfied by an
+# installed distribution with the same version, so version comparison alone cannot enforce a commit pin.
+expidite_requirement_is_installed() {
+    "$HOME/$venv_dir/bin/python" -c "
+import importlib.metadata, json, sys
+from pip._vendor.packaging.requirements import Requirement
+
+try:
+    req = Requirement(sys.argv[1])
+    dist = importlib.metadata.distribution('expidite')
+    direct_url = json.loads(dist.read_text('direct_url.json') or '{}')
+    if req.url:
+        if req.url.startswith('git+'):
+            url, separator, revision = req.url[4:].rpartition('@')
+            vcs = direct_url.get('vcs_info', {})
+            commit = vcs.get('commit_id', '')
+            matches = (separator and direct_url.get('url') == url and vcs.get('vcs') == 'git'
+                       and (vcs.get('requested_revision') == revision
+                            or (revision and commit.startswith(revision) and all(c in '0123456789abcdef' for c in revision.lower()))))
+        else:
+            matches = direct_url.get('url') == req.url
+    else:
+        exact = any(spec.operator in ('==', '===') and not spec.version.endswith('.*') for spec in req.specifier)
+        matches = req.specifier.contains(dist.version) and not (exact and direct_url)
+    sys.exit(0 if matches else 1)
+except Exception:
+    sys.exit(1)
+" "$1" 2>/dev/null
 }
 
 # The commit the installed expidite was built from, as recorded by pip in direct_url.json. Empty if it was
@@ -753,14 +785,13 @@ prepare_code_install() {
         if [ "$expidite_git_branch" == "main" ]; then
             requirement=$(get_user_expidite_requirement)
         fi
-        [ -z "$requirement" ] && EXPIDITE_BOOTSTRAPPED="yes"
         install_expidite_requirement "${requirement:-expidite @ git+$EXPIDITE_GIT_URL@$expidite_git_branch}" \
             "$reason"
     fi
 }
 
 ##############################################################################################################
-# Runs after install_user_code: apply or remove a test branch override, then check the result.
+# Runs after install_user_code: apply or remove a test branch override, then enforce the chosen source.
 ##############################################################################################################
 install_expidite() {
     # Records the test branch installed on the device, so that once it is removed from system.cfg we know the
@@ -772,17 +803,32 @@ install_expidite() {
         echo_header "Install expidite: version chosen by the user's code"
         local requirement
         requirement=$(get_user_expidite_requirement)
-        if [ -f "$override_flag" ]; then
-            if install_expidite_requirement "${requirement:-expidite @ git+$EXPIDITE_GIT_URL@main}" \
+        if [ -z "$requirement" ]; then
+            # Older user repositories have no expidite dependency. Keep their previous main-tracking
+            # behaviour until they add a pin, rather than silently freezing their installed version.
+            echo "Warning: the user's package has no applicable expidite version pin; following main. Add a pin to its pyproject.toml."
+            local installed
+            installed=$(get_installed_expidite_commit)
+            if [ -z "$EXP_REMOTE_HASH" ]; then
+                echo "Cannot find the head of main; leaving expidite as it is."
+            elif [ -f "$override_flag" ] || [ "$installed" != "$EXP_REMOTE_HASH" ]; then
+                if install_expidite_requirement "expidite @ git+$EXPIDITE_GIT_URL@$EXP_REMOTE_HASH" \
+                        "the user's package has no applicable expidite version pin"; then
+                    rm -f "$override_flag"
+                    sync
+                fi
+            else
+                echo "Expidite is at the head of main ($EXP_REMOTE_HASH). Skipping install."
+            fi
+        elif [ -f "$override_flag" ]; then
+            if install_expidite_requirement "$requirement" \
                     "test branch '$(<"$override_flag")' has been removed from system.cfg"; then
                 rm -f "$override_flag"
                 sync
             fi
-        elif [ "$EXPIDITE_BOOTSTRAPPED" == "yes" ] && [ -n "$requirement" ]; then
-            # pip keeps the bootstrap install if its version number matches what the user's code asks for,
-            # even though the code may differ.
-            install_expidite_requirement "$requirement" \
-                "expidite was installed from main before the user's code, which asks for '$requirement'"
+        elif ! expidite_requirement_is_installed "$requirement"; then
+            # Also retries a failed install on the next run, even if the user's code hash was already saved.
+            install_expidite_requirement "$requirement" "the installed expidite does not match the user's dependency"
         else
             echo "Nothing to do: the user's code installed the expidite it depends on."
         fi

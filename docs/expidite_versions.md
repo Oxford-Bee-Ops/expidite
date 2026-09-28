@@ -7,6 +7,7 @@ are using to test an expidite branch, which you set with `expidite_git_branch` i
 | `expidite_git_branch` in system.cfg | Which expidite is installed | When it changes |
 |---|---|---|
 | `main`, or not set (the default) | The version your code's `pyproject.toml` asks for | When your code changes |
+| `main`, with no applicable expidite version pin in your code | The head of expidite main, for compatibility with older user repositories | Whenever main has a new commit |
 | Any other branch | The latest commit on that expidite branch | Whenever the branch has a new commit |
 
 The installer (`rpi_installer.sh`, or `zero_installer.sh` on a Pi Zero) applies this on every run. It runs on
@@ -42,9 +43,14 @@ expidite only if the version in expidite's `pyproject.toml` has changed. A commi
 version bump therefore does not reach devices. A pin to a commit or tag, or to a PyPI version, does not
 have this problem, because changing it is a deliberate change to your code.
 
-**Never pin a version older than the first one with this installer (0.1.304).** The installer that runs on a
-device is the one in the installed expidite. Older installers install the head of expidite main on every run,
-whatever your code asks for, so the device would move back to main the next time main changes.
+**Pin 0.1.305 or newer.** The installer that runs on a device is the one in its installed expidite. Versions
+before 0.1.304 install the head of main on every run, overriding your pin. Version 0.1.304 does not reliably
+apply a changed Git commit pin when the package version stays the same.
+
+If your code has no applicable expidite version pin, the installer warns and continues to track the head of
+expidite main. This includes packages that declare only `expidite` with no version. It preserves the behaviour
+of devices set up before dependency pins were introduced. Add a pin to your code to make upgrades deliberate.
+Environment markers are evaluated on the device; a dependency whose marker is false does not count as a pin.
 
 ## Use case 2: testing an expidite branch on a device
 
@@ -99,8 +105,8 @@ The steps, in order, in `rpi_installer.sh` and `zero_installer.sh`:
    if it isn't installed at all.
 2. `install_user_code` installs your code when its branch has a new commit. pip installs the expidite version
    your code depends on at the same time.
-3. `install_expidite` applies the test branch if one is set. If none is set but one was installed before, it
-   reinstalls the version your code asks for.
+3. `install_expidite` applies the test branch if one is set. Otherwise it checks the installed version and
+   source against your code's requirement and reinstalls it if they differ. Without a requirement it tracks main.
 
 Every expidite install does a normal `pip install` (to bring in any changed dependencies) followed by
 `pip install --force-reinstall --no-deps` of expidite alone, so that code changes are installed even when the

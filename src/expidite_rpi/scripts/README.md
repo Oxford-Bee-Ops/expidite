@@ -26,7 +26,7 @@ Code Deployment → System Configuration → Service Management → Persistence
 - `install_os_packages()`: Handles system-level package management via apt
 - `prepare_code_install()`: Checks GitHub is reachable, repairs a broken install, and installs expidite if it is missing
 - `install_user_code()`: Deploys custom user sensor/processor code, and with it the expidite version that code depends on
-- `install_expidite()`: Applies or removes a test branch override set by `expidite_git_branch` (see [docs/expidite_versions.md](../../../docs/expidite_versions.md))
+- `install_expidite()`: Enforces the user's expidite version pin, applies or removes a test branch override, or tracks main for older user repositories without a pin (see [docs/expidite_versions.md](../../../docs/expidite_versions.md))
 
 ### 3. **Security & Access Management**
 - **SSH Key Management**: Automated deployment of SSH keys for private repository access
@@ -46,7 +46,7 @@ Code Deployment → System Configuration → Service Management → Persistence
 
 ### 5. **Version Control & Update Management**
 - **Hash-Based Deployment**: Reinstalls the user's code only when its branch has a new commit
-- **Expidite version from the user's code**: The user's code pins the expidite version it needs; `expidite_git_branch` in system.cfg overrides it on test devices. See [docs/expidite_versions.md](../../../docs/expidite_versions.md)
+- **Expidite version from the user's code**: The user's code pins the expidite version it needs; `expidite_git_branch` in system.cfg overrides it on test devices. Older repositories without a pin continue to track main. See [docs/expidite_versions.md](../../../docs/expidite_versions.md)
 - **Atomic Updates**: Only updates when new commits are detected
 - **Rollback Safety**: Preserves version information and maintains update history
 
