@@ -34,11 +34,13 @@ Key design decisions:
 
 ## Installation
 
-To install the code, run:
+To install a published release in a Python 3.13 or newer environment, run:
 
-`pip install git+https://github.com/Oxford-Bee-Ops/expidite`
+`pip install expidite`
 
-And follow the instructions in Usage > User Flow below.
+To install directly from the current source instead, run `pip install git+https://github.com/Oxford-Bee-Ops/expidite.git`. For Raspberry Pi device setup, follow the initial setup steps below; the installer creates its own environment.
+
+Maintainers: see the [publishing instructions](https://github.com/Oxford-Bee-Ops/expidite/blob/main/docs/publishing.md) for the TestPyPI and PyPI release process.
 
 The [example configuration and code](https://github.com/Oxford-Bee-Ops/expidite/tree/main/src/expidite_rpi/example) and [Raspberry Pi installer scripts](https://github.com/Oxford-Bee-Ops/expidite/tree/main/src/expidite_rpi/scripts) are in the GitHub source tree. Download or clone the repository to copy and customise them.
 
@@ -83,7 +85,7 @@ The following steps enable you to run the default example sensor on your RPI. Do
             - Option `2. View Status`
         - In Python:
             - `python`
-            - `from expidite_rpi.core import RpiCore`
+            - `from expidite_rpi import RpiCore`
             - `rc = RpiCore()`
             - `rc.start()`
 - You should see data appearing in each of the containers in your cloud storage account.
