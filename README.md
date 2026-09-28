@@ -96,6 +96,9 @@ To execute your particular experimental setup, you need to configure your device
     - You will need the mac address of the device's wlan0 interface as the identifier of the device
     - To get the mac address run `cat /sys/class/net/wlan0/address`
     - See the example fleet_config.py for more details.
+- In your repo's **pyproject.toml**, declare the version of expidite your code needs, for example
+  `"expidite @ git+https://github.com/oxford-bee-ops/expidite.git@<commit>"`. Devices install that version,
+  and upgrade when you change it. See [docs/expidite_versions.md](docs/expidite_versions.md).
 - Edit the **system.cfg**:
     - Set `my_git_repo_url` to your Git repository URL
     - **For PUBLIC repositories**: Comment out `my_git_ssh_private_key_file` and use HTTPS URL format
@@ -154,6 +157,7 @@ KE=keys.env; SC=system.cfg; FC=Fleet config
 | Auto-start Management Service | SC:`auto_start_management_service`              | Starts the remote management service automatically after reboot. Also requires config in keys.env.
 | Git repo                      | SC:`my_git_repo_url`                            | "Not set" | URL of your Git repo containing your configuration and any custom code
 | Git branch                    | SC:`my_git_branch`                              | "main" | Name of the Git branch to use if not main
+| Expidite test branch          | SC:`expidite_git_branch`                        | "main" | Leave as "main" in normal use: devices then run the expidite version that your repo's pyproject.toml asks for. Set it to another expidite branch to test that branch on a device. See [docs/expidite_versions.md](docs/expidite_versions.md).
 | Python package name           | SC:`my_package_name`                            | "" | By default, Expidite will use git clone to install the custom code repo. It is also possible for Expidite to install a Python package. Only set this if you know what you are doing.
 | SSH keys                      | SC:`my_git_ssh_private_key_file`                | "Not set" | The name of the SSH key file in the .expidite directory that gives access to the Git repo if it is private. This field can be left commented out if the repo is public.
 | Fleet config                  | SC:`my_fleet_config`                            | | The fully-qualified object name of the fleet config inventory. For example "my_project.my_fleet_config.INVENTORY".

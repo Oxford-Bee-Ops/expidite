@@ -185,7 +185,8 @@ class SystemCfg(BaseSettings):
     # (ie will expand to "$HOME/$venv_dir").
     # This will be created if it does not exist.
     venv_dir: str = "venv"
-    # The branch of expidite code to use.
+    # "main" (the default) installs the expidite version that the user's code asks for. Any other branch
+    # overrides that with the head of that expidite branch, for testing. See docs/expidite_versions.md.
     expidite_git_branch: str = "main"
     # Pydantic-settings helper
     model_config = SettingsConfigDict(extra="ignore")

@@ -21,8 +21,9 @@
 # - install_ssh_keys for accessing the user's code repository
 # - create_and_activate_venv
 # - install_os_packages required for RpiCore
-# - install_expidite
-# - install_user_code
+# - prepare_code_install to check GitHub is reachable, repair a broken install, and bootstrap expidite
+# - install_user_code, which also installs the version of expidite that the user's code depends on
+# - install_expidite to apply or remove a test branch override (expidite_git_branch in system.cfg)
 # - install_ufw and configure the firewall rules
 # - set_log_storage_volatile so that logs are stored in RAM and don't wear out the SD card
 # - create_mount which is a RAM disk for the use by RpiCore
@@ -290,21 +291,23 @@ flag_reboot_required() {
 ##############################################################################################################
 # Repair an install that failed verification on a previous run.
 #
-# Without this the bad state is permanent, which is what turned one bad install into four dead devices:
-# install_expidite skips the install whenever the remote hash matches the cached one, and that cache was
-# written *before* the damage occurred. So every subsequent boot concludes expidite is already up to date and
-# leaves the broken package exactly where it is. Nothing short of a human with an SSH session recovers it.
+# Without this the bad state is permanent, which is what turned one bad install into four dead devices: the
+# installer skipped the install whenever the remote hash matched the cached one, and that cache was written
+# *before* the damage occurred. So every subsequent boot concluded expidite was already up to date and left
+# the broken package exactly where it was. Nothing short of a human with an SSH session recovered it.
 #
 # Three things are needed to make the reinstall actually stick:
 #
-# - Clear both hash caches, so install_expidite and install_user_code stop short-circuiting. We clear the
-#   user's too: whatever zeroed expidite was equally able to zero the user's package, which is installed in
-#   the same run and so was being written in the same window.
+# - Clear the user's hash cache, so install_user_code stops short-circuiting: whatever zeroed expidite was
+#   equally able to zero the user's package, which is installed in the same run and so was being written in
+#   the same window. (The expidite-repo-last-hash file is from older installers, which cached expidite's hash
+#   too; we still clear it in case a device ever runs one of those again.)
 #
 # - Purge the damaged tree. pip works out what to uninstall from the dist-info RECORD, and on a zeroed
 #   install RECORD is itself zero bytes - pip cannot remove what it cannot enumerate. We purge only expidite,
 #   whose on-disk layout we know; the user's package is left to --force-reinstall because its import name is
-#   not reliably derivable from its pip name.
+#   not reliably derivable from its pip name. prepare_code_install then reinstalls expidite, because it is
+#   no longer installed at all.
 #
 # - Bypass pip's caches. ~/.cache/pip is on the same SD card and was being written in the same window, so a
 #   cached wheel may itself be truncated; installing from it would faithfully reproduce the damage.
@@ -319,8 +322,8 @@ flag_reboot_required() {
 ##############################################################################################################
 PIP_HEAL_ARGS=()
 
-# Set by heal_broken_install so install_expidite knows this run is a repair rather than a routine upgrade,
-# and can flag the reboot that a repair needs but a same-version reinstall would otherwise not trigger.
+# Set by heal_broken_install so prepare_code_install reinstalls expidite even when pip still reports it as
+# installed (because the purge could not find the package directory), and flags the reboot a repair needs.
 EXPIDITE_HEAL_ACTIVE="no"
 
 # Is the installed expidite actually usable? Shared by heal_broken_install (as a precondition, before we
@@ -599,19 +602,92 @@ install_ufw() {
     sudo ufw --force enable
 }
 
-# Function to install expidite's RpiCore
-install_expidite() {
-    echo_header "Install expidite from GitHub"
-    EXP_HASH_FILE="$HOME/.expidite/flags/expidite-repo-last-hash"
-    current_version=$(pip show expidite | grep Version)
-    echo "Installing expidite. Current version: $current_version"
+##############################################################################################################
+# Which version of expidite a device runs.
+#
+# expidite_git_branch in system.cfg selects one of two modes. docs/expidite_versions.md explains them for
+# users; this is the mechanics.
+#
+# - main (the default, and what devices in the field have): the user's code decides. Its pyproject.toml
+#   declares the expidite it depends on, and pip installs that when install_user_code installs the user's
+#   code, so expidite only changes when the user's code does. install_expidite has nothing to do, except to
+#   put the user's version back after a test branch has been removed from system.cfg.
+#
+# - any other branch: a test override. install_expidite runs after install_user_code, so the branch wins, and
+#   reinstalls whenever the branch head moves: commit to the branch, reboot the device, and it is running.
+#
+# main used to mean "install the head of main on every run", which overwrote whatever version the user's code
+# pinned: pip applied the pin only on the runs where the user's code changed.
+#
+# pip decides whether to replace an installed package by version number alone, so a git install whose code
+# changed but whose version did not is reported as already satisfied. Every install below therefore follows
+# its normal install (which brings in any changed dependencies) with a --force-reinstall --no-deps of
+# expidite alone.
+##############################################################################################################
+EXPIDITE_GIT_URL="https://github.com/oxford-bee-ops/expidite.git"
 
-    # If the current version is blank, remove any existing EXP_HASH_FILE which might be left over
-    # from a previous installation
-    if [ -z "$current_version" ]; then
-        rm -f "$EXP_HASH_FILE"
+# Set by prepare_code_install when it had to install expidite without knowing which version the user's code
+# wants (because the user's code was not installed yet), so install_expidite knows to correct it.
+EXPIDITE_BOOTSTRAPPED="no"
+
+# The expidite requirement declared by the installed user package, for example "expidite==0.1.303" or
+# "expidite @ git+https://github.com/oxford-bee-ops/expidite.git@main". Empty if there is none, including when
+# the user's code is not installed yet.
+get_user_expidite_requirement() {
+    local project_name
+    project_name=$(get_pip_package_name "$my_git_repo_url")
+    "$HOME/$venv_dir/bin/python" -c "
+import importlib.metadata, re, sys
+try:
+    reqs = importlib.metadata.requires(sys.argv[1]) or []
+except Exception:
+    sys.exit(0)
+for req in reqs:
+    if re.match(r'\s*expidite(?![\w.-])', req, re.IGNORECASE) and 'extra' not in req.partition(';')[2]:
+        print(req)
+        break
+" "$project_name" 2>/dev/null
+}
+
+# The commit the installed expidite was built from, as recorded by pip in direct_url.json. Empty if it was
+# not installed from git.
+get_installed_expidite_commit() {
+    "$HOME/$venv_dir/bin/python" -c "
+import importlib.metadata, json
+try:
+    du = json.loads(importlib.metadata.distribution('expidite').read_text('direct_url.json') or '{}')
+    print(du.get('vcs_info', {}).get('commit_id', ''))
+except Exception:
+    pass
+" 2>/dev/null
+}
+
+# Install the pip requirement $1 for expidite, because $2. On success, flag a reboot so that every process
+# picks up the new code.
+install_expidite_requirement() {
+    local requirement="$1" reason="$2"
+    echo "Installing '$requirement' because $reason."
+    if pip_install "${PIP_HEAL_ARGS[@]}" "$requirement" \
+            && pip_install --force-reinstall --no-deps "$requirement"; then
+        echo "Expidite installed: $(pip show expidite 2>/dev/null | grep Version). Reboot required."
+        flag_reboot_required
+        return 0
     fi
+    # No cached hash is written anywhere on this path, so there is nothing to stop the next run retrying.
+    echo "Failed to install expidite; the next run will retry."
+    return 1
+}
 
+##############################################################################################################
+# Runs before install_user_code: check that GitHub is reachable, repair a broken install, and make sure some
+# expidite is present.
+#
+# That last step is for a device with no expidite at all - a new install, or one heal_broken_install has just
+# purged. The user's code would normally bring in expidite as a dependency, but installing the user's code
+# from a release wheel runs github_installer.py, which is itself part of expidite.
+##############################################################################################################
+prepare_code_install() {
+    echo_header "Prepare to install code (expidite_git_branch=$expidite_git_branch)"
     source "$HOME/$venv_dir/bin/activate" || { echo "Failed to activate virtual environment"; exit 1; }
 
     # If git doesn't exist, then the previous OS update failed part way through; re-run it.
@@ -621,83 +697,94 @@ install_expidite() {
     fi
 
     ##########################################################################################################
-    # We don't return exit code 1 if the install fails, because we want to continue with the rest of the
-    # script and this can happen due to transient network issues causing github.com name resolution to fail.
+    # We don't return exit code 1 if GitHub can't be reached, because we want to continue with the rest of
+    # the script and this can happen due to transient network issues causing github.com name resolution to
+    # fail.
     ##########################################################################################################
-    # Check if the branch exists
-    if ! git ls-remote --heads https://github.com/oxford-bee-ops/expidite.git "$expidite_git_branch" > /dev/null; then
-        echo "Warning: Branch '$expidite_git_branch' does not exist in the repository."
+    EXP_REMOTE_HASH=$(git ls-remote "$EXPIDITE_GIT_URL" "refs/heads/$expidite_git_branch" | awk '{print $1}')
+    if [ -z "$EXP_REMOTE_HASH" ]; then
+        echo "Warning: cannot find branch '$expidite_git_branch' of expidite (no such branch, or no network)."
     fi
 
-    # 1. Get remote HEAD commit hash (using HTTPS since expidite is a public repository)
-    EXP_REMOTE_HASH=$(git ls-remote "https://github.com/oxford-bee-ops/expidite.git" "refs/heads/$expidite_git_branch" | awk '{print $1}')
-
-    # 1a. Repair a previously-failed install before the hash comparison below can short-circuit it. Placed
-    # after the ls-remote so the purge only happens once we know GitHub is reachable.
+    # Repair a previously-failed install before anything can short-circuit it. Placed after the ls-remote so
+    # the purge only happens once we know GitHub is reachable.
     heal_broken_install
 
-    # 2. Load last-installed hash (if any)
-    if [[ -f "$EXP_HASH_FILE" ]]; then
-        EXP_LOCAL_HASH=$(<"$EXP_HASH_FILE")
-    else
-        EXP_LOCAL_HASH=""
+    local reason=""
+    if ! pip show expidite >/dev/null 2>&1; then
+        reason="expidite is not installed"
+    elif [ "$EXPIDITE_HEAL_ACTIVE" == "yes" ]; then
+        reason="the installed expidite is broken"
     fi
-
-    # 3. Compare and install only if changed (or if [ "$new_install" == "yes" ])
-    if [[ "$EXP_REMOTE_HASH" != "$EXP_LOCAL_HASH" || "$new_install" == "yes" ]]; then
-        echo "Detected new commit $EXP_REMOTE_HASH on branch $expidite_git_branch."
-        exp_install_success="false"
-        if pip_install "${PIP_HEAL_ARGS[@]}" \
-                "git+https://github.com/oxford-bee-ops/expidite.git@$expidite_git_branch"; then
-            exp_install_success="true"
-        else
-            echo "Failed to install Expidite"
+    if [ -n "$reason" ]; then
+        local requirement=""
+        if [ "$expidite_git_branch" == "main" ]; then
+            requirement=$(get_user_expidite_requirement)
         fi
+        [ -z "$requirement" ] && EXPIDITE_BOOTSTRAPPED="yes"
+        install_expidite_requirement "${requirement:-expidite @ git+$EXPIDITE_GIT_URL@$expidite_git_branch}" \
+            "$reason"
+    fi
+}
 
-        updated_version=$(pip show expidite | grep Version)
+##############################################################################################################
+# Runs after install_user_code: apply or remove a test branch override, then check the result.
+##############################################################################################################
+install_expidite() {
+    # Records the test branch installed on the device, so that once it is removed from system.cfg we know the
+    # installed expidite is not the one the user's code asks for. pip will not put that back by itself: the
+    # user's code has not changed, and a test branch often has the same version number.
+    local override_flag="$HOME/.expidite/flags/expidite-branch-override"
 
-        # Only cache the hash if the install actually succeeded. The hash file is what makes every later run
-        # skip this block ("No changes detected"), so writing it after a failed install tells all future runs
-        # that a version we never installed is present - the failure is not merely swallowed, it is recorded
-        # as a success and can never be retried. install_user_code_from_git_clone already guards its hash
-        # write this way; this one did not, and that is why four devices stayed broken across every reboot.
-        if [ "$exp_install_success" == "true" ]; then
-            echo "Expidite installed successfully. Now version: $updated_version"
-
-            # We store the updated_version in the flags directory for later use in logging
-            echo "$updated_version" > "$HOME/.expidite/expidite_code_version"
-            echo "$EXP_REMOTE_HASH" > "$EXP_HASH_FILE"
-            sync
-
-            # If the version has changed, we need to set a flag so we reboot at the end of the script
-            if [ "$current_version" != "$updated_version" ]; then
-                echo "Expidite version has changed from $current_version to $updated_version. Reboot required."
-                # Set a flag to indicate that a reboot is required
-                flag_reboot_required
-            elif [ "$EXPIDITE_HEAL_ACTIVE" == "yes" ]; then
-                # A repair reinstalls the *same* version, so the check above never fires - yet a repair needs
-                # the reboot more than a version bump does. heal_broken_install deleted and recreated
-                # site-packages/expidite_rpi underneath a running system: expidite-management.service is not
-                # stopped by this script and has been importing from that directory, so it is now holding
-                # module objects whose files were removed. Only a reboot gets every process onto the new
-                # files.
-                #
-                # This cannot loop. The reboot is flagged only after a *successful* reinstall, and a
-                # successful reinstall means the next run's precondition check passes, so it does not heal
-                # and does not flag another reboot. Exactly one reboot, with the cyclical-reboot guard still
-                # underneath it as a backstop.
-                echo "Expidite was repaired at the same version ($updated_version). Reboot required."
-                flag_reboot_required
+    if [ "$expidite_git_branch" == "main" ]; then
+        echo_header "Install expidite: version chosen by the user's code"
+        local requirement
+        requirement=$(get_user_expidite_requirement)
+        if [ -f "$override_flag" ]; then
+            if install_expidite_requirement "${requirement:-expidite @ git+$EXPIDITE_GIT_URL@main}" \
+                    "test branch '$(<"$override_flag")' has been removed from system.cfg"; then
+                rm -f "$override_flag"
+                sync
             fi
+        elif [ "$EXPIDITE_BOOTSTRAPPED" == "yes" ] && [ -n "$requirement" ]; then
+            # pip keeps the bootstrap install if its version number matches what the user's code asks for,
+            # even though the code may differ.
+            install_expidite_requirement "$requirement" \
+                "expidite was installed from main before the user's code, which asks for '$requirement'"
         else
-            echo "Install failed; hash NOT updated, so this install will be retried on the next run."
-            echo "Current version remains: $updated_version"
-            # Deliberately no reboot flag: rebooting cannot fix a failed download, and doing so on every run
-            # is exactly the cyclical reboot we are trying to prevent.
+            echo "Nothing to do: the user's code installed the expidite it depends on."
         fi
     else
-        echo "No changes detected on branch $expidite_git_branch. Skipping install."
+        echo_header "Install expidite: test branch $expidite_git_branch"
+        # Written on every run rather than only when we install, so a device that was already on this branch
+        # when this installer arrived is still recognised when the branch is later removed.
+        if [ "$(cat "$override_flag" 2>/dev/null)" != "$expidite_git_branch" ]; then
+            echo "$expidite_git_branch" > "$override_flag"
+            sync
+        fi
+
+        # Compare the commit pip recorded for the installed expidite with the branch head, not a cached hash.
+        # One test then covers every way they can differ: the branch has moved, install_user_code has just
+        # replaced the branch with the user's own version, or the device has just been switched to this
+        # branch. And a failed install is retried on the next run, because nothing claims it succeeded.
+        local installed
+        installed=$(get_installed_expidite_commit)
+        if [ -z "$EXP_REMOTE_HASH" ]; then
+            echo "Cannot find the head of branch $expidite_git_branch; leaving expidite as it is."
+        elif [ "$installed" == "$EXP_REMOTE_HASH" ]; then
+            echo "Expidite is at the head of $expidite_git_branch ($EXP_REMOTE_HASH). Skipping install."
+        else
+            # Install the commit we compared against, not the branch name, in case the branch moves meanwhile.
+            install_expidite_requirement "expidite @ git+$EXPIDITE_GIT_URL@$EXP_REMOTE_HASH" \
+                "branch $expidite_git_branch is at $EXP_REMOTE_HASH (installed: ${installed:-not from git})"
+        fi
     fi
+
+    local version
+    version=$(pip show expidite 2>/dev/null | grep Version)
+    echo "Expidite version: ${version:-not installed}"
+    # We store the version in the flags directory for later use in logging.
+    [ -n "$version" ] && echo "$version" > "$HOME/.expidite/expidite_code_version"
 
     # Make sure the rpi_installer.sh script is executable
     # Check the script is in the venv directory
@@ -757,29 +844,6 @@ fix_my_git_repo() {
     echo "$git_repo_url"
 }
 
-##############################################################################################################
-# When expidite_git_branch is not main, reinstall expidite from that branch after user-code installation
-# in case pip resolved the user-code's expidite dependency back to main.
-##############################################################################################################
-_saved_expidite_version=""
-
-save_expidite_version() {
-    _saved_expidite_version=$(pip show expidite 2>/dev/null | awk '/^Version:/{print $2}')
-}
-
-restore_expidite_if_overridden() {
-    if [ "$expidite_git_branch" != "main" ]; then
-        local exp_ver
-        exp_ver=$(pip show expidite 2>/dev/null | awk '/^Version:/{print $2}')
-        if [ -n "$_saved_expidite_version" ] && [ "$exp_ver" != "$_saved_expidite_version" ]; then
-            echo "Expidite was changed ($_saved_expidite_version -> $exp_ver) by user-code install."
-            echo "Restoring expidite from branch $expidite_git_branch..."
-            pip_install "git+https://github.com/oxford-bee-ops/expidite.git@$expidite_git_branch" \
-                || echo "Warning: Failed to restore expidite from branch $expidite_git_branch"
-        fi
-    fi
-}
-
 install_user_code() {
     echo_header "Install user's code"
 
@@ -797,11 +861,9 @@ install_user_code_from_package() {
     project_name=$(get_pip_package_name "$my_git_repo_url")
     current_version=$(pip show "$project_name" 2>/dev/null | grep Version)
 
-    save_expidite_version
     # github_installer.py pips the wheel in-process, so it needs the same flush that pip_install performs.
     "$HOME/$venv_dir/scripts/github_installer.py"
     sync
-    restore_expidite_if_overridden
 
     updated_version=$(pip show "$project_name" 2>/dev/null | grep Version)
 
@@ -914,8 +976,6 @@ install_user_code_from_git_clone() {
         # fail.
         install_success="false"
 
-        save_expidite_version
-
         # Use appropriate URL scheme based on access method
         if [ "$use_ssh" == "true" ]; then
             # For SSH URLs, pip expects git+ssh:// format
@@ -936,8 +996,6 @@ install_user_code_from_git_clone() {
                 echo "Failed to install $pip_url"
             fi
         fi
-
-        restore_expidite_if_overridden
 
         # Only cache the new hash if installation was successful
         if [ "$install_success" == "true" ]; then
@@ -1731,8 +1789,9 @@ if [ "$os_update" == "yes" ]; then
     install_os_packages
     install_ufw
 fi
-install_expidite
+prepare_code_install
 install_user_code
+install_expidite
 # Immediately after the installs, so the verdict sits next to the install output in the log, and before
 # anything downstream (service starts, the reboot) acts on what was installed.
 verify_expidite_install
