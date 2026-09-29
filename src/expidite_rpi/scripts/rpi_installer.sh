@@ -604,7 +604,7 @@ install_expidite() {
     echo_header "Install expidite from GitHub"
     EXP_HASH_FILE="$HOME/.expidite/flags/expidite-repo-last-hash"
     current_version=$(pip show expidite | grep Version)
-    echo "Installing expidite. Current version: $current_version"
+    echo "Current version: $current_version"
 
     # If the current version is blank, remove any existing EXP_HASH_FILE which might be left over
     # from a previous installation
