@@ -154,8 +154,6 @@ def _install_user_repo_package() -> None:
 
 
 if __name__ == "__main__":
-    print("Installing user repo package...")
-
     try:
         _install_user_repo_package()
         print("Installation of user repo package complete")
