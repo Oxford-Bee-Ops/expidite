@@ -1,6 +1,5 @@
-##############################################################################################################
-# Utils that have no dependencies on other modules in the project
-##############################################################################################################
+"""Utils that have no dependencies on other modules in the project."""
+
 import logging
 import subprocess
 from collections.abc import Generator

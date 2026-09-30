@@ -1,11 +1,11 @@
-##############################################################################################################
-# The run_my_sensor script is invoked by the RpiCore at startup.
-# It provides a means for users to customize the behavior of the RpiCore and run their own code.
-#
-# By default, it:
-# - loads the fleet configuration specified in system_cfg.my_fleet_config
-# - starts the RpiCore
-##############################################################################################################
+"""Script invoked by RpiCore at startup.
+
+It provides a means for users to customize the behavior of RpiCore and run their own code.
+
+By default, it:
+- loads the fleet configuration specified in system_cfg.my_fleet_config
+- starts RpiCore
+"""
 
 from expidite_rpi import RpiCore
 from expidite_rpi.core import configuration as root_cfg

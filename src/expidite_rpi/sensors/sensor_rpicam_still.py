@@ -1,9 +1,8 @@
-##############################################################################################################
-# Sensor class that provides a direct map onto Raspberry Pi's rpicam-still.
-#
-# The user specifies the rpicam-still command line, except for the file name, which is set by RpiCore.
-#
-##############################################################################################################
+"""Sensor class that provides a direct map onto Raspberry Pi's rpicam-still.
+
+The user specifies the rpicam-still command line, except for the file name, which is set by RpiCore.
+"""
+
 from dataclasses import dataclass
 from typing import cast
 

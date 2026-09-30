@@ -1,8 +1,8 @@
-##############################################################################################################
-# Expidite API
-#
-# File define constants used on interfaces between components in the Expidite system.
-##############################################################################################################
+"""Expidite API.
+
+Constants used on interfaces between components in the Expidite system.
+"""
+
 from datetime import UTC, datetime
 from enum import Enum, StrEnum, auto
 

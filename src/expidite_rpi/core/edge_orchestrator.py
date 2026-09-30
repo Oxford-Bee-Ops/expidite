@@ -1,6 +1,5 @@
-##############################################################################################################
-# EdgeOrchestrator: Manages the state of the sensor threads
-##############################################################################################################
+"""EdgeOrchestrator: manages the state of the sensor threads."""
+
 import threading
 from collections.abc import Callable
 from dataclasses import asdict

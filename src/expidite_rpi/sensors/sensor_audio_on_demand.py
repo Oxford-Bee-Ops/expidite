@@ -1,10 +1,8 @@
-##############################################################################################################
-# AudioSensor
-#
-# Called by RpiCore to record audio from USB microphones plugged into the Raspberry Pi.
-#
-# Only supports 1 microphone.
-##############################################################################################################
+"""AudioSensor: records audio from USB microphones plugged into the Raspberry Pi.
+
+Only supports 1 microphone.
+"""
+
 from dataclasses import dataclass
 
 from expidite_rpi.core import api, file_naming

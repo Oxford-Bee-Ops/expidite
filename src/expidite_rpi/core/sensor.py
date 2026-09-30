@@ -1,9 +1,5 @@
-##############################################################################################################
-# Sensor classes
-# - EdgeOrchestrator: Manages the state of the sensor threads
-# - SensorConfig: Dataclass for sensor configuration, specified in sensor_cac.py
-# - Sensor: Super class for all sensor classes
-##############################################################################################################
+"""Sensor: superclass for all sensor classes."""
+
 from abc import ABC
 from datetime import UTC, datetime, timedelta
 from threading import Event, Thread

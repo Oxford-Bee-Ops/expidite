@@ -1,6 +1,5 @@
-##############################################################################################################
-# Execute environment dependent setup
-##############################################################################################################
+"""Execute environment dependent setup."""
+
 import contextlib
 import datetime as dt
 import os

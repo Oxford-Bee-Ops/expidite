@@ -1,12 +1,11 @@
-##############################################################################################################
-# ContinuousAudioSensor
-#
-# Called by RpiCore to record audio continuously from USB microphones plugged into the Raspberry Pi.
-# Recording is split into consecutive chunks of DeviceCfg.max_recording_timer seconds so that the sensor
-# can be cleanly stopped/restarted within the expected shutdown window.
-#
-# Only supports 1 microphone.
-##############################################################################################################
+"""ContinuousAudioSensor: records audio continuously from USB microphones plugged into the Raspberry Pi.
+
+Recording is split into consecutive chunks of DeviceCfg.max_recording_timer seconds so that the sensor
+can be cleanly stopped/restarted within the expected shutdown window.
+
+Only supports 1 microphone.
+"""
+
 from dataclasses import dataclass
 
 from expidite_rpi.core import api, file_naming

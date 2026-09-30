@@ -1,6 +1,5 @@
-##############################################################################################################
-# The config_validator is used to validate RpiCore configuration files (eg fleet_config.py).
-##############################################################################################################
+"""Validate RpiCore configuration files (eg fleet_config.py)."""
+
 from abc import ABC, abstractmethod
 
 from expidite_rpi.core import api

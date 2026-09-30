@@ -1,18 +1,17 @@
-##############################################################################################################
-# This file contains recipes for fully specified device types.
-#
-# RpiCore config model
-#
-# DeviceCfg (1 per physical device)
-# -> sensor_ds_list: list[SensorDsCfg] - 1 per Sensor)
-#    -> [0]
-#       -> sensor_cfg: SensorCfg
-#       -> datastream_cfgs: list[DatastreamCfg]
-#          -> [0]
-#             -> edge_processors: list[DataProcessorCfg]
-#             -> cloud_processors: list[DataProcessorCfg]
-#
-##############################################################################################################
+"""Recipes for fully specified device types.
+
+RpiCore config model:
+
+DeviceCfg (1 per physical device)
+-> sensor_ds_list: list[SensorDsCfg] - 1 per Sensor)
+   -> [0]
+      -> sensor_cfg: SensorCfg
+      -> datastream_cfgs: list[DatastreamCfg]
+         -> [0]
+            -> edge_processors: list[DataProcessorCfg]
+            -> cloud_processors: list[DataProcessorCfg]
+"""
+
 from dataclasses import replace
 
 from expidite_rpi.core import configuration as root_cfg

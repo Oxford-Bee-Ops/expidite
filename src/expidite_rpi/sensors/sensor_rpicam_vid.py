@@ -1,9 +1,7 @@
-##############################################################################################################
-# Sensor class that provides a direct map onto Raspberry Pi's rpicam-vid for continuous video recording.
-#
-# The user specifies the rpicam-vid command line, except for the file name, which is set by RpiCore.
-#
-##############################################################################################################
+"""Sensor class that provides a direct map onto Raspberry Pi's rpicam-vid for continuous video recording.
+
+The user specifies the rpicam-vid command line, except for the file name, which is set by RpiCore.
+"""
 
 from dataclasses import dataclass
 from typing import cast

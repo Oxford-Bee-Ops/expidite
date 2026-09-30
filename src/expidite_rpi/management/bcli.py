@@ -1,6 +1,5 @@
-##############################################################################################################
-# Description: This script is used to run the bcli command.
-##############################################################################################################
+"""Implementation of the bcli command."""
+
 import ast
 import datetime as dt
 import os
