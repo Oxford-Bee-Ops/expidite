@@ -1,8 +1,10 @@
 import contextlib
 import csv
 import io
-from concurrent.futures import ThreadPoolExecutor, as_completed
+import json
+from concurrent.futures import Future, ThreadPoolExecutor, as_completed
 from datetime import UTC, datetime, timedelta
+from hashlib import sha256
 from pathlib import Path
 from threading import Lock
 from typing import Optional
@@ -83,6 +85,21 @@ def log_cloud_failure(message: str, exc: Exception, *, elapsed_seconds: float = 
 # that aborts a download when the blob is appended to mid-transfer. Must stay at or below the SDK's
 # max_single_get_size (default 32 MiB) so each request stays a single GET. See _download_blob_delta.
 _DELTA_CHUNK_BYTES = 8 * 1024 * 1024
+_DELTA_DOWNLOAD_BATCH_SIZE = 10_000
+
+# Fingerprint of the actual CSV header, set when a journal is created or rebuilt.
+JOURNAL_HEADER_METADATA_KEY = "journal_header_sha256"
+
+
+def _journal_header_hash(header: str) -> str:
+    """Hash column names and order, ignoring CSV quoting and line-ending differences."""
+    columns = next(csv.reader([header]))
+    canonical = json.dumps(columns, ensure_ascii=False, separators=(",", ":"))
+    return sha256(canonical.encode("utf-8")).hexdigest()
+
+
+class _JournalHeaderChangedError(ResourceModifiedError):
+    """A journal blob's header metadata changed during a delta download, so it was rewritten."""
 
 
 ##############################################################################################################
@@ -102,7 +119,7 @@ class CloudConnector:
         self._validated_containers: dict[str, ContainerClient] = {}
         self._append_locks: dict[str, Lock] = {}
         self._append_locks_lock = Lock()
-        self._validated_append_files: set[str] = set()
+        self._validated_append_files: dict[tuple[str, str], tuple[str, ...]] = {}
 
     @staticmethod
     def get_instance(cloud_type: CloudType) -> "CloudConnector":
@@ -312,12 +329,9 @@ class CloudConnector:
         so that we don't duplicate a header row.
 
         We need to cope with changes in software versions which may change the headers in the CSV file.
-        Each file in the cloud will only ever be written to by one device (ie this one), so we only need to
-        check the headers once at start up.
-        If this is the first time we're writing to this remote file, but the file already exists, we check
-        that the headers in the local file match the headers in the remote file. If they do not match, we
-        download the remote file, merge the data to create a coherent set of headers and push the aggregated
-        data back to the remote file.
+        Each cloud file is written by one device. Cache its validated columns for this connector instance.
+        Older fragments are aligned to those columns; fragments adding columns trigger a merge and rewrite
+        that preserves existing columns and values. The first write after startup checks the remote schema.
         """
         try:
             logger.debug(f"CloudConnector.append_to_cloud() with delete_src={delete_src} for {src_file}")
@@ -363,45 +377,69 @@ class CloudConnector:
         # swallow_exceptions=False re-raises failures instead of logging them, so the AsyncCloudConnector can
         # classify the exception (transient network outage vs real fault) and divert to the disk spool.
         try:
+            if not lines_to_append or not lines_to_append[0].strip():
+                msg = "Journal fragment must have a non-blank CSV header"
+                raise ValueError(msg)
             target_container = self._validate_container(dst_container)
             blob_client = target_container.get_blob_client(dst_file)
 
             # Prevent multiple threads from updating the same file in cloud storage simultaneously.
             with self._get_append_lock(dst_file):
+                cache_key = (dst_container, dst_file)
+                header_hash = _journal_header_hash(lines_to_append[0])
+                columns = tuple(next(csv.reader([lines_to_append[0]])))
+                cached_columns = self._validated_append_files.get(cache_key)
                 if not blob_client.exists():
                     # Create the blob and include the Headers.
-                    blob_client.create_append_blob()
                     data_to_append = "".join(lines_to_append[:])
-                elif dst_file in self._validated_append_files:
-                    # Drop the Headers in the first line so we don't have repeat header rows.
-                    data_to_append = "".join(lines_to_append[1:])
-                # It's our first time writing to this file since reboot. Validate that the headers match.
+                    self._validated_append_files.pop(cache_key, None)
+                    blob_client.create_append_blob(metadata={JOURNAL_HEADER_METADATA_KEY: header_hash})
+                elif cached_columns is not None and set(columns).issubset(cached_columns):
+                    # Older fragments still use the stored schema: reorder and pad their rows as needed.
+                    data_to_append = self._align_append_rows(lines_to_append, cached_columns)
+                    columns = cached_columns
+                # Validate on first write and whenever the incoming header changes (e.g. after spool drain).
                 elif self._headers_match(blob_client, lines_to_append[0]):
                     logger.debug(f"Headers match for {blob_client.blob_name}, appending data")
                     # Drop the Headers in the first line so we don't have repeat header rows.
                     data_to_append = "".join(lines_to_append[1:])
                 else:
-                    logger.warning(
-                        f"{root_cfg.RAISE_WARN()}Headers do not match for {dst_file}, "
-                        "downloading remote file to merge headers"
+                    properties = blob_client.get_blob_properties()
+                    remote_columns = (
+                        tuple(next(csv.reader([self._read_first_line(blob_client, properties.size)])))
+                        if properties.size
+                        else ()
                     )
-                    data_to_append = self._merge_local_and_remote(
-                        dst_container, dst_file, lines_to_append, col_order
-                    )
+                    if remote_columns and set(columns).issubset(remote_columns):
+                        data_to_append = self._align_append_rows(lines_to_append, remote_columns)
+                        columns = remote_columns
+                    else:
+                        logger.warning(
+                            f"{root_cfg.RAISE_WARN()}Headers do not match for {dst_file}, "
+                            "downloading remote file to merge headers"
+                        )
+                        data_to_append = self._merge_local_and_remote(
+                            dst_container, dst_file, lines_to_append, col_order
+                        )
+                        header_hash = _journal_header_hash(data_to_append.partition("\n")[0])
+                        columns = tuple(next(csv.reader([data_to_append.partition("\n")[0]])))
 
-                    # Re-create the append_blob - this replaces the existing file.
-                    # create_append_blob() overwrites an existing append blob in place, but Azure rejects a
-                    # Put Blob that would change an existing blob's *type*, so anything that isn't already an
-                    # append blob must be deleted first.
-                    if blob_client.get_blob_properties().blob_type != BlobType.APPENDBLOB:
-                        blob_client.delete_blob()
-                    blob_client.create_append_blob()
+                        # Invalidate before replacing: a failed append must not leave a trusted empty blob.
+                        self._validated_append_files.pop(cache_key, None)
+
+                        # Re-create the append_blob - this replaces the existing file.
+                        # create_append_blob() overwrites an existing append blob in place, but Azure rejects
+                        # a Put Blob that would change an existing blob's *type*, so anything that isn't
+                        # already an append blob must be deleted first.
+                        if properties.blob_type != BlobType.APPENDBLOB:
+                            blob_client.delete_blob()
+                        blob_client.create_append_blob(metadata={JOURNAL_HEADER_METADATA_KEY: header_hash})
 
                 # Append the data.
                 blob_client.append_block(data_to_append.encode("utf-8"))
 
                 # Record that we've validated this file (might already be true).
-                self._validated_append_files.add(dst_file)
+                self._validated_append_files[cache_key] = columns
 
             return True
         except Exception as e:
@@ -409,6 +447,18 @@ class CloudConnector:
                 raise
             log_cloud_failure(f"Failed to append data to {dst_file}", e, elapsed_seconds=elapsed_seconds)
             return False
+
+    @staticmethod
+    def _align_append_rows(lines: list[str], columns: tuple[str, ...]) -> str:
+        """Preserve CSV values while ordering rows and padding columns absent from older fragments."""
+        incoming_columns = tuple(next(csv.reader([lines[0]])))
+        if incoming_columns == columns:
+            return "".join(lines[1:])
+        rows = csv.DictReader(io.StringIO("".join(lines)))
+        output = io.StringIO()
+        writer = csv.DictWriter(output, fieldnames=columns, lineterminator="\n")
+        writer.writerows(rows)
+        return output.getvalue()
 
     def _merge_local_and_remote(
         self,
@@ -438,6 +488,9 @@ class CloudConnector:
 
         # Generate the CSV data to append (including the headers).
         csv_buffer = io.StringIO()
+        if col_order is not None:
+            # Caller order is a preference, not permission to discard existing columns and their values.
+            col_order = [*col_order, *(col for col in merged_df.columns if col not in col_order)]
         merged_df.to_csv(csv_buffer, index=False, columns=col_order)
         data_to_append = csv_buffer.getvalue()
         tmp_file.unlink()  # Clean up the temporary file.
@@ -548,6 +601,8 @@ class CloudConnector:
         src_container: str,
         dst_dir: Path,
         files_with_offsets: dict[str, int],
+        *,
+        check_journal_headers: bool = False,
     ) -> None:
         """Download files from src_container, using byte-range requests for partially-downloaded files.
 
@@ -563,30 +618,63 @@ class CloudConnector:
                 For files that already exist locally, pass the current local file size as the offset so that
                 only the new bytes are transferred. For files that don't exist locally, pass offset 0 so that
                 the file is downloaded in full.
+            check_journal_headers: Compare journal_header_sha256 metadata with the local CSV header before
+                extending a journal. A mismatch forces a full download. Legacy blobs without the metadata
+                retain the existing delta behaviour: upgrade writers before changing their columns.
+                Uses existing properties/range requests and creates no local tracking files.
+
+        Raises:
+            Exception: The first per-file error, after other files and subsequent batches have been attempted.
+                Each error includes the failed filename; additional errors are attached as an ExceptionGroup
+                cause. Exhausted schema-change retries discard the incomplete local file so the next run
+                downloads it in full.
         """
         download_container = self._validate_container(src_container)
         files_downloaded = 0
+        failures: list[Exception] = []
+
+        def collect_results(futures: dict[Future[str], str]) -> None:
+            nonlocal files_downloaded
+            for future in as_completed(futures, timeout=600):
+                try:
+                    future.result()
+                except Exception as exc:
+                    exc.add_note(f"Journal download failed: {futures[future]}")
+                    failures.append(exc)
+                    logger.warning(f"Failed to download {futures[future]}: {exc}")
+                else:
+                    files_downloaded += 1
 
         # Create a pool of threads to download the files
         with ThreadPoolExecutor(max_workers=8) as executor:
-            futures = []
+            futures: dict[Future[str], str] = {}
             for blob_name, offset in files_with_offsets.items():
                 blob_client = download_container.get_blob_client(blob_name)
                 dst_file = dst_dir / blob_name
-                futures.append(
-                    executor.submit(self._download_file, blob_client, dst_file, offset, append_only=True)
-                )
-                if len(futures) > 10_000:
-                    logger.info("Working on batch of 10,000 files")
-                    for future in as_completed(futures, timeout=600):
-                        future.result()
-                        files_downloaded += 1
-                    futures = []
+                futures[
+                    executor.submit(
+                        self._download_file,
+                        blob_client,
+                        dst_file,
+                        offset,
+                        append_only=True,
+                        check_journal_headers=check_journal_headers,
+                    )
+                ] = blob_name
+                if len(futures) >= _DELTA_DOWNLOAD_BATCH_SIZE:
+                    logger.info(f"Working on batch of {len(futures):,} files")
+                    collect_results(futures)
+                    futures = {}
             logger.info(f"Downloading remaining {len(futures)} files")
-            for future in as_completed(futures, timeout=600):
-                future.result()
-                files_downloaded += 1
+            collect_results(futures)
         logger.info(f"Completed download of {files_downloaded} files")
+        if failures:
+            message = f"Failed to download {len(failures)} journal(s)"
+            first_error = failures[0]
+            first_error.add_note(message)
+            if len(failures) > 1:
+                raise first_error from ExceptionGroup(message, failures[1:])
+            raise first_error
 
     def get_last_file_modified_time(
         self,
@@ -640,7 +728,14 @@ class CloudConnector:
                 if attempt == 2:
                     raise
 
-    def _download_blob_delta(self, blob_client: BlobClient, dst_file: Path, offset: int) -> None:
+    def _download_blob_delta(
+        self,
+        blob_client: BlobClient,
+        dst_file: Path,
+        offset: int,
+        *,
+        check_journal_headers: bool = False,
+    ) -> None:
         """Download an append-only blob into dst_file, fetching only the bytes we don't already have.
 
         Pass offset=0 to download the whole blob, or offset=<local file size> to append only the new tail
@@ -653,8 +748,50 @@ class CloudConnector:
         cannot abort the download - there is no need to discard progress and re-download the whole file
         just because the blob grew while we were reading it. This applies equally to a from-scratch
         download (offset=0) of a large, actively-appended blob.
+
+        If the journal header changes mid-download, the blob was rewritten, so retry in full from offset 0.
         """
-        size = blob_client.get_blob_properties().size
+        for attempt in range(3):
+            try:
+                self._download_blob_delta_once(
+                    blob_client, dst_file, offset, check_journal_headers=check_journal_headers
+                )
+                return
+            except _JournalHeaderChangedError:
+                logger.info(f"Journal header changed during download of {dst_file} attempt {attempt + 1}")
+                # A mixed-schema prefix cannot be used as the baseline for a future delta download.
+                dst_file.unlink(missing_ok=True)
+                if attempt == 2:
+                    raise
+                offset = 0
+
+    def _download_blob_delta_once(
+        self,
+        blob_client: BlobClient,
+        dst_file: Path,
+        offset: int,
+        *,
+        check_journal_headers: bool,
+    ) -> None:
+        """A single attempt at _download_blob_delta."""
+        properties = blob_client.get_blob_properties()
+        size = properties.size
+        header_hash = (
+            (properties.metadata or {}).get(JOURNAL_HEADER_METADATA_KEY) if check_journal_headers else None
+        )
+        if offset > 0 and not dst_file.exists():
+            offset = 0
+        if header_hash and offset > 0:
+            # errors="replace" so an undecodable local header forces a full download rather than failing.
+            try:
+                with dst_file.open(encoding="utf-8", errors="replace", newline="") as local_file:
+                    local_hash = _journal_header_hash(local_file.readline())
+            except FileNotFoundError:
+                offset = 0
+            else:
+                if local_hash != header_hash:
+                    logger.info(f"{dst_file.name} has different journal columns; re-downloading")
+                    offset = 0
         if size < offset:
             # The blob is smaller than our local copy, so it was truncated or rewritten rather than
             # appended to. The append-only assumption no longer holds, so re-download the whole blob.
@@ -671,7 +808,16 @@ class CloudConnector:
             cursor = offset
             while cursor < size:
                 length = min(_DELTA_CHUNK_BYTES, size - cursor)
-                file_bytes = blob_client.download_blob(offset=cursor, length=length).readall()
+                download = blob_client.download_blob(offset=cursor, length=length)
+                if (
+                    check_journal_headers
+                    and (download.properties.metadata or {}).get(JOURNAL_HEADER_METADATA_KEY) != header_hash
+                ):
+                    # Metadata is included in range responses: a schema change during transfer must abort
+                    # this attempt, while an ordinary concurrent append remains safe.
+                    msg = "Journal header changed during download"
+                    raise _JournalHeaderChangedError(msg)
+                file_bytes = download.readall()
                 my_file.write(file_bytes)
                 cursor += len(file_bytes)
                 written += len(file_bytes)
@@ -679,7 +825,13 @@ class CloudConnector:
         logger.info(f"Downloaded {dst_file.name}, {written:,} {descriptor}")
 
     def _download_file(
-        self, blob_client: BlobClient, dst_file: Path, offset: int = 0, append_only: bool = False
+        self,
+        blob_client: BlobClient,
+        dst_file: Path,
+        offset: int = 0,
+        append_only: bool = False,
+        *,
+        check_journal_headers: bool = False,
     ) -> str:
         """Download a single file.
 
@@ -690,8 +842,10 @@ class CloudConnector:
         """
         if not dst_file.parent.exists():
             dst_file.parent.mkdir(parents=True, exist_ok=True)
-        if offset > 0 or append_only:
-            self._download_blob_delta(blob_client, dst_file, offset)
+        if offset > 0 or append_only or check_journal_headers:
+            self._download_blob_delta(
+                blob_client, dst_file, offset, check_journal_headers=check_journal_headers
+            )
         else:
             self._download_blob(blob_client, dst_file)
         return dst_file.name
@@ -727,38 +881,48 @@ class CloudConnector:
     def _get_connection_string(self) -> str:
         return self._connection_string
 
+    def _read_first_line(self, blob_client: BlobClient, size: int) -> str:
+        """Read the blob from the start up to the first newline or end of blob, using range requests."""
+        data = b""
+        length = 4096
+        while len(data) < size and b"\n" not in data:
+            chunk = blob_client.download_blob(
+                offset=len(data), length=min(length, size - len(data))
+            ).readall()
+            if not chunk:
+                break
+            data += chunk
+            length *= 2
+        return data.split(b"\n", 1)[0].decode("utf-8", errors="replace")
+
     def _headers_match(self, blob_client: BlobClient, local_line: str) -> bool:
         """Check if the headers in the local file match the headers in the remote file.
 
         Returns false if either is empty or if the headers do not match.
+        Uses the journal_header_sha256 metadata when present; otherwise reads the remote header line in full,
+        however long it is, because a truncated header would look mismatched and force a needless rewrite.
         """
-        start_of_contents = blob_client.download_blob(encoding="utf-8").read(chars=1000)
-
-        if not start_of_contents:
-            return False  # No contents in the remote file
-
         if not local_line.strip():
             logger.warning(f"{root_cfg.RAISE_WARN()}Local file {blob_client.blob_name} has no headers")
             return False  # No headers in the local file
 
-        # Get the first line from start_of_contents
-        cloud_lines = start_of_contents.splitlines()
-        if len(cloud_lines) >= 1:
-            # We have headers from local and cloud files; check headers match
-            local_reader = csv.reader([local_line])
-            cloud_reader = csv.reader([cloud_lines[0]])
-            local_headers = next(local_reader)
-            cloud_headers = next(cloud_reader)
-            if local_headers != cloud_headers:
-                logger.warning(
-                    f"{root_cfg.RAISE_WARN()}Local and remote headers do not match in "
-                    f"{blob_client.blob_name}: {local_headers}, {cloud_headers}"
-                )
-                return False
+        properties = blob_client.get_blob_properties()
+        if not properties.size:
+            # No contents in the remote file. This can carry header metadata if create_append_blob()
+            # succeeded but the append_block() that followed failed, so check before trusting the metadata.
+            return False
 
-            # All is good; headers match
-            logger.debug(f"Headers match for {blob_client.blob_name}: {local_headers}")
-            return True
+        remote_header = "header metadata"
+        remote_hash = (properties.metadata or {}).get(JOURNAL_HEADER_METADATA_KEY)
+        if not remote_hash:
+            remote_header = self._read_first_line(blob_client, properties.size)
+            remote_hash = _journal_header_hash(remote_header)
+        if remote_hash != _journal_header_hash(local_line):
+            logger.warning(
+                f"{root_cfg.RAISE_WARN()}Local and remote headers do not match in "
+                f"{blob_client.blob_name}: {local_line.strip()}, {remote_header}"
+            )
+            return False
 
-        logger.warning(f"{root_cfg.RAISE_WARN()}Remote file {blob_client.blob_name} has no headers")
-        return False
+        logger.debug(f"Headers match for {blob_client.blob_name}: {local_line.strip()}")
+        return True

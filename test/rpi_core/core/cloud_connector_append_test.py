@@ -11,6 +11,7 @@ import io
 from threading import Lock
 from types import SimpleNamespace
 from typing import cast
+from unittest.mock import Mock
 
 import pandas as pd
 import pytest
@@ -18,6 +19,7 @@ from azure.core.exceptions import ResourceExistsError, ResourceNotFoundError
 from azure.storage.blob import BlobType, ContainerClient
 
 from expidite_rpi.core.cloud_connector import CloudConnector
+from expidite_rpi.core.cloud_connector import cloud_connector as cc_module
 
 DST_CONTAINER = "expidite-upload"
 DST_FILE = "journal.csv"
@@ -38,17 +40,11 @@ def _csv_lines(frame: pd.DataFrame) -> list[str]:
 
 
 class _FakeDownloadStream:
-    def __init__(self, data: bytes, encoding: str | None) -> None:
+    def __init__(self, data: bytes) -> None:
         self._data = data
-        self._encoding = encoding
 
     def readall(self) -> bytes:
         return self._data
-
-    def read(self, chars: int | None = None) -> str:
-        assert self._encoding is not None, "read(chars=...) is only used on a text download"
-        text = self._data.decode(self._encoding)
-        return text if chars is None else text[:chars]
 
 
 class _FakeBlobClient:
@@ -65,6 +61,8 @@ class _FakeBlobClient:
         self.blob_type = blob_type
         self.deletes = 0
         self.creates = 0
+        self.metadata: dict[str, str] = {}
+        self.range_requests: list[tuple[int, int]] = []
 
     def exists(self) -> bool:
         return self.content is not None
@@ -72,12 +70,13 @@ class _FakeBlobClient:
     def get_blob_properties(self) -> SimpleNamespace:
         if self.content is None:
             raise ResourceNotFoundError(_NO_SUCH_BLOB)
-        return SimpleNamespace(size=len(self.content), blob_type=self.blob_type)
+        return SimpleNamespace(size=len(self.content), blob_type=self.blob_type, metadata=dict(self.metadata))
 
-    def create_append_blob(self) -> None:
+    def create_append_blob(self, metadata: dict[str, str] | None = None) -> None:
         if self.content is not None and self.blob_type != BlobType.APPENDBLOB:
             raise ResourceExistsError(_INVALID_BLOB_TYPE)
         self.creates += 1
+        self.metadata = dict(metadata or {})
         self.content = b""
         self.blob_type = BlobType.APPENDBLOB
 
@@ -93,10 +92,13 @@ class _FakeBlobClient:
         self.content = None
         self.blob_type = None
 
-    def download_blob(self, encoding: str | None = None) -> _FakeDownloadStream:
+    def download_blob(self, offset: int = 0, length: int | None = None) -> _FakeDownloadStream:
         if self.content is None:
             raise ResourceNotFoundError(_NO_SUCH_BLOB)
-        return _FakeDownloadStream(self.content, encoding)
+        if length is None:
+            return _FakeDownloadStream(self.content[offset:])
+        self.range_requests.append((offset, length))
+        return _FakeDownloadStream(self.content[offset : offset + length])
 
     def as_csv(self) -> pd.DataFrame:
         assert self.content is not None, "blob does not exist"
@@ -122,7 +124,7 @@ def _connector(blob: _FakeBlobClient) -> CloudConnector:
     cc._validated_containers = {DST_CONTAINER: cast(ContainerClient, _FakeContainerClient(blob))}
     cc._append_locks = {}
     cc._append_locks_lock = Lock()
-    cc._validated_append_files = set()
+    cc._validated_append_files = {}
     return cc
 
 
@@ -135,6 +137,41 @@ def _append(cc: CloudConnector, local: pd.DataFrame, col_order: list[str] | None
         col_order=col_order,
         swallow_exceptions=False,
     )
+
+
+@pytest.mark.unittest
+@pytest.mark.parametrize("state", ["missing", "existing", "cached"])
+@pytest.mark.parametrize("lines", [[], [""], ["\n", "1,2\n"], [" \t\r\n", "1,2\n"]])
+def test_blank_header_rejected_before_cloud_operations(
+    state: str, lines: list[str], monkeypatch: pytest.MonkeyPatch
+) -> None:
+    frame = pd.DataFrame({"a": [1], "b": [2]})
+    blob = _FakeBlobClient(DST_FILE, None if state == "missing" else _csv_bytes(frame), BlobType.APPENDBLOB)
+    cc = _connector(blob)
+    if state == "cached":
+        assert _append(cc, frame)
+    original_content = blob.content
+    original_metadata = dict(blob.metadata)
+    original_cache = dict(cc._validated_append_files)
+    validate = Mock(side_effect=AssertionError("Invalid fragment must not contact cloud storage"))
+    monkeypatch.setattr(cc, "_validate_container", validate)
+
+    with pytest.raises(ValueError, match="non-blank CSV header"):
+        cc._append_data_to_blob(DST_CONTAINER, DST_FILE, lines, swallow_exceptions=False)
+
+    validate.assert_not_called()
+    assert blob.content == original_content
+    assert blob.metadata == original_metadata
+    assert cc._validated_append_files == original_cache
+    assert blob.creates == 0
+    assert blob.deletes == 0
+
+
+@pytest.mark.unittest
+def test_blank_header_returns_false_when_exceptions_are_swallowed() -> None:
+    blob = _FakeBlobClient(DST_FILE)
+    assert _connector(blob)._append_data_to_blob(DST_CONTAINER, DST_FILE, ["\n", "1,2\n"]) is False
+    assert blob.content is None
 
 
 class TestAppendDataToBlobHeaderMismatch:
@@ -218,7 +255,7 @@ class TestAppendDataToBlobOtherPaths:
         assert result is True
         assert blob.deletes == 0
         assert blob.lines() == ["col1,col2", "1,2"]
-        assert DST_FILE in cc._validated_append_files
+        assert (DST_CONTAINER, DST_FILE) in cc._validated_append_files
 
     @pytest.mark.unittest
     def test_matching_headers_append_without_repeating_the_header_row(self) -> None:
@@ -233,3 +270,138 @@ class TestAppendDataToBlobOtherPaths:
         assert blob.deletes == 0
         assert blob.creates == 0, "an in-place append must not re-create the blob"
         assert blob.lines() == ["col1,col2", "1,2", "3,4"]
+
+
+@pytest.mark.unittest
+def test_old_spooled_header_does_not_skip_validation_of_new_columns() -> None:
+    """Draining an old fragment must not validate a later fragment with added columns."""
+    old = pd.DataFrame({"col_a": [1]})
+    blob = _FakeBlobClient(DST_FILE, _csv_bytes(old), BlobType.APPENDBLOB)
+    cc = _connector(blob)
+    assert _append(cc, pd.DataFrame({"col_a": [2]}))
+    assert blob.creates == 0
+
+    new = pd.DataFrame({"col_a": [3], "journal_column_test": ["added"]})
+    assert _append(cc, new, col_order=list(new.columns))
+
+    assert blob.creates == 1
+    merged = blob.as_csv()
+    assert merged["col_a"].tolist() == [1, 2, 3]
+    assert merged["journal_column_test"].isna().tolist() == [True, True, False]
+    assert merged["journal_column_test"].iloc[-1] == "added"
+    header_hash = cc_module._journal_header_hash(blob.lines()[0])
+    assert blob.metadata[cc_module.JOURNAL_HEADER_METADATA_KEY] == header_hash
+    assert cc._validated_append_files[DST_CONTAINER, DST_FILE] == tuple(merged.columns)
+
+    assert _append(cc, new)
+    assert blob.creates == 1
+    assert len(blob.as_csv()) == 4
+
+
+@pytest.mark.unittest
+def test_journal_hash_tracks_actual_output_header_and_survives_appends() -> None:
+    blob = _FakeBlobClient(DST_FILE)
+    initial = pd.DataFrame({"col_a": [1]})
+    assert _append(_connector(blob), initial)
+    key = cc_module.JOURNAL_HEADER_METADATA_KEY
+    first_hash = blob.metadata[key]
+    assert first_hash == cc_module._journal_header_hash(blob.lines()[0])
+    assert _append(_connector(blob), initial)
+    assert blob.metadata[key] == first_hash
+    # Incoming order differs from output order; the hash must describe the merged CSV, not the fragment.
+    assert _append(_connector(blob), pd.DataFrame({"col_c": [3], "col_a": [2]}), col_order=["col_a", "col_c"])
+    assert blob.lines()[0] == "col_a,col_c"
+    assert blob.metadata[key] == cc_module._journal_header_hash("col_a,col_c")
+    assert blob.metadata[key] != first_hash
+    assert blob.deletes == 0
+
+
+@pytest.mark.unittest
+def test_legacy_append_does_not_add_hash_or_rewrite() -> None:
+    frame = pd.DataFrame({"col1": [1]})
+    blob = _FakeBlobClient(DST_FILE, _csv_bytes(frame), BlobType.APPENDBLOB)
+    assert _append(_connector(blob), frame)
+    assert blob.metadata == {}
+    assert blob.creates == 0
+
+
+class TestHeadersMatch:
+    @pytest.mark.unittest
+    def test_long_legacy_header_is_read_in_full_and_matches(self) -> None:
+        """A header longer than one read must not be truncated into a false mismatch and a rewrite."""
+        frame = pd.DataFrame({f"column_{i:04d}": [i] for i in range(600)})
+        assert len(_csv_lines(frame)[0]) > 4096
+        blob = _FakeBlobClient(DST_FILE, _csv_bytes(frame), BlobType.APPENDBLOB)
+
+        assert _append(_connector(blob), frame)
+
+        assert blob.creates == 0, "matching headers must not rewrite the blob"
+        assert len(blob.range_requests) > 1
+        assert blob.lines()[1:] == blob.lines()[1:2] * 2
+
+    @pytest.mark.unittest
+    def test_matching_header_metadata_skips_download(self) -> None:
+        frame = pd.DataFrame({"col1": [1], "col2": [2]})
+        blob = _FakeBlobClient(DST_FILE, _csv_bytes(frame), BlobType.APPENDBLOB)
+        blob.metadata[cc_module.JOURNAL_HEADER_METADATA_KEY] = cc_module._journal_header_hash("col1,col2")
+
+        assert _append(_connector(blob), frame)
+
+        assert blob.range_requests == []
+        assert blob.creates == 0
+        assert blob.lines() == ["col1,col2", "1,2", "1,2"]
+
+    @pytest.mark.unittest
+    def test_mismatched_header_metadata_merges(self) -> None:
+        blob = _FakeBlobClient(
+            DST_FILE, _csv_bytes(pd.DataFrame({"col1": [1], "col2": [2]})), BlobType.APPENDBLOB
+        )
+        blob.metadata[cc_module.JOURNAL_HEADER_METADATA_KEY] = cc_module._journal_header_hash("col1,col2")
+
+        assert _append(_connector(blob), pd.DataFrame({"col1": [3], "col3": [4]}), col_order=["col1", "col3"])
+
+        assert blob.creates == 1
+        assert blob.lines()[0] == "col1,col3,col2"
+        assert blob.metadata[cc_module.JOURNAL_HEADER_METADATA_KEY] == cc_module._journal_header_hash(
+            "col1,col3,col2"
+        )
+        assert blob.as_csv()["col2"].iloc[0] == 2
+
+
+@pytest.mark.unittest
+@pytest.mark.parametrize("restart_before_old", [True, False])
+def test_new_old_new_fragments_preserve_columns_and_values(restart_before_old: bool) -> None:
+    """Old fragments are padded/reordered without rewriting or dropping newer values."""
+    blob = _FakeBlobClient(DST_FILE)
+    cc = _connector(blob)
+    first = pd.DataFrame({"col_a": [1], "col_c": ["new value"], "col_b": ["first"]})
+    assert _append(cc, first, col_order=list(first.columns))
+    key = cc_module.JOURNAL_HEADER_METADATA_KEY
+    header_hash = blob.metadata[key]
+    if restart_before_old:
+        cc = _connector(blob)
+    for value in (2, 3):
+        old = pd.DataFrame({"col_b": ['old, "quoted"\nvalue'], "col_a": [value]})
+        assert _append(cc, old, col_order=list(old.columns))
+    last = pd.DataFrame({"col_a": [4], "col_b": ["last"], "col_c": ["another new value"]})
+    assert _append(cc, last, col_order=list(last.columns))
+    result = blob.as_csv()
+    assert list(result.columns) == ["col_a", "col_c", "col_b"]
+    assert result["col_a"].tolist() == [1, 2, 3, 4]
+    assert result["col_b"].tolist() == ["first", 'old, "quoted"\nvalue', 'old, "quoted"\nvalue', "last"]
+    assert result["col_c"].iloc[0] == "new value"
+    assert result["col_c"].iloc[-1] == "another new value"
+    assert result["col_c"].isna().tolist() == [False, True, True, False]
+    assert blob.creates == 1
+    assert blob.metadata[key] == header_hash
+
+
+@pytest.mark.unittest
+def test_empty_blob_with_header_metadata_gets_header_row() -> None:
+    """create_append_blob() succeeded but append_block() failed: the retry must still write the header."""
+    blob = _FakeBlobClient(DST_FILE, b"", BlobType.APPENDBLOB)
+    blob.metadata[cc_module.JOURNAL_HEADER_METADATA_KEY] = cc_module._journal_header_hash("col1,col2")
+
+    assert _append(_connector(blob), pd.DataFrame({"col1": [1], "col2": [2]}))
+
+    assert blob.lines() == ["col1,col2", "1,2"]

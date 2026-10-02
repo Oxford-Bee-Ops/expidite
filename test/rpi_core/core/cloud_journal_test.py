@@ -75,7 +75,7 @@ class Test_CloudJournal:
         ######################################################################################################
         # Because CC only checks for mismatched columns when it is first writing to a new file, we need to
         # delete it's cache of known files.
-        cc._validated_append_files = set()
+        cc._validated_append_files = {}
 
         reqd_columns = ["field1", "field2", "field3", "field4"]
         test_data = {"field1": 1, "field2": 2, "field3": 3, "field4": 4}
