@@ -91,7 +91,7 @@ def _download_and_install_package(release: GitRelease) -> None:
                     _install_package(local_wheel_path)
                     return
 
-    msg = "No user repo package found"
+    msg = "No user package found"
     raise AssertionError(msg)
 
 
@@ -163,16 +163,16 @@ def _install_user_repo_package() -> None:
         package_name = canonicalize_name(_get_my_package_name()).replace("-", "_")
         _run_package_post_install(package_name)
     except GithubException as e:
-        print(f"Failed to read user repo package: {e}")
+        print(f"Failed to read user package: {e}")
         raise
 
 
 if __name__ == "__main__":
     try:
         _install_user_repo_package()
-        print("Installation of user repo package complete")
+        print("Installation of user package complete")
     except Exception as e:
-        print(f"Installation of user repo package failed: {e}")
+        print(f"Installation of user package failed: {e}")
         # We don't return any indication that the installation failed because we want the caller to continue
         # with the rest of the script and failures can happen due to transient network issues causing
         # github.com name resolution to fail.
