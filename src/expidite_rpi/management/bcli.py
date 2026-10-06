@@ -1,7 +1,7 @@
 """Implementation of the bcli command."""
 
 import ast
-import datetime as dt
+import json
 import os
 import queue
 import subprocess
@@ -90,36 +90,20 @@ def run_cmd_live_echo(cmd: str) -> str:
 
 
 def _parse_log_dict(log_dict_str: str) -> dict:
-    """Parse a dictionary embedded in telemetry logs.
+    """Parse the dictionary embedded in a telemetry log line.
 
-    Prefer literal parsing, but allow a tightly-scoped eval fallback for legacy
-    payloads that include reprs like datetime.datetime(...).
+    DPnode.log() writes the payload as JSON. Fall back to literal parsing for lines written by older versions
+    as a Python dict repr; those fail if they contain non-literal values such as datetimes or enums.
     """
-    parsed = ast.literal_eval(log_dict_str)
+    try:
+        parsed = json.loads(log_dict_str)
+    except json.JSONDecodeError:
+        parsed = ast.literal_eval(log_dict_str)
     if isinstance(parsed, dict):
         return parsed
 
     msg = f"Parsed log payload is not a dictionary: {type(parsed)}"
     raise ValueError(msg)
-
-
-def _parse_log_dict_with_fallback(log_dict_str: str) -> dict:
-    try:
-        return _parse_log_dict(log_dict_str)
-    except Exception as err:
-        parsed = eval(
-            log_dict_str,
-            {
-                "__builtins__": {},
-                "datetime": dt,
-            },
-            {},
-        )
-        if isinstance(parsed, dict):
-            return parsed
-
-        msg = f"Parsed log payload is not a dictionary: {type(parsed)}"
-        raise ValueError(msg) from err
 
 
 class InteractiveMenu:
@@ -303,14 +287,13 @@ class InteractiveMenu:
         logs = device_health.get_logs(
             since=since_time, min_priority=6, grep_str=[api.TELEM_TAG, "Save log: "]
         )
-        had_parse_errors = False
         for log in logs:
             try:
                 # Nicely format sensor logs
                 # The message contains a dictionary after "Save log: " which is enclosed in {}
                 # We want to extract that dictionary and display it as key: value pairs
                 log_dict_str = log["message"].split("Save log: ")[1]
-                log_dict = _parse_log_dict_with_fallback(log_dict_str)
+                log_dict = _parse_log_dict(log_dict_str)
                 data_type_id = log_dict.pop("data_type_id")
                 timestamp = log_dict.pop("timestamp", "UNKNOWN")
 
@@ -322,14 +305,13 @@ class InteractiveMenu:
                     log_dict.pop(k, "")
                 log["message"] = ", ".join([f"{k}={v!s}" for k, v in log_dict.items()])
                 click.echo(f"\n{data_type_id} >>> {timestamp} >>> {log['message']}")
-            except Exception:
-                had_parse_errors = True
-                logger.exception(f"Error parsing log dictionary {log.get('message', '')}")
+            except Exception as e:
+                # Show the raw line rather than drop it; don't log an error as it would surface in View Status
+                logger.debug(f"Error parsing log dictionary: {e!s}")
+                click.echo(f"\n{log.get('message', '')}")
 
         if not logs:
             click.echo("No sensor output logs found.")
-        elif had_parse_errors:
-            click.echo("\nSome sensor logs could not be parsed; check expidite logs for details.")
         click.echo(f"\n{dash_line}\n")
 
     def display_score_logs(self) -> None:
@@ -345,26 +327,23 @@ class InteractiveMenu:
             since=since_time, min_priority=6, grep_str=[api.TELEM_TAG, "Save log: ", "SCORE"]
         )
 
-        had_parse_errors = False
         for log in logs:
             try:
                 # Nicely format SCORE logs
                 log_dict_str = log["message"].split("Save log: ")[1]
-                log_dict = _parse_log_dict_with_fallback(log_dict_str)
+                log_dict = _parse_log_dict(log_dict_str)
                 observed_type_id = str(log_dict.get("observed_type_id", "UNKNOWN"))
                 observed_sensor_index = str(log_dict.get("observed_sensor_index", "UNKNOWN"))
                 count = log_dict.get("count", "UNKNOWN")
                 sample_period = str(log_dict.get("sample_period", "UNKNOWN"))
                 observed_label = f"{observed_type_id} {observed_sensor_index}"
                 click.echo(f"\n{observed_label:<20} | {count!s:<4} | {sample_period:<20}")
-            except Exception:
-                had_parse_errors = True
-                logger.exception(f"Error parsing SCORE log dictionary {log.get('message', '')}")
+            except Exception as e:
+                logger.debug(f"Error parsing SCORE log dictionary: {e!s}")
+                click.echo(f"\n{log.get('message', '')}")
 
         if not logs:
             click.echo("No SCORE logs found.")
-        elif had_parse_errors:
-            click.echo("\nSome SCORE logs could not be parsed; check expidite logs for details.")
         click.echo(f"\n{dash_line}\n")
 
     def display_running_processes(self) -> None:

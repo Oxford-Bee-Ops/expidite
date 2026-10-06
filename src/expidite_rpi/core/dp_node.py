@@ -1,3 +1,4 @@
+import json
 import shutil
 import threading  # Add this import for thread safety
 from dataclasses import asdict, dataclass
@@ -165,7 +166,8 @@ class DPnode:
 
         # We also spam the data to the logger for easy debugging and display in the bcli
         # We use the TELEM_TAG so that the BCLI can identify these as sensor logs for display.
-        logger.info(f"{api.TELEM_TAG}Save log: {log_data!s}")
+        # Serialise as JSON (stringifying datetimes, enums, etc.) so the BCLI can parse it back reliably.
+        logger.info(f"{api.TELEM_TAG}Save log: {json.dumps(log_data, default=str)}")
 
     def save_data(self, stream_index: int, sensor_data: pd.DataFrame) -> None:
         """Called by Sensors to save 1 or more 'rows' of Sensor-generated data.
