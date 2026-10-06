@@ -177,7 +177,7 @@ class TestAppendDataToBlobEscalation:
             del dst_container  # unused; the stub always fails
             raise exc
 
-        connector._validate_container = _boom  # type: ignore[method-assign, assignment]
+        connector._validate_container = _boom  # type: ignore[method-assign, assignment]  # ty: ignore[invalid-assignment]
         return connector
 
     @pytest.mark.unittest

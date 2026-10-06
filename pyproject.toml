@@ -280,7 +280,7 @@ reportUnnecessaryIsInstance = "none"
 # ty: static type checker.
 ##############################################################################################################
 [tool.ty.src]
-include = ["src", "tests"]
+include = ["src", "test"]
 [tool.ty.environment]
 python-version = "3.13"
 # These files/modules had exceptions prior to rules being enforced. Ignore temporarily until we can fix them.

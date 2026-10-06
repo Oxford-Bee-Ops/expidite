@@ -428,7 +428,9 @@ class TestAsyncCloudConnectorSpool:
                 cc._offline = True
 
             src = make_file(tmp_path, "V3_d01111111111_test.txt")
-            assert cc._spool.spool_upload(CONTAINER, src, api.StorageTier.HOT, move=True)
+            assert (
+                cc._spool.spool_upload(CONTAINER, src, api.StorageTier.HOT, move=True) is SpoolResult.SPOOLED
+            )
             assert cc._spool.spool_append(CONTAINER, "V3_HEART_d01111111111_20260701.csv", CSV_DATA)
 
             uploaded: list[str] = []
@@ -467,7 +469,9 @@ class TestAsyncCloudConnectorSpool:
         try:
             self._stop_background_threads(cc)
             src = make_file(tmp_path, "V3_d01111111111_test.txt")
-            assert cc._spool.spool_upload(CONTAINER, src, api.StorageTier.HOT, move=True)
+            assert (
+                cc._spool.spool_upload(CONTAINER, src, api.StorageTier.HOT, move=True) is SpoolResult.SPOOLED
+            )
 
             def failing_upload(self: CloudConnector, *args: object, **kwargs: object) -> None:
                 raise ServiceRequestError(message="still offline")
@@ -493,8 +497,13 @@ class TestAsyncCloudConnectorSpool:
             self._stop_background_threads(cc)
             poison = make_file(tmp_path, "V3_poison.txt")
             good = make_file(tmp_path, "V3_good.txt")
-            assert cc._spool.spool_upload(CONTAINER, poison, api.StorageTier.HOT, move=True)
-            assert cc._spool.spool_upload(CONTAINER, good, api.StorageTier.HOT, move=True)
+            assert (
+                cc._spool.spool_upload(CONTAINER, poison, api.StorageTier.HOT, move=True)
+                is SpoolResult.SPOOLED
+            )
+            assert (
+                cc._spool.spool_upload(CONTAINER, good, api.StorageTier.HOT, move=True) is SpoolResult.SPOOLED
+            )
 
             uploaded: list[str] = []
 

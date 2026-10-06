@@ -34,39 +34,40 @@ class TestDeriveDeviceKey:
 class TestDirectMethodHandlers:
     """Test direct method handlers by calling them directly (bypassing SDK dispatch)."""
 
-    def _make_client(self) -> IoTHubClient:
-        """Create an IoTHubClient without DPS provisioning."""
+    def _make_client(self) -> tuple[IoTHubClient, MagicMock]:
+        """Create an IoTHubClient without DPS provisioning, returning it with its mocked InteractiveMenu."""
         client = IoTHubClient.__new__(IoTHubClient)
         client._hub_client = MagicMock()
-        client.im = MagicMock()
-        return client
+        im = MagicMock()
+        client.im = im
+        return client, im
 
     @pytest.mark.unittest
     def test_handle_enter_review_mode(self) -> None:
-        client = self._make_client()
-        client.im.is_review_mode_enabled.return_value = True  # type: ignore[attr-defined]
+        client, im = self._make_client()
+        im.is_review_mode_enabled.return_value = True
         result = client._handle_enter_review_mode({})
-        client.im.enter_review_mode.assert_called_once()  # type: ignore[attr-defined]
+        im.enter_review_mode.assert_called_once()
         assert result["status"] == "True"
 
     @pytest.mark.unittest
     def test_handle_exit_review_mode(self) -> None:
-        client = self._make_client()
-        client.im.is_review_mode_enabled.return_value = False  # type: ignore[attr-defined]
+        client, im = self._make_client()
+        im.is_review_mode_enabled.return_value = False
         result = client._handle_exit_review_mode({})
-        client.im.exit_review_mode.assert_called_once()  # type: ignore[attr-defined]
+        im.exit_review_mode.assert_called_once()
         assert result["status"] == "False"
 
     @pytest.mark.unittest
     def test_handle_reboot_not_on_rpi(self, monkeypatch: pytest.MonkeyPatch) -> None:
-        client = self._make_client()
+        client, _ = self._make_client()
         monkeypatch.setattr(root_cfg, "running_on_rpi", False)
         result = client._handle_reboot({})
         assert "error" in result
 
     @pytest.mark.unittest
     def test_method_dispatch_unknown_method(self) -> None:
-        client = self._make_client()
+        client, _ = self._make_client()
         mock_request = MagicMock()
         mock_request.name = "nonexistent_method"
         mock_request.payload = {}
