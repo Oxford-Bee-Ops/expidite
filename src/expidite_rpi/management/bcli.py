@@ -836,11 +836,6 @@ class InteractiveMenu:
         else:
             click.echo("\n ### FAIL ###\n")
 
-        # Flash red and then green, closing each write before the LED controller reads it.
-        for colour in ("red", "green"):
-            root_cfg.LED_STATUS_FILE.write_text(f"{colour}:blink:0.25", encoding="utf-8")
-            time.sleep(2)
-
         click.echo(f"{dash_line}")
 
     def run_network_test(self) -> None:

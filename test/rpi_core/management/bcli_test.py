@@ -1,6 +1,5 @@
 import shlex
 from datetime import UTC, datetime, timedelta
-from pathlib import Path
 from unittest.mock import Mock, call
 
 import click
@@ -301,16 +300,12 @@ def test_display_errors_prints_journal_cross_check_with_same_cutoff(
 
 
 @pytest.mark.parametrize("validation_fails", [False, True])
-def test_validation_led_states_are_visible_during_each_pause(
+def test_validation_reports_pass_or_fail(
     menu: bcli.InteractiveMenu,
     validation_fails: bool,
-    tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,
     capsys: pytest.CaptureFixture[str],
 ) -> None:
-    status_file = tmp_path / "LED_STATUS"
-    status_file.write_text("previous:status:longer:than:the:new:state", encoding="utf-8")
-    monkeypatch.setattr(root_cfg, "LED_STATUS_FILE", status_file)
     monkeypatch.setattr(root_cfg, "system_cfg", SystemCfg(is_valid=True))
     monkeypatch.setattr(root_cfg, "running_on_rpi", True)
     monkeypatch.setattr(bcli, "run_cmd", Mock(return_value="Signed in: yes"))
@@ -319,17 +314,8 @@ def test_validation_led_states_are_visible_during_each_pause(
     if validation_fails:
         orchestrator.load_config.side_effect = RuntimeError("Example validation failure")
     monkeypatch.setattr(bcli.EdgeOrchestrator, "get_instance", Mock(return_value=orchestrator))
-    observed_states: list[str] = []
-
-    def observe_led_state(seconds: float) -> None:
-        assert seconds == 2
-        observed_states.append(status_file.read_text(encoding="utf-8"))
-
-    monkeypatch.setattr(bcli.time, "sleep", observe_led_state)
 
     menu.validate_device()
 
-    assert observed_states == ["red:blink:0.25", "green:blink:0.25"]
-    assert status_file.read_text(encoding="utf-8") == "green:blink:0.25"
     expected_result = "FAIL" if validation_fails else "PASS"
     assert f"### {expected_result} ###" in capsys.readouterr().out
