@@ -8,7 +8,9 @@ import subprocess
 import sys
 import threading
 import time
+from collections.abc import Callable
 from datetime import timedelta
+from functools import partial, wraps
 from pathlib import Path
 
 import click
@@ -33,11 +35,55 @@ header = dash_line + "\n\n"
 ##############################################################################################################
 
 
+def _non_windows_requirement() -> str | None:
+    """Preserve the existing platform policy, which rejects only Windows."""
+    if root_cfg.running_on_windows:
+        return "This command only works on Linux. Exiting..."
+    return None
+
+
+def _rpi_requirement() -> str | None:
+    if not root_cfg.running_on_rpi:
+        return "This command only works on a Raspberry Pi"
+    return None
+
+
+def _system_config_requirement() -> str | None:
+    if root_cfg.system_cfg is None or not root_cfg.system_cfg.is_valid:
+        return "System.cfg is not set. Please check your installation."
+    return None
+
+
+def _check_requirements(*requirements: Callable[[], str | None], error_prefix: str = "") -> bool:
+    """Display the first unmet requirement, retaining each command's prompt/output order."""
+    for requirement in requirements:
+        if error := requirement():
+            click.echo(f"{error_prefix}{error}")
+            return False
+    return True
+
+
+def _requires[**P](
+    *requirements: Callable[[], str | None], error_prefix: str = ""
+) -> Callable[[Callable[P, None]], Callable[P, None]]:
+    """Check command requirements at call time and display the first unmet requirement."""
+
+    def decorate(command: Callable[P, None]) -> Callable[P, None]:
+        @wraps(command)
+        def guarded(*args: P.args, **kwargs: P.kwargs) -> None:
+            if _check_requirements(*requirements, error_prefix=error_prefix):
+                command(*args, **kwargs)
+
+        return guarded
+
+    return decorate
+
+
 # Wrapper for utils.run_cmd so that we can display error rather than throwing an exception
 def run_cmd(cmd: str) -> str:
     """Run a command and return its output or an error message."""
-    if not root_cfg.running_on_rpi:
-        return "This command only works on a Raspberry Pi"
+    if error := _rpi_requirement():
+        return error
     try:
         return utils.run_cmd(cmd, ignore_errors=True)
     except Exception as e:
@@ -65,8 +111,8 @@ def run_cmd_live_echo(cmd: str) -> str:
     Returns:
         A string indicating success or an error message.
     """
-    if not root_cfg.running_on_rpi:
-        return "This command only works on a Raspberry Pi"
+    if error := _rpi_requirement():
+        return error
     try:
         process = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, shell=True)
         q: queue.Queue = queue.Queue()
@@ -208,8 +254,7 @@ class InteractiveMenu:
         else:
             filter_str = ""
         click.echo("Press Ctrl+C to exit...\n")
-        if root_cfg.running_on_windows:
-            click.echo("This command only works on Linux. Exiting...")
+        if not _check_requirements(_non_windows_requirement):
             return
         try:
             if filter_str != "":
@@ -242,11 +287,9 @@ class InteractiveMenu:
             log["timestamp"] = api.utc_to_iso_str(log["time_logged"])
             click.echo(f"\n{log['timestamp']} - {log['priority']} - {log['message']}")
 
+    @_requires(_non_windows_requirement)
     def display_errors(self) -> None:
         """Display error logs."""
-        if root_cfg.running_on_windows:
-            click.echo("This command only works on Linux. Exiting...")
-            return
         click.echo("\n")
         click.echo(f"{dash_line}")
         click.echo("# ERROR LOGS")
@@ -262,11 +305,9 @@ class InteractiveMenu:
         click.echo(f"{dash_line}")
         utils.run_cmd("journalctl", ignore_errors=True, grep_strs=["error"])
 
+    @_requires(_non_windows_requirement)
     def display_rpi_core_logs(self) -> None:
         """Display regular rpi_core logs."""
-        if root_cfg.running_on_windows:
-            click.echo("This command only works on Linux. Exiting...")
-            return
         click.echo(f"{dash_line}")
         click.echo("# Expidite logs")
         click.echo("# Displaying expidite logs for the last 15 minutes")
@@ -275,10 +316,8 @@ class InteractiveMenu:
         logs = device_health.get_logs(since=since_time, min_priority=6, grep_str=["expidite"])
         self.display_logs(logs)
 
+    @_requires(_non_windows_requirement)
     def display_sensor_logs(self) -> None:
-        if root_cfg.running_on_windows:
-            click.echo("This command only works on Linux. Exiting...")
-            return
         click.echo(f"{dash_line}")
         click.echo("# Sensor logs")
         click.echo("# Displaying sensor output logs (last 30 minutes)")
@@ -314,11 +353,9 @@ class InteractiveMenu:
             click.echo("No sensor output logs found.")
         click.echo(f"\n{dash_line}\n")
 
+    @_requires(_non_windows_requirement)
     def display_score_logs(self) -> None:
         """View the SCORE logs."""
-        if root_cfg.running_on_windows:
-            click.echo("This command only works on Linux. Exiting...")
-            return
         click.echo(f"\n{dash_line}")
         click.echo("# Expidite SCORE logs of sensor output (last 15 minutes)")
         click.echo(f"{dash_line}")
@@ -346,13 +383,11 @@ class InteractiveMenu:
             click.echo("No SCORE logs found.")
         click.echo(f"\n{dash_line}\n")
 
+    @_requires(_system_config_requirement)
     def display_running_processes(self) -> None:
         # Running processes.
         # Drop any starting / or . characters.
         # And convert the process list to a simple comma-separated string with no {} or ' or " characters.
-        if not root_cfg.system_cfg.is_valid:
-            click.echo("System.cfg is not set. Please check your installation.")
-            return
         process_set = utils.check_running_processes(search_string=f"{root_cfg.system_cfg.my_start_script}")
         process_list_str = (
             str(process_set).replace("{", "").replace("}", "").replace("'", "").replace('"', "").strip()
@@ -377,13 +412,9 @@ class InteractiveMenu:
     def update_software(self) -> None:
         """Update the software to the latest version."""
         click.echo("Running update to get latest code...")
-        if root_cfg.running_on_windows:
-            click.echo("This command only works on Linux. Exiting...")
+        if not _check_requirements(_non_windows_requirement, _system_config_requirement):
             return
         # Check if the scripts directory exists
-        if not root_cfg.system_cfg.is_valid:
-            click.echo("System.cfg is not set. Please check your installation.")
-            return
         scripts_dir = Path.home() / root_cfg.system_cfg.venv_dir / "scripts"
         if scripts_dir.exists():
             # We need to trigger rpi_installer.sh if we're on a RPI, but trigger zero_installer.sh if we're on
@@ -441,8 +472,8 @@ class InteractiveMenu:
                 return
             else:
                 click.echo(f"Starting RpiCore ({my_start_script})...")
-                if root_cfg.running_on_windows:
-                    click.echo("This command only works on Linux. Exiting...")
+                if error := _non_windows_requirement():
+                    click.echo(error)
                     return
 
                 # Check whether the script is already running
@@ -502,8 +533,7 @@ class InteractiveMenu:
     def enable_rpi_connect(self) -> None:
         """Enable the RPi Connect service."""
         click.echo("Enabling RPi Connect service...")
-        if not root_cfg.running_on_rpi:
-            click.echo("This command only works on a Raspberry Pi")
+        if not _check_requirements(_rpi_requirement):
             return
         click.echo("Copy the URL returned by this command to a browser ")
         click.echo("and authenticate the request to your Raspberry Pi connect account.")
@@ -594,8 +624,7 @@ class InteractiveMenu:
         click.echo(f"{dash_line}")
         click.echo("# CRONTAB ENTRIES")
         click.echo(f"{dash_line}\n")
-        if not root_cfg.running_on_rpi:
-            click.echo("This command only works on a Raspberry Pi")
+        if not _check_requirements(_rpi_requirement):
             return
         # Get the crontab entries for the user 'bee-ops'
         cron = CronTab(user=utils.get_current_user())
@@ -603,11 +632,9 @@ class InteractiveMenu:
             click.echo(job)
         click.echo("\n")
 
+    @_requires(_rpi_requirement)
     def reboot_device(self) -> None:
         """Reboot the device."""
-        if not root_cfg.running_on_rpi:
-            click.echo("This command only works on a Raspberry Pi")
-            return
         click.echo("Are you sure you want to reboot the device? (y/n)")
         if click.getchar().lower() != "y":
             click.echo("Reboot cancelled.")
@@ -709,8 +736,7 @@ class InteractiveMenu:
 
         success = True
 
-        if not root_cfg.system_cfg.is_valid:
-            click.echo("ERROR: System.cfg is not set. Please check your installation.")
+        if not _check_requirements(_system_config_requirement, error_prefix="ERROR: "):
             return
 
         # Check that rpi-connect is running
@@ -821,11 +847,7 @@ class InteractiveMenu:
         click.echo(f"{dash_line}")
         click.echo("# NETWORK INFO")
         click.echo(f"{dash_line}")
-        if not root_cfg.running_on_rpi:
-            click.echo("This command only works on a Raspberry Pi")
-            return
-        if not root_cfg.system_cfg.is_valid:
-            click.echo("System.cfg is not set. Please check your installation.")
+        if not _check_requirements(_rpi_requirement, _system_config_requirement):
             return
         scripts_dir = Path.home() / root_cfg.system_cfg.venv_dir / "scripts"
         if not scripts_dir.exists():
@@ -839,6 +861,36 @@ class InteractiveMenu:
     ##########################################################################################################
     # Interactive menu functions
     ##########################################################################################################
+    def _run_menu(
+        self,
+        title: str,
+        options: dict[int, tuple[str, Callable[[], None]]],
+        *,
+        exit_label: str = "Back to Main Menu",
+        exit_message: str | None = None,
+    ) -> None:
+        """Display a menu and dispatch choices until the user selects zero."""
+        while True:
+            click.echo(f"{header}{title}:")
+            click.echo(f"0. {exit_label}")
+            for number, (label, _action) in options.items():
+                click.echo(f"{number}. {label}")
+            try:
+                choice = click.prompt("\nEnter your choice", type=int, default=0)
+                click.echo("\n")
+            except ValueError:
+                click.echo("Invalid input. Please enter a number.")
+                continue
+
+            if choice == 0:
+                if exit_message is not None:
+                    click.echo(exit_message)
+                return
+            if choice not in options:
+                click.echo("Invalid choice. Please try again.")
+                continue
+            options[choice][1]()
+
     def interactive_menu(self) -> None:
         """Interactive menu for navigating commands."""
         # click.clear()
@@ -849,155 +901,57 @@ class InteractiveMenu:
         # Display status
         click.echo(f"{dash_line}")
         click.echo(f"# Expidite CLI on {root_cfg.my_device_id} {root_cfg.my_device.name}")
-        while True:
-            click.echo(f"{header}Main Menu:")
-            click.echo("0. Exit")
-            click.echo("1. View Config")
-            click.echo("2. View Status")
-            click.echo("3. Validate device")
-            click.echo("4. Sensing Commands")
-            click.echo("5. Maintenance Commands")
-            click.echo("6. Debug Commands")
-            try:
-                choice = click.prompt("\nEnter your choice", type=int, default=0)
-                click.echo("\n")
-            except ValueError:
-                click.echo("Invalid input. Please enter a number.")
-                continue
-
-            match choice:
-                case 1:
-                    self.view_rpi_core_config()
-                case 2:
-                    self.view_status()
-                case 3:
-                    self.validate_device()
-                case 4:
-                    self.sensing_menu()
-                case 5:
-                    self.maintenance_menu()
-                case 6:
-                    self.debug_menu()
-                case 0:
-                    click.echo("Exiting...")
-                    break
-                case _:
-                    click.echo("Invalid choice. Please try again.")
+        self._run_menu(
+            "Main Menu",
+            {
+                1: ("View Config", self.view_rpi_core_config),
+                2: ("View Status", self.view_status),
+                3: ("Validate device", self.validate_device),
+                4: ("Sensing Commands", self.sensing_menu),
+                5: ("Maintenance Commands", self.maintenance_menu),
+                6: ("Debug Commands", self.debug_menu),
+            },
+            exit_label="Exit",
+            exit_message="Exiting...",
+        )
 
     def sensing_menu(self) -> None:
         """Menu for sensing commands."""
-        while True:
-            click.echo(f"{header}Sensing Menu:")
-            click.echo("0. Back to Main Menu")
-            click.echo("1. Trigger sensing operation now")
-            try:
-                choice = click.prompt("\nEnter your choice", type=int, default=0)
-                click.echo("\n")
-            except ValueError:
-                click.echo("Invalid input. Please enter a number.")
-                continue
-
-            match choice:
-                case 1:
-                    self.trigger_sensing()
-                case 0:
-                    break
-                case _:
-                    click.echo("Invalid choice. Please try again.")
+        self._run_menu("Sensing Menu", {1: ("Trigger sensing operation now", self.trigger_sensing)})
 
     def debug_menu(self) -> None:
         """Menu for debugging commands."""
-        while True:
-            click.echo(f"{header}Debug Menu:")
-            click.echo("0. Back to Main Menu")
-            click.echo("1. Run Network Test")
-            click.echo("2. Display logs live (journalctl)")
-            click.echo("3. Display errors")
-            click.echo("4. Display all expidite logs")
-            click.echo("5. Display sensor measurement logs")
-            click.echo("6. Display SCORE sensor activity logs")
-            click.echo("7. Display running processes")
-            click.echo("8. Show recordings and data files")
-            click.echo("9. Show Crontab Entries")
-            click.echo("10. nmap ping scan of local network")
-            try:
-                choice = click.prompt(
-                    "\nEnter your choice",
-                    type=int,
-                    default=0,
-                )
-                click.echo("\n")
-            except ValueError:
-                click.echo("Invalid input. Please enter a number.")
-                continue
-
-            match choice:
-                case 1:
-                    self.run_network_test()
-                case 2:
-                    self.journalctl()
-                case 3:
-                    self.display_errors()
-                case 4:
-                    self.display_rpi_core_logs()
-                case 5:
-                    self.display_sensor_logs()
-                case 6:
-                    self.display_score_logs()
-                case 7:
-                    self.display_running_processes()
-                case 8:
-                    self.show_recordings()
-                case 9:
-                    self.show_crontab_entries()
-                case 10:
-                    self.nmap_ping_scan()
-                case 0:
-                    break
-                case _:
-                    click.echo("Invalid choice. Please try again.")
+        self._run_menu(
+            "Debug Menu",
+            {
+                1: ("Run Network Test", self.run_network_test),
+                2: ("Display logs live (journalctl)", self.journalctl),
+                3: ("Display errors", self.display_errors),
+                4: ("Display all expidite logs", self.display_rpi_core_logs),
+                5: ("Display sensor measurement logs", self.display_sensor_logs),
+                6: ("Display SCORE sensor activity logs", self.display_score_logs),
+                7: ("Display running processes", self.display_running_processes),
+                8: ("Show recordings and data files", self.show_recordings),
+                9: ("Show Crontab Entries", self.show_crontab_entries),
+                10: ("nmap ping scan of local network", self.nmap_ping_scan),
+            },
+        )
 
     def maintenance_menu(self) -> None:
         """Menu for maintenance commands."""
-        while True:
-            click.echo(f"{header}Maintenance Menu:")
-            click.echo("0. Back to Main Menu")
-            click.echo("1. Update Software")
-            click.echo("2. Enable rpi-connect")
-            click.echo("3. Review mode")
-            click.echo("4. Start RpiCore")
-            click.echo("5. Stop RpiCore (graceful stop)")
-            click.echo("6. Hard stop RpiCore (pkill)")
-            click.echo("7. Reboot the Device")
-            click.echo("8. Update storage key")
-            try:
-                choice = click.prompt("\nEnter your choice", type=int, default=0)
-                click.echo("\n")
-            except ValueError:
-                click.echo("Invalid input. Please enter a number.")
-                continue
-
-            match choice:
-                case 1:
-                    self.update_software()
-                case 2:
-                    self.enable_rpi_connect()
-                case 3:
-                    self.review_mode()
-                case 4:
-                    self.start_rpi_core()
-                case 5:
-                    self.stop_rpi_core(pkill=False)
-                case 6:
-                    self.stop_rpi_core(pkill=True)
-                case 7:
-                    self.reboot_device()
-                case 8:
-                    self.update_storage_key()
-                case 0:
-                    break
-                case _:
-                    click.echo("Invalid choice. Please try again.")
+        self._run_menu(
+            "Maintenance Menu",
+            {
+                1: ("Update Software", self.update_software),
+                2: ("Enable rpi-connect", self.enable_rpi_connect),
+                3: ("Review mode", self.review_mode),
+                4: ("Start RpiCore", self.start_rpi_core),
+                5: ("Stop RpiCore (graceful stop)", partial(self.stop_rpi_core, pkill=False)),
+                6: ("Hard stop RpiCore (pkill)", partial(self.stop_rpi_core, pkill=True)),
+                7: ("Reboot the Device", self.reboot_device),
+                8: ("Update storage key", self.update_storage_key),
+            },
+        )
 
 
 ##############################################################################################################
