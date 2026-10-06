@@ -744,18 +744,7 @@ class InteractiveMenu:
         if not _check_requirements(_system_config_requirement, error_prefix="ERROR: "):
             return
 
-        # Check that rpi-connect is running
         try:
-            if root_cfg.running_on_rpi:
-                output = run_cmd("rpi-connect status")
-                if "Signed in: yes" in output:
-                    click.echo("\nrpi-connect is running.")
-                else:
-                    click.echo(
-                        "\nERROR: rpi-connect is not running. Please start it using the maintenance menu."
-                    )
-                    success = False
-
             # Check that the devices configured are working
             sensors: dict[str, list[int]] = {}
             orchestrator = EdgeOrchestrator.get_instance()
@@ -827,6 +816,15 @@ class InteractiveMenu:
                         click.echo(f"{log['time_logged']} - {log['priority']} - {log['message']}")
                 else:
                     click.echo("\nNo error logs found.")
+
+            # Check that a storage account is configured and accessible
+            if root_cfg.keys:
+                storage_account = root_cfg.keys.get_storage_account()
+                if not storage_account:
+                    click.echo("ERROR: No storage account configured.")
+                    success = False
+                else:
+                    print(f"Storage account: {storage_account}")
 
         except Exception as e:
             logger.exception(f"{root_cfg.RAISE_WARN()}Exception running validation tests")
