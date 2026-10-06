@@ -4,7 +4,6 @@ import signal
 import threading
 
 from expidite_rpi.core import configuration as root_cfg
-from expidite_rpi.management.common import load_and_set_inventory
 from expidite_rpi.management.iot_hub_client import IoTHubClient
 
 logger = root_cfg.setup_logger("expidite")
@@ -22,12 +21,8 @@ def main() -> None:
     signal.signal(signal.SIGTERM, _signal_handler)
     signal.signal(signal.SIGINT, _signal_handler)
 
-    inventory = load_and_set_inventory()
-    if not inventory:
-        logger.warning("Failed to load fleet configuration; idling until stopped")
-        stop_event.wait()
-        return
-
+    # The fleet config is deliberately not required here. IoT Hub is the remote-access lifeline, so it must
+    # come up even when the fleet config is missing, lacks this device, or is broken.
     client: IoTHubClient | None = None
     keys = root_cfg.keys
     if keys is not None:

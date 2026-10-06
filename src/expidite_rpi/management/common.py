@@ -5,7 +5,6 @@ import sys
 import click
 
 from expidite_rpi.core import configuration as root_cfg
-from expidite_rpi.core.device_config_objects import DeviceCfg
 
 logger = root_cfg.setup_logger("expidite")
 
@@ -87,14 +86,3 @@ def check_if_setup_required() -> None:
         click.getchar()
 
     check_device_in_inventory()
-
-
-def load_and_set_inventory() -> list[DeviceCfg] | None:
-    """Load fleet configuration and set the global inventory.
-
-    Returns the inventory list, or None if loading failed.
-    """
-    inventory = root_cfg.load_configuration()
-    if inventory:
-        root_cfg.set_inventory(inventory)
-    return inventory

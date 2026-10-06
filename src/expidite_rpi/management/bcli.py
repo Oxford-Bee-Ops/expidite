@@ -160,7 +160,12 @@ class InteractiveMenu:
         inventory = root_cfg.load_configuration()
         logger.debug(f"Inventory: {inventory}")
         if inventory:
-            self.sc.configure(inventory)
+            # Don't propagate config errors: this class also backs the IoT Hub client, which must stay up so a
+            # misconfigured device can still be reached and recovered remotely.
+            try:
+                self.sc.configure(inventory)
+            except Exception:
+                logger.exception(f"{root_cfg.RAISE_WARN()}Failed to configure RpiCore from fleet config")
 
     ##########################################################################################################
     # Main menu functions
