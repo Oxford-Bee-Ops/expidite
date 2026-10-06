@@ -97,6 +97,9 @@ def _download_and_install_package(release: GitRelease) -> None:
 
 def _install_package(local_wheel_path: Path) -> None:
     try:
+        # rpi_installer.sh pipes our stdout through tee, so it is block-buffered. Flush before the child
+        # writes to the same pipe, or its output lands in the log ahead of lines we printed earlier.
+        sys.stdout.flush()
         subprocess.check_call(
             [
                 sys.executable,
@@ -128,6 +131,8 @@ def _run_package_post_install(package_name: str) -> None:
         scripts_module = importlib.import_module(f"{package_name}.scripts")
         post_install_path = importlib.resources.files(scripts_module) / "post-install.sh"
 
+        # Flush so the script's output doesn't overtake ours; see _install_package.
+        sys.stdout.flush()
         subprocess.check_call(["bash", str(post_install_path)])
         print(f"Successfully ran post-install script for {package_name}")
     except (ModuleNotFoundError, FileNotFoundError):
