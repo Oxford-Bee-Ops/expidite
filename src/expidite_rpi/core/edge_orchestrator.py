@@ -59,7 +59,7 @@ class EdgeOrchestrator:
     - starts an observability thread to monitor the performance of the RpiCore
     """
 
-    _instance = None
+    _instance: "EdgeOrchestrator | None" = None
     _status_lock = threading.RLock()  # Re-entrant lock to ensure thread-safety
 
     def __init__(self) -> None:

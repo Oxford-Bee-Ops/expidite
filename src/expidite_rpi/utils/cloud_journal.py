@@ -13,7 +13,7 @@ logger = root_cfg.setup_logger("expidite")
 
 
 class _CloudJournalManager:
-    _instance = None
+    _instance: "_CloudJournalManager | None" = None
     """CloudJournalManager is a worker thread that manages synchronisation of CloudJournal
     objects to the cloud.
 

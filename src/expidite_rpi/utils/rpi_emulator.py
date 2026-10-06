@@ -36,7 +36,7 @@ class RpiTestRecording:
 class RpiEmulator:
     """The test harness enables thorough testing of the sensor code without RPi hardware."""
 
-    _instance = None
+    _instance: RpiEmulator | None = None
     _is_available = Event()
     ONE_OR_MORE = -1
 
