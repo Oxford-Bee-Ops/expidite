@@ -1,3 +1,6 @@
+import shlex
+from datetime import UTC, datetime, timedelta
+from pathlib import Path
 from unittest.mock import Mock, call
 
 import click
@@ -268,3 +271,65 @@ def test_command_helpers_still_return_platform_errors(monkeypatch: pytest.Monkey
     monkeypatch.setattr(root_cfg, "running_on_rpi", False)
     assert bcli.run_cmd("unused") == "This command only works on a Raspberry Pi"
     assert bcli.run_cmd_live_echo("unused") == "This command only works on a Raspberry Pi"
+
+
+def test_display_errors_prints_journal_cross_check_with_same_cutoff(
+    menu: bcli.InteractiveMenu, monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
+) -> None:
+    now = datetime(2026, 10, 6, 15, 30, 45, 123456, tzinfo=UTC)
+    logs = Mock(return_value=[])
+    run_cmd = Mock(return_value="Example error from the journal\nAnother error")
+    monkeypatch.setattr(root_cfg, "running_on_windows", False)
+    monkeypatch.setattr(bcli.api, "utc_now", Mock(return_value=now))
+    monkeypatch.setattr(bcli.device_health, "get_logs", logs)
+    monkeypatch.setattr(bcli.utils, "run_cmd", run_cmd)
+
+    menu.display_errors()
+
+    logs.assert_called_once_with(since=now - timedelta(hours=4), min_priority=4)
+    run_cmd.assert_called_once()
+    assert shlex.split(run_cmd.call_args.args[0]) == [
+        "journalctl",
+        "--since",
+        "2026-10-06 11:30:45.123456 UTC",
+        "--no-pager",
+    ]
+    assert run_cmd.call_args.kwargs == {"ignore_errors": True, "grep_strs": ["error"]}
+    output = capsys.readouterr().out
+    assert output.endswith("Example error from the journal\nAnother error\n")
+    assert output.index("# ERROR LOGS (journalctl grep check)") < output.index("Example error")
+
+
+@pytest.mark.parametrize("validation_fails", [False, True])
+def test_validation_led_states_are_visible_during_each_pause(
+    menu: bcli.InteractiveMenu,
+    validation_fails: bool,
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    status_file = tmp_path / "LED_STATUS"
+    status_file.write_text("previous:status:longer:than:the:new:state", encoding="utf-8")
+    monkeypatch.setattr(root_cfg, "LED_STATUS_FILE", status_file)
+    monkeypatch.setattr(root_cfg, "system_cfg", SystemCfg(is_valid=True))
+    monkeypatch.setattr(root_cfg, "running_on_rpi", True)
+    monkeypatch.setattr(bcli, "run_cmd", Mock(return_value="Signed in: yes"))
+    monkeypatch.setattr(bcli.device_health, "get_logs", Mock(return_value=[]))
+    orchestrator = Mock(dp_trees=[])
+    if validation_fails:
+        orchestrator.load_config.side_effect = RuntimeError("Example validation failure")
+    monkeypatch.setattr(bcli.EdgeOrchestrator, "get_instance", Mock(return_value=orchestrator))
+    observed_states: list[str] = []
+
+    def observe_led_state(seconds: float) -> None:
+        assert seconds == 2
+        observed_states.append(status_file.read_text(encoding="utf-8"))
+
+    monkeypatch.setattr(bcli.time, "sleep", observe_led_state)
+
+    menu.validate_device()
+
+    assert observed_states == ["red:blink:0.25", "green:blink:0.25"]
+    assert status_file.read_text(encoding="utf-8") == "green:blink:0.25"
+    expected_result = "FAIL" if validation_fails else "PASS"
+    assert f"### {expected_result} ###" in capsys.readouterr().out

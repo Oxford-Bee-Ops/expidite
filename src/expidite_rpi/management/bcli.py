@@ -303,7 +303,12 @@ class InteractiveMenu:
         click.echo(f"{dash_line}")
         click.echo("# ERROR LOGS (journalctl grep check)")
         click.echo(f"{dash_line}")
-        utils.run_cmd("journalctl", ignore_errors=True, grep_strs=["error"])
+        output = utils.run_cmd(
+            f'journalctl --since "{since_time:%Y-%m-%d %H:%M:%S.%f} UTC" --no-pager',
+            ignore_errors=True,
+            grep_strs=["error"],
+        )
+        click.echo(output)
 
     @_requires(_non_windows_requirement)
     def display_rpi_core_logs(self) -> None:
@@ -833,11 +838,9 @@ class InteractiveMenu:
         else:
             click.echo("\n ### FAIL ###\n")
 
-        # Now flash the LED green and then red
-        with open(root_cfg.LED_STATUS_FILE, "w") as f:
-            f.write("red:blink:0.25")  # Flash red
-            time.sleep(2)
-            f.write("green:blink:0.25")  # Flash green
+        # Flash red and then green, closing each write before the LED controller reads it.
+        for colour in ("red", "green"):
+            root_cfg.LED_STATUS_FILE.write_text(f"{colour}:blink:0.25", encoding="utf-8")
             time.sleep(2)
 
         click.echo(f"{dash_line}")
