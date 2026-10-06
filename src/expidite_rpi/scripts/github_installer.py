@@ -9,6 +9,7 @@ from pathlib import Path
 
 from github import Auth, Github, GithubException
 from github.GitRelease import GitRelease
+from packaging.utils import canonicalize_name
 from packaging.version import Version
 
 from expidite_rpi import configuration as root_cfg
@@ -88,7 +89,6 @@ def _download_and_install_package(release: GitRelease) -> None:
                     local_wheel_path = Path(temp_dir) / asset.name
                     asset.download_asset(str(local_wheel_path))
                     _install_package(local_wheel_path)
-                    _run_package_post_install(local_wheel_path.stem.split("-")[0])
                     return
 
     msg = "No user repo package found"
@@ -117,7 +117,13 @@ def _install_package(local_wheel_path: Path) -> None:
 
 
 def _run_package_post_install(package_name: str) -> None:
-    """If the user package includes a post-install script, run it now."""
+    """If the user package includes a post-install script, run it now.
+
+    This runs on every installer pass, not only when a new version of the user package was installed, so the
+    script must be idempotent. Running it only on a version change would make a failed post-install permanent:
+    the package itself had already installed, so every later pass saw the latest version present and skipped
+    the script, leaving whatever it was meant to set up missing until someone fixed the device by hand.
+    """
     try:
         scripts_module = importlib.import_module(f"{package_name}.scripts")
         post_install_path = importlib.resources.files(scripts_module) / "post-install.sh"
@@ -143,11 +149,14 @@ def _install_user_repo_package() -> None:
         print(f"User package: installed: {installed_version}, latest: {latest_version}")
 
         if installed_version == latest_version:
-            print("Latest version already installed. No action needed.")
-            return
+            print("Latest version already installed.")
+        else:
+            assert latest_release is not None
+            _download_and_install_package(latest_release)
 
-        assert latest_release is not None
-        _download_and_install_package(latest_release)
+        # Match wheel name normalization: lowercase and collapse runs of dots, hyphens and underscores.
+        package_name = canonicalize_name(_get_my_package_name()).replace("-", "_")
+        _run_package_post_install(package_name)
     except GithubException as e:
         print(f"Failed to read user repo package: {e}")
         raise
