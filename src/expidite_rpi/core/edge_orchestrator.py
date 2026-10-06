@@ -509,7 +509,6 @@ def main() -> None:
                 orchestrator.load_config()
                 orchestrator.start_all()
             else:
-                logger.debug(f"Orchestrator running ({orchestrator.get_status()})")
                 root_cfg.EXPIDITE_IS_RUNNING_FLAG.touch()
 
             # Ping systemd — this must happen more frequently than WatchdogSec configured in rpi_installer.sh,

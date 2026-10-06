@@ -124,7 +124,6 @@ class DeviceManager:
     # This function gets called every 5 seconds.
     # Set the LEDs to ON or OFF as appropriate given the current device state.
     def led_timer_callback(self) -> None:
-        logger.debug("LED timer callback")
         if root_cfg.my_device.leds_installed == api.LedsInstalled.RED_ONLY:
             self._set_leds_red_only()
         else:
@@ -283,7 +282,6 @@ class DeviceManager:
     # We only enable the AP wifi connection if the client wifi connection is UP
     def wifi_timer_callback(self) -> None:
         try:
-            logger.debug("Wifi timer callback")
             # Test that internet connectivity is UP and working by pinging google DNS servers
             # -c 1 means ping once, -W 1 means timeout after 1 second
             ping_ok = (
@@ -455,7 +453,6 @@ class DeviceManager:
     @staticmethod
     def diagnostics_upload_timer_callback() -> None:
         try:
-            logger.debug("Diagnostics upload timer callback")
             DiagnosticsBundle.upload()
         except Exception:
             logger.exception(f"{root_cfg.RAISE_WARN()}Diagnostics upload callback threw an exception")
