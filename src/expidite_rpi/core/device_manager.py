@@ -52,7 +52,7 @@ class DeviceManager:
         self.ping_success_count_run = 0
         self.last_ping_was_ok = False
         self.log_counter = 0
-        self.wifi_log_frequency = 60 * 10
+        self.wifi_log_frequency = 600  # In wifi timer callbacks (every 10s), so every 100 minutes
         self.client_wlan = "wlan0"
         if root_cfg.my_device.wifi_clients:
             self.inject_wifi_clients()
@@ -121,7 +121,7 @@ class DeviceManager:
     # blink of the red LED.
     ##########################################################################################################
 
-    # This function gets called every second.
+    # This function gets called every 5 seconds.
     # Set the LEDs to ON or OFF as appropriate given the current device state.
     def led_timer_callback(self) -> None:
         logger.debug("LED timer callback")

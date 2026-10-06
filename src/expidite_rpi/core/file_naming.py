@@ -33,11 +33,7 @@ def parse_data_id(data_id: str) -> DATA_ID:
         data_id - Datastream ID to be parsed
 
     Returns:
-        A DATA_ID NamedTuple with the following components:
-            bapi.RECORD_ID.DS_TYPE_ID       - always
-            bapi.RECORD_ID.DEVICE_ID        - always
-            bapi.RECORD_ID.SENSOR_INDEX     - always
-            bapi.RECORD_ID.STREAM_INDEX     - always
+        A DATA_ID NamedTuple with the fields type_id, device_id, sensor_index and stream_index.
     """
     fields = data_id.split("_")
     assert len(fields) == 4, f"Error parsing data_id:{data_id}"
@@ -57,17 +53,17 @@ def parse_record_filename(fname: Path | str) -> dict:
 
     Returns:
         A dictionary with the following components derived from the filename:
-            bapi.RECORD_ID.VERSION          - always
-            bapi.RECORD_ID.DS_TYPE_ID       - always
-            bapi.RECORD_ID.DEVICE_ID        - always
-            bapi.RECORD_ID.SENSOR_INDEX     - always
-            bapi.RECORD_ID.STREAM_INDEX     - always
-            bapi.RECORD_ID.TIMESTAMP        - always
-            bapi.RECORD_ID.SUFFIX           - always
-            bapi.RECORD_ID.END_TIME         - if present
-            bapi.RECORD_ID.OFFSET           - if present
-            bapi.RECORD_ID.SECONDARY_OFFSET - if present
-            bapi.RECORD_ID.INCREMENT        - always
+            api.RECORD_ID.VERSION          - always
+            api.RECORD_ID.DATA_TYPE_ID     - always
+            api.RECORD_ID.DEVICE_ID        - always
+            api.RECORD_ID.SENSOR_INDEX     - always
+            api.RECORD_ID.STREAM_INDEX     - always
+            api.RECORD_ID.TIMESTAMP        - always
+            api.RECORD_ID.SUFFIX           - always
+            api.RECORD_ID.END_TIME         - if present
+            api.RECORD_ID.OFFSET           - if present
+            api.RECORD_ID.SECONDARY_OFFSET - if present
+            api.RECORD_ID.INCREMENT        - always
     """
     logger.debug(f"Parsing filename: {fname}")
     if isinstance(fname, str):
@@ -236,11 +232,11 @@ def parse_journal_filename(fname: Path | str) -> dict:
 
     Returns:
         A dictionary with the following components derived from the filename:
-            bapi.RECORD_ID.VERSION          - always
-            bapi.RECORD_ID.DS_TYPE_ID       - always
-            bapi.RECORD_ID.DEVICE_ID        - always
-            bapi.RECORD_ID.TIMESTAMP        - always
-            bapi.RECORD_ID.SUFFIX           - always
+            api.RECORD_ID.VERSION          - always
+            api.RECORD_ID.DATA_TYPE_ID     - always
+            api.RECORD_ID.DEVICE_ID        - always
+            api.RECORD_ID.TIMESTAMP        - always
+            api.RECORD_ID.SUFFIX           - always
     """
     if isinstance(fname, str):
         fname = Path(fname)

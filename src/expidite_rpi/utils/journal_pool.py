@@ -21,7 +21,7 @@ class JournalPool(ABC):
     JournalPool.get().
 
     There is a "Journal" in the JournalPool per DPtreeNode type_id. Data is stored based on its
-    bapi.RECORD_ID.DS_TYPE_ID and bapi.RECORD_ID.TIMESTAMP in the CJ.
+    api.RECORD_ID.DATA_TYPE_ID and api.RECORD_ID.TIMESTAMP in the CJ.
     """
 
     _instance: JournalPool | None = None
@@ -127,7 +127,7 @@ class CloudJournalPool(JournalPool):
         The V3 filename format is:
             V3_{DPtreeNodeCfg_type_id}_{day}.csv
         """
-        # Check that the output_fields contain at least all the bapi.REQD_RECORD_ID_FIELDS
+        # Check that the output_fields contain at least all the api.REQD_RECORD_ID_FIELDS
         assert stream.fields is not None, f"output_fields must be set in {stream}"
 
         fname = file_naming.get_cloud_journal_filename(stream.type_id, day)

@@ -52,7 +52,7 @@ src/
     utils/          # Utilities, cloud journal, RPi emulator
     scripts/        # Installation and deployment scripts
     example/        # Template code for custom sensors/processors
-    bcli.py         # CLI entry point (bcli command)
+    management/     # Device management: bcli.py (bcli command entry point), management service, SSH tunnel
     rpi_core.py     # Public API (RpiCore class)
 ```
 
@@ -102,6 +102,6 @@ Configuration flows: YAML/env files → `configuration.py` → `device_config_ob
 
 ## Python Requirements
 
-- Python 3.11+ required
+- Python 3.13+ required
 - Strict typing is enforced via mypy + pyright + ty — all code must pass all three type checkers
 - `ruff` is both the formatter and linter (replaces black + flake8)
