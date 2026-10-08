@@ -156,10 +156,16 @@ class DPworker(Thread):
                     logger.exception(f"{root_cfg.RAISE_WARN()}Error processing files for {self}")
 
             # We want to run this loop every minute, so see how long it took us since the start_time
-            sleep_time = root_cfg.DP_FREQUENCY - (api.utc_now() - start_time).total_seconds()
-            logger.debug(f"DataProcessor ({dp}) sleeping for {sleep_time} seconds")
+            elapsed = (api.utc_now() - start_time).total_seconds()
+            sleep_time = root_cfg.DP_FREQUENCY - elapsed
             if sleep_time > 0:
+                logger.debug(f"DataProcessor ({dp}) sleeping for {sleep_time:.1f} seconds")
                 self._stop_requested.wait(sleep_time)
+            else:
+                logger.debug(
+                    f"DataProcessor ({dp}) took {elapsed:.1f}s, over the {root_cfg.DP_FREQUENCY}s cycle; "
+                    "running again immediately"
+                )
 
     def _get_stream_files(self, stream: Stream) -> list[Path] | None:
         """Find any files that match the requested Datastream (type, device_id & sensor_index)."""
