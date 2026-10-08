@@ -87,7 +87,9 @@ def _download_and_install_package(release: GitRelease) -> None:
                 print(f"Downloading: {asset.name}")
                 with tempfile.TemporaryDirectory() as temp_dir:
                     local_wheel_path = Path(temp_dir) / asset.name
-                    asset.download_asset(str(local_wheel_path))
+                    # PyGithub's default chunk_size=1 writes the file a byte at a time. Pick a more reasonable
+                    # chunk size to make it faster.
+                    asset.download_asset(str(local_wheel_path), chunk_size=1024 * 1024)
                     _install_package(local_wheel_path)
                     return
 
