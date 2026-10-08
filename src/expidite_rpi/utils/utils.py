@@ -289,7 +289,10 @@ def run_video_cmd(
     timer, leaving the calling sensor thread blocked forever inside run_cmd. This wrapper parses the
     command's "-t <milliseconds>" duration (falling back to default_duration_s when absent, and passes run_cmd
     a timeout of duration + margin, so a hung camera becomes a bounded, recoverable exception rather than
-    permanentlt stuck.
+    permanently stuck.
+
+    Returns the command's stdout (e.g. rpicam-still "--metadata -" JSON), not a return code: a non-zero exit
+    raises unless ignore_errors is set.
     """
     match = re.search(r"\s-t\s+(\d+)", cmd)
     duration_s = int(match.group(1)) / 1000 if match else default_duration_s

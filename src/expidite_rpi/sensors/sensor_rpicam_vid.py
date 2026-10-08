@@ -148,8 +148,8 @@ class RpicamSensor(Sensor):
                 logger.info(f"Recording video with command: {cmd}")
 
                 # Start the video recording process
-                rc = utils.run_video_cmd(cmd)
-                logger.info(f"Video recording completed with rc={rc}")
+                utils.run_video_cmd(cmd)
+                logger.info("Video recording completed")
 
                 # Save the video file to the datastream
                 self.save_recording(
