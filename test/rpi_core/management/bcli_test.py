@@ -319,3 +319,28 @@ def test_validation_reports_pass_or_fail(
 
     expected_result = "FAIL" if validation_fails else "PASS"
     assert f"### {expected_result} ###" in capsys.readouterr().out
+
+
+I2CDETECT_OUTPUT = """\
+     0  1  2  3  4  5  6  7  8  9  a  b  c  d  e  f
+00:                         -- -- -- -- -- -- -- --
+10: -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- --
+20: -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- --
+30: -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- --
+40: -- -- -- -- 44 -- -- -- -- -- 4a -- -- -- -- --
+50: -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- --
+60: -- -- -- -- -- -- -- -- UU -- -- -- -- -- -- --
+70: -- -- -- -- -- -- -- --
+"""
+
+
+def test_parse_i2cdetect_reads_cells_by_position() -> None:
+    # 0x4a needs lowercase matching; 0x40/0x10 must not match the row labels; UU counts as present.
+    assert bcli.parse_i2cdetect(I2CDETECT_OUTPUT) == {0x44, 0x4A, 0x68}
+
+
+@pytest.mark.parametrize(
+    "output", ["", "Error: /usr/sbin/i2cdetect: not found", "This command only works on a Raspberry Pi"]
+)
+def test_parse_i2cdetect_handles_failed_command(output: str) -> None:
+    assert bcli.parse_i2cdetect(output) == set()

@@ -152,6 +152,28 @@ def _parse_log_dict(log_dict_str: str) -> dict:
     raise ValueError(msg)
 
 
+def parse_i2cdetect(output: str) -> set[int]:
+    """Return the addresses that i2cdetect reports as present, including "UU" (claimed by a kernel driver).
+
+    Each grid row is "<row>:" followed by 16 three-character cells (" --", " UU", " 4a", or blank), so cells
+    are read by position rather than by searching the text, which would also match the row labels.
+    """
+    found: set[int] = set()
+    for line in output.splitlines():
+        label, sep, cells = line.partition(":")
+        if not sep or len(label) != 2:
+            continue
+        try:
+            row = int(label, 16)
+        except ValueError:
+            continue
+        for col in range(16):
+            cell = cells[col * 3 + 1 : col * 3 + 3]
+            if cell == "UU" or (cell.strip() and cell != "--"):
+                found.add(row + col)
+    return found
+
+
 class InteractiveMenu:
     """Interactive menu for navigating commands."""
 
@@ -799,11 +821,11 @@ class InteractiveMenu:
                 # Validate that the I2C device(s) is working
                 click.echo(f"\nI2C devices expected for indices: {sensors[api.SENSOR_TYPE.I2C.value]}")
                 i2c_indexes = sensors[api.SENSOR_TYPE.I2C.value]
-                i2c_test_result = run_cmd("i2cdetect -y 1")
+                i2c_test_result = run_cmd("/usr/sbin/i2cdetect -y 1")
+                i2c_found = parse_i2cdetect(i2c_test_result)
                 for index in i2c_indexes:
-                    # We need to convert the index from base10 to base16
-                    hex_index = f"{index:X}"
-                    if str(hex_index) in i2c_test_result:
+                    hex_index = f"0x{index:02x}"
+                    if index in i2c_found:
                         click.echo(f"I2C device {index} ({hex_index}) is working.")
                     else:
                         click.echo(f"ERROR: I2C device {index} ({hex_index}) not found.")
