@@ -148,21 +148,28 @@ class Stream:
 ```
 
 ### Node Configuration
+
+`SensorCfg` and `DataProcessorCfg` inherit `outputs` and `description` from
+`DPtreeNodeCfg`. Subclasses only need to redeclare a field when overriding its
+type, default, or field options.
+
 ```python
 @dataclass
-class SensorCfg(DPtreeNodeCfg):
-    sensor_type: SENSOR_TYPE
-    sensor_index: int
+class DPtreeNodeCfg:
     outputs: list[Stream]  # Defines output streams
     description: str
-    # Sensor-specific fields...
+
+
+@dataclass
+class SensorCfg(DPtreeNodeCfg):
+    sensor_type: SENSOR_TYPE = SENSOR_TYPE.NOT_SET
+    sensor_index: int = 0
+    # Other sensor-specific fields...
 
 
 @dataclass
 class DataProcessorCfg(DPtreeNodeCfg):
-    outputs: list[Stream]
-    description: str
-    # Processor-specific fields...
+    pass  # Subclass to add processor-specific fields.
 ```
 
 ### Tree Building
