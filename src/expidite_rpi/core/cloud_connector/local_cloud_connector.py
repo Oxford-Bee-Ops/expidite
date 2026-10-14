@@ -93,43 +93,26 @@ class LocalCloudConnector(CloudConnector):
         self,
         src_container: str,
         dst_dir: Path,
-        folder_prefix_len: int | None = None,
-        files: list[str] | None = None,
+        files: list[str],
         overwrite: bool = True,
     ) -> None:
-        """Download all the files in the src_container to the dst_dir.
+        """Download the listed files from src_container to dst_dir.
 
         Parameters:
             src_container: source container
             dst_dir: destination directory to download the files to
-            folder_prefix_len: Optional; first n characters of the file name to use as a subfolder
-            files: Optional; list of files to download from src_container; if None, all files in the container
-                will be downloaded; useful for chunking downloads
+            files: blob names to download from src_container (e.g. from list_cloud_files); pass a subset to
+                chunk downloads
             overwrite: If False, function will skip downloading files that already exist in dst_dir
         """
         download_container = self.local_cloud / src_container
-
-        if files is None:
-            for blob in download_container.glob("*"):
-                if folder_prefix_len is not None:
-                    folder_dir = dst_dir / blob.name[:folder_prefix_len]
-                else:
-                    folder_dir = dst_dir
-                if not folder_dir.exists():
-                    folder_dir.mkdir(parents=True, exist_ok=True)
-                shutil.copy(blob, folder_dir)
-        else:
-            for blob_name in files:
-                src_file = download_container / blob_name
-                if folder_prefix_len is not None:
-                    folder_dir = dst_dir / blob_name[:folder_prefix_len]
-                else:
-                    folder_dir = dst_dir
-                dst_file = folder_dir / blob_name
-                if not overwrite and dst_file.exists():
-                    logger.debug(f"File {dst_file} already exists; skipping download")
-                    continue
-                shutil.copy(src_file, dst_file)
+        for blob_name in files:
+            dst_file = dst_dir / blob_name
+            if not overwrite and dst_file.exists():
+                logger.debug(f"File {dst_file} already exists; skipping download")
+                continue
+            dst_file.parent.mkdir(parents=True, exist_ok=True)
+            shutil.copy(download_container / blob_name, dst_file)
 
     def move_between_containers(
         self,

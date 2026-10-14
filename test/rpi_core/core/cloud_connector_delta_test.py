@@ -6,6 +6,8 @@ append-only download fetches [offset, size) as a sequence of single-GET chunks a
 blob being appended to mid-download, without falling back to a full re-download.
 """
 
+from collections.abc import Iterator
+from concurrent.futures import Future
 from pathlib import Path
 from types import SimpleNamespace
 from typing import cast
@@ -357,7 +359,7 @@ class TestJournalHeaders:
     def test_batch_finishes_other_journals_before_reporting_schema_failure(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch, batch_size: int
     ) -> None:
-        monkeypatch.setattr(cc_module, "_DELTA_DOWNLOAD_BATCH_SIZE", batch_size)
+        monkeypatch.setattr(cc_module, "_DOWNLOAD_BATCH_SIZE", batch_size)
         bad = _FakeBlobClient(b"a,b\n1,2\n")
         good = _FakeBlobClient(b"a,b\n3,4\n")
         original = bad.download_blob
@@ -441,3 +443,71 @@ class TestJournalHeaders:
         cc.download_container_deltas("journals", tmp_path, {dst.name: 8}, check_journal_headers=True)
         assert dst.read_bytes() == blob.content
         assert blob.range_requests == [(0, len(blob.content))]
+
+
+class TestDownloadContainer:
+    @staticmethod
+    def _cc_with_blobs(monkeypatch: pytest.MonkeyPatch, blobs: dict[str, _FakeBlobClient]) -> CloudConnector:
+        container = MagicMock()
+        container.get_blob_client.side_effect = lambda name: blobs[name].as_client
+        cc = _connector()
+        monkeypatch.setattr(cc, "_validate_container", lambda _name: cast("ContainerClient", container))
+        return cc
+
+    @pytest.mark.unittest
+    def test_downloads_nested_names_into_missing_dirs(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        blob = _FakeBlobClient(b"video")
+        cc = self._cc_with_blobs(monkeypatch, {"2026/10/clip.mp4": blob})
+        dst_dir = tmp_path / "not_yet_created"
+        cc.download_container("videos", dst_dir, files=["2026/10/clip.mp4"])
+        assert (dst_dir / "2026" / "10" / "clip.mp4").read_bytes() == b"video"
+        assert blob.full_downloads == 1
+        assert blob.range_requests == []
+
+    @pytest.mark.unittest
+    @pytest.mark.parametrize("overwrite", [True, False])
+    def test_overwrite_flag(self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch, overwrite: bool) -> None:
+        existing = _FakeBlobClient(b"new")
+        missing = _FakeBlobClient(b"fresh")
+        cc = self._cc_with_blobs(monkeypatch, {"existing.csv": existing, "missing.csv": missing})
+        (tmp_path / "existing.csv").write_bytes(b"old")
+        cc.download_container("c", tmp_path, files=["existing.csv", "missing.csv"], overwrite=overwrite)
+        assert (tmp_path / "existing.csv").read_bytes() == (b"new" if overwrite else b"old")
+        assert existing.full_downloads == (1 if overwrite else 0)
+        assert (tmp_path / "missing.csv").read_bytes() == b"fresh"
+
+    @pytest.mark.unittest
+    def test_failure_does_not_stop_other_files(self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+        bad = _FakeBlobClient(b"")
+
+        def fail(offset: int = 0, length: int | None = None) -> _FakeDownloadStream:
+            msg = "bad.bin"
+            raise ResourceModifiedError(msg)
+
+        monkeypatch.setattr(bad, "download_blob", fail)
+        good = _FakeBlobClient(b"good")
+        cc = self._cc_with_blobs(monkeypatch, {"bad.bin": bad, "good.bin": good})
+        with pytest.raises(ResourceModifiedError) as caught:
+            cc.download_container("c", tmp_path, files=["bad.bin", "good.bin"])
+        assert (tmp_path / "good.bin").read_bytes() == b"good"
+        assert "File download failed: bad.bin" in caught.value.__notes__
+        assert "Failed to download 1 file(s)" in caught.value.__notes__
+
+    @pytest.mark.unittest
+    def test_batches_at_exactly_batch_size(self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+        monkeypatch.setattr(cc_module, "_DOWNLOAD_BATCH_SIZE", 2)
+        blobs = {f"f{i}.bin": _FakeBlobClient(bytes([i])) for i in range(5)}
+        cc = self._cc_with_blobs(monkeypatch, blobs)
+        batches: list[int] = []
+        original = cc_module.as_completed
+
+        def recording_as_completed(fs: dict[Future[str], str]) -> Iterator[Future[str]]:
+            batches.append(len(fs))
+            return original(fs)
+
+        monkeypatch.setattr(cc_module, "as_completed", recording_as_completed)
+        cc.download_container("c", tmp_path, files=list(blobs))
+        assert batches == [2, 2, 1]
+        assert all((tmp_path / name).exists() for name in blobs)

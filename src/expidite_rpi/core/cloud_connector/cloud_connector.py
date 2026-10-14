@@ -85,7 +85,7 @@ def log_cloud_failure(message: str, exc: Exception, *, elapsed_seconds: float = 
 # that aborts a download when the blob is appended to mid-transfer. Must stay at or below the SDK's
 # max_single_get_size (default 32 MiB) so each request stays a single GET. See _download_blob_delta.
 _DELTA_CHUNK_BYTES = 8 * 1024 * 1024
-_DELTA_DOWNLOAD_BATCH_SIZE = 10_000
+_DOWNLOAD_BATCH_SIZE = 10_000
 
 # Fingerprint of the actual CSV header, set when a journal is created or rebuilt.
 JOURNAL_HEADER_METADATA_KEY = "journal_header_sha256"
@@ -228,57 +228,32 @@ class CloudConnector:
         self,
         src_container: str,
         dst_dir: Path,
-        folder_prefix_len: int | None = None,
-        files: list[str] | None = None,
+        files: list[str],
         overwrite: bool = True,
     ) -> None:
-        """Download all the files in the src_container to the dst_dir.
+        """Download the listed files from src_container to dst_dir.
 
         Parameters:
             src_container: source container
             dst_dir: destination directory to download the files to
-            folder_prefix_len: Optional; first n characters of the file name to use as a subfolder
-            files: Optional; list of files to download from src_container; if None, all files in the container
-                will be downloaded; useful for chunking downloads
+            files: blob names to download from src_container (e.g. from list_cloud_files); pass a subset to
+                chunk downloads
             overwrite: If False, function will skip downloading files that already exist in dst_dir
+
+        Raises:
+            Exception: The first per-file error, after other files and subsequent batches have been attempted.
+                Each error includes the failed filename; additional errors are attached as an ExceptionGroup
+                cause.
         """
         download_container = self._validate_container(src_container)
-        original_dst_dir = dst_dir
-
-        if files is None:
-            for blob in download_container.list_blobs():
-                blob_client = download_container.get_blob_client(blob.name)
-                if folder_prefix_len is not None:
-                    dst_dir = original_dst_dir / blob.name[:folder_prefix_len]
-                    if not dst_dir.exists():
-                        dst_dir.mkdir(parents=True, exist_ok=True)
-                self._download_blob(blob_client, dst_dir / blob.name)
-        else:
-            files_downloaded = 0
-            # Create a pool of threads to download the files
-            with ThreadPoolExecutor(max_workers=8) as executor:
-                futures = []
-                for blob_name in files:
-                    blob_client = download_container.get_blob_client(blob_name)
-                    if folder_prefix_len is not None:
-                        dst_dir = original_dst_dir / blob_name[:folder_prefix_len]
-                    dst_file = dst_dir / blob_name
-                    if not overwrite and dst_file.exists():
-                        logger.debug(f"File {dst_file} already exists; skipping download")
-                        continue
-                    futures.append(executor.submit(self._download_file, blob_client, dst_file))
-                    if len(futures) > 10_000:
-                        logger.info("Working on batch of 10,000 files")
-                        for future in as_completed(futures, timeout=600):
-                            future.result()
-                            files_downloaded += 1
-                        futures = []
-                logger.info(f"Downloading total of {len(futures)} files")
-
-                for future in as_completed(futures, timeout=600):
-                    future.result()
-                    files_downloaded += 1
-                logger.info(f"Completed downloaded of {files_downloaded} files")
+        to_download: dict[str, tuple[Path, int]] = {}
+        for blob_name in files:
+            dst_file = dst_dir / blob_name
+            if not overwrite and dst_file.exists():
+                logger.debug(f"File {dst_file} already exists; skipping download")
+                continue
+            to_download[blob_name] = (dst_file, 0)
+        self._download_in_batches(download_container, to_download, append_only=False, kind="file")
 
     def move_between_containers(
         self,
@@ -630,38 +605,66 @@ class CloudConnector:
                 downloads it in full.
         """
         download_container = self._validate_container(src_container)
+        to_download = {
+            blob_name: (dst_dir / blob_name, offset) for blob_name, offset in files_with_offsets.items()
+        }
+        self._download_in_batches(
+            download_container,
+            to_download,
+            append_only=True,
+            check_journal_headers=check_journal_headers,
+            kind="journal",
+        )
+
+    def _download_in_batches(
+        self,
+        download_container: ContainerClient,
+        to_download: dict[str, tuple[Path, int]],
+        *,
+        append_only: bool,
+        check_journal_headers: bool = False,
+        kind: str,
+    ) -> None:
+        """Download {blob_name: (dst_file, offset)} on a thread pool, in batches of _DOWNLOAD_BATCH_SIZE.
+
+        Every file is attempted even if some fail. The first failure is then raised, annotated with its
+        filename; any others are attached as an ExceptionGroup cause. kind ("file", "journal") names the items
+        in those messages.
+
+        There is deliberately no overall timeout: a batch of large blobs can legitimately take a long time,
+        and a timeout could not stop the worker threads anyway. Stuck requests are bounded by the Azure SDK's
+        own connection and read timeouts.
+        """
         files_downloaded = 0
         failures: list[Exception] = []
 
         def collect_results(futures: dict[Future[str], str]) -> None:
             nonlocal files_downloaded
-            for future in as_completed(futures, timeout=600):
+            for future in as_completed(futures):
                 try:
                     future.result()
                 except Exception as exc:
-                    exc.add_note(f"Journal download failed: {futures[future]}")
+                    exc.add_note(f"{kind.capitalize()} download failed: {futures[future]}")
                     failures.append(exc)
                     logger.warning(f"Failed to download {futures[future]}: {exc}")
                 else:
                     files_downloaded += 1
 
-        # Create a pool of threads to download the files
         with ThreadPoolExecutor(max_workers=8) as executor:
             futures: dict[Future[str], str] = {}
-            for blob_name, offset in files_with_offsets.items():
+            for blob_name, (dst_file, offset) in to_download.items():
                 blob_client = download_container.get_blob_client(blob_name)
-                dst_file = dst_dir / blob_name
                 futures[
                     executor.submit(
                         self._download_file,
                         blob_client,
                         dst_file,
                         offset,
-                        append_only=True,
+                        append_only=append_only,
                         check_journal_headers=check_journal_headers,
                     )
                 ] = blob_name
-                if len(futures) >= _DELTA_DOWNLOAD_BATCH_SIZE:
+                if len(futures) >= _DOWNLOAD_BATCH_SIZE:
                     logger.info(f"Working on batch of {len(futures):,} files")
                     collect_results(futures)
                     futures = {}
@@ -669,7 +672,7 @@ class CloudConnector:
             collect_results(futures)
         logger.info(f"Completed download of {files_downloaded} files")
         if failures:
-            message = f"Failed to download {len(failures)} journal(s)"
+            message = f"Failed to download {len(failures)} {kind}(s)"
             first_error = failures[0]
             first_error.add_note(message)
             if len(failures) > 1:
