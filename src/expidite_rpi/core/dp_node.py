@@ -575,9 +575,8 @@ class DPnode:
                 logger.error(err_str)
                 raise ValueError(err_str)
 
-        # Add name and tags fields
+        # Add name field.
         output_data[api.RECORD_ID.NAME.value] = root_cfg.my_device.name
-        output_data[api.RECORD_ID.TAGS.value] = root_cfg.my_device.tags
 
         # Warn about superfluous fields that will get dropped
         if stream.fields is not None and len(stream.fields) > 0:
