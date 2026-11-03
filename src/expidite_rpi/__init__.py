@@ -3,6 +3,13 @@
 # Re-export specific classes and functions
 # Dynamically fetch the version from the package metadata
 import importlib.metadata
+import os
+
+# Blinka 10+ prompts to install missing platform packages on `import board` in interactive terminals,
+# including optional PWM and NeoPixel backends that we do not use. Disable this automatic check and
+# installation prompt before any `import board`. We do require gpiod, but that is automatically installed as
+# part of the OS.
+os.environ.setdefault("BLINKA_SKIP_DEPENDENCY_CHECK", "1")
 
 from .core import api, configuration, file_naming
 from .core.device_config_objects import DeviceCfg, WifiClient
