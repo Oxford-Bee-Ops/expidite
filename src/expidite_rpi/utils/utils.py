@@ -233,9 +233,14 @@ def run_cmd(
 
         if p.returncode != 0:
             if ignore_errors:
-                logger.info(f"Ignoring failure running command: {cmd} Err output: {err!s}")
+                logger.info(
+                    f"Ignoring failure running command: {cmd} Return code: {p.returncode} Err output: {err!s}"
+                )
                 return ""
-            msg = f"{root_cfg.RAISE_WARN()}Error running command: {cmd}, Error: {err!s}"
+            msg = (
+                f"{root_cfg.RAISE_WARN()}Error running command: {cmd}, "
+                f"Return code: {p.returncode}, Error: {err!s}"
+            )
             raise RuntimeError(msg)
 
         # Return lines that contain all of the entries in grep_strs
