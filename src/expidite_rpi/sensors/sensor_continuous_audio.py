@@ -38,6 +38,12 @@ class ContinuousAudioSensorCfg(SensorCfg):
     # DURATION: The duration of each audio recording chunk in seconds (set to max_recording_timer).
     # FILENAME: The filename to use for the audio recording.
     arecord_cmd: str = "arecord -D HW_INDEX -r 44100 -c 1 -f S16_LE -t wav -d DURATION FILENAME"
+    # If True, an audio recording whose live upload attempt fails (e.g. during a network outage) is dropped
+    # rather than persisted to the disk spool for retry, so expendable audio never consumes spool disk.
+    # Set False where every recording matters: failed uploads are then spooled and retried. Note that WAV
+    # files are not subject to the spool's video eviction - they may exceed SPOOL_MAX_BYTES (down to the
+    # free-disk floor), and making room for them evicts the oldest spooled videos.
+    can_discard_recordings: bool = True
 
 
 DEFAULT_CONTINUOUS_AUDIO_SENSOR_CFG = ContinuousAudioSensorCfg(
@@ -118,7 +124,7 @@ class ContinuousAudioSensor(Sensor):
                     temporary_file=wav_output_filename,
                     start_time=start_time,
                     end_time=api.utc_now(),
-                    can_discard=True,
+                    can_discard=self.config.can_discard_recordings,
                 )
 
                 logger.info(f"Saved audio chunk of {duration!s}s to {final_output_filename}")

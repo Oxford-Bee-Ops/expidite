@@ -1,3 +1,4 @@
+from dataclasses import replace
 from datetime import datetime
 from pathlib import Path
 from typing import cast
@@ -55,6 +56,7 @@ class _DummyContinuousAudioSelf:
                 "temporary_file": temporary_file,
                 "start_time": start_time,
                 "end_time": end_time,
+                "can_discard": can_discard,
             }
         )
         return temporary_file
@@ -88,3 +90,31 @@ def test_continuous_audio_records_chunks_of_max_recording_timer(monkeypatch: pyt
     for cmd in record_cmds:
         assert " -d 3 " in cmd
         assert "hw:1,0" in cmd
+
+
+@pytest.mark.unittest
+@pytest.mark.parametrize("can_discard_recordings", [True, False])
+def test_continuous_audio_honours_can_discard_recordings(
+    monkeypatch: pytest.MonkeyPatch, can_discard_recordings: bool
+) -> None:
+    monkeypatch.setattr(root_cfg.my_device, "max_recording_timer", 3)
+
+    def fake_run_cmd(cmd: str, *args: object, **kwargs: object) -> str:
+        if cmd.startswith("arecord -l"):
+            return "card 1: Device [USB Audio Device], device 0: USB Audio [USB Audio]"
+        return "arecord command emulated successfully"
+
+    monkeypatch.setattr(sensor_continuous_audio.utils, "run_cmd", fake_run_cmd)
+
+    config = replace(DEFAULT_CONTINUOUS_AUDIO_SENSOR_CFG, can_discard_recordings=can_discard_recordings)
+    dummy_sensor = _DummyContinuousAudioSelf(config, num_chunks=1)
+    ContinuousAudioSensor.run(cast(ContinuousAudioSensor, dummy_sensor))
+
+    assert len(dummy_sensor.saved_recordings) == 1
+    assert dummy_sensor.saved_recordings[0]["can_discard"] is can_discard_recordings
+
+
+@pytest.mark.unittest
+def test_continuous_audio_can_discard_recordings_defaults_to_true() -> None:
+    """Existing users of ContinuousAudioSensor keep the expendable-audio behaviour by default."""
+    assert DEFAULT_CONTINUOUS_AUDIO_SENSOR_CFG.can_discard_recordings is True

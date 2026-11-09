@@ -50,6 +50,12 @@ class RpicamSensorCfg(SensorCfg):
     # The FILENAME suffix should match the datastream input_format.
     rpicam_cmd: str = "rpicam-vid --framerate 15 --width 640 --height 480 -o FILENAME -t 5000"
     review_mode_cmd: str = "rpicam-still --width 640 --height 480 -o FILENAME"
+    # If True, a video recording whose live upload attempt fails (e.g. during a network outage) is dropped
+    # rather than persisted to the disk spool for retry, so expendable video never consumes spool disk.
+    # Set False where every recording matters: failed uploads are then spooled and retried (subject to the
+    # spool's disk budget, which evicts the oldest spooled videos first). Review mode images are always
+    # discardable.
+    can_discard_recordings: bool = True
 
 
 DEFAULT_RPICAM_SENSOR_CFG = RpicamSensorCfg(
@@ -68,6 +74,7 @@ class RpicamSensor(Sensor):
         self.config = config
         self.recording_format = self.get_stream(RPICAM_STREAM_INDEX).format
         self.rpicam_cmd = self.config.rpicam_cmd
+        self.can_discard_recordings = config.can_discard_recordings
 
         assert self.rpicam_cmd, f"rpicam_cmd must be set in the sensor configuration: {self.rpicam_cmd}"
         assert self.rpicam_cmd.startswith("rpicam-vid "), (
@@ -157,7 +164,7 @@ class RpicamSensor(Sensor):
                     filename,
                     start_time=start_time,
                     end_time=api.utc_now(),
-                    can_discard=True,
+                    can_discard=self.can_discard_recordings,
                 )
 
                 exception_count = 0  # Reset exception count on success
