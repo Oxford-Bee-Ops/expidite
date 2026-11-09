@@ -9,14 +9,18 @@ This test demonstrates the review mode behavior by:
 
 import tempfile
 import time
+from dataclasses import replace
 from pathlib import Path
 from unittest.mock import patch
+
+import pytest
 
 from expidite_rpi.core import api
 from expidite_rpi.core import configuration as root_cfg
 from expidite_rpi.sensors.sensor_rpicam_vid import (
     DEFAULT_RPICAM_SENSOR_CFG,
     RPICAM_REVIEW_MODE_STREAM_INDEX,
+    RPICAM_STREAM_INDEX,
     RpicamSensor,
     RpicamSensorCfg,
 )
@@ -170,6 +174,55 @@ class TestReviewModeExercise:
         stream_indices_used = [call[0][0] for call in mock_save_recording.call_args_list]
         expected_indices = [0, 1, 1, 0]  # Normal, Review, Review, Normal
         assert stream_indices_used == expected_indices
+
+    @pytest.mark.parametrize("can_discard_recordings", [True, False])
+    @patch.object(RpicamSensor, "in_review_mode", return_value=False)
+    @patch("expidite_rpi.utils.utils.run_video_cmd")
+    @patch("expidite_rpi.core.file_naming.get_temporary_filename")
+    @patch.object(RpicamSensor, "save_recording")
+    def test_video_recording_honours_can_discard_recordings(
+        self,
+        mock_save_recording,
+        mock_get_filename,
+        mock_run_video_cmd,
+        mock_in_review_mode,
+        can_discard_recordings: bool,
+    ) -> None:
+        """Test that video recordings are saved with can_discard taken from the sensor config."""
+        mock_get_filename.return_value = self.temp_dir / "test_video.mp4"
+        config = replace(DEFAULT_RPICAM_SENSOR_CFG, can_discard_recordings=can_discard_recordings)
+        sensor = RpicamSensor(config)
+
+        with (
+            patch.object(sensor, "continue_recording", side_effect=[True, False]),
+            patch.object(sensor.stop_requested, "wait"),
+        ):
+            sensor.run()
+
+        mock_save_recording.assert_called_once()
+        assert mock_save_recording.call_args[0][0] == RPICAM_STREAM_INDEX
+        assert mock_save_recording.call_args[1]["can_discard"] is can_discard_recordings
+
+    @patch("expidite_rpi.utils.utils.run_video_cmd")
+    @patch("expidite_rpi.core.file_naming.get_temporary_filename")
+    @patch.object(RpicamSensor, "save_recording")
+    def test_review_mode_ignores_can_discard_recordings(
+        self, mock_save_recording, mock_get_filename, mock_run_video_cmd
+    ) -> None:
+        """Review mode images are always discardable, even when video recordings are not."""
+        mock_get_filename.return_value = self.temp_dir / "test_review_image.jpg"
+        config = replace(DEFAULT_RPICAM_SENSOR_CFG, can_discard_recordings=False)
+        sensor = RpicamSensor(config)
+
+        sensor.review_mode_output()
+
+        mock_save_recording.assert_called_once()
+        assert mock_save_recording.call_args[0][0] == RPICAM_REVIEW_MODE_STREAM_INDEX
+        assert mock_save_recording.call_args[1]["can_discard"] is True
+
+    def test_can_discard_recordings_defaults_to_true(self) -> None:
+        """Existing users of RpicamSensor keep the expendable-video behaviour by default."""
+        assert DEFAULT_RPICAM_SENSOR_CFG.can_discard_recordings is True
 
     @patch("expidite_rpi.utils.utils.run_cmd")
     def test_review_mode_command_construction(self, mock_run_cmd) -> None:

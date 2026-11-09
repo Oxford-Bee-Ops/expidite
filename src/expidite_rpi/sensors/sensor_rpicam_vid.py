@@ -4,7 +4,6 @@ The user specifies the rpicam-vid command line, except for the file name, which 
 """
 
 from dataclasses import dataclass
-from typing import cast
 
 from expidite_rpi.core import api, file_naming
 from expidite_rpi.core import configuration as root_cfg
@@ -50,6 +49,12 @@ class RpicamSensorCfg(SensorCfg):
     # The FILENAME suffix should match the datastream input_format.
     rpicam_cmd: str = "rpicam-vid --framerate 15 --width 640 --height 480 -o FILENAME -t 5000"
     review_mode_cmd: str = "rpicam-still --width 640 --height 480 -o FILENAME"
+    # If True, a video recording whose live upload attempt fails (e.g. during a network outage) is dropped
+    # rather than persisted to the disk spool for retry, so expendable video never consumes spool disk.
+    # Set False where every recording matters: failed uploads are then spooled and retried (subject to the
+    # spool's disk budget, which evicts the oldest spooled videos first). Review mode images are always
+    # discardable.
+    can_discard_recordings: bool = True
 
 
 DEFAULT_RPICAM_SENSOR_CFG = RpicamSensorCfg(
@@ -65,7 +70,7 @@ class RpicamSensor(Sensor):
     def __init__(self, config: RpicamSensorCfg) -> None:
         """Constructor for the RpicamSensor class."""
         super().__init__(config)
-        self.config = config
+        self.config: RpicamSensorCfg = config
         self.recording_format = self.get_stream(RPICAM_STREAM_INDEX).format
         self.rpicam_cmd = self.config.rpicam_cmd
 
@@ -100,10 +105,9 @@ class RpicamSensor(Sensor):
         """
         try:
             filename = file_naming.get_temporary_filename(api.FORMAT.JPG)
-            config = cast(RpicamSensorCfg, self.config)
 
             # Run recording process
-            utils.run_video_cmd(config.review_mode_cmd.replace("FILENAME", str(filename)))
+            utils.run_video_cmd(self.config.review_mode_cmd.replace("FILENAME", str(filename)))
             logger.info("Review mode image captured")
             self.save_recording(
                 RPICAM_REVIEW_MODE_STREAM_INDEX,
@@ -157,7 +161,7 @@ class RpicamSensor(Sensor):
                     filename,
                     start_time=start_time,
                     end_time=api.utc_now(),
-                    can_discard=True,
+                    can_discard=self.config.can_discard_recordings,
                 )
 
                 exception_count = 0  # Reset exception count on success
