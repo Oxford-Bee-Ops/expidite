@@ -1,10 +1,10 @@
 [build-system]
-requires = ["setuptools==84.0.0"]
+requires = ["setuptools==84.2.1"]
 build-backend = "setuptools.build_meta"
 
 [project]
 name = "expidite"
-version = "0.1.324"
+version = "0.1.325"
 description = "Python module to support using Raspberry Pi for scientific data collection"
 readme = "README.md"
 requires-python = ">=3.13"
@@ -19,18 +19,18 @@ dependencies = [
     "adafruit-circuitpython-busdevice==5.2.17",
     "adafruit-circuitpython-bmp280==3.3.12",
     "adafruit-circuitpython-ltr390==1.1.25",
-    "adafruit-circuitpython-register==1.12.1", # 1.13.0 removed Struct.buffer, which adafruit_ltr390 1.1.24 uses.
+    "adafruit-circuitpython-register==1.13.0",
     "adafruit-platformdetect==3.90.0",
     "azure-iot-device==2.14.0",
     "azure-storage-blob==12.31.1",
     "bottleneck==1.6.0", # Required by pandas.
-    "click==8.5.0",
-    "gpiozero==2.0.1",
+    "click==8.5.1",
+    "gpiozero==2.0.1.post3",
     "numexpr==2.14.2", # Required by pandas.
-    "numpy==2.4.2",
-    "opencv-python-headless==4.13.0.92",
+    "numpy==2.5.4",
+    "opencv-python-headless==5.0.0.93",
     "packaging==26.3",
-    "pandas==3.1.0",
+    "pandas==3.1.1",
     "psutil==7.2.2",
     "PyGithub==2.10.0",
     "PyYAML==6.0.3",
@@ -52,16 +52,16 @@ Issues = "https://github.com/Oxford-Bee-Ops/expidite/issues"
 [project.optional-dependencies]
 dev = [
     "codespell==2.4.3",
-    "deadcode==2.4.1",
+    "deadcode==2.6.0",
     "mypy==2.4.1",
     "pandas-stubs==3.1.0.261029",
     "pyright==1.1.414",
     "pytest==9.2.0",
     "pytest-socket==0.8.1",
-    "ruff==0.17.3",
-    "ty==0.0.95",
+    "ruff==0.17.4",
+    "ty==0.0.99",
     "types-psutil==7.2.2.20260906",
-    "types-PyYAML==6.0.12.20261030",
+    "types-PyYAML==6.0.12.20261103",
 ]
 
 [project.scripts]
