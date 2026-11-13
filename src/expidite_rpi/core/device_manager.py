@@ -6,7 +6,7 @@ import shlex
 import subprocess
 from collections import deque
 from enum import IntEnum, auto
-from time import sleep
+from time import monotonic, sleep
 
 from expidite_rpi.core import api, reboot
 from expidite_rpi.core import configuration as root_cfg
@@ -19,6 +19,13 @@ logger = root_cfg.setup_logger("expidite")
 _PING_RTT_RE = re.compile(r"time[=<]([\d.]+) ms")
 # Number of recent good ping RTTs summarised in the ping logs (30 pings at 10s = 5 minutes).
 PING_RTT_WINDOW = 30
+
+# Wifi recovery schedule, timed from the first failed check of an unbroken run of failures: the five recovery
+# steps run at 2, 4, 6, 8 and 10 minutes into each 20 minute cycle, and the device reboots after 2 hours.
+RECOVERY_CYCLE_SECONDS = 20 * 60
+RECOVERY_STEP_SECONDS = 2 * 60
+RECOVERY_STEP_COUNT = 5
+REBOOT_AFTER_SECONDS = 2 * 3600
 
 
 def parse_ping_rtt_ms(ping_stdout: str) -> float | None:
@@ -49,6 +56,11 @@ class DeviceManager:
         self.ping_failure_count_run = 0
         self.ping_success_count_run = 0
         self.recent_rtts_ms: deque[float] = deque(maxlen=PING_RTT_WINDOW)
+        # monotonic() time of the first failed check in the current run of failures; None while pings succeed.
+        self.fail_run_start: float | None = None
+        # (cycle, step) of the last recovery step run in the current run of failures.
+        self.last_recovery_slot: tuple[int, int] | None = None
+        self.reboot_requested = False
         self.led_timer: utils.RepeatTimer | None = None
         self.wifi_timer: utils.RepeatTimer | None = None
         self.diagnostics_upload_timer: utils.RepeatTimer | None = None
@@ -65,6 +77,9 @@ class DeviceManager:
         self.ping_failure_count_run = 0
         self.ping_success_count_run = 0
         self.recent_rtts_ms = deque(maxlen=PING_RTT_WINDOW)
+        self.fail_run_start = None
+        self.last_recovery_slot = None
+        self.reboot_requested = False
         self.last_ping_was_ok = False
         self.log_counter = 0
         self.wifi_log_frequency = 600  # In wifi timer callbacks (every 10s), so every 100 minutes
@@ -361,6 +376,10 @@ class DeviceManager:
             self.ping_failure_count_run = 0
         self.ping_failure_count_run += 1
         self.last_ping_was_ok = False
+        if self.fail_run_start is None:
+            # First failure of a new run: the wifi recovery schedule is timed from here.
+            self.fail_run_start = monotonic()
+            self.last_recovery_slot = None
         logger.info(
             f"Ping failure count run: {self.ping_failure_count_run}, all "
             f"(good/bad): {self.ping_success_count_all}/{self.ping_failure_count_all}; {self.rtt_summary()}"
@@ -391,60 +410,74 @@ class DeviceManager:
     # Possible recovery actions:
     # - Restart the wlan0 interface:  nmcli dev disconnect / connect wlan0
     # - Toggle radio:                 nmcli radio wifi off / on
-    # - Reload NMCLI:                 nlcli general reload
+    # - Reload NMCLI:                 nmcli general reload
     # - Explicit wifi connect:        nmcli dev wifi connect <SSID> password <password>
     # - Restart NetworkManager:       sudo systemctl restart NetworkManager
     # - Restart the device:           sudo reboot
     #
-    # Try the first four recovery actions on a 20 minute cycle.
-    # These recovery actions are attempted at 2, 4, 6, 8 minutes respectively into each 20 minute cycle.
-    # If that doesn't recover it, then after the failure count gets to 4 hours reboot the device.
+    # The schedule is timed from the first failed check of an unbroken run of failures; any successful check
+    # ends the run and the next failure starts the schedule again. The first five recovery actions run in
+    # order at 2, 4, 6, 8 and 10 minutes into each 20 minute cycle, so they repeat six times; each one runs
+    # on the first check in its 2 minute slot. If that doesn't recover it, the device reboots after 2 hours.
     ##########################################################################################################
     def attempt_wifi_recovery(self) -> None:
-        retry_frequency = int(
-            self.ping_check_interval * 120
-        )  # Retry recovery action set every 10s*120=1200s=20mins
+        if self.fail_run_start is None:
+            return
+        elapsed = monotonic() - self.fail_run_start
 
         # Reboot after 2 hours. Data queued in memory will be spooled to disk first.
-        if self.ping_failure_count_run == int((2 * 3600) / self.ping_check_interval):
-            reboot.request_managed_reboot("Rebooting device due to no internet for >2 hours", is_error=True)
+        if elapsed >= REBOOT_AFTER_SECONDS:
+            if not self.reboot_requested:
+                self.reboot_requested = True
+                reboot.request_managed_reboot(
+                    "Rebooting device due to no internet for >2 hours", is_error=True
+                )
+            return
 
-        elif self.ping_failure_count_run % retry_frequency == 10:
-            logger.info("Restarting client wifi interface")
-            utils.run_cmd("sudo nmcli dev disconnect " + self.client_wlan, ignore_errors=True)
-            sleep(1)
-            utils.run_cmd("sudo nmcli dev connect " + self.client_wlan, ignore_errors=True)
-            sleep(1)
+        cycle, offset = divmod(int(elapsed), RECOVERY_CYCLE_SECONDS)
+        step = offset // RECOVERY_STEP_SECONDS  # 0 = before the first step; 1-5 = a step; 6-9 = waiting
+        if not 1 <= step <= RECOVERY_STEP_COUNT or (cycle, step) == self.last_recovery_slot:
+            return
+        self.last_recovery_slot = (cycle, step)
+        logger.info(f"No internet for {elapsed / 60:.1f} minutes; wifi recovery step {step}")
 
-        elif self.ping_failure_count_run % retry_frequency == 20:
-            logger.info("Toggle wifi radio")
-            utils.run_cmd("sudo nmcli radio wifi off", ignore_errors=True)
-            sleep(1)
-            utils.run_cmd("sudo nmcli radio wifi on", ignore_errors=True)
-            sleep(1)
+        match step:
+            case 1:
+                logger.info("Restarting client wifi interface")
+                utils.run_cmd("sudo nmcli dev disconnect " + self.client_wlan, ignore_errors=True)
+                sleep(1)
+                utils.run_cmd("sudo nmcli dev connect " + self.client_wlan, ignore_errors=True)
+                sleep(1)
 
-        elif self.ping_failure_count_run % retry_frequency == 30:
-            logger.info("Reloading NMCLI configuration")
-            utils.run_cmd("sudo nmcli general reload", ignore_errors=True)
-            sleep(1)
+            case 2:
+                logger.info("Toggle wifi radio")
+                utils.run_cmd("sudo nmcli radio wifi off", ignore_errors=True)
+                sleep(1)
+                utils.run_cmd("sudo nmcli radio wifi on", ignore_errors=True)
+                sleep(1)
 
-        elif self.ping_failure_count_run % retry_frequency == 40:
-            logger.info("Explicitly connecting to wifi network")
-            for client in self.wifi_clients:
-                if client.ssid is not None and client.pw is not None:
-                    logger.info(f"Connecting to {client.ssid}")
-                    wifi_connect_args = self._get_wifi_connect_args(client.pw)
-                    utils.run_cmd(
-                        f"sudo nmcli dev wifi connect {shlex.quote(client.ssid)}{wifi_connect_args}",
-                        ignore_errors=True,
-                    )
-                    break
-            sleep(1)
+            case 3:
+                logger.info("Reloading NMCLI configuration")
+                utils.run_cmd("sudo nmcli general reload", ignore_errors=True)
+                sleep(1)
 
-        elif self.ping_failure_count_run % retry_frequency == 50:
-            logger.info("Restarting NetworkManager")
-            utils.run_cmd("sudo systemctl restart NetworkManager", ignore_errors=True)
-            sleep(1)
+            case 4:
+                logger.info("Explicitly connecting to wifi network")
+                for client in self.wifi_clients:
+                    if client.ssid is not None and client.pw is not None:
+                        logger.info(f"Connecting to {client.ssid}")
+                        wifi_connect_args = self._get_wifi_connect_args(client.pw)
+                        utils.run_cmd(
+                            f"sudo nmcli dev wifi connect {shlex.quote(client.ssid)}{wifi_connect_args}",
+                            ignore_errors=True,
+                        )
+                        break
+                sleep(1)
+
+            case _:  # Step 5
+                logger.info("Restarting NetworkManager")
+                utils.run_cmd("sudo systemctl restart NetworkManager", ignore_errors=True)
+                sleep(1)
 
     def _get_wifi_connect_args(self, password: str) -> str:
         if password == "":
@@ -464,6 +497,7 @@ class DeviceManager:
     def action_on_ping_ok(self) -> None:
         # Track ping stats for logging purposes
         self.ping_success_count_all += 1
+        self.fail_run_start = None
         if not self.last_ping_was_ok:
             self.ping_failure_count_run = 0
             self.ping_success_count_run = 0
