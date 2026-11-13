@@ -1,8 +1,10 @@
 # Class to optionally manage:
 # - Wifi
 # - LED indicator status
+import re
 import shlex
 import subprocess
+from collections import deque
 from enum import IntEnum, auto
 from time import sleep
 
@@ -12,6 +14,17 @@ from expidite_rpi.core.diagnostics_bundle import DiagnosticsBundle
 from expidite_rpi.utils import utils
 
 logger = root_cfg.setup_logger("expidite")
+
+# Matches the round trip time in a ping reply line, e.g. "64 bytes from 8.8.8.8: icmp_seq=1 time=14.2 ms".
+_PING_RTT_RE = re.compile(r"time[=<]([\d.]+) ms")
+# Number of recent good ping RTTs summarised in the ping logs (30 pings at 10s = 5 minutes).
+PING_RTT_WINDOW = 30
+
+
+def parse_ping_rtt_ms(ping_stdout: str) -> float | None:
+    """Return the round trip time in ms from the output of a single ping, or None if there is no reply."""
+    match = _PING_RTT_RE.search(ping_stdout)
+    return float(match.group(1)) if match else None
 
 
 class DeviceState(IntEnum):
@@ -35,6 +48,7 @@ class DeviceManager:
         self.ping_success_count_all = 0
         self.ping_failure_count_run = 0
         self.ping_success_count_run = 0
+        self.recent_rtts_ms: deque[float] = deque(maxlen=PING_RTT_WINDOW)
         self.led_timer: utils.RepeatTimer | None = None
         self.wifi_timer: utils.RepeatTimer | None = None
         self.diagnostics_upload_timer: utils.RepeatTimer | None = None
@@ -50,6 +64,7 @@ class DeviceManager:
         self.ping_success_count_all = 0
         self.ping_failure_count_run = 0
         self.ping_success_count_run = 0
+        self.recent_rtts_ms = deque(maxlen=PING_RTT_WINDOW)
         self.last_ping_was_ok = False
         self.log_counter = 0
         self.wifi_log_frequency = 600  # In wifi timer callbacks (every 10s), so every 100 minutes
@@ -284,15 +299,19 @@ class DeviceManager:
         try:
             # Test that internet connectivity is UP and working by pinging google DNS servers
             # -c 1 means ping once, -W 1 means timeout after 1 second
-            ping_ok = (
-                subprocess.run(
-                    ["ping", "-c", "1", "-W", "1", "8.8.8.8"],
-                    check=False,
-                    stdout=subprocess.DEVNULL,
-                    stderr=subprocess.DEVNULL,
-                ).returncode
-                == 0
+            ping = subprocess.run(
+                ["ping", "-c", "1", "-W", "1", "8.8.8.8"],
+                check=False,
+                capture_output=True,
+                text=True,
             )
+            ping_ok = ping.returncode == 0
+
+            if ping_ok:
+                rtt_ms = parse_ping_rtt_ms(ping.stdout)
+                if rtt_ms is not None:
+                    self.recent_rtts_ms.append(rtt_ms)
+
             # Even if ICMP ping works, we still see situation where TCP can be failed (router issue).
             # We can identify this by running ss -tpn and checking for connections in SYN_SENT state which
             # indicates that the TCP handshake is not completing.
@@ -344,7 +363,7 @@ class DeviceManager:
         self.last_ping_was_ok = False
         logger.info(
             f"Ping failure count run: {self.ping_failure_count_run}, all "
-            f"(good/bad): {self.ping_success_count_all}/{self.ping_failure_count_all}"
+            f"(good/bad): {self.ping_success_count_all}/{self.ping_failure_count_all}; {self.rtt_summary()}"
         )
 
         # Set ping status so that the LEDs reflect this change
@@ -432,6 +451,16 @@ class DeviceManager:
             return ""
         return f" password {shlex.quote(password)}"
 
+    def rtt_summary(self) -> str:
+        """Summarise the recent good ping round trip times for the ping logs."""
+        rtts = self.recent_rtts_ms
+        if not rtts:
+            return "no recent good ping RTTs"
+        return (
+            f"good ping RTT ms (last/min/avg/max of {len(rtts)}): "
+            f"{rtts[-1]:.0f}/{min(rtts):.0f}/{sum(rtts) / len(rtts):.0f}/{max(rtts):.0f}"
+        )
+
     def action_on_ping_ok(self) -> None:
         # Track ping stats for logging purposes
         self.ping_success_count_all += 1
@@ -441,8 +470,8 @@ class DeviceManager:
         self.ping_success_count_run += 1
         if self.ping_success_count_run % 30 == 0:
             logger.info(
-                f"Ping successful count run: {self.ping_success_count_run}, all "
-                f"(good/bad): {self.ping_success_count_all}/{self.ping_failure_count_all}"
+                f"Ping successful count run: {self.ping_success_count_run}, all (good/bad): "
+                f"{self.ping_success_count_all}/{self.ping_failure_count_all}; {self.rtt_summary()}"
             )
 
         # Set ping status so that the LEDs reflect this change
