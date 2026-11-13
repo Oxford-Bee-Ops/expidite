@@ -297,10 +297,10 @@ class DeviceManager:
     # We only enable the AP wifi connection if the client wifi connection is UP
     def wifi_timer_callback(self) -> None:
         try:
-            # Test that internet connectivity is UP and working by pinging google DNS servers
-            # -c 1 means ping once, -W 1 means timeout after 1 second
+            # Test that internet connectivity is UP and working by pinging google DNS servers.
+            # -c 1 means ping once, -W 2 means timeout after 2 seconds, which leaves headroom for slow links.
             ping = subprocess.run(
-                ["ping", "-c", "1", "-W", "1", "8.8.8.8"],
+                ["ping", "-c", "1", "-W", "2", "8.8.8.8"],
                 check=False,
                 capture_output=True,
                 text=True,
