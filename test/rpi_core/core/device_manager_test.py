@@ -113,7 +113,7 @@ class Test_device_manager:
             manager.recent_rtts_ms.append(rtt_ms)
 
         # The window keeps only the last three, so the 900ms ping has dropped out.
-        assert manager.rtt_summary() == "good ping RTT ms (last/min/avg/max of 3): 60.0/40.0/50.0/60.0"
+        assert manager.rtt_summary() == "good ping RTT ms (last/min/avg/max of 3): 60/40/50/60"
 
     @pytest.mark.unittest
     @pytest.mark.parametrize(

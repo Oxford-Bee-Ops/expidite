@@ -458,7 +458,7 @@ class DeviceManager:
             return "no recent good ping RTTs"
         return (
             f"good ping RTT ms (last/min/avg/max of {len(rtts)}): "
-            f"{rtts[-1]:.1f}/{min(rtts):.1f}/{sum(rtts) / len(rtts):.1f}/{max(rtts):.1f}"
+            f"{rtts[-1]:.0f}/{min(rtts):.0f}/{sum(rtts) / len(rtts):.0f}/{max(rtts):.0f}"
         )
 
     def action_on_ping_ok(self) -> None:
