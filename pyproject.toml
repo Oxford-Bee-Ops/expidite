@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "expidite"
-version = "0.1.330"
+version = "0.1.331"
 description = "Python module to support using Raspberry Pi for scientific data collection"
 readme = "README.md"
 requires-python = ">=3.13"
@@ -14,7 +14,7 @@ authors = [
   {name = "Stuart", email = "stuart@bee-ops.com"},
 ]
 dependencies = [
-    "adafruit-blinka==10.1.0",
+    "adafruit-blinka==10.2.0",
     "adafruit-circuitpython-ahtx0==1.0.30",
     "adafruit-circuitpython-busdevice==5.2.17",
     "adafruit-circuitpython-bmp280==3.3.12",
@@ -23,7 +23,7 @@ dependencies = [
     "adafruit-platformdetect==3.90.0",
     "azure-iot-device==2.14.0",
     "azure-storage-blob==12.31.1",
-    "bottleneck==1.6.0", # Required by pandas.
+    "bottleneck==1.6.1", # Required by pandas.
     "click==8.5.1",
     "gpiozero==2.0.1.post3",
     "numexpr==2.14.2", # Required by pandas.
@@ -34,7 +34,7 @@ dependencies = [
     "psutil==7.2.2",
     "PyGithub==2.10.0",
     "PyYAML==6.0.3",
-    "pydantic-settings==2.16.2",
+    "pydantic-settings==2.16.3",
     "python-crontab==3.4.0",
     "sdnotify==0.3.2",
     "sensirion_i2c_sht4x==1.1.0",
@@ -52,16 +52,16 @@ Issues = "https://github.com/Oxford-Bee-Ops/expidite/issues"
 [project.optional-dependencies]
 dev = [
     "codespell==2.4.3",
-    "deadcode==2.6.0",
+    "deadcode==2.6.3",
     "mypy==2.4.1",
     "pandas-stubs==3.1.0.261029",
     "pyright==1.1.414",
     "pytest==9.2.0",
     "pytest-socket==0.8.1",
-    "ruff==0.17.4",
-    "ty==0.0.99",
-    "types-psutil==7.2.2.20260906",
-    "types-PyYAML==6.0.12.20261103",
+    "ruff==0.17.5",
+    "ty==0.0.104",
+    "types-psutil==7.2.2.20261111",
+    "types-PyYAML==6.0.12.20261113",
 ]
 
 [project.scripts]
@@ -293,8 +293,8 @@ python-version = "3.13"
 include = ["src/expidite_rpi/sensors/drivers"]
 [tool.ty.overrides.rules]
 invalid-assignment = "ignore"
-invalid-method-override = "ignore"
-invalid-return-type = "ignore"
+incompatible-method-override = "ignore"
+invalid-explicit-return = "ignore"
 possibly-missing-attribute = "ignore"
 [[tool.ty.overrides]]
 include = [
