@@ -20,6 +20,7 @@ if TYPE_CHECKING:
 from expidite_rpi.core import configuration as root_cfg
 from expidite_rpi.core import reboot
 from expidite_rpi.core.device_config_objects import FAILED_TO_LOAD
+from expidite_rpi.management import system_logs
 from expidite_rpi.management.bcli import InteractiveMenu
 from expidite_rpi.management.ssh_tunnel import SshTunnelManager
 
@@ -194,6 +195,7 @@ class IoTHubClient:
 
         handlers: dict[str, Any] = {
             "reboot": self._handle_reboot,
+            "upload_system_logs": self._handle_upload_system_logs,
             "get_review_mode": self._handle_get_review_mode,
             "enter_review_mode": self._handle_enter_review_mode,
             "exit_review_mode": self._handle_exit_review_mode,
@@ -219,6 +221,9 @@ class IoTHubClient:
 
         if self._hub_client is not None:
             self._hub_client.send_method_response(response)
+
+    def _handle_upload_system_logs(self, payload: dict[str, Any]) -> dict[str, str]:
+        return system_logs.request_system_logs(payload.get("uploadUrl"), payload.get("uploadToken"))
 
     def _handle_reboot(self, _payload: dict[str, Any]) -> dict[str, str]:
         logger.info("IoT Hub: Reboot requested")

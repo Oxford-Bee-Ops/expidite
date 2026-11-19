@@ -77,3 +77,25 @@ class TestDirectMethodHandlers:
             mock_mr.create_from_method_request.assert_called_once()
             call_args = mock_mr.create_from_method_request.call_args
             assert call_args[0][1] == 404
+
+    @pytest.mark.unittest
+    def test_system_logs_dispatch_passes_upload_credentials(self) -> None:
+        """Pass the portal's per-export credentials to the journal uploader."""
+        client, _ = self._make_client()
+        request = MagicMock(name="method_request")
+        request.name = "upload_system_logs"
+        request.payload = {
+            "uploadUrl": "https://portal.example.org/internal/device-logs/export-id",
+            "uploadToken": "example-export-credential",
+        }
+        with (
+            patch(
+                "expidite_rpi.management.system_logs.request_system_logs", return_value={"status": "accepted"}
+            ) as export,
+            patch("azure.iot.device.MethodResponse") as method_response,
+        ):
+            client._on_method_request(request)
+        export.assert_called_once_with(request.payload["uploadUrl"], request.payload["uploadToken"])
+        method_response.create_from_method_request.assert_called_once_with(
+            request, 200, {"status": "accepted"}
+        )
