@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "expidite"
-version = "0.1.332"
+version = "0.1.333"
 description = "Python module to support using Raspberry Pi for scientific data collection"
 readme = "README.md"
 requires-python = ">=3.13"
@@ -27,8 +27,8 @@ dependencies = [
     "click==8.5.1",
     "gpiozero==2.0.1.post3",
     "numexpr==2.14.2", # Required by pandas.
-    "numpy==2.5.4",
-    "opencv-python-headless==5.0.0.93",
+    "numpy==2.5.5",
+    "opencv-python-headless==5.1.0.95",
     "packaging==26.3",
     "pandas==3.1.1",
     "psutil==7.2.2",
@@ -52,14 +52,14 @@ Issues = "https://github.com/Oxford-Bee-Ops/expidite/issues"
 [project.optional-dependencies]
 dev = [
     "codespell==2.4.3",
-    "deadcode==2.6.3",
+    "deadcode==2.7.0",
     "mypy==2.4.1",
     "pandas-stubs==3.1.0.261029",
     "pyright==1.1.414",
     "pytest==9.2.0",
     "pytest-socket==0.8.1",
-    "ruff==0.17.5",
-    "ty==0.0.104",
+    "ruff==0.17.6",
+    "ty==0.0.107",
     "types-psutil==7.2.2.20261111",
     "types-PyYAML==6.0.12.20261113",
 ]
